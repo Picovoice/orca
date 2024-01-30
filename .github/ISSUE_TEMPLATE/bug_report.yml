@@ -1,0 +1,87 @@
+name: Bug report
+description: Bugs in Orca
+title: "Orca Issue: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before** reporting an issue, make sure to read the [documentation](https://picovoice.ai/docs/orca/) and search [existing issues](https://github.com/Picovoice/orca/issues).
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Have you checked the docs and existing issues?
+      description: Make sure you have checked all of the below before submitting an issue
+      options:
+        - label: I have read all of the relevant Picovoice Orca docs
+          required: true
+        - label: I have searched the existing issues for Orca
+          required: true
+  - type: dropdown
+    id: sdk
+    attributes:
+      label: SDK
+      options:
+        - C
+        - Python
+        - Web
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: "Orca package version"
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: framework
+    attributes:
+      label: "Framework version"
+      placeholder: "Python 3.7, .NET Core 3.1, etc."
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux (x86_64)
+        - macOS (x86_64, arm64)
+        - Windows (x86_64)
+        - Raspberry Pi
+        - NVIDIA Jetson
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: "OS/Browser version"
+      placeholder: "macOS 11.0, Android 8.0, etc."
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1.
+        2. 
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expectation
+    attributes:
+      label: Expected Behavior
+      description: A concise description of what you expected to happen.
+    validations:
+      required: true

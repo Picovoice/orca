@@ -1,0 +1,4 @@
+*.py linguist-detectable=true
+demo/** linguist-detectable=false
+lib/** linguist-detectable=false
+resources/** linguist-detectable=false
