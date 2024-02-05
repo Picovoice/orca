@@ -56,6 +56,13 @@ Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the 
 single-channel 16-bit PCM WAV file.\
 When done make sure to explicitly release the resources with `orca.delete()`.
 
+### Text input
+
+Orca can handle the 26 lower-case (`a-z`) and the 26 upper-case (`A-Z`) English letters, and standard punctuation marks
+(`[".", ":", ",", "\"", "?", "!"]`).
+Pronunciations of numerals, abbreviations, special characters, etc. can be achieved with the
+[custom pronunciations](#custom-pronunciations) feature.
+
 ### Custom pronunciations
 
 Orca allows to embed custom pronunciations in the text via the syntax: `{word|pronunciation}`.\

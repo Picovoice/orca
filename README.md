@@ -44,6 +44,13 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Overview
 
+### Text input
+
+Orca can handle the 26 lower-case (`a-z`) and the 26 upper-case (`A-Z`) English letters, and standard punctuation marks
+(`[".", ":", ",", "\"", "?", "!"]`).
+Pronunciations of numerals, abbreviations, special characters, etc. can be achieved with the
+[custom pronunciations](#custom-pronunciations) feature.
+
 ### Custom pronunciations
 
 Orca supports custom pronunciations via a specific syntax embedded within the input text.
