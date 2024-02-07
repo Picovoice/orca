@@ -297,7 +297,7 @@ describe('Orca Binding', function() {
           try {
             let orca: any = null;
 
-            const setOrcaSpeech = (customSpeechRate: number) => new Promise<Int16Array | null>(async (resolve) => {
+            const setOrcaSpeech = (customSpeechRate: number) => new Promise<Int16Array | null>(async resolve => {
               orca = await instance.create(
                 ACCESS_KEY,
                 orcaSpeech => {
