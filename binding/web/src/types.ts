@@ -12,6 +12,7 @@
 import { PvModel } from '@picovoice/web-utils';
 import { OrcaError } from './orca_errors';
 
+// eslint-disable-next-line no-shadow
 export enum PvStatus {
   SUCCESS = 10000,
   OUT_OF_MEMORY,
