@@ -1,0 +1,14 @@
+source 'https://cdn.cocoapods.org/'
+platform :ios, '13.0'
+
+target 'OrcaAppTest' do
+  pod 'Orca-iOS', '~> 0.1.0'
+end
+
+target 'OrcaAppTestUITests' do
+  pod 'Orca-iOS', '~> 0.1.0'
+end
+
+target 'PerformanceTest' do
+  pod 'Orca-iOS', '~> 0.1.0'
+end
