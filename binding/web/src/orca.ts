@@ -229,7 +229,7 @@ export class Orca {
    * @param model.version Version of the model file. Increment to update the model file in storage.
    * @param options Optional configuration arguments.
    * @param options.synthesizeErrorCallback User-defined callback invoked if any error happens
-   * during synthesis. Its only input argument is the error message.
+   * while synthesizing speech. Its only input argument is the error message.
    *
    * @returns An instance of the Orca engine.
    */

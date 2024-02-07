@@ -244,7 +244,7 @@ npm install --save @picovoice/orca-web
 Create an instance of the engine using `OrcaWorker` and synthesize speech:
 
 ```typescript
-import { OrcaWorker } from "@picovoice/orca-web";
+import { OrcaWorker, OrcaSpeech } from "@picovoice/orca-web";
 import orcaParams from "${PATH_TO_BASE64_ORCA_PARAMS}";
 
 function orcaSpeechCallback(orcaSpeech: OrcaSpeech) {
