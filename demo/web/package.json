@@ -1,0 +1,26 @@
+{
+  "name": "orca-web-demo",
+  "version": "1.0.0",
+  "description": "A basic demo to show how to use Orca for web browsers, using the IIFE version of the library",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "postinstall": "npx pvbase64 -i ../../lib/common/orca_params_male.pv -o ./orca_params_male.js && npx pvbase64 -i ../../lib/common/orca_params_female.pv -o ./orca_params_female.js",
+    "start": "yarn run http-server -a localhost -p 5000"
+  },
+  "keywords": [
+    "Picovoice",
+    "Orca",
+    "browser",
+    "voice ai",
+    "text-to-speech"
+  ],
+  "author": "Picovoice Inc",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@picovoice/orca-web": "file:../../binding/web"
+  },
+  "devDependencies": {
+    "http-server": "^14.0.0"
+  }
+}

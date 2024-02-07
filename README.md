@@ -33,9 +33,11 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
     - [Demos](#demos)
         - [Python](#python-demos)
         - [C](#c-demos)
+        - [Web Demo](#web-demo)
     - [SDKs](#sdks)
         - [Python](#python)
         - [C](#c)
+        - [Web](#web)
     - [AccessKey](#accesskey)
     - [Releases](#releases)
     - [FAQ](#faq)
@@ -128,6 +130,24 @@ Run the demo:
 ./demo/c/build/orca_demo -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
+### Web Demos
+
+From [demo/web](./demo/web) run the following in the terminal:
+
+```console
+yarn
+yarn start
+```
+
+(or)
+
+```console
+npm install
+npm run start
+```
+
+Open `http://localhost:5000` in your browser to try the demo.
+
 ## SDKs
 
 ### Python
@@ -206,6 +226,42 @@ pv_orca_delete_pcm(pcm);
 pv_orca_synthesize_params_delete(synthesize_params);
 pv_orca_delete(handle);
 ```
+
+### Web
+
+Install the web SDK using yarn:
+
+```console
+yarn add @picovoice/orca-web
+```
+
+or using npm:
+
+```console
+npm install --save @picovoice/orca-web
+```
+
+Create an instance of the engine using `OrcaWorker` and synthesize speech:
+
+```typescript
+import { OrcaWorker } from "@picovoice/orca-web";
+import orcaParams from "${PATH_TO_BASE64_ORCA_PARAMS}";
+
+function orcaSpeechCallback(orcaSpeech: OrcaSpeech) {
+  const pcm = orcaSpeech.orcaSpeech;
+}
+
+const orca = await OrcaWorker.create(
+  "${ACCESS_KEY}",
+  orcaSpeechCallback,
+  { base64: orcaParams }
+);
+
+await orca.synthesize("${TEXT}")
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/). Finally, when done
+release the resources using `orca.release()`.
 
 ## Releases
 

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="node_modules/@picovoice/orca-web/dist/iife/index.js"></script>
+  <script type="application/javascript" src="orca_params_male.js"></script>
+  <script type="application/javascript">
+    const ORCA_SAMPLE_RATE = 22050;
+
+    let orca = null;
+    let pcm = null;
+
+    function writeMessage(message) {
+      console.log(message);
+      document.getElementById('status').innerHTML = message;
+    }
+
+    window.onload = function() {
+      const audioContext = new (window.AudioContext ||
+        window.webKitAudioContext)({ sampleRate: ORCA_SAMPLE_RATE });
+
+      const originalAudioGain = audioContext.createGain();
+      originalAudioGain.gain.value = 1;
+      originalAudioGain.connect(audioContext.destination);
+
+      function createBuffer(data) {
+        const buffer = audioContext.createBuffer(
+          1,
+          data.length,
+          ORCA_SAMPLE_RATE,
+        );
+        const source = new Float32Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+          source[i] = data[i] < 0 ? data[i] / 32768 : data[i] / 32767;
+        }
+        buffer.copyToChannel(source, 0);
+        return buffer;
+      }
+
+      let isPlaying = false;
+      let originalAudioSource;
+      const textToSynthesizeEl = document.getElementById('text-to-synthesize');
+      const speechRateSliderEl = document.getElementById('speech-rate');
+      const synthesizeBtnEl = document.getElementById('synthesize-btn');
+      const controlBtnEl = document.getElementById('control-btn');
+      const speechRateDisplayEl = document.getElementById('speech-rate-display');
+
+      function onSynthesizeParamChange() {
+        if (orca !== null && isPlaying === false) {
+          synthesizeBtnEl.disabled = false;
+          controlBtnEl.disabled = true;
+          controlBtnEl.innerHTML = 'Play';
+        }
+      }
+
+      function onSpeechRateSliderChange() {
+        speechRateDisplayEl.innerText = speechRateSliderEl.value;
+      }
+
+      textToSynthesizeEl.addEventListener('input', onSynthesizeParamChange);
+      speechRateSliderEl.addEventListener('change', onSynthesizeParamChange);
+      speechRateSliderEl.addEventListener('change', onSpeechRateSliderChange);
+
+      function onAudioStop() {
+        isPlaying = false;
+        controlBtnEl.innerHTML = 'Play';
+        textToSynthesizeEl.disabled = false;
+        speechRateSliderEl.disabled = false;
+      }
+
+      controlBtnEl.addEventListener('click', () => {
+        if (!isPlaying) {
+          originalAudioSource = audioContext.createBufferSource();
+          originalAudioSource.addEventListener('ended', onAudioStop);
+          originalAudioSource.buffer = createBuffer(pcm);
+          originalAudioSource.connect(originalAudioGain);
+          originalAudioSource.start();
+
+          isPlaying = true;
+          controlBtnEl.innerHTML = 'Stop';
+          textToSynthesizeEl.disabled = true;
+          speechRateSliderEl.disabled = true;
+          synthesizeBtnEl.disabled = true;
+        } else {
+          originalAudioSource.stop();
+          onAudioStop();
+        }
+      });
+    };
+
+    function orcaSpeechCallback(orcaSpeech) {
+      pcm = orcaSpeech.speech;
+      writeMessage('Synthesizing complete!');
+      document.getElementById('text-to-synthesize').disabled = false;
+      document.getElementById('speech-rate').disabled = false;
+      document.getElementById('control-btn').disabled = false;
+    }
+
+    async function startOrca(accessKey) {
+      writeMessage('Orca is loading. Please wait...');
+      try {
+        document.getElementById('start-orca').disabled = true;
+        document.getElementById('text-to-synthesize').disabled = true;
+
+        orca = await OrcaWeb.OrcaWorker.create(
+          accessKey,
+          orcaSpeechCallback,
+          { base64: modelParams, forceWrite: true },
+          { synthesizeErrorCallback: (e) => writeMessage(e) },
+        );
+
+        document.getElementById('text-to-synthesize').disabled = false;
+        document.getElementById('speech-rate').disabled = false;
+        writeMessage('Orca worker ready!');
+      } catch (err) {
+        writeMessage(err);
+      }
+    }
+
+    async function synthesize() {
+      writeMessage('Synthesizing. Please wait...');
+      try {
+        document.getElementById('text-to-synthesize').disabled = true;
+        document.getElementById('speech-rate').disabled = true;
+        document.getElementById('synthesize-btn').disabled = true;
+        document.getElementById('control-btn').disabled = true;
+        const text = document.getElementById('text-to-synthesize').value;
+        const speechRate = document.getElementById('speech-rate').value;
+        await orca.synthesize(text, speechRate);
+      } catch (err) {
+        writeMessage(err);
+      }
+    }
+  </script>
+</head>
+<body>
+<h1>Orca Web Demo</h1>
+<p>This demo uses Orca for Web to:</p>
+<ol>
+  <li>
+    Create an instance of Orca with the model file provided or default model
+    file.
+  </li>
+  <li>Convert text into audio speech data.</li>
+</ol>
+After entering the AccessKey, click the "Start Orca" button.
+<hr />
+<label for="accessKey"
+>AccessKey obtained from
+  <a href="https://console.picovoice.ai/">Picovoice Console</a>:</label
+>
+<input type="text" id="accessKey" name="accessKey" />
+<input
+  id="start-orca"
+  type="button"
+  value="Start Orca"
+  onclick="startOrca(document.getElementById('accessKey').value)"
+/>
+<hr />
+<label for="text-to-synthesize">Text to synthesize (English)</label>
+<br />
+<textarea id="text-to-synthesize" rows="4" cols="50" disabled>
+</textarea
+>
+<br />
+<label>
+  Speech Rate: <span id="speech-rate-display">1.0</span>
+  <input
+    id="speech-rate"
+    type="range"
+    min="0.7"
+    max="1.3"
+    value="1"
+    step="0.1"
+    disabled
+  />
+</label>
+<br />
+<hr />
+<button id="synthesize-btn" onclick="synthesize()" disabled>
+  Synthesize
+</button>
+<button id="control-btn" disabled>Play</button>
+<br />
+<br />
+<div id="status" style="white-space: pre"></div>
+</body>
+</html>
