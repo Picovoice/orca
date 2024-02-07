@@ -1,8 +1,15 @@
-# Cobra Voice Activity Detection Engine
+# Orca Text-to-Speech Engine
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Cobra is a highly accurate and lightweight voice activity detection (VAD) engine.
+Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+
+- Private; All voice processing runs locally.
+- Cross-Platform:
+    - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
+    - Android and iOS
+    - Chrome, Safari, Firefox, and Edge
+    - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
 
 ## Compatibility
 
@@ -11,71 +18,94 @@ Cobra is a highly accurate and lightweight voice activity detection (VAD) engine
 ## Installation
 
 <!-- markdown-link-check-disable -->
-The Cobra iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Cobra-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
+The Orca iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Orca-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
 <!-- markdown-link-check-enable -->
 
 ```ruby
-pod 'Cobra-iOS'
+pod 'Orca-iOS'
 ```
 
 ## AccessKey
 
-Cobra requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Cobra SDKs.
+Orca requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Orca SDKs.
 You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
 Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get your `AccessKey`.
-
-## Permissions
-
-To enable recording with your iOS device's microphone you must add the following to your app's `Info.plist` file:
-```xml
-<key>NSMicrophoneUsageDescription</key>
-<string>[Permission explanation]</string>
-```
 
 ## Usage
 
 Create an instance of the engine
 
 ```swift
-import Cobra
+import Orca
 
 let accessKey : String = // .. accessKey provided by Picovoice Console (https://console.picovoice.ai/)
 do {
-    handle = try Cobra(accessKey: accessKey)
+    orca = try Orca(accessKey: accessKey)
 } catch { }
 ```
 
-`handle` is an instance of Cobra that detects voice activities.
+You can synthesize speech by calling one of the `synthesize` methods:
 
 ```swift
-func getNextAudioFrame() -> [Int16] {
-    // .. get audioFrame
-    return audioFrame;
-}
-
-let threshold = // .. detection threshold within [0, 1]
-while true {
-    do {
-        let voiceProbability = try handle.process(getNextAudioFrame())
-        if voiceProbability >= threshold {
-            // .. detection made!
-        }
-    } catch { }
-}
+// return raw pcm
+pcm = orca.synthesize(text="${TEXT}")
 ```
 
-For `process` to work correctly, the audio data must be in the audio format required by Picovoice.
-The required audio format is found by using `Cobra.sampleRate` to get the required sample rate and `Cobra.frameLength` to get the required number of samples per input frame. Audio must be single-channel and 16-bit linearly-encoded.
+Replace `${TEXT}` with the text to be synthesized. 
 
 When done, resources have to be released explicitly:
 
 ```swift
-handle.delete()
+orca.delete()
 ```
+
+### Custom pronunciations
+
+Orca allows to embed custom pronunciations in the text via the syntax: `{word|pronunciation}`.\
+The pronunciation is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for example:
+
+- "This is a {custom|K AH S T AH M} pronunciation"
+- "{read|R IY D} this as {read|R EH D}, please."
+- "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
+
+### Voices
+
+Orca can synthesize speech with various voices, each of which is characterized by a model file located
+in [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common).
+To create an instance of the engine with a specific voice, use:
+
+```swift
+import Orca
+
+do {
+    orca = try Orca(accessKey: accessKey, modelPath="${MODEL_PATH}")
+} catch { }
+```
+
+and replace `${MODEL_PATH}` with the path to the model file with the desired voice.
+
+### Speech control
+
+Orca allows for keyword arguments to be provided to the `synthesize` methods to control the synthesized speech:
+
+- `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value
+  produces speech that is faster (slower). The default is `1.0`.
+
+```swift
+pcm = orca.synthesize(
+    text="${TEXT}",
+    speechRate=1.0)
+```
+
+### Orca properties
+
+To obtain the set of valid punctuation symbols, call `Orca.validPunctuationSymbols`.
+To retrieve the maximum number of characters allowed, call `Orca.maxCharacterLimit`.
+The sample rate of Orca is `Orca.sampleRate`.
 
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable in [`CobraAppTestUITests.swift`](CobraAppTest/CobraAppTestUITests/CobraAppTestUITests.swift). Open `CobraAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable in [`OrcaAppTestUITests.swift`](OrcaAppTest/OrcaAppTestUITests/OrcaAppTestUITests.swift). Open `OrcaAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
 
 ## Demo App
 
