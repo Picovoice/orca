@@ -12,9 +12,9 @@ Pod::Spec.new do |s|
       - Private; All voice processing runs locally.
       - Cross-Platform:
         - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
+        - Android and iOS
+        - Chrome, Safari, Firefox, and Edge
         - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
-        - Android
-        - iOS
     DESC
     s.homepage = 'https://github.com/Picovoice/orca/tree/main/binding/ios'
     s.author = { 'Picovoice' => 'hello@picovoice.ai' }
