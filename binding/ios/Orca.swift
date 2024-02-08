@@ -11,19 +11,29 @@ import PvOrca
 
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Cheetah library.
 public class Orca {
+    
+    static let resourceBundle: Bundle = {
+        let myBundle = Bundle(for: Orca.self)
+
+        guard let resourceBundleURL = myBundle.url(
+             forResource: "OrcaResources", withExtension: "bundle")
+        else { fatalError("OrcaResources.bundle not found") }
+
+        guard let resourceBundle = Bundle(url: resourceBundleURL)
+            else { fatalError("Could not open OrcaResources.bundle") }
+
+        return resourceBundle
+    }()
 
     private var handle: OpaquePointer?
-
+    /// Orca valid symbols
     private var _validPunctuationSymbols: Set<String>?
-
-    /// Required audio sample rate
-    public static let sampleRate = UInt32(pv_sample_rate())
-
+    /// Orca sample rate
+    private var _sampleRate: Int32?
+    /// Maximum number of characters allowed in a single synthesis request.
+    public static let maxCharacterLimit = Int32(pv_orca_max_character_limit())
     /// Orca version string
     public static let version = String(cString: pv_orca_version())
-
-    /// Maximum number of characters allowed in a single synthesis request.
-    public static let maxCharacterLimit = Uint32(pv_orca_max_character_limit())
 
     private static var sdk = "ios"
 
@@ -31,12 +41,29 @@ public class Orca {
         self.sdk = sdk
     }
 
-    var validPunctuationSymbols: Set<String> {
-        get {
+    public var validPunctuationSymbols: Set<String> {
+        get throws {
             if _validPunctuationSymbols == nil {
-                _validPunctuationSymbols = getValidPunctuationSymbols()
+                _validPunctuationSymbols = try getValidPunctuationSymbols()
             }
-            return _validPunctuationSymbols
+            return _validPunctuationSymbols!
+        }
+    }
+    
+    public var sampleRate: Int32 {
+        get throws {
+            if _sampleRate == nil {
+                var cSampleRate: Int32 = 0
+                let status = pv_orca_sample_rate(handle, &cSampleRate)
+                if status != PV_STATUS_SUCCESS {
+                    let messageStack = try getMessageStack()
+                    throw pvStatusToOrcaError(status, "Orca failed to get sample rate", messageStack)
+                }
+                
+                _sampleRate = cSampleRate
+            }
+            
+            return _sampleRate!
         }
     }
 
@@ -48,11 +75,19 @@ public class Orca {
     /// - Throws: OrcaError
     public init(
         accessKey: String,
-        modelPath: String) throws {
+        modelPath: String? = nil) throws {
 
         var modelPathArg = modelPath
-        if !FileManager().fileExists(atPath: modelPathArg) {
-            modelPathArg = try getResourcePath(modelPathArg)
+        
+        if modelPath == nil {
+            modelPathArg  = Orca.resourceBundle.path(forResource: "orca_params", ofType: "pv")
+            if modelPathArg == nil {
+                throw OrcaIOError("Unable to find the default model path")
+            }
+        }
+            
+        if !FileManager().fileExists(atPath: modelPathArg!) {
+            modelPathArg = try getResourcePath(modelPathArg!)
         }
 
         pv_set_sdk(Orca.sdk)
@@ -109,7 +144,7 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        var cSynthesizeParams = getCSynthesizeParams(speechRate: speechRate)
+        var cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
 
         var cNumSamples: Int32 = 0
         var cPcm: UnsafeMutablePointer<Int16>?
@@ -119,7 +154,7 @@ public class Orca {
             throw pvStatusToOrcaError(status, "Unable to synthesize speech", messageStack)
         }
 
-        let buffer = UnsafeBufferPointer(start: cPcm, count: cNumSamples)
+        let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
         let pcm = Array(buffer)
 
         pv_orca_delete_pcm(cPcm)
@@ -128,8 +163,8 @@ public class Orca {
         return pcm
     }
 
-    private func getCSynthesizeParams(speechRate: Float32? = nil) throws -> UnsafeMutablePointer<pv_orca_synthesize_params_t>? {
-        var cParams: UnsafeMutablePointer<pv_orca_synthesize_params_t>?
+    private func getCSynthesizeParams(speechRate: Float32? = nil) throws -> OpaquePointer? {
+        var cParams: OpaquePointer?
 
         var status = pv_orca_synthesize_params_init(&cParams)
         if status != PV_STATUS_SUCCESS {
@@ -138,7 +173,7 @@ public class Orca {
         }
 
         if speechRate != nil {
-            status = pv_orca_synthesize_params_set_speech_rate(&cParams, speechRate)
+            status = pv_orca_synthesize_params_set_speech_rate(cParams, speechRate!)
             if status != PV_STATUS_SUCCESS {
                 let messageStack = try getMessageStack()
                 throw pvStatusToOrcaError(status, "Unable to set Orca speech rate", messageStack)
@@ -154,22 +189,39 @@ public class Orca {
         }
 
         var cNumSymbols: Int32 = 0
-        var cSymbols: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
+        var cSymbols: UnsafePointer<UnsafePointer<Int8>?>?
         let status = pv_orca_valid_punctuation_symbols(handle, &cNumSymbols, &cSymbols)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()
             throw pvStatusToOrcaError(status, "Unable to get Orca valid punctuation symbols", messageStack)
         }
 
-        var symbols: [String] = []
-        for i in 0..<cSymbols {
-            symbols.append(String(cString: cSymbols!.advanced(by: Int(i)).pointee!))
+        var symbols: Set<String> = []
+        for i in 0..<cNumSymbols {
+            symbols.insert(String(cString: cSymbols!.advanced(by: Int(i)).pointee!))
         }
 
         pv_orca_valid_punctuation_symbols_delete(cSymbols)
 
         return symbols
     }
+    
+    /// Given a path, return the full path to the resource.
+        ///
+        /// - Parameters:
+        ///   - filePath: relative path of a file in the bundle.
+        /// - Throws: OrcaIOError
+        /// - Returns: The full path of the resource.
+        private func getResourcePath(_ filePath: String) throws -> String {
+            if let resourcePath = Bundle(for: type(of: self)).resourceURL?.appendingPathComponent(filePath).path {
+                if FileManager.default.fileExists(atPath: resourcePath) {
+                    return resourcePath
+                }
+            }
+
+            throw OrcaIOError("Could not find file at path '\(filePath)'. " +
+                "If this is a packaged asset, ensure you have added it to your xcode project.")
+        }
 
     private func pvStatusToOrcaError(
         _ status: pv_status_t,
