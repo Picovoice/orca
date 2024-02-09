@@ -2,7 +2,27 @@
   "test_sentences": {
     "text": "It doesn't matter how slowly you go, as long as you do not stop!",
     "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
-    "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
+    "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!",
+    "text_invalid": [
+      "Numbers 1992",
+      "7.38",
+      "",
+      "Symbols *&$",
+      "reiner@gmail.com",
+      "Escape characters \n",
+      "\"ی\", \"ء\"",
+      "ॐÁ hindi and spanish",
+      "Б russian",
+      "Some korean ㅘ",
+      "Not closed {custom|K AH S T AM pron",
+      "No separator in {custom K AH S T AM} pron",
+      "Wrong {{custom}|K AH S T AM} pron",
+      "Wrong {{custom||K AH S T AM}} pron",
+      "Wrong {custom|K AH S T AM}}| pron",
+      "Wrong }custom|K AH S T AM{ pron",
+      "Wrong {custom| K AH S T AM} pron",
+      "Wrong {custom|K AH S T AM } pron"
+    ]
   },
   "wer_threshold": 0.2
 }
