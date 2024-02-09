@@ -12,10 +12,9 @@ import XCTest
 
 import Orca
 
-class PerformanceTest: XCTestCase {
-    let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
+class PerformanceTest: BaseTest {
     let iterationString: String = "{NUM_TEST_ITERATIONS}"
-    let thresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
+    let procThresholdString: String = "{PROC_PERFORMANCE_THRESHOLD_SEC}"
 
     override func setUp() {
         super.setUp()
@@ -23,6 +22,39 @@ class PerformanceTest: XCTestCase {
     }
 
     func testPerformance() throws {
+        try XCTSkipIf(procThresholdString == "{PROC_PERFORMANCE_THRESHOLD_SEC}")
         
+        let numTestIterations = Int(iterationString) ?? 30
+        let procPerformanceThresholdSec = Double(procThresholdString)
+        
+        try XCTSkipIf(procPerformanceThresholdSec == nil)
+
+        let bundle = Bundle(for: type(of: self))
+        
+        for param in params {
+            
+            let modelURL = bundle.url(forResource: "orca_params_\(param)", withExtension: "pv")!
+            var results: [Double] = []
+            
+            for i in 0...numTestIterations {
+                var totalNSec = 0.0
+                let orca = try? Orca(accessKey: accessKey, modelURL: modelURL)
+
+                let before = CFAbsoluteTimeGetCurrent()
+                let pcm = try? orca?.synthesize(text: self.testData!.test_sentences.text)
+                let after = CFAbsoluteTimeGetCurrent()
+                totalNSec += (after - before)
+
+                // throw away first run to account for cold start
+                if i > 0 {
+                    results.append(totalNSec)
+                }
+                orca?.delete()
+            }
+            
+            let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)
+            let avgSec = Double(round(avgNSec * 1000) / 1000)
+            XCTAssertLessThanOrEqual(avgSec, procPerformanceThresholdSec!)
+        }
     }
 }

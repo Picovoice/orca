@@ -36,37 +36,38 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testSynthesize() throws {
-        var leopard = try Leopard.init(access_key=self.access_key)
+        let leopard = try Leopard.init(accessKey: self.accessKey, modelPath: "test_resources/leopard_params.pv")
         
         for orca in self.orcas {
-            let pcm = try orca.synthesize(self.testData.tests.testSentences.text)
+            let pcm = try orca.synthesize(text: self.testData!.test_sentences.text)
             XCTAssertGreaterThan(pcm.count, 0)
                 
-            let groundTruth = self.testData.tests.testSentences.textNoPunctuation.components(separatedBy: " ")
-            let transcript, _ = try leopard.process(pcm)
+            let groundTruth = self.testData!.test_sentences.text_no_punctuation
+            let (transcript, _) = try leopard.process(pcm)
             
             let wer = self.characterErrorRate(transcript: transcript, expectedTranscript: groundTruth)
-            XCTAssertLessThan(wer, self.testData.tests.werThreshold)
+            XCTAssertLessThan(wer, self.testData!.wer_threshold)
         }
+        
+        leopard.delete()
     }
 
     func testSynthesizeCustomPron() throws {
         for orca in self.orcas {
-            let pcm = try orca.synthesize(self.testData.tests.testSentences.textCustomPunctuation)
+            let pcm = try orca.synthesize(text: self.testData!.test_sentences.text_custom_pronunciation)
             XCTAssertGreaterThan(pcm.count, 0)
         }
     }
 
     func testSynthesizeSpeechRate() throws {
         for orca in self.orcas {
-            let pcmFast = try orca.synthesize(self.testData.tests.testSentences.text, speech_rate=1.3)
-            let pcmSlow = try orca.synthesize(self.testData.tests.testSentences.text, speech_rate=0.7)
+            let pcmFast = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 1.3)
+            let pcmSlow = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 0.7)
             
-            self.assertLess(len(pcm_fast), len(pcm_slow))
-            XCTAssertLessThan(pcmFast.count, pcmFast.count)
+            XCTAssertLessThan(pcmFast.count, pcmSlow.count)
             
             do {
-                let pcm = try orca.synthesize(test_sentences.text, speech_rate=9999)
+                let pcm = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 9999)
                 XCTAssertNil(pcm)
             } catch { }
         }
@@ -95,12 +96,13 @@ class OrcaAppTestUITests: BaseTest {
         }
     }
 
-    func testProcessMessageStack() throws {
+    func testSynthesizeMessageStack() throws {
         let orca: Orca = try Orca(accessKey: accessKey)
         orca.delete()
 
         do {
-            
+            let pcm = try orca.synthesize(text: self.testData!.test_sentences.text)
+            XCTAssertNil(pcm)
         } catch {
             XCTAssert("\(error.localizedDescription)".count > 0)
         }
