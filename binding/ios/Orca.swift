@@ -80,7 +80,7 @@ public class Orca {
         var modelPathArg = modelPath
         
         if modelPath == nil {
-            modelPathArg  = Orca.resourceBundle.path(forResource: "orca_params", ofType: "pv")
+            modelPathArg  = Orca.resourceBundle.path(forResource: "orca_params_female", ofType: "pv")
             if modelPathArg == nil {
                 throw OrcaIOError("Unable to find the default model path")
             }
@@ -134,7 +134,7 @@ public class Orca {
     ///     that can be retrieved with `.validPunctuationSymbols`.
     /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
     /// - Throws: OrcaError
-    public func synthesize(text: String, speechRate: Float32) throws -> [Int16] {
+    public func synthesize(text: String, speechRate: Float32? = nil) throws -> [Int16] {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
@@ -144,7 +144,7 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        var cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
+        let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
 
         var cNumSamples: Int32 = 0
         var cPcm: UnsafeMutablePointer<Int16>?
