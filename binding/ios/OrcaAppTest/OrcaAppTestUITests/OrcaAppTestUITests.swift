@@ -36,7 +36,12 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testSynthesize() throws {
-        let leopard = try Leopard.init(accessKey: self.accessKey, modelPath: "test_resources/leopard_params.pv")
+        let bundle = Bundle(for: type(of: self))
+        let leopardModelPath = bundle.path(
+            forResource: "leopard_params",
+            ofType: "pv",
+            inDirectory: "test_resources/model_files")!
+        let leopard = try Leopard.init(accessKey: self.accessKey, modelPath: leopardModelPath)
         
         for orca in self.orcas {
             let pcm = try orca.synthesize(text: self.testData!.test_sentences.text)
