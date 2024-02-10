@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:foregroundTint="#002A1F65"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/toolbarLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorPrimary"
+                android:minHeight="?attr/actionBarSize"
+                android:theme="?attr/actionBarTheme"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="0dp"
+                tools:ignore="MissingConstraints" />
+
+            <Button
+                android:id="@+id/resetButton"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="10dp"
+                android:backgroundTint="@color/colorWarning"
+                android:onClick="onResetClick"
+                android:text="RESET"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/toolbar"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <RelativeLayout
+        android:id="@+id/enrollLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/testButton"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ProgressBar
+            android:id="@+id/enrollProgress"
+            android:translationZ="10dp"
+            android:indeterminateTint="@android:color/white"
+            android:layout_width="160dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="1dp"
+            android:layout_marginEnd="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone" />
+
+        <ToggleButton
+            android:id="@+id/enrollButton"
+            android:theme="@style/ButtonStyle"
+            android:textColor="@android:color/white"
+            android:layout_width="160dp"
+            android:layout_height="80dp"
+            android:layout_marginStart="1dp"
+            android:layout_marginEnd="1dp"
+            android:layout_marginBottom="40dp"
+            android:onClick="onEnrollClick"
+            android:textOff="ENROLL"
+            android:textOn=""
+            android:textSize="20sp"
+            android:enabled="true" />
+
+    </RelativeLayout>
+
+    <ToggleButton
+        android:id="@+id/testButton"
+        android:theme="@style/ButtonStyle"
+        android:textColor="@android:color/white"
+        android:layout_width="160dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_marginBottom="40dp"
+        android:onClick="onTestClick"
+        android:textOff="TEST"
+        android:textOn="STOP"
+        android:textSize="20sp"
+        android:enabled="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/enrollLayout" />
+
+    <ScrollView
+        android:id="@+id/speakerTableView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/textViewBarrier"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbarLayout"
+        android:background="#2B1A81" >
+
+        <TableLayout
+            android:id="@+id/speakerTableLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow android:background="@color/colorAccent" >
+
+                <TextView
+                    android:text="Speaker"
+                    android:layout_weight="1"
+                    android:textStyle="bold"
+                    android:padding="5dp" />
+
+                <TextView
+                    android:text="Probability"
+                    android:layout_weight="1"
+                    android:textStyle="bold"
+                    android:padding="5dp" />
+
+            </TableRow>
+
+        </TableLayout>
+
+    </ScrollView>
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/textViewBarrier"
+        app:barrierDirection="left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="recordingTextView,errorTextView"/>
+
+    <TextView
+        android:id="@+id/recordingTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:text=""
+        android:textAlignment="center"
+        app:layout_constraintTop_toBottomOf="@+id/speakerTableView"
+        app:layout_constraintBottom_toTopOf="@+id/testButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/errorTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="#FF0000"
+        android:padding="8dp"
+        android:text="TextView"
+        android:textColor="#FFFFFF"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@+id/speakerTableView"
+        app:layout_constraintBottom_toTopOf="@+id/testButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
