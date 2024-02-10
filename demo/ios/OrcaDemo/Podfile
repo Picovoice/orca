@@ -1,0 +1,6 @@
+source 'https://cdn.cocoapods.org/'
+platform :ios, '13.0'
+
+target 'OrcaDemo' do
+  pod 'Orca-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/orca/v0.1-ios/binding/ios/Orca-iOS.podspec', :tag => 'Orca-iOS-v0.1.0'
+end
