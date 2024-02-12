@@ -13,7 +13,7 @@ import json
 import os
 from dataclasses import dataclass
 
-from typing import List
+from typing import List, Sequence
 
 
 @dataclass
@@ -21,6 +21,7 @@ class TestSentences:
     text: str
     text_no_punctuation: str
     text_custom_pronunciation: str
+    text_invalid: Sequence[str]
 
 
 def get_test_data() -> TestSentences:
