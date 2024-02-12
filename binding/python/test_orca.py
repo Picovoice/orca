@@ -43,12 +43,12 @@ class OrcaTestCase(unittest.TestCase):
         for orca in cls.orcas:
             orca.delete()
 
-    def test_valid_punctuation_symbols(self) -> None:
+    def test_valid_characters(self) -> None:
         for orca in self.orcas:
-            symbols = orca.valid_punctuation_symbols
-            self.assertGreaterEqual(len(symbols), 0)
-            self.assertTrue(all(isinstance(x, str) for x in symbols))
-            self.assertTrue("," in symbols)
+            characters = orca.valid_characters
+            self.assertGreaterEqual(len(characters), 0)
+            self.assertTrue(all(isinstance(x, str) for x in characters))
+            self.assertTrue("," in characters)
 
     def test_max_character_limit(self) -> None:
         for orca in self.orcas:

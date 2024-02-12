@@ -163,17 +163,17 @@ class Orca(object):
         self._delete_func.argtypes = [POINTER(self.COrca)]
         self._delete_func.restype = None
 
-        self._valid_punctuation_symbols_func = library.pv_orca_valid_punctuation_symbols
-        self._valid_punctuation_symbols_func.argtypes = [
+        self._valid_characters_func = library.pv_orca_valid_characters
+        self._valid_characters_func.argtypes = [
             POINTER(self.COrca),
             POINTER(c_int32),
             POINTER(POINTER(POINTER(c_char_p))),
         ]
-        self._valid_punctuation_symbols_func.restype = self.PicovoiceStatuses
+        self._valid_characters_func.restype = self.PicovoiceStatuses
 
-        self._valid_punctuation_symbols_delete_func = library.pv_orca_valid_punctuation_symbols_delete
-        self._valid_punctuation_symbols_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
-        self._valid_punctuation_symbols_delete_func.restype = None
+        self._valid_characters_delete_func = library.pv_orca_valid_characters_delete
+        self._valid_characters_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
+        self._valid_characters_delete_func.restype = None
 
         self._sample_rate_func = library.pv_orca_sample_rate
         self._sample_rate_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
@@ -227,26 +227,25 @@ class Orca(object):
         self._delete_func(self._handle)
 
     @property
-    def valid_punctuation_symbols(self) -> Set[str]:
-        """Set of punctuation symbols supported by Orca."""
+    def valid_characters(self) -> Set[str]:
+        """Set of characters supported by Orca."""
 
-        c_num_symbols = c_int32()
-        c_symbols = POINTER(POINTER(c_char_p))()
+        c_num_characters = c_int32()
+        c_characters = POINTER(POINTER(c_char_p))()
 
-        status = self._valid_punctuation_symbols_func(self._handle, byref(c_num_symbols), byref(c_symbols))
+        status = self._valid_characters_func(self._handle, byref(c_num_characters), byref(c_characters))
         if status is not self.PicovoiceStatuses.SUCCESS:
             raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca punctuation symbols",
+                message="Unable to get Orca valid characters",
                 message_stack=self._get_error_stack())
 
-        num_symbols = c_num_symbols.value
-        symbols_array_pointer = cast(c_symbols, POINTER(c_char_p * num_symbols))
-        symbols_list = list(symbols_array_pointer.contents)
-        symbols = set([symbol.decode('utf-8') for symbol in symbols_list])
+        num_characters = c_num_characters.value
+        characters_array_pointer = cast(c_characters, POINTER(c_char_p * num_characters))
+        characters = set([symbol.decode('utf-8') for symbol in list(characters_array_pointer.contents)])
 
-        self._valid_punctuation_symbols_delete_func(c_symbols)
+        self._valid_characters_delete_func(c_characters)
 
-        return symbols
+        return characters
 
     @property
     def sample_rate(self) -> int:
@@ -276,8 +275,7 @@ class Orca(object):
         Generates audio from text. The returned audio contains the speech representation of the text.
 
         :param text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-        `self.max_character_limit`. Allowed characters are lower-case and upper-case letters and punctuation marks
-        that can be retrieved with `self.valid_punctuation_symbols`.
+        `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
         Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
         The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
         :param speech_rate: Rate of speech of the synthesized audio.
@@ -315,8 +313,7 @@ class Orca(object):
         Generates audio from text. The returned audio contains the speech representation of the text.
 
         :param text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-        `self.max_character_limit`. Allowed characters are lower-case and upper-case letters and punctuation marks
-        that can be retrieved with `self.valid_punctuation_symbols`.
+        `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
         Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
         The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
         :param output_path: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`

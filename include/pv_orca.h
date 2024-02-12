@@ -56,24 +56,24 @@ PV_API pv_status_t pv_orca_init(
 PV_API void pv_orca_delete(pv_orca_t *object);
 
 /**
- * Gets an array of punctuation symbols that are accepted as input to Orca synthesize functions.
+ * Gets an array of characters that are accepted as input to Orca synthesize functions.
  *
  * @param object Constructed instance of Orca.
- * @param[out] num_symbols Number of valid punctuation symbols.
- * @param[out] symbols An array of valid punctuation symbols for Orca.
+ * @param[out] num_characters Number of valid characters.
+ * @param[out] characters An array of valid characters for Orca.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
  */
-PV_API pv_status_t pv_orca_valid_punctuation_symbols(
+PV_API pv_status_t pv_orca_valid_characters(
         const pv_orca_t *object,
-        int32_t *num_symbols,
-        const char *const **symbols);
+        int32_t *num_characters,
+        const char *const **characters);
 
 /**
- * Deletes the punctuation symbols previously created by `pv_orca_valid_punctuation_symbols()`.
+ * Deletes the characters previously created by `pv_orca_valid_characters()`.
  *
-  * @param symbols The symbols returned from `pv_orca_valid_punctuation_symbols()`.
+  * @param characters The characters returned from `pv_orca_valid_characters()`.
  */
-PV_API void pv_orca_valid_punctuation_symbols_delete(const char *const *symbols);
+PV_API void pv_orca_valid_characters_delete(const char *const *characters);
 
 /**
  * Gets the sampling rate of the audio produced by Orca.
@@ -101,7 +101,7 @@ typedef struct pv_orca_synthesize_params pv_orca_synthesize_params_t;
 
 /**
  * Constructor for the pv_orca_synthesize_params object.
- * 
+ *
  * @param[out] object Constructed instance of pv_orca_synthesize_params.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` or `PV_STATUS_OUT_OF_MEMORY`  on failure.
  */
@@ -109,14 +109,14 @@ PV_API pv_status_t pv_orca_synthesize_params_init(pv_orca_synthesize_params_t **
 
 /**
  * Destructor for the pv_orca_synthesize_params object.
- * 
+ *
  * @param object The pv_orca_synthesize_params object.
 */
 PV_API void pv_orca_synthesize_params_delete(pv_orca_synthesize_params_t *object);
 
 /**
  * Setter for the speech rate.
- * 
+ *
  * @param object Constructed instance of pv_orca_synthesize_params.
  * @param speech_rate The pace of the speech. Valid values are within [0.7, 1.3].
  * @return Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
@@ -127,7 +127,7 @@ PV_API pv_status_t pv_orca_synthesize_params_set_speech_rate(
 
 /**
  * Getter for the speech rate.
- * 
+ *
  * @param object Constructed instance of pv_orca_synthesize_params.
  * @param[out] speech_rate The pace of the speech.
  * @return Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
@@ -142,8 +142,7 @@ PV_API pv_status_t pv_orca_synthesize_params_get_speech_rate(
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling
- * `pv_orca_max_character_limit()`. Allowed characters are lower-case and upper-case letters and
- * a number of punctuation marks that can be retrieved by calling `pv_orca_valid_punctuation_symbols()`.
+ * `pv_orca_max_character_limit()`. Allowed characters can be retrieved by calling `pv_orca_valid_characters()`.
  * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
  * The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
  * @param synthesize_params Global parameters for synthesized text. See 'pv_orca_synthesize_text_params_t' for details.
@@ -165,8 +164,7 @@ PV_API pv_status_t pv_orca_synthesize(
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling
- * `pv_orca_max_character_limit()`. Allowed characters are lower-case and upper-case letters and
- * a number of punctuation marks that can be retrieved by calling `pv_orca_valid_punctuation_symbols()`.
+ * `pv_orca_max_character_limit()`. Allowed characters can be retrieved by calling `pv_orca_valid_characters()`.
  * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
  * The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
  * @param synthesize_params Global parameters for synthesized text. See 'pv_orca_synthesize_text_params_t()' for details.

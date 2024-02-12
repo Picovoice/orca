@@ -86,7 +86,7 @@ Orca allows for keyword arguments to be provided to the `synthesize` methods to 
 
 ### Orca properties
 
-To obtain the set of valid punctuation symbols, call `orca.valid_punctuation_symbols`.\
+To obtain the set of valid characters, call `orca.valid_characters`.\
 To retrieve the maximum number of characters allowed, call `orca.max_character_limit`.\
 The sample rate of Orca is `orca.sample_rate`.
 
