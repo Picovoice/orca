@@ -19,27 +19,16 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaException;
+import ai.picovoice.orca.OrcaSynthesizeParams;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,19 +60,95 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<TestResult> results = new ArrayList<>();
 
-        String modelFile = getModelFile();
+        final String modelFile = "models/orca_params_female.pv";
 
         TestResult result = new TestResult();
+        result.testName = "Test Init";
+        Orca orca = null;
+        try {
+            orca = new Orca.Builder()
+                    .setAccessKey(accessKey)
+                    .setModelPath(modelFile)
+                    .build(getApplicationContext());
+            result.success = true;
+        } catch (OrcaException e) {
+            result.success = false;
+            result.errorMessage = String.format("Failed to init Orca with '%s'", e);
+        } finally {
+            results.add(result);
+        }
+
+        result = new TestResult();
+        result.testName = "Test Orca properties";
+        try {
+            int maxCharLimit = orca.getMaxCharacterLimit();
+            int sampleRate = orca.getSampleRate();
+            String[] symbols = orca.getValidPunctuationSymbols();
+            String version = orca.getVersion();
+
+            if (maxCharLimit > 0 && sampleRate > 0 && symbols.length > 0 && version.length() > 0) {
+                result.success = true;
+            } else {
+                result.success = false;
+                result.errorMessage = "Orca properties returned invalid result.";
+            }
+        } catch (Exception e) {
+            result.success = false;
+            result.errorMessage = String.format("Failed to process with '%s'", e);
+        } finally {
+            results.add(result);
+        }
+
+        result = new TestResult();
+        result.testName = "Test Synthesize";
+        try {
+            short[] pcm = orca.synthesize("Hello", new OrcaSynthesizeParams.Builder().build());
+            if (pcm.length > 0) {
+                result.success = true;
+            } else {
+                result.success = false;
+                result.errorMessage = "Synthesize returned invalid result.";
+            }
+        } catch (Exception e) {
+            result.success = false;
+            result.errorMessage = String.format("Failed to synthesize with '%s'", e);
+        } finally {
+            results.add(result);
+        }
+
+        result = new TestResult();
+        result.testName = "Test Synthesize To File";
+        try {
+            File outputFile = new File(getApplicationContext().getFilesDir(), "out.wav");
+
+            orca.synthesizeToFile(
+                    outputFile.getAbsolutePath(),
+                    "Hello",
+                    new OrcaSynthesizeParams.Builder().build());
+            if (outputFile.exists()) {
+                result.success = true;
+            } else {
+                result.success = false;
+                result.errorMessage = "Synthesize to file returned invalid result.";
+            }
+        } catch (Exception e) {
+            result.success = false;
+            result.errorMessage = String.format("Failed to synthesize to file with '%s'", e);
+        } finally {
+            results.add(result);
+        }
+
+        result = new TestResult();
         result.testName = "Test Exception";
-//        try {
-//
-//            result.success = false;
-//            result.errorMessage = "Init should have throw an exception";
-//        } catch (OrcaException e) {
-//            result.success = true;
-//        } finally {
-//            results.add(result);
-//        }
+        try {
+            new Orca.Builder().setAccessKey("").build(getApplicationContext());
+            result.success = false;
+            result.errorMessage = "Init should have throw an exception";
+        } catch (OrcaException e) {
+            result.success = true;
+        } finally {
+            results.add(result);
+        }
 
         displayTestResults(results);
     }
@@ -133,24 +198,5 @@ public class MainActivity extends AppCompatActivity {
         } else {
             resultView.setText("Passed");
         }
-    }
-
-    private String getModelFile() {
-        return "models/orca_params_female.pv";
-    }
-
-    private void extractFile(String filepath) throws IOException {
-        System.out.println(filepath);
-        InputStream is = new BufferedInputStream(getAssets().open(filepath), 256);
-        File absPath = new File(getApplicationContext().getFilesDir(), filepath);
-        OutputStream os = new BufferedOutputStream(new FileOutputStream(absPath), 256);
-        int r;
-        while ((r = is.read()) != -1) {
-            os.write(r);
-        }
-        os.flush();
-
-        is.close();
-        os.close();
     }
 }
