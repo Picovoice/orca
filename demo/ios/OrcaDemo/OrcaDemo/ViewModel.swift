@@ -77,7 +77,7 @@ class ViewModel: ObservableObject {
 
     public func toggleSynthesizeOn(text: String) {
         state = UIState.PROCESSING
-        
+
         let _: () = Future<[Int16]?, Error> { promise in
             DispatchQueue.global().async {
                 do {
@@ -95,18 +95,18 @@ class ViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
                 switch completion {
-                    case .failure(let error):
-                        self.synthesizeError = "\(error.localizedDescription)"
-                        self.state = UIState.SYNTHESIZE_ERROR
-                    case .finished:
-                        break
+                case .failure(let error):
+                    self.synthesizeError = "\(error.localizedDescription)"
+                    self.state = UIState.SYNTHESIZE_ERROR
+                case .finished:
+                    break
                 }
             }, receiveValue: { value in
                 do {
                     try self.player.play(pcm: value) { _ in
                         self.state = UIState.READY
                     }
-                    
+
                     self.state = UIState.PLAYING
                 } catch {
                     self.errorMessage = "\(error.localizedDescription)"

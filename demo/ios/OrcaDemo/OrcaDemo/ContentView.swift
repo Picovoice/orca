@@ -21,7 +21,7 @@ struct ContentView: View {
         let interactionDisabled =
             !viewModel.errorMessage.isEmpty || viewModel.state == UIState.PROCESSING
             || viewModel.state == UIState.INIT || text.isEmpty
-        GeometryReader { metrics in
+        GeometryReader { _ in
             VStack(spacing: 10) {
                 GeometryReader { geometry in
                     ScrollView {
@@ -29,7 +29,10 @@ struct ContentView: View {
                             .transparentScrolling()
                             .padding()
                             .foregroundColor(Color.white)
-                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: geometry.size.height, maxHeight: .infinity)
+                            .frame(minWidth: 0,
+                                   maxWidth: .infinity,
+                                   minHeight: geometry.size.height,
+                                   maxHeight: .infinity)
                             .font(.title3)
                             .background(navyBlue)
                     }
@@ -43,7 +46,7 @@ struct ContentView: View {
                 } else if viewModel.state == .PROCESSING {
                     Text("Processing text...")
                         .padding()
-                        .font(.body)	
+                        .font(.body)
                         .foregroundColor(Color.black)
                 } else if viewModel.state == .PLAYING {
                     Text("Playing audio")
@@ -59,7 +62,7 @@ struct ContentView: View {
                         .font(.body)
                         .opacity(viewModel.synthesizeError.isEmpty ? 0 : 1)
                         .cornerRadius(10)
-                }  else {
+                } else {
                     Text(viewModel.errorMessage)
                         .padding()
                         .foregroundColor(Color.white)

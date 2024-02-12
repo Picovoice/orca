@@ -32,11 +32,11 @@ public class AudioPlayerError: LocalizedError {
 public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
     let audioFilePath = "temp.wav"
     let sampleRate = 16000.0
-    
+
     var audioFile: URL?
     var player: AVAudioPlayer?
     var onComplete: ((Bool) -> Void)?
-    
+
     func play(pcm: [Int16]? = nil, onComplete: ((Bool) -> Void)? = nil) throws {
         let audioDir = try FileManager.default.url(
                         for: .documentDirectory,
@@ -45,17 +45,17 @@ public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
                         create: false)
         audioFile = audioDir.appendingPathComponent(audioFilePath)
         self.onComplete = onComplete
-        
+
         if pcm != nil {
             try savePCMToAudioFile(pcm: pcm!, sampleRate: sampleRate)
         }
         try playAudioFile()
     }
-    
+
     func stop() {
         player?.stop()
     }
-    
+
     private func savePCMToAudioFile(pcm: [Int16], sampleRate: Double) throws {
         guard let format = AVAudioFormat(commonFormat: .pcmFormatInt16,
                                          sampleRate: sampleRate,
@@ -63,17 +63,17 @@ public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
                                          interleaved: false) else {
             throw AudioPlayerError("Failed to get Audio Format")
         }
-        
+
         let audioWav = try openOutputWav(fileUrl: audioFile!, format: format)
         try writePcmToWav(pcm: pcm, format: format, audioWav: audioWav)
     }
-    
+
     private func playAudioFile() throws {
         player = try AVAudioPlayer(contentsOf: audioFile!)
         player?.delegate = self
         player?.play()
     }
-    
+
     private func writePcmToWav(pcm: [Int16], format: AVAudioFormat, audioWav: AVAudioFile?) throws {
         let writeBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(pcm.count))!
         memcpy(writeBuffer.int16ChannelData![0], pcm, pcm.count * 2)
@@ -85,7 +85,7 @@ public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
             throw AudioPlayerError("\(error.localizedDescription)")
         }
     }
-    
+
     private func openOutputWav(fileUrl: URL, format: AVAudioFormat) throws -> AVAudioFile? {
         do {
             if FileManager.default.fileExists(atPath: fileUrl.path) {
@@ -100,7 +100,7 @@ public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
             throw AudioPlayerError("\(error.localizedDescription)")
         }
     }
-    
+
     public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         self.onComplete?(flag)
     }

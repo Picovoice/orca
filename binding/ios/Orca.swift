@@ -11,7 +11,7 @@ import PvOrca
 
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Cheetah library.
 public class Orca {
-    
+
     static let resourceBundle: Bundle = {
         let myBundle = Bundle(for: Orca.self)
 
@@ -49,7 +49,7 @@ public class Orca {
             return _validPunctuationSymbols!
         }
     }
-    
+
     public var sampleRate: Int32 {
         get throws {
             if _sampleRate == nil {
@@ -59,10 +59,10 @@ public class Orca {
                     let messageStack = try getMessageStack()
                     throw pvStatusToOrcaError(status, "Orca failed to get sample rate", messageStack)
                 }
-                
+
                 _sampleRate = cSampleRate
             }
-            
+
             return _sampleRate!
         }
     }
@@ -78,14 +78,14 @@ public class Orca {
         modelPath: String? = nil) throws {
 
         var modelPathArg = modelPath
-        
+
         if modelPath == nil {
             modelPathArg  = Orca.resourceBundle.path(forResource: "orca_params_female", ofType: "pv")
             if modelPathArg == nil {
                 throw OrcaIOError("Unable to find the default model path")
             }
         }
-            
+
         if !FileManager().fileExists(atPath: modelPathArg!) {
             modelPathArg = try getResourcePath(modelPathArg!)
         }
@@ -143,23 +143,20 @@ public class Orca {
             throw OrcaInvalidArgumentError(
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
-        
-        // TODO: Update after API change
+
         let regex = try NSRegularExpression(pattern: "[^A-Z\\s]", options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
-        
+
         let textSymbols = matches.map {
             String(text[Range($0.range, in: text)!])
         }
-        
+
         var unexpectedSymbols: [String] = []
-        for symbol in textSymbols {
-            if try !validPunctuationSymbols.contains(symbol) {
-                unexpectedSymbols.append(symbol)
-            }
+        for symbol in textSymbols where try !validPunctuationSymbols.contains(symbol) {
+            unexpectedSymbols.append(symbol)
         }
-        
+
         if unexpectedSymbols.count > 0 {
             throw OrcaInvalidArgumentError(
                 "Text contains the following invalid symbols: `\(unexpectedSymbols.joined(separator: ", "))`")
@@ -226,7 +223,7 @@ public class Orca {
 
         return symbols
     }
-    
+
     /// Given a path, return the full path to the resource.
         ///
         /// - Parameters:
