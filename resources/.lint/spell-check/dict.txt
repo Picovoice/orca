@@ -4,6 +4,7 @@ Picovoice
 aarch
 armv
 camelcase
+Cocoapods
 copywasm
 downsample
 flac
@@ -14,6 +15,7 @@ jetson
 libpv
 pvbase
 pluginutils
+Podfile
 pvorca
 pvorcademo
 signup
@@ -24,3 +26,4 @@ wargv
 Sevilla
 editdistance
 pvleopard
+xcworkspace
