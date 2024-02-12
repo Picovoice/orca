@@ -4,6 +4,7 @@ armv
 camelcase
 Compat
 constraintlayout
+Cocoapod
 Cocoapods
 copywasm
 downsample
