@@ -62,7 +62,6 @@ type OrcaWasmOutput = {
   version: string;
   sampleRate: number;
   maxCharacterLimit: number;
-  numSymbols: number;
   validPunctuationSymbols: string[];
 
   objectAddress: number;
@@ -108,7 +107,6 @@ export class Orca {
 
   private static _version: string;
   private static _sampleRate: number;
-  private static _numSymbols: number;
   private static _maxCharacterLimit: number;
   private static _validPunctuationSymbols: string[];
   private static _wasm: string;
@@ -128,7 +126,6 @@ export class Orca {
     Orca._version = handleWasm.version;
     Orca._sampleRate = handleWasm.sampleRate;
     Orca._maxCharacterLimit = handleWasm.maxCharacterLimit;
-    Orca._numSymbols = handleWasm.numSymbols;
     Orca._validPunctuationSymbols = handleWasm.validPunctuationSymbols;
 
     this._pvOrcaDelete = handleWasm.pvOrcaDelete;
@@ -173,13 +170,6 @@ export class Orca {
    */
   get maxCharacterLimit(): number {
     return Orca._maxCharacterLimit;
-  }
-
-  /**
-   * Get number of valid punctuation symbols.
-   */
-  get numSymbols(): number {
-    return Orca._numSymbols;
   }
 
   /**
@@ -661,7 +651,6 @@ export class Orca {
       version: version,
       sampleRate: sampleRate,
       maxCharacterLimit: maxCharacterLimit,
-      numSymbols: numSymbols,
       validPunctuationSymbols: validPunctuationSymbols,
       messageStackAddressAddressAddress: messageStackAddressAddressAddress,
       messageStackDepthAddress: messageStackDepthAddress,
