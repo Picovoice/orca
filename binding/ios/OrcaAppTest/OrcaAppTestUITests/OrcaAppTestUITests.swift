@@ -16,7 +16,7 @@ class OrcaAppTestUITests: BaseTest {
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
-    
+
     func testValidPunctuationSymbols() throws {
         for orca in self.orcas {
             let symbols = try orca.validPunctuationSymbols
@@ -24,7 +24,7 @@ class OrcaAppTestUITests: BaseTest {
             XCTAssertTrue(symbols.contains(","))
         }
     }
-    
+
     func testMaxCharacterLimit() throws {
         XCTAssertGreaterThan(Orca.maxCharacterLimit, 0)
     }
@@ -42,18 +42,18 @@ class OrcaAppTestUITests: BaseTest {
             ofType: "pv",
             inDirectory: "test_resources/model_files")!
         let leopard = try Leopard.init(accessKey: self.accessKey, modelPath: leopardModelPath)
-        
+
         for orca in self.orcas {
             let pcm = try orca.synthesize(text: self.testData!.test_sentences.text)
             XCTAssertGreaterThan(pcm.count, 0)
-                
+
             let groundTruth = self.testData!.test_sentences.text_no_punctuation
             let (transcript, _) = try leopard.process(pcm)
-            
+
             let wer = self.characterErrorRate(transcript: transcript, expectedTranscript: groundTruth)
             XCTAssertLessThan(wer, self.testData!.wer_threshold)
         }
-        
+
         leopard.delete()
     }
 
@@ -68,9 +68,9 @@ class OrcaAppTestUITests: BaseTest {
         for orca in self.orcas {
             let pcmFast = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 1.3)
             let pcmSlow = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 0.7)
-            
+
             XCTAssertLessThan(pcmFast.count, pcmSlow.count)
-            
+
             do {
                 let pcm = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 9999)
                 XCTAssertNil(pcm)
@@ -81,7 +81,6 @@ class OrcaAppTestUITests: BaseTest {
     func testVersion() throws {
         XCTAssertGreaterThan(Orca.version.count, 0)
     }
-
 
     func testMessageStack() throws {
         var first_error: String = ""

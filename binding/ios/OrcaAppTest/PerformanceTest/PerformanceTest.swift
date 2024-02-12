@@ -23,19 +23,19 @@ class PerformanceTest: BaseTest {
 
     func testPerformance() throws {
         try XCTSkipIf(procThresholdString == "{PROC_PERFORMANCE_THRESHOLD_SEC}")
-        
+
         let numTestIterations = Int(iterationString) ?? 30
         let procPerformanceThresholdSec = Double(procThresholdString)
-        
+
         try XCTSkipIf(procPerformanceThresholdSec == nil)
 
         let bundle = Bundle(for: type(of: self))
-        
+
         for param in params {
-            
+
             let modelURL = bundle.url(forResource: "orca_params_\(param)", withExtension: "pv")!
             var results: [Double] = []
-            
+
             for i in 0...numTestIterations {
                 var totalNSec = 0.0
                 let orca = try? Orca(accessKey: accessKey, modelURL: modelURL)
@@ -51,7 +51,7 @@ class PerformanceTest: BaseTest {
                 }
                 orca?.delete()
             }
-            
+
             let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)
             let avgSec = Double(round(avgNSec * 1000) / 1000)
             XCTAssertLessThanOrEqual(avgSec, procPerformanceThresholdSec!)

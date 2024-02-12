@@ -75,16 +75,16 @@ class BaseTest: XCTestCase {
         "male",
         "female"
     ]
-    
+
     let accessKey = "{TESTING_ACCESS_KEY_HERE}"
     var orcas: [Orca] = []
     var testData: TestData?
-    
+
     override func setUp() async throws {
         try await super.setUp()
-        
+
         testData = try getTestData()
-        
+
         let bundle = Bundle(for: type(of: self))
         for param in params {
             let modelPath: String = bundle.path(
@@ -96,14 +96,14 @@ class BaseTest: XCTestCase {
             )
         }
     }
-    
+
     override func tearDown() {
         super.tearDown()
         for orca in orcas {
             orca.delete()
         }
     }
-    
+
     func getTestData() throws -> TestData {
         let bundle = Bundle(for: type(of: self))
         let testDataJsonUrl = bundle.url(
@@ -116,7 +116,7 @@ class BaseTest: XCTestCase {
 
         return testData
     }
-    
+
     func characterErrorRate(transcript: String, expectedTranscript: String) -> Float {
         return Float(transcript.levenshtein(expectedTranscript)) / Float(expectedTranscript.count)
     }
