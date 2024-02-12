@@ -144,7 +144,7 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        let regex = try NSRegularExpression(pattern: "[^A-Z\\s]", options: .caseInsensitive)
+        let regex = try NSRegularExpression(pattern: "[^A-Z{}|'\\s]", options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
