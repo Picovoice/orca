@@ -4,6 +4,7 @@ Picovoice
 aarch
 armv
 camelcase
+Cocoapod
 Cocoapods
 copywasm
 downsample
