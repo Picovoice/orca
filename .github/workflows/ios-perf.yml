@@ -62,7 +62,7 @@ jobs:
 
       - name: Inject AppID
         run: sed -i '.bak' 's:{TESTING_ACCESS_KEY_HERE}:${{secrets.PV_VALID_ACCESS_KEY}}:'
-          PerformanceTest/BaseTest.swift
+          OrcaAppTestUITests/BaseTest.swift
 
       - name: Inject Number of Iterations
         run: sed -i '.bak' 's:{NUM_TEST_ITERATIONS}:30:'
