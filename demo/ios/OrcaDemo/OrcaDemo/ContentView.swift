@@ -23,19 +23,20 @@ struct ContentView: View {
             || viewModel.state == UIState.INIT || text.isEmpty
         GeometryReader { metrics in
             VStack(spacing: 10) {
-                ScrollView {
-                    TextField("Enter Text", text: $text)
-                        .padding()
-                        .fixedSize(horizontal: false, vertical: true)
-                        .foregroundColor(Color.white)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .font(.title3)
+                GeometryReader { geometry in
+                    ScrollView {
+                        TextEditor(text: $text)
+                            .transparentScrolling()
+                            .padding()
+                            .foregroundColor(Color.white)
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: geometry.size.height, maxHeight: .infinity)
+                            .font(.title3)
+                            .background(navyBlue)
+                    }
                 }
-                .frame(maxWidth: .infinity, minHeight: metrics.size.height * 0.4)
-                .background(navyBlue)
 
                 if viewModel.state == .INIT || viewModel.state == .READY {
-                    Text("Start by entering any text to be synthesized")
+                    Text("Enter any text to be synthesized")
                         .padding()
                         .font(.body)
                         .foregroundColor(Color.black)
@@ -49,7 +50,16 @@ struct ContentView: View {
                     .padding()
                     .font(.body)
                     .foregroundColor(Color.black)
-                } else {
+                } else if viewModel.state == .SYNTHESIZE_ERROR {
+                    Text(viewModel.synthesizeError)
+                        .padding()
+                        .foregroundColor(Color.white)
+                        .frame(maxWidth: .infinity)
+                        .background(dangerRed)
+                        .font(.body)
+                        .opacity(viewModel.synthesizeError.isEmpty ? 0 : 1)
+                        .cornerRadius(10)
+                }  else {
                     Text(viewModel.errorMessage)
                         .padding()
                         .foregroundColor(Color.white)
@@ -90,6 +100,18 @@ struct ContentView: View {
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0)
             .background(Color.white)
 
+        }
+    }
+}
+
+public extension View {
+    func transparentScrolling() -> some View {
+        if #available(iOS 16.0, *) {
+            return scrollContentBackground(.hidden)
+        } else {
+            return onAppear {
+                UITextView.appearance().backgroundColor = .clear
+            }
         }
     }
 }
