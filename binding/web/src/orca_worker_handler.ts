@@ -65,7 +65,6 @@ self.onmessage = async function(
           sampleRate: orca.sampleRate,
           maxCharacterLimit: orca.maxCharacterLimit,
           validPunctuationSymbols: orca.validPunctuationSymbols,
-          numSymbols: orca.numSymbols,
         });
       } catch (e: any) {
         if (e instanceof OrcaError) {

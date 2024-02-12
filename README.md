@@ -17,6 +17,7 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
+    - Chrome, Safari, Firefox, and Edge
 
 **Please note that Orca is currently in development. While we prioritize stability and compatibility, certain aspects of
 Orca may undergo changes as we continually enhance and refine the engine to provide the best user experience possible.**
@@ -33,7 +34,7 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
     - [Demos](#demos)
         - [Python](#python-demos)
         - [C](#c-demos)
-        - [Web Demo](#web-demos)
+        - [Web](#web-demos)
     - [SDKs](#sdks)
         - [Python](#python)
         - [C](#c)
