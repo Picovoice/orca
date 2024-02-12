@@ -66,7 +66,7 @@ jobs:
 
       - name: Inject Number of Iterations
         run: sed -i '.bak' 's:{NUM_TEST_ITERATIONS}:30:'
-          OrcaAppTestUITests/PerformanceTest.swift
+          PerformanceTest/PerformanceTest.swift
 
       - name: Inject Performance Threshold
         run: sed -i '.bak' 's:{PERFORMANCE_THRESHOLD_SEC}:${{ matrix.performanceThresholdSec }}:'
