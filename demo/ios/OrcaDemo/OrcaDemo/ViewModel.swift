@@ -7,6 +7,7 @@
 //  specific language governing permissions and limitations under the License.
 //
 
+import Combine
 import Foundation
 import Orca
 
@@ -14,21 +15,21 @@ enum UIState {
     case INIT
     case READY
     case PROCESSING
+    case SYNTHESIZE_ERROR
     case SYNTHESIZED
     case PLAYING
     case ERROR
 }
 
 class ViewModel: ObservableObject {
-    private let ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    private let ACCESS_KEY = "Tw4jothrMMLyRYQ793yD/XF3DeithcbeNVsYlNN0Dc1vY26suWNOkg==" // Obtained from Picovoice Console (https://console.picovoice.ai)
 
     private var orca: Orca!
+    private var player: AudioPlayer = AudioPlayer()
+    private var previousText = ""
+    private var subscriptions = Set<AnyCancellable>()
 
-    private var isSynthesizing = false
-    private var isPlaying = false
-    
-    private var player: AudioPlayer!
-
+    @Published var synthesizeError = ""
     @Published var errorMessage = ""
     @Published var state = UIState.INIT
 
@@ -62,7 +63,7 @@ class ViewModel: ObservableObject {
     }
 
     public func toggleSynthesize(text: String) {
-        if isPlaying {
+        if state == UIState.PLAYING {
             toggleSynthesizeOff()
         } else {
             toggleSynthesizeOn(text: text)
@@ -70,22 +71,48 @@ class ViewModel: ObservableObject {
     }
 
     public func toggleSynthesizeOff() {
-        state = UIState.SYNTHESIZED
+        player.stop()
+        state = UIState.READY
     }
 
     public func toggleSynthesizeOn(text: String) {
         state = UIState.PROCESSING
         
-        do {
-            let pcm = try orca.synthesize(text: text)
-            player = AudioPlayer()
-            try player.savePCMToAudioFile(pcm: pcm, filePath: "temp.wav", sampleRate: Double(orca.sampleRate))
-            try player.playAudioFile(filePath: "temp.wav")
-            
-            state = UIState.PLAYING
-        } catch {
-            errorMessage = "\(error.localizedDescription)"
-            state = UIState.READY
+        let _: () = Future<[Int16]?, Error> { promise in
+            DispatchQueue.global().async {
+                do {
+                    var pcm: [Int16]?
+                    if self.previousText != text {
+                        pcm = try self.orca.synthesize(text: text)
+                        self.previousText = text
+                    }
+                    promise(.success(pcm))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
         }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                    case .failure(let error):
+                        self.synthesizeError = "\(error.localizedDescription)"
+                        self.state = UIState.SYNTHESIZE_ERROR
+                    case .finished:
+                        break
+                }
+            }, receiveValue: { value in
+                do {
+                    try self.player.play(pcm: value) { _ in
+                        self.state = UIState.READY
+                    }
+                    
+                    self.state = UIState.PLAYING
+                } catch {
+                    self.errorMessage = "\(error.localizedDescription)"
+                    self.state = UIState.ERROR
+                }
+            })
+            .store(in: &subscriptions)
     }
 }

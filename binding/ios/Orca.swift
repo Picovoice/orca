@@ -143,6 +143,27 @@ public class Orca {
             throw OrcaInvalidArgumentError(
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
+        
+        // TODO: Update after API change
+        let regex = try NSRegularExpression(pattern: "[^A-Z\\s]", options: .caseInsensitive)
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, range: range)
+        
+        let textSymbols = matches.map {
+            String(text[Range($0.range, in: text)!])
+        }
+        
+        var unexpectedSymbols: [String] = []
+        for symbol in textSymbols {
+            if try !validPunctuationSymbols.contains(symbol) {
+                unexpectedSymbols.append(symbol)
+            }
+        }
+        
+        if unexpectedSymbols.count > 0 {
+            throw OrcaInvalidArgumentError(
+                "Text contains the following invalid symbols: `\(unexpectedSymbols.joined(separator: ", "))`")
+        }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
 
