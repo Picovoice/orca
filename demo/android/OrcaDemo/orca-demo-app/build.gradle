@@ -34,6 +34,13 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'ai.picovoice:orca-android:0.1.0'
-    implementation 'ai.picovoice:android-voice-processor:1.0.2'
+    implementation files('../../../../binding/android/Orca/orca/build/outputs/aar/orca-release.aar')
 }
+
+tasks.register('copyParams', Copy) {
+    from("${rootDir}/../../../lib/common")
+    include('orca_params_female.pv')
+    into("${rootDir}/orca-demo-app/src/main/assets")
+}
+
+preBuild.dependsOn(copyParams)

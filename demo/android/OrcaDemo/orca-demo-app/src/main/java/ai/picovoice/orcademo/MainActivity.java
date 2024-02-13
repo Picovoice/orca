@@ -12,30 +12,28 @@
 
 package ai.picovoice.orcademo;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 
-import ai.picovoice.android.voiceprocessor.VoiceProcessor;
-import ai.picovoice.android.voiceprocessor.VoiceProcessorException;
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaActivationException;
 import ai.picovoice.orca.OrcaActivationLimitException;
@@ -43,23 +41,146 @@ import ai.picovoice.orca.OrcaActivationRefusedException;
 import ai.picovoice.orca.OrcaActivationThrottledException;
 import ai.picovoice.orca.OrcaException;
 import ai.picovoice.orca.OrcaInvalidArgumentException;
+import ai.picovoice.orca.OrcaSynthesizeParams;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
+    private static final String MODEL_FILE = "orca_params_female.pv";
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private String synthesizedFilePath;
+    private MediaPlayer synthesizedPlayer;
+
+    private boolean isTextSynthesized = false;
+
+    private Pattern validationRegex;
+
+    private Orca orca;
+
+    Button clearTextButton;
+    TextView errorText;
+    TextView infoTextView;
+    TextView numCharsTextView;
+    EditText synthesizeEditText;
+    ToggleButton synthesizeButton;
+    ProgressBar synthesizeProgress;
+
+    @SuppressLint("DefaultLocale")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.orca_demo);
+        clearTextButton = findViewById(R.id.clearTextButton);
+        errorText = findViewById(R.id.errorTextView);
+        infoTextView = findViewById(R.id.infoTextView);
+        numCharsTextView = findViewById(R.id.numCharsTextView);
+        synthesizeEditText = findViewById(R.id.synthesizeEditText);
+        synthesizeButton = findViewById(R.id.synthesizeButton);
+        synthesizeProgress = findViewById(R.id.synthesizeProgress);
+
+        try {
+            orca = new Orca.Builder()
+                    .setAccessKey(ACCESS_KEY)
+                    .setModelPath(MODEL_FILE)
+                    .build(getApplicationContext());
+            String[] englishAlphabet = {
+                    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                    "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+                    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+                    ",",
+            };
+            validationRegex = Pattern.compile(String.format(
+                    "[%s ]+",
+                    String.join("", englishAlphabet)));
+            numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
+        } catch (OrcaException e) {
+            onOrcaException(e);
+        }
+
+        synthesizedFilePath = getApplicationContext()
+                .getFileStreamPath("synthesized.wav")
+                .getAbsolutePath();
+        synthesizedPlayer = new MediaPlayer();
+
+        synthesizeEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                isTextSynthesized = false;
+                runOnUiThread(() ->
+                        numCharsTextView.setText(String.format(
+                                "%d/%d",
+                                s.toString().length(),
+                                orca.getMaxCharacterLimit()))
+                );
+                validateText(s.toString());
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        orca.delete();
+        if (synthesizedPlayer != null) {
+            synthesizedPlayer.release();
+        }
+    }
+
+
     @SuppressLint("SetTextI18n")
     private void setUIState(UIState state) {
-
         runOnUiThread(() -> {
-            TextView errorText = findViewById(R.id.errorTextView);
-            TextView recordingTextView = findViewById(R.id.recordingTextView);
-            ToggleButton enrollButton = findViewById(R.id.enrollButton);
-            ProgressBar enrollProgress = findViewById(R.id.enrollProgress);
-            ToggleButton testButton = findViewById(R.id.testButton);
-
             switch (state) {
-                case IDLE:
+                case EDIT:
+                    infoTextView.setVisibility(View.INVISIBLE);
+                    clearTextButton.setEnabled(synthesizeEditText.getText().toString().length() > 0);
+                    synthesizeButton.setVisibility(View.VISIBLE);
+                    synthesizeButton.setEnabled(true);
+                    synthesizeEditText.setEnabled(true);
+                    synthesizeProgress.setVisibility(View.INVISIBLE);
+                    break;
+                case PLAYBACK:
+                    infoTextView.setVisibility(View.VISIBLE);
+                    clearTextButton.setEnabled(false);
+                    synthesizeButton.setVisibility(View.VISIBLE);
+                    synthesizeButton.setEnabled(true);
+                    synthesizeEditText.setEnabled(false);
+                    synthesizeProgress.setVisibility(View.INVISIBLE);
+                    break;
+                case BUSY:
+                    infoTextView.setVisibility(View.VISIBLE);
+                    clearTextButton.setEnabled(false);
+                    synthesizeButton.setVisibility(View.INVISIBLE);
+                    synthesizeButton.setEnabled(false);
+                    synthesizeEditText.setEnabled(false);
+                    synthesizeProgress.setVisibility(View.VISIBLE);
+                    break;
+                case ERROR:
+                    infoTextView.setVisibility(View.VISIBLE);
+                    clearTextButton.setEnabled(true);
+                    errorText.setVisibility(View.INVISIBLE);
+                    synthesizeButton.setEnabled(false);
+                    synthesizeEditText.setEnabled(true);
+                    synthesizeProgress.setVisibility(View.INVISIBLE);
+                    break;
+                case FATAL_ERROR:
+                    infoTextView.setVisibility(View.INVISIBLE);
+                    clearTextButton.setEnabled(false);
+                    errorText.setVisibility(View.VISIBLE);
+                    synthesizeButton.setEnabled(false);
+                    synthesizeEditText.setEnabled(false);
+                    synthesizeProgress.setVisibility(View.INVISIBLE);
                     break;
                 default:
                     break;
@@ -67,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void OrcaException(OrcaException e) {
+    private void onOrcaException(OrcaException e) {
         if (e instanceof OrcaInvalidArgumentException) {
             displayError(e.getMessage());
         } else if (e instanceof OrcaActivationException) {
@@ -83,40 +204,152 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.orca_demo);
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitleTextColor(Color.WHITE);
-        setSupportActionBar(toolbar);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
     private void displayError(String message) {
-        setUIState(UIState.ERROR);
-
-        TextView errorText = findViewById(R.id.errorTextView);
+        setUIState(UIState.FATAL_ERROR);
         errorText.setText(message);
-        errorText.setVisibility(View.VISIBLE);
+    }
 
-        ToggleButton enrollButton = findViewById(R.id.enrollButton);
-        enrollButton.setEnabled(false);
+    private void validateText(String text) {
+        if (text.length() > 0) {
+            runOnUiThread(() -> {
+                clearTextButton.setEnabled(true);
+            });
 
-        ToggleButton testButton = findViewById(R.id.testButton);
-        testButton.setEnabled(false);
+            if (text.length() >= orca.getMaxCharacterLimit()) {
+                runOnUiThread(() -> {
+                    setUIState(UIState.ERROR);
+                    infoTextView.setText("Too many characters");
+                });
+            } else {
+                if (validationRegex.matcher(text).matches()) {
+                    runOnUiThread(() -> {
+                        setUIState(UIState.EDIT);
+                        synthesizeButton.setEnabled(true);
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        setUIState(UIState.ERROR);
+                        infoTextView.setText("Invalid characters in text");
+                    });
+                }
+            }
+        } else {
+            runOnUiThread(() -> synthesizeButton.setEnabled(false));
+        }
+    }
+
+    private void runSynthesis() {
+        runOnUiThread(() -> {
+            setUIState(UIState.BUSY);
+            infoTextView.setText("Synthesizing...");
+        });
+        executor.submit(() -> {
+            String text = synthesizeEditText.getText().toString();
+            try {
+                orca.synthesizeToFile(
+                        synthesizedFilePath,
+                        text,
+                        new OrcaSynthesizeParams.Builder().build());
+            } catch (OrcaException e) {
+                mainHandler.post(() -> onOrcaException(e));
+            }
+
+            synthesizedPlayer.reset();
+            synthesizedPlayer.setAudioAttributes(
+                    new AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .build()
+            );
+            synthesizedPlayer.setLooping(false);
+            synthesizedPlayer.setOnCompletionListener(mediaPlayer -> {
+                runOnUiThread(() -> synthesizeButton.setChecked(false));
+                stopPlayback();
+            });
+            try {
+                synthesizedPlayer.setDataSource(synthesizedFilePath);
+                synthesizedPlayer.prepare();
+                isTextSynthesized = true;
+                mainHandler.post(this::startPlayback);
+            } catch (Exception e) {
+                mainHandler.post(() -> displayError(e.toString()));
+            }
+        });
+    }
+
+    private void startPlayback() {
+        try {
+            synthesizedPlayer.start();
+            updateCurrentTime(0);
+            runOnUiThread(() -> {
+                setUIState(UIState.PLAYBACK);
+                infoTextView.setText(
+                        String.format("0:00 / %s", formatTime(synthesizedPlayer.getDuration()))
+                );
+            });
+        } catch (Exception e) {
+            displayError(e.toString());
+        }
+     }
+
+    private void updateCurrentTime(int delayMillis) {
+        mainHandler.postDelayed(() -> {
+            if (synthesizedPlayer != null && synthesizedPlayer.isPlaying()) {
+                infoTextView.setText(
+                        String.format("%s / %s",
+                                formatTime(synthesizedPlayer.getCurrentPosition()),
+                                formatTime(synthesizedPlayer.getDuration())));
+                updateCurrentTime(500);
+            }
+        }, delayMillis);
+    }
+
+    @SuppressLint("DefaultLocale")
+    private String formatTime(int milliseconds) {
+        int seconds = (milliseconds / 1000) % 60;
+        int minutes = (milliseconds / (1000 * 60)) % 60;
+        return String.format("%d:%02d", minutes, seconds);
+    }
+
+    private void stopPlayback() {
+        if (synthesizedPlayer.isPlaying()) {
+            synthesizedPlayer.pause();
+        }
+        synthesizedPlayer.seekTo(0);
+
+        runOnUiThread(() -> setUIState(UIState.EDIT));
+    }
+
+    public void onClearTextClick(View view) {
+        runOnUiThread(() -> {
+            clearTextButton.setEnabled(false);
+            synthesizeEditText.setText("");
+        });
+    }
+
+    public void onSynthesizeClick(View view) {
+        if (orca == null) {
+            displayError("Orca is not initialized");
+            synthesizeButton.setChecked(false);
+            return;
+        }
+
+        if (synthesizeButton.isChecked()) {
+            if (!isTextSynthesized) {
+                runSynthesis();
+            } else {
+                startPlayback();
+            }
+        } else {
+            stopPlayback();
+        }
     }
 
     private enum UIState {
-        IDLE,
-        ENROLLING,
-        INITIALIZING,
-        TESTING,
-        ERROR
+        EDIT,
+        PLAYBACK,
+        BUSY,
+        ERROR,
+        FATAL_ERROR
     }
 }
