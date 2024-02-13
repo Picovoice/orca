@@ -44,7 +44,7 @@ public class Orca {
     public var validCharacters: Set<String> {
         get throws {
             if _validCharacters == nil {
-                _validCharacters = try getValidCharacters()
+                _validCharacters = try getValidChracters()
             }
             return _validCharacters!
         }
@@ -132,9 +132,10 @@ public class Orca {
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is 
     ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
     ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///   - speechRate: Rate of speech of the generated audio.
     /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
     /// - Throws: OrcaError
-    public func synthesize(text: String, speechRate: Float32? = nil) throws -> [Int16] {
+    public func synthesize(text: String, speechRate: Double? = nil) throws -> [Int16] {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
@@ -145,9 +146,7 @@ public class Orca {
         }
 
         let characters = try self.validCharacters
-        let regex = try NSRegularExpression(
-            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
-            options: .caseInsensitive)
+        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
@@ -178,8 +177,65 @@ public class Orca {
 
         return pcm
     }
+    
+    /// Generates audio from text. The returned audio contains the speech representation of the text.
+    ///
+    /// - Parameters:
+    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
+    ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
+    ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)` and consists of a single mono channel.
+    ///   - speechRate: Rate of speech of the generated audio.
+    /// - Throws: OrcaError
+    public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil) throws {
+        if handle == nil {
+            throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
+        }
 
-    private func getCSynthesizeParams(speechRate: Float32? = nil) throws -> OpaquePointer? {
+        if text.count > Orca.maxCharacterLimit {
+            throw OrcaInvalidArgumentError(
+                "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
+        }
+
+        let characters = try self.validCharacters
+        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, range: range)
+
+        let unexpectedCharacters = matches.map {
+            String(text[Range($0.range, in: text)!])
+        }
+
+        if unexpectedCharacters.count > 0 {
+            throw OrcaInvalidArgumentError(
+                "Text contains the following invalid characters: `\(unexpectedCharacters.joined(separator: ", "))`")
+        }
+
+        let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
+        
+        let status = pv_orca_synthesize_to_file(handle, text, cSynthesizeParams, outputPath)
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try getMessageStack()
+            throw pvStatusToOrcaError(status, "Unable to synthesize speech to file", messageStack)
+        }
+        
+        pv_orca_synthesize_params_delete(cSynthesizeParams)
+    }
+    
+    /// Generates audio from text. The returned audio contains the speech representation of the text.
+    ///
+    /// - Parameters:
+    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
+    ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
+    ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)` and consists of a single mono channel.
+    ///   - speechRate: Rate of speech of the generated audio.
+    /// - Throws: OrcaError
+    public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil) throws {
+        try synthesizeToFile(text: text, outputPath: outputURL.path, speechRate: speechRate)
+    }
+
+    private func getCSynthesizeParams(speechRate: Double? = nil) throws -> OpaquePointer? {
         var cParams: OpaquePointer?
 
         var status = pv_orca_synthesize_params_init(&cParams)
@@ -189,7 +245,7 @@ public class Orca {
         }
 
         if speechRate != nil {
-            status = pv_orca_synthesize_params_set_speech_rate(cParams, speechRate!)
+            status = pv_orca_synthesize_params_set_speech_rate(cParams, Float(speechRate!))
             if status != PV_STATUS_SUCCESS {
                 let messageStack = try getMessageStack()
                 throw pvStatusToOrcaError(status, "Unable to set Orca speech rate", messageStack)
@@ -199,7 +255,7 @@ public class Orca {
         return cParams
     }
 
-    private func getValidCharacters() throws -> Set<String> {
+    private func getValidChracters() throws -> Set<String> {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to get valid characters - resources have been released")
         }

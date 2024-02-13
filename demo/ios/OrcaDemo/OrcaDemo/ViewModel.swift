@@ -28,10 +28,14 @@ class ViewModel: ObservableObject {
     private var player: AudioPlayer = AudioPlayer()
     private var previousText = ""
     private var subscriptions = Set<AnyCancellable>()
+    
+    private let audioFilePath = "temp.wav"
+    private var audioFile: URL!
 
     @Published var synthesizeError = ""
     @Published var errorMessage = ""
     @Published var state = UIState.INIT
+    @Published var maxCharacterLimit = Orca.maxCharacterLimit
 
     init() {
         initialize()
@@ -42,6 +46,14 @@ class ViewModel: ObservableObject {
         do {
             try orca = Orca(accessKey: ACCESS_KEY)
             state = UIState.READY
+            
+            let audioDir = try FileManager.default.url(
+                            for: .documentDirectory,
+                            in: .userDomainMask,
+                            appropriateFor: nil,
+                            create: false)
+            audioFile = audioDir.appendingPathComponent(audioFilePath)
+            
             return
         } catch is OrcaActivationError {
             errorMessage = "ACCESS_KEY activation error"
@@ -83,7 +95,7 @@ class ViewModel: ObservableObject {
                 do {
                     var pcm: [Int16]?
                     if self.previousText != text {
-                        pcm = try self.orca.synthesize(text: text)
+                        try self.orca.synthesizeToFile(text: text, outputURL: self.audioFile)
                         self.previousText = text
                     }
                     promise(.success(pcm))
@@ -103,7 +115,7 @@ class ViewModel: ObservableObject {
                 }
             }, receiveValue: { value in
                 do {
-                    try self.player.play(pcm: value) { _ in
+                    try self.player.play(audioFile: self.audioFile) { _ in
                         self.state = UIState.READY
                     }
 

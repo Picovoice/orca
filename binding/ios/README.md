@@ -40,7 +40,7 @@ import Orca
 
 let accessKey : String = // .. accessKey provided by Picovoice Console (https://console.picovoice.ai/)
 do {
-    orca = try Orca(accessKey: accessKey)
+    let orca = try Orca(accessKey: accessKey)
 } catch { }
 ```
 
@@ -48,10 +48,14 @@ You can synthesize speech by calling one of the `synthesize` methods:
 
 ```swift
 // return raw pcm
-pcm = orca.synthesize(text="${TEXT}")
+let pcm = try orca.synthesize(text: "${TEXT}")
+
+// save to a file
+try orca.synthesizeToFile(text: "${TEXT}", outputPath: "${OUTPUT_PATH}")
 ```
 
-Replace `${TEXT}` with the text to be synthesized. 
+Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the path to save the generated audio as a
+single-channel 16-bit PCM WAV file.
 
 When done, resources have to be released explicitly:
 

@@ -15,8 +15,7 @@ struct ContentView: View {
 
     let activeBlue = Color(red: 55 / 255, green: 125 / 255, blue: 1, opacity: 1)
     let dangerRed = Color(red: 1, green: 14 / 255, blue: 14 / 255, opacity: 1)
-    let navyBlue = Color(red: 37 / 255, green: 24 / 255, blue: 126 / 255, opacity: 1)
-    let warningYellow = Color(red: 255 / 255, green: 193 / 255, blue: 7 / 255, opacity: 1)
+    let lightGray = Color(red: 247 / 255, green: 247 / 255, blue: 247 / 255, opacity: 1)
 
     var body: some View {
         let interactionDisabled =
@@ -25,34 +24,29 @@ struct ContentView: View {
         GeometryReader { _ in
             VStack(spacing: 10) {
                 GeometryReader { geometry in
-                    ScrollView {
-                        ZStack(alignment: .bottomTrailing) {
+                    VStack {
+                        ScrollView {
                             TextEditor(text: $text)
                                 .transparentScrolling()
                                 .padding()
-                                .foregroundColor(Color.white)
                                 .frame(minWidth: 0,
                                        maxWidth: .infinity,
                                        minHeight: geometry.size.height,
                                        maxHeight: .infinity)
                                 .font(.title3)
-                                .background(navyBlue)
-
-                            Button(action: {
-                                text = ""
-                            },
-                            label: {
-                                Text("CLEAR")
-                                    .padding(3)
-                                    .background(warningYellow)
-                                    .font(.system(size: 16))
-                                    .foregroundColor(Color.black)
-                            })
-                            .disabled(viewModel.state == .PLAYING || viewModel.state == .PROCESSING)
+                                .background(lightGray)
+                                .onChange(of: text) { _ in
+                                    text = String(text.prefix(Int(viewModel.maxCharacterLimit)))
+                                }
                         }
+                        
+                        Text("\(text.count) / \(viewModel.maxCharacterLimit)")
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .foregroundColor(Color.gray)
                     }
                 }
-
+                
                 if viewModel.state == .INIT || viewModel.state == .READY {
                     Text("Enter any text to be synthesized")
                         .padding()
@@ -65,9 +59,9 @@ struct ContentView: View {
                         .foregroundColor(Color.black)
                 } else if viewModel.state == .PLAYING {
                     Text("Playing audio")
-                    .padding()
-                    .font(.body)
-                    .foregroundColor(Color.black)
+                        .padding()
+                        .font(.body)
+                        .foregroundColor(Color.black)
                 } else if viewModel.state == .SYNTHESIZE_ERROR {
                     Text(viewModel.synthesizeError)
                         .padding()
@@ -87,11 +81,11 @@ struct ContentView: View {
                         .opacity(viewModel.errorMessage.isEmpty ? 0 : 1)
                         .cornerRadius(10)
                 }
-
+                
                 Button(action: {
                     viewModel.toggleSynthesize(text: text)
                 },
-                label: {
+                       label: {
                     Text(viewModel.state == .PLAYING ? "Stop" : "Synthesize")
                         .padding()
                         .background(interactionDisabled ? Color.gray : activeBlue)
@@ -117,6 +111,9 @@ struct ContentView: View {
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0)
             .background(Color.white)
+            .onTapGesture {
+                hideKeyboard()
+            }
 
         }
     }
@@ -131,6 +128,11 @@ public extension View {
                 UITextView.appearance().backgroundColor = .clear
             }
         }
+    }
+    
+    func hideKeyboard() {
+        let resign = #selector(UIResponder.resignFirstResponder)
+        UIApplication.shared.sendAction(resign, to: nil, from: nil, for: nil)
     }
 }
 

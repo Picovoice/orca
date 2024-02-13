@@ -32,10 +32,12 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
         - [Audio output](#audio-output)
     - [Demos](#demos)
         - [Python](#python-demos)
+        - [iOS](#ios-demo)
         - [C](#c-demos)
         - [Android](#android-demo)
     - [SDKs](#sdks)
         - [Python](#python)
+        - [iOS](#ios)
         - [C](#c)
         - [Android](#android)
     - [AccessKey](#accesskey)
@@ -116,6 +118,18 @@ orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_P
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
+### iOS Demo
+
+Copy your `AccessKey` into the `ACCESS_KEY` variable inside [`ViewModel.swift`](./demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift).
+
+Before building the demo app, run the following from [`OrcaDemo`](./demo/ios/OrcaDemo) directory to install the `Orca-iOS` CocoaPod:
+
+```ruby
+pod install
+```
+
+Open [OrcaDemo.xcworkspace](./demo/ios/OrcaDemo/OrcaDemo.xcworkspace) and run the demo.
+
 ### C Demos
 
 Build the demo:
@@ -165,6 +179,27 @@ orca.delete()
 ```
 
 For more details see [Python SDK](./binding/python/README.md).
+
+### iOS
+
+Create an instance of the engine and synthesize:
+
+```swift
+import Orca
+
+do {
+  let orca = try Orca(accessKey: "${ACCESS_KEY}")
+} catch {}
+
+do {
+    let pcm = try orca.synthesize(text: "${TEXT}")
+} catch {}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/) and `${TEXT}` with
+the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+When done be sure to explicitly release the resources using `orca.delete()`.
 
 ### C
 
