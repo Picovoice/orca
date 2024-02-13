@@ -16,6 +16,7 @@ struct ContentView: View {
     let activeBlue = Color(red: 55 / 255, green: 125 / 255, blue: 1, opacity: 1)
     let dangerRed = Color(red: 1, green: 14 / 255, blue: 14 / 255, opacity: 1)
     let navyBlue = Color(red: 37 / 255, green: 24 / 255, blue: 126 / 255, opacity: 1)
+    let warningYellow = Color(red: 255 / 255, green: 193 / 255, blue: 7 / 255, opacity: 1)
 
     var body: some View {
         let interactionDisabled =
@@ -25,16 +26,30 @@ struct ContentView: View {
             VStack(spacing: 10) {
                 GeometryReader { geometry in
                     ScrollView {
-                        TextEditor(text: $text)
-                            .transparentScrolling()
-                            .padding()
-                            .foregroundColor(Color.white)
-                            .frame(minWidth: 0,
-                                   maxWidth: .infinity,
-                                   minHeight: geometry.size.height,
-                                   maxHeight: .infinity)
-                            .font(.title3)
-                            .background(navyBlue)
+                        ZStack(alignment: .bottomTrailing) {
+                            TextEditor(text: $text)
+                                .transparentScrolling()
+                                .padding()
+                                .foregroundColor(Color.white)
+                                .frame(minWidth: 0,
+                                       maxWidth: .infinity,
+                                       minHeight: geometry.size.height,
+                                       maxHeight: .infinity)
+                                .font(.title3)
+                                .background(navyBlue)
+                            
+                            Button(action: {
+                                text = ""
+                            },
+                            label: {
+                                Text("CLEAR")
+                                    .padding(3)
+                                    .background(warningYellow)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Color.black)
+                            })
+                            .disabled(viewModel.state == .PLAYING || viewModel.state == .PROCESSING)
+                        }
                     }
                 }
 
