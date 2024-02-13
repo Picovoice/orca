@@ -157,17 +157,17 @@ public class Orca {
     }
 
     /**
-     * Getter for the set of punctuation symbols that are accepted as input to Orca synthesize functions.
+     * Getter for the set of characters that are accepted as input to Orca synthesize functions.
      *
-     * @return Array of punctuation symbols that are accepted as input to Orca synthesize functions.
+     * @return Array of characters that are accepted as input to Orca synthesize functions.
      */
-    public String[] getValidPunctuationSymbols() throws OrcaException {
+    public String[] getValidCharacters() throws OrcaException {
         if (handle == 0) {
             throw new OrcaInvalidStateException(
-                    "Attempted to call Orca getValidPunctuationSymbols after delete."
+                    "Attempted to call Orca getValidCharacters after delete."
             );
         }
-        return OrcaNative.getValidPunctuationSymbols(handle);
+        return OrcaNative.getValidCharacters(handle);
     }
 
     /**

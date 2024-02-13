@@ -141,10 +141,10 @@ public class OrcaTest {
         }
 
         @Test
-        public void testValidPunctuationSymbols() throws OrcaException {
-            String[] symbols = orca.getValidPunctuationSymbols();
-            assertTrue(symbols.length > 0);
-            assertTrue(Arrays.asList(symbols).contains(","));
+        public void testValidCharacters() throws OrcaException {
+            String[] characters = orca.getValidCharacters();
+            assertTrue(characters.length > 0);
+            assertTrue(Arrays.asList(characters).contains(","));
         }
 
         @Test

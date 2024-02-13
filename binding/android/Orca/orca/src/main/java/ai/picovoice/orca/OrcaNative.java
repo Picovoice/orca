@@ -24,7 +24,7 @@ class OrcaNative {
 
     static native int getSampleRate(long object) throws OrcaException;
 
-    static native String[] getValidPunctuationSymbols(long object) throws OrcaException;
+    static native String[] getValidCharacters(long object) throws OrcaException;
 
     static native int getMaxCharacterLimit();
 

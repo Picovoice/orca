@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             int maxCharLimit = orca.getMaxCharacterLimit();
             int sampleRate = orca.getSampleRate();
-            String[] symbols = orca.getValidPunctuationSymbols();
+            String[] symbols = orca.getValidCharacters();
             String version = orca.getVersion();
 
             if (maxCharLimit > 0 && sampleRate > 0 && symbols.length > 0 && version.length() > 0) {

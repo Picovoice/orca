@@ -31,7 +31,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import ai.picovoice.orca.Orca;
@@ -87,16 +86,9 @@ public class MainActivity extends AppCompatActivity {
                     .setAccessKey(ACCESS_KEY)
                     .setModelPath(MODEL_FILE)
                     .build(getApplicationContext());
-            String[] englishAlphabet = {
-                    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-                    "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-                    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-                    "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-                    ",",
-            };
             validationRegex = Pattern.compile(String.format(
                     "[%s ]+",
-                    String.join("", englishAlphabet)));
+                    String.join("", orca.getValidCharacters())));
             numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
         } catch (OrcaException e) {
             onOrcaException(e);
@@ -109,10 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
         synthesizeEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void afterTextChanged(Editable s) { }
+            public void afterTextChanged(Editable s) {
+            }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -257,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
             synthesizedPlayer.reset();
             synthesizedPlayer.setAudioAttributes(
                     new AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                             .setUsage(AudioAttributes.USAGE_MEDIA)
                             .build()
             );
@@ -269,6 +263,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 synthesizedPlayer.setDataSource(synthesizedFilePath);
                 synthesizedPlayer.prepare();
+                synthesizedPlayer.setVolume(1f, 1f);
                 isTextSynthesized = true;
                 mainHandler.post(this::startPlayback);
             } catch (Exception e) {
@@ -290,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             displayError(e.toString());
         }
-     }
+    }
 
     private void updateCurrentTime(int delayMillis) {
         mainHandler.postDelayed(() -> {
