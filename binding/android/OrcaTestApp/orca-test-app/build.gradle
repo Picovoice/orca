@@ -49,23 +49,23 @@ android {
         resValue 'string', 'procPerformanceThresholdSec', properties.getProperty("procPerformanceThresholdSec", "")
     }
 
-//    signingConfigs {
-//        release {
-//            storePassword properties.getProperty("storePassword")
-//            storeFile file(properties.getProperty("storeFile", ".dummy.jks"))
-//            keyAlias properties.getProperty("keyAlias")
-//            keyPassword properties.getProperty("keyPassword")
-//        }
-//    }
+    signingConfigs {
+        release {
+            storePassword properties.getProperty("storePassword")
+            storeFile file(properties.getProperty("storeFile", ".dummy.jks"))
+            keyAlias properties.getProperty("keyAlias")
+            keyPassword properties.getProperty("keyPassword")
+        }
+    }
 
     buildTypes {
         debug {
-//            signingConfig signingConfigs.release
+            signingConfig signingConfigs.release
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-//            signingConfig signingConfigs.release
+            signingConfig signingConfigs.release
         }
     }
 

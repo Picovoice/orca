@@ -1,4 +1,4 @@
-# Ocra Binding for Android
+# Orca Binding for Android
 
 ## Orca
 
