@@ -16,7 +16,7 @@ class OrcaAppTestUITests: BaseTest {
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
-    
+
     func testValidCharacters() throws {
         for orca in self.orcas {
             let characters = try orca.validCharacters
