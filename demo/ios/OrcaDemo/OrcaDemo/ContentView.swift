@@ -37,7 +37,7 @@ struct ContentView: View {
                                        maxHeight: .infinity)
                                 .font(.title3)
                                 .background(navyBlue)
-                            
+
                             Button(action: {
                                 text = ""
                             },
