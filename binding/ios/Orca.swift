@@ -27,7 +27,7 @@ public class Orca {
 
     private var handle: OpaquePointer?
     /// Orca valid symbols
-    private var _validPunctuationSymbols: Set<String>?
+    private var _validCharacters: Set<String>?
     /// Orca sample rate
     private var _sampleRate: Int32?
     /// Maximum number of characters allowed in a single synthesis request.
@@ -41,12 +41,12 @@ public class Orca {
         self.sdk = sdk
     }
 
-    public var validPunctuationSymbols: Set<String> {
+    public var validCharacters: Set<String> {
         get throws {
-            if _validPunctuationSymbols == nil {
-                _validPunctuationSymbols = try getValidPunctuationSymbols()
+            if validCharacters == nil {
+                validCharacters = try getValidChracters()
             }
-            return _validPunctuationSymbols!
+            return validCharacters!
         }
     }
 
@@ -144,22 +144,18 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        let regex = try NSRegularExpression(pattern: "[^A-Z{}|'\\s]", options: .caseInsensitive)
+        let characters = try self.validCharacters.
+        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))]", options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
-        let textSymbols = matches.map {
+        let unexpectedCharacters = matches.map {
             String(text[Range($0.range, in: text)!])
         }
 
-        var unexpectedSymbols: [String] = []
-        for symbol in textSymbols where try !validPunctuationSymbols.contains(symbol) {
-            unexpectedSymbols.append(symbol)
-        }
-
-        if unexpectedSymbols.count > 0 {
+        if unexpectedCharacters.count > 0 {
             throw OrcaInvalidArgumentError(
-                "Text contains the following invalid symbols: `\(unexpectedSymbols.joined(separator: ", "))`")
+                "Text contains the following invalid characters: `\(unexpectedCharacters.joined(separator: ", "))`")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
@@ -201,27 +197,27 @@ public class Orca {
         return cParams
     }
 
-    private func getValidPunctuationSymbols() throws -> Set<String> {
+    private func getValidChracters() throws -> Set<String> {
         if handle == nil {
-            throw OrcaInvalidStateError("Unable to get punctuation symbols - resources have been released")
+            throw OrcaInvalidStateError("Unable to get valid characters - resources have been released")
         }
 
-        var cNumSymbols: Int32 = 0
-        var cSymbols: UnsafePointer<UnsafePointer<Int8>?>?
-        let status = pv_orca_valid_punctuation_symbols(handle, &cNumSymbols, &cSymbols)
+        var cNumCharacters: Int32 = 0
+        var cCharacters: UnsafePointer<UnsafePointer<Int8>?>?
+        let status = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Unable to get Orca valid punctuation symbols", messageStack)
+            throw pvStatusToOrcaError(status, "Unable to get Orca valid characters", messageStack)
         }
 
-        var symbols: Set<String> = []
-        for i in 0..<cNumSymbols {
-            symbols.insert(String(cString: cSymbols!.advanced(by: Int(i)).pointee!))
+        var characters: Set<String> = []
+        for i in 0..<cNumCharacters {
+            characters.insert(String(cString: cCharacters!.advanced(by: Int(i)).pointee!))
         }
 
-        pv_orca_valid_punctuation_symbols_delete(cSymbols)
+        pv_orca_valid_characters_delete(cCharacters)
 
-        return symbols
+        return characters
     }
 
     /// Given a path, return the full path to the resource.
