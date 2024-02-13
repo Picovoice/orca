@@ -32,13 +32,15 @@ class PerformanceTest: BaseTest {
         let bundle = Bundle(for: type(of: self))
 
         for param in params {
-
-            let modelURL = bundle.url(forResource: "orca_params_\(param)", withExtension: "pv")!
+            let modelPath: String = bundle.path(
+                    forResource: "orca_params_\(param)",
+                    ofType: "pv",
+                    inDirectory: "test_resources/model_files")!
             var results: [Double] = []
 
             for i in 0...numTestIterations {
                 var totalNSec = 0.0
-                let orca = try? Orca(accessKey: accessKey, modelURL: modelURL)
+                let orca = try? Orca(accessKey: accessKey, modelPath: modelPath)
 
                 let before = CFAbsoluteTimeGetCurrent()
                 let pcm = try? orca?.synthesize(text: self.testData!.test_sentences.text)
