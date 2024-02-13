@@ -41,6 +41,7 @@ public class Orca {
         self.sdk = sdk
     }
 
+    /// Set of characters supported by Orca.
     public var validCharacters: Set<String> {
         get throws {
             if _validCharacters == nil {
@@ -50,6 +51,7 @@ public class Orca {
         }
     }
 
+    /// Audio sample rate of generated audio.
     public var sampleRate: Int32 {
         get throws {
             if _sampleRate == nil {
@@ -129,9 +131,10 @@ public class Orca {
     /// Generates audio from text. The returned audio contains the speech representation of the text.
     ///
     /// - Parameters:
-    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is 
-    ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
-    ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
+    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+    ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - speechRate: Rate of speech of the generated audio.
     /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
     /// - Throws: OrcaError
@@ -183,9 +186,10 @@ public class Orca {
     /// Generates audio from text. The returned audio contains the speech representation of the text.
     ///
     /// - Parameters:
-    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is 
-    ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
-    ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
+    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+    ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio.
@@ -231,8 +235,9 @@ public class Orca {
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-    ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
-    ///     that can be retrieved with `.validPunctuationSymbols`.
+    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+    ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio.
