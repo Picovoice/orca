@@ -21,6 +21,7 @@ struct TestSentences: Decodable {
     var text: String
     var text_no_punctuation: String
     var text_custom_pronunciation: String
+    var text_invalid: [String]
 }
 
 extension String {

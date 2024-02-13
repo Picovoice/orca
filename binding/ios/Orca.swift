@@ -43,10 +43,10 @@ public class Orca {
 
     public var validCharacters: Set<String> {
         get throws {
-            if validCharacters == nil {
-                validCharacters = try getValidChracters()
+            if _validCharacters == nil {
+                _validCharacters = try getValidChracters()
             }
-            return validCharacters!
+            return _validCharacters!
         }
     }
 
@@ -144,8 +144,8 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        let characters = try self.validCharacters.
-        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))]", options: .caseInsensitive)
+        let characters = try self.validCharacters
+        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
