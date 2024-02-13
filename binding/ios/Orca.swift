@@ -145,7 +145,9 @@ public class Orca {
         }
 
         let characters = try self.validCharacters
-        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
+        let regex = try NSRegularExpression(
+            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
+            options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
