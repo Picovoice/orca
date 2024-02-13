@@ -183,7 +183,7 @@ public class Orca {
         return pcm
     }
 
-    /// Generates audio from text. The returned audio contains the speech representation of the text.
+    /// Generates audio from text and saves it to a WAV file. The file contains the speech representation of the text.
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
@@ -231,7 +231,7 @@ public class Orca {
         pv_orca_synthesize_params_delete(cSynthesizeParams)
     }
 
-    /// Generates audio from text. The returned audio contains the speech representation of the text.
+    /// Generates audio from text and saves it to a WAV file. The file contains the speech representation of the text.
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
