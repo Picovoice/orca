@@ -18,7 +18,7 @@ from typing import List
 import editdistance
 import pvleopard
 
-from _orca import Orca, OrcaError
+from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
 from test_util import get_model_paths, get_test_data
 
@@ -43,12 +43,12 @@ class OrcaTestCase(unittest.TestCase):
         for orca in cls.orcas:
             orca.delete()
 
-    def test_valid_punctuation_symbols(self) -> None:
+    def test_valid_characters(self) -> None:
         for orca in self.orcas:
-            symbols = orca.valid_punctuation_symbols
-            self.assertGreaterEqual(len(symbols), 0)
-            self.assertTrue(all(isinstance(x, str) for x in symbols))
-            self.assertTrue("," in symbols)
+            characters = orca.valid_characters
+            self.assertGreaterEqual(len(characters), 0)
+            self.assertTrue(all(isinstance(x, str) for x in characters))
+            self.assertTrue("," in characters)
 
     def test_max_character_limit(self) -> None:
         for orca in self.orcas:
@@ -114,6 +114,12 @@ class OrcaTestCase(unittest.TestCase):
             version = orca.version
             self.assertIsInstance(version, str)
             self.assertGreater(len(version), 0)
+
+    def test_invalid_input(self) -> None:
+        for orca in self.orcas:
+            for sentence in test_sentences.text_invalid:
+                with self.assertRaises(OrcaInvalidArgumentError):
+                    orca.synthesize(sentence)
 
     def test_message_stack(self):
         relative_path = '../..'

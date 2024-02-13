@@ -42,6 +42,14 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Overview
 
+### Text input
+
+Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, as well as
+common punctuation marks. You can get a list of all supported characters by calling the
+`valid_characters()` method provided in the Orca SDK you are using.
+Pronunciations of characters or words not supported by this list can be achieved with
+[custom pronunciations](#custom-pronunciations).
+
 ### Custom pronunciations
 
 Orca supports custom pronunciations via a specific syntax embedded within the input text.

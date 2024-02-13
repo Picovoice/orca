@@ -164,10 +164,10 @@ int picovoice_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_valid_punctuation_symbols_func)(pv_orca_t *, int32_t *, const char *const **) =
-            load_symbol(orca_library, "pv_orca_valid_punctuation_symbols");
-    if (!pv_orca_valid_punctuation_symbols_func) {
-        print_dl_error("Failed to load 'pv_orca_valid_punctuation_symbols'");
+    pv_status_t (*pv_orca_valid_characters_func)(pv_orca_t *, int32_t *, const char *const **) =
+            load_symbol(orca_library, "pv_orca_valid_characters");
+    if (!pv_orca_valid_characters_func) {
+        print_dl_error("Failed to load 'pv_orca_valid_characters'");
         exit(EXIT_FAILURE);
     }
 
