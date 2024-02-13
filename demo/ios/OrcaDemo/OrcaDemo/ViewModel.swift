@@ -28,7 +28,7 @@ class ViewModel: ObservableObject {
     private var player: AudioPlayer = AudioPlayer()
     private var previousText = ""
     private var subscriptions = Set<AnyCancellable>()
-    
+
     private let audioFilePath = "temp.wav"
     private var audioFile: URL!
 
@@ -46,14 +46,14 @@ class ViewModel: ObservableObject {
         do {
             try orca = Orca(accessKey: ACCESS_KEY)
             state = UIState.READY
-            
+
             let audioDir = try FileManager.default.url(
                             for: .documentDirectory,
                             in: .userDomainMask,
                             appropriateFor: nil,
                             create: false)
             audioFile = audioDir.appendingPathComponent(audioFilePath)
-            
+
             return
         } catch is OrcaActivationError {
             errorMessage = "ACCESS_KEY activation error"
@@ -113,7 +113,7 @@ class ViewModel: ObservableObject {
                 case .finished:
                     break
                 }
-            }, receiveValue: { value in
+            }, receiveValue: { _ in
                 do {
                     try self.player.play(audioFile: self.audioFile) { _ in
                         self.state = UIState.READY

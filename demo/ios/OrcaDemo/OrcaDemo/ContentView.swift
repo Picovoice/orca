@@ -39,14 +39,14 @@ struct ContentView: View {
                                     text = String(text.prefix(Int(viewModel.maxCharacterLimit)))
                                 }
                         }
-                        
+
                         Text("\(text.count) / \(viewModel.maxCharacterLimit)")
                             .font(.footnote)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .foregroundColor(Color.gray)
                     }
                 }
-                
+
                 if viewModel.state == .INIT || viewModel.state == .READY {
                     Text("Enter any text to be synthesized")
                         .padding()
@@ -81,7 +81,7 @@ struct ContentView: View {
                         .opacity(viewModel.errorMessage.isEmpty ? 0 : 1)
                         .cornerRadius(10)
                 }
-                
+
                 Button(action: {
                     viewModel.toggleSynthesize(text: text)
                 },
@@ -129,7 +129,7 @@ public extension View {
             }
         }
     }
-    
+
     func hideKeyboard() {
         let resign = #selector(UIResponder.resignFirstResponder)
         UIApplication.shared.sendAction(resign, to: nil, from: nil, for: nil)

@@ -120,15 +120,18 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` wi
 
 ### iOS Demo
 
-Copy your `AccessKey` into the `ACCESS_KEY` variable inside [`ViewModel.swift`](./demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift).
+Run the following from [demo/ios](demo/ios) to install the Cobra-iOS CocoaPod:
 
-Before building the demo app, run the following from [`OrcaDemo`](./demo/ios/OrcaDemo) directory to install the `Orca-iOS` CocoaPod:
-
-```ruby
+```console
 pod install
 ```
 
-Open [OrcaDemo.xcworkspace](./demo/ios/OrcaDemo/OrcaDemo.xcworkspace) and run the demo.
+Replace `let ACCESS_KEY = "..."` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with yours
+obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+Then, using Xcode, open the generated OrcaDemo.xcworkspace and run the application.
+
+For more information about iOS demos go to [demo/ios](demo/ios).
 
 ### C Demos
 

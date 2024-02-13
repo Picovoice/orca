@@ -46,7 +46,7 @@ public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
         let audioSession = AVAudioSession.sharedInstance()
         try audioSession.setCategory(AVAudioSession.Category.playback)
         try audioSession.setActive(true)
-        
+
         player = try AVAudioPlayer(contentsOf: audioFile)
         player?.delegate = self
         player?.setVolume(1.0, fadeDuration: 0.05)
