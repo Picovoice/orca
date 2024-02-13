@@ -16,12 +16,25 @@ class OrcaAppTestUITests: BaseTest {
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
-
-    func testValidPunctuationSymbols() throws {
+    
+    func testValidCharacters() throws {
         for orca in self.orcas {
-            let symbols = try orca.validPunctuationSymbols
-            XCTAssertGreaterThan(symbols.count, 0)
-            XCTAssertTrue(symbols.contains(","))
+            let characters = try orca.validCharacters
+            XCTAssertGreaterThan(characters.count, 0)
+            XCTAssert(characters.contains(","))
+        }
+    }
+
+    func testInvalidText() throws {
+        for orca in self.orcas {
+            for sentence in self.testData!.test_sentences.text_invalid {
+                do {
+                    let pcm = try orca.synthesize(text: sentence)
+                    XCTAssertNil(pcm)
+                } catch {
+                    XCTAssertTrue(error is OrcaError)
+                }
+            }
         }
     }
 
