@@ -22,7 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Android binding for Orca Text-to-Speech engine.
+ * Android binding for Orca Text-to-Speech engine. Orca converts text to spoken audio
+ * without network latency.
  */
 public class Orca {
 
@@ -84,9 +85,15 @@ public class Orca {
     }
 
     /**
-     * @param text
-     * @param params
-     * @return
+     * Generates audio from text. The returned audio contains the speech representation of the text.
+     *
+     * @param text   Text to be converted to audio. The maximum length can be attained by calling
+     *               `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
+     *               `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
+     *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
+     *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+     * @param params Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
+     * @return The output audio.
      * @throws OrcaException if there is an error while synthesizing audio.
      */
     public short[] synthesize(String text, OrcaSynthesizeParams params) throws OrcaException {
@@ -103,13 +110,23 @@ public class Orca {
     }
 
     /**
-     * @param outputPath
-     * @param text
-     * @param params
-     * @return
+     * Generates audio from text and saves it to a file. The file contains the speech
+     * representation of the text.
+     *
+     * @param outputPath Absolute path to the output audio file. The output file is saved as
+     *                   `WAV (.wav)` and consists of a single mono channel.
+     * @param text       Text to be converted to audio. The maximum length can be attained by calling
+     *                   `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
+     *                   `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
+     *                   syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
+     *                   e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+     * @param params     Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
      * @throws OrcaException if there is an error while synthesizing audio to file.
      */
-    public void synthesizeToFile(String outputPath, String text, OrcaSynthesizeParams params) throws OrcaException {
+    public void synthesizeToFile(
+            String outputPath,
+            String text,
+            OrcaSynthesizeParams params) throws OrcaException {
         if (handle == 0) {
             throw new OrcaInvalidStateException(
                     "Attempted to call Orca synthesize after delete."
@@ -178,16 +195,27 @@ public class Orca {
         private String accessKey = null;
         private String modelPath = null;
 
+        /**
+         * Sets the AccessKey.
+         *
+         * @param accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+         * @return Modified builder object.
+         */
         public Builder setAccessKey(String accessKey) {
             this.accessKey = accessKey;
             return this;
         }
 
+        /**
+         * Sets the path to the model file (`.pv`).
+         *
+         * @param modelPath Absolute path to the file (`.pv`) containing Orca model parameters.
+         * @return Modified builder object.
+         */
         public Builder setModelPath(String modelPath) {
             this.modelPath = modelPath;
             return this;
         }
-
 
         /**
          * Validates properties and creates an instance of the Orca Speech-to-Text engine.

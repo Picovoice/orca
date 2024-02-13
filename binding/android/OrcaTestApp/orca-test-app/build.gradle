@@ -110,7 +110,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation files('../../Orca/orca/build/outputs/aar/orca-release.aar')
+    implementation 'ai.picovoice:orca-android:0.1.0'
 
     // Espresso UI Testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

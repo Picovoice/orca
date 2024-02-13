@@ -26,6 +26,11 @@ public class OrcaSynthesizeParams {
         this.speechRate = speechRate;
     }
 
+    /**
+     * Getter for the pace of the synthesized speech. Valid values are within [0.7, 1.3].
+     *
+     * @return Speech Rate.
+     */
     public float getSpeechRate() {
         return this.speechRate;
     }
@@ -37,6 +42,12 @@ public class OrcaSynthesizeParams {
 
         private float speechRate = 1.0f;
 
+        /**
+         * Sets the speech rate.
+         *
+         * @param speechRate The pace of the synthesized speech. Valid values are within [0.7, 1.3].
+         * @return Modified builder object.
+         */
         public Builder setSpeechRate(float speechRate) {
             this.speechRate = speechRate;
             return this;
