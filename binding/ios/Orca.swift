@@ -132,7 +132,7 @@ public class Orca {
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    `self.maxCharacterLimit`. Allowed characters can be retrieved by calling `self.validCharacters`.
     ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - speechRate: Rate of speech of the generated audio.
@@ -187,7 +187,7 @@ public class Orca {
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    `self.maxCharacterLimit`. Allowed characters can be retrieved by calling `self.validCharacters`.
     ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
@@ -235,7 +235,7 @@ public class Orca {
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
-    ///    `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
+    ///    `self.maxCharacterLimit`. Allowed characters can be retrieved by calling `self.validCharacters`.
     ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)`
