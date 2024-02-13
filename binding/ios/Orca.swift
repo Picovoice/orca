@@ -146,7 +146,9 @@ public class Orca {
         }
 
         let characters = try self.validCharacters
-        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
+        let regex = try NSRegularExpression(
+            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
+            options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
@@ -177,14 +179,15 @@ public class Orca {
 
         return pcm
     }
-    
+
     /// Generates audio from text. The returned audio contains the speech representation of the text.
     ///
     /// - Parameters:
-    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
+    ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is 
     ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
     ///     that can be retrieved with `.validPunctuationSymbols`.
-    ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)` and consists of a single mono channel.
+    ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
+    ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio.
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil) throws {
@@ -198,7 +201,9 @@ public class Orca {
         }
 
         let characters = try self.validCharacters
-        let regex = try NSRegularExpression(pattern: "[^\(characters.joined(separator: ""))\\s{}|']", options: .caseInsensitive)
+        let regex = try NSRegularExpression(
+            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
+            options: .caseInsensitive)
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, range: range)
 
@@ -212,23 +217,24 @@ public class Orca {
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
-        
+
         let status = pv_orca_synthesize_to_file(handle, text, cSynthesizeParams, outputPath)
         if status != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()
             throw pvStatusToOrcaError(status, "Unable to synthesize speech to file", messageStack)
         }
-        
+
         pv_orca_synthesize_params_delete(cSynthesizeParams)
     }
-    
+
     /// Generates audio from text. The returned audio contains the speech representation of the text.
     ///
     /// - Parameters:
     ///   - text: Text to be converted to audio. The maximum number of characters per call to `.synthesize()` is
     ///     `.maxCharacterLimit`. Allowed characters are lower-case and upper-case letters and punctuation marks
     ///     that can be retrieved with `.validPunctuationSymbols`.
-    ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)` and consists of a single mono channel.
+    ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)`
+    ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio.
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil) throws {
