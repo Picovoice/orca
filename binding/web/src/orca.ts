@@ -35,8 +35,8 @@ import { pvStatusToException } from './orca_errors';
  */
 type pv_orca_init_type = (accessKey: number, modelPath: number, object: number) => Promise<number>;
 type pv_orca_delete_type = (object: number) => Promise<void>;
-type pv_orca_valid_punctuation_symbols_type = (object: number, numSymbols: number, symbols: number) => Promise<number>;
-type pv_orca_valid_punctuation_symbols_delete_type = (symbols: number) => Promise<void>;
+type pv_orca_valid_characters_type = (object: number, numCharacters: number, validCharacters: number) => Promise<number>;
+type pv_orca_valid_characters_delete_type = (validCharacters: number) => Promise<void>;
 type pv_orca_sample_rate_type = (object: number, sampleRate: number) => Promise<number>;
 type pv_orca_max_character_limit_type = () => Promise<number>;
 type pv_orca_synthesize_params_init_type = (object: number) => Promise<number>;
@@ -62,7 +62,7 @@ type OrcaWasmOutput = {
   version: string;
   sampleRate: number;
   maxCharacterLimit: number;
-  validPunctuationSymbols: string[];
+  validCharacters: string[];
 
   objectAddress: number;
   inputBufferAddress: number;
@@ -108,7 +108,7 @@ export class Orca {
   private static _version: string;
   private static _sampleRate: number;
   private static _maxCharacterLimit: number;
-  private static _validPunctuationSymbols: string[];
+  private static _validCharacters: string[];
   private static _wasm: string;
   private static _wasmSimd: string;
   private static _sdk: string = 'web';
@@ -126,7 +126,7 @@ export class Orca {
     Orca._version = handleWasm.version;
     Orca._sampleRate = handleWasm.sampleRate;
     Orca._maxCharacterLimit = handleWasm.maxCharacterLimit;
-    Orca._validPunctuationSymbols = handleWasm.validPunctuationSymbols;
+    Orca._validCharacters = handleWasm.validCharacters;
 
     this._pvOrcaDelete = handleWasm.pvOrcaDelete;
     this._pvOrcaSynthesize = handleWasm.pvOrcaSynthesize;
@@ -173,10 +173,10 @@ export class Orca {
   }
 
   /**
-   * Get valid punctuation symbols.
+   * Get valid characters.
    */
-  get validPunctuationSymbols(): string[] {
-    return Orca._validPunctuationSymbols;
+  get validCharacters(): string[] {
+    return Orca._validCharacters;
   }
 
   /**
@@ -273,7 +273,7 @@ export class Orca {
    *
    * @param text A frame of audio with properties described above.
    * The maximum number of characters per call to `.synthesize()` is `.maxCharacterLimit`.
-   * Allowed characters are lower-case and upper-case letters and punctuation marks that can be retrieved with `.validPunctuationSymbols`.
+   * Allowed characters are lower-case and upper-case letters and punctuation marks that can be retrieved with `.validCharacters`.
    * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
    * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
    * @param speechRate Optional argument to configure the rate of speech of the synthesized audio.
@@ -459,8 +459,8 @@ export class Orca {
     const pv_free = exports.pv_free as pv_free_type;
     const pv_orca_init = exports.pv_orca_init as pv_orca_init_type;
     const pv_orca_delete = exports.pv_orca_delete as pv_orca_delete_type;
-    const pv_orca_valid_punctuation_symbols = exports.pv_orca_valid_punctuation_symbols as pv_orca_valid_punctuation_symbols_type;
-    const pv_orca_valid_punctuation_symbols_delete = exports.pv_orca_valid_punctuation_symbols_delete as pv_orca_valid_punctuation_symbols_delete_type;
+    const pv_orca_valid_characters = exports.pv_orca_valid_characters as pv_orca_valid_characters_type;
+    const pv_orca_valid_characters_delete = exports.pv_orca_valid_characters_delete as pv_orca_valid_characters_delete_type;
     const pv_orca_sample_rate = exports.pv_orca_sample_rate as pv_orca_sample_rate_type;
     const pv_orca_max_character_limit = exports.pv_orca_max_character_limit as pv_orca_max_character_limit_type;
     const pv_orca_synthesize_params_init = exports.pv_orca_synthesize_params_init as pv_orca_synthesize_params_init_type;
@@ -582,28 +582,28 @@ export class Orca {
     const sampleRate = memoryBufferView.getInt32(sampleRateAddress, true);
     await pv_free(sampleRateAddress);
 
-    const numSymbolsAddress = await aligned_alloc(
+    const numCharactersAddress = await aligned_alloc(
       Int32Array.BYTES_PER_ELEMENT,
       Int32Array.BYTES_PER_ELEMENT,
     );
-    if (numSymbolsAddress === 0) {
+    if (numCharactersAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const symbolsAddressAddressAddress = await aligned_alloc(
+    const validCharactersAddressAddressAddress = await aligned_alloc(
       Int32Array.BYTES_PER_ELEMENT,
       Int32Array.BYTES_PER_ELEMENT,
     );
-    if (symbolsAddressAddressAddress === 0) {
+    if (validCharactersAddressAddressAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const validPunctuationSymbolsStatus = await pv_orca_valid_punctuation_symbols(
+    const validCharactersStatus = await pv_orca_valid_characters(
       objectAddress,
-      numSymbolsAddress,
-      symbolsAddressAddressAddress,
+      numCharactersAddress,
+      validCharactersAddressAddressAddress,
     );
-    if (validPunctuationSymbolsStatus !== PV_STATUS_SUCCESS) {
+    if (validCharactersStatus !== PV_STATUS_SUCCESS) {
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,
         pv_free_error_stack,
@@ -613,26 +613,26 @@ export class Orca {
         memoryBufferUint8,
       );
 
-      throw pvStatusToException(validPunctuationSymbolsStatus, 'Get valid punctuation symbols failed', messageStack, pvError);
+      throw pvStatusToException(validCharactersStatus, 'Get valid characters failed', messageStack, pvError);
     }
 
-    const numSymbols = memoryBufferView.getInt32(numSymbolsAddress, true);
-    const symbolsAddressAddress = memoryBufferView.getInt32(symbolsAddressAddressAddress, true);
+    const numCharacters = memoryBufferView.getInt32(numCharactersAddress, true);
+    const validCharactersAddressAddress = memoryBufferView.getInt32(validCharactersAddressAddressAddress, true);
 
-    const validPunctuationSymbols: string[] = [];
-    for (let i = 0; i < numSymbols; i++) {
-      const symbolIndex = memoryBufferView.getInt32(symbolsAddressAddress + i * Int32Array.BYTES_PER_ELEMENT, true);
-      validPunctuationSymbols.push(
+    const validCharacters: string[] = [];
+    for (let i = 0; i < numCharacters; i++) {
+      const charIndex = memoryBufferView.getInt32(validCharactersAddressAddress + i * Int32Array.BYTES_PER_ELEMENT, true);
+      validCharacters.push(
         arrayBufferToStringAtIndex(
           memoryBufferUint8,
-          symbolIndex,
+          charIndex,
         ),
       );
     }
 
-    await pv_free(numSymbolsAddress);
-    await pv_free(symbolsAddressAddressAddress);
-    await pv_orca_valid_punctuation_symbols_delete(symbolsAddressAddress);
+    await pv_free(numCharactersAddress);
+    await pv_free(validCharactersAddressAddressAddress);
+    await pv_orca_valid_characters_delete(validCharactersAddressAddress);
 
     const maxCharacterLimit = await pv_orca_max_character_limit();
 
@@ -651,7 +651,7 @@ export class Orca {
       version: version,
       sampleRate: sampleRate,
       maxCharacterLimit: maxCharacterLimit,
-      validPunctuationSymbols: validPunctuationSymbols,
+      validCharacters: validCharacters,
       messageStackAddressAddressAddress: messageStackAddressAddressAddress,
       messageStackDepthAddress: messageStackDepthAddress,
 

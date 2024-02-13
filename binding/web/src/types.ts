@@ -80,7 +80,7 @@ export type OrcaWorkerInitResponse =
   command: 'ok';
   version: string;
   numSymbols: number;
-  validPunctuationSymbols: string[];
+  validCharacters: string[];
   maxCharacterLimit: number;
   sampleRate: number;
 };

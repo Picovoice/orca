@@ -180,7 +180,7 @@ orca.synthesize(TEXT, speechRate);
 
 ### Orca Properties
 
-To obtain the set of valid punctuation symbols, call `.validPunctuationSymbols`. To retrieve the maximum number of
+To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
 characters allowed, call `.maxCharacterLimit`. The sample rate of Orca is `.sampleRate`.
 
 ### Clean Up

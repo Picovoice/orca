@@ -29,7 +29,7 @@ export class OrcaWorker {
   private readonly _version: string;
   private readonly _sampleRate: number;
   private readonly _maxCharacterLimit: number;
-  private readonly _validPunctuationSymbols: string[];
+  private readonly _validCharacters: string[];
 
   private static _wasm: string;
   private static _wasmSimd: string;
@@ -40,13 +40,13 @@ export class OrcaWorker {
     version: string,
     sampleRate: number,
     maxCharacterLimit: number,
-    validPunctuationSymbols: string[],
+    validCharacters: string[],
   ) {
     this._worker = worker;
     this._version = version;
     this._sampleRate = sampleRate;
     this._maxCharacterLimit = maxCharacterLimit;
-    this._validPunctuationSymbols = validPunctuationSymbols;
+    this._validCharacters = validCharacters;
   }
 
   /**
@@ -73,8 +73,8 @@ export class OrcaWorker {
   /**
    * Get valid punctuation symbols.
    */
-  get validPunctuationSymbols(): string[] {
-    return this._validPunctuationSymbols;
+  get validCharacters(): string[] {
+    return this._validCharacters;
   }
 
   /**
@@ -189,7 +189,7 @@ export class OrcaWorker {
                   event.data.version,
                   event.data.sampleRate,
                   event.data.maxCharacterLimit,
-                  event.data.validPunctuationSymbols,
+                  event.data.validCharacters,
                 ),
               );
               break;

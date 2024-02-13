@@ -12,7 +12,7 @@ import testData from '../cypress/fixtures/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
-const EXPECTED_VALID_PUNCTUATION_SYMBOLS = ['.', ':', ',', '"', '?', '!'];
+const EXPECTED_VALID_CHARACTERS = ['.', ':', ',', '"', '?', '!'];
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 
@@ -68,9 +68,9 @@ const runInitTest = async (
     expect(orca.version.length).to.be.greaterThan(0);
     expect(orca.maxCharacterLimit).to.eq(EXPECTED_MAX_CHARACTER_LIMIT);
     expect(orca.sampleRate).to.eq(EXPECTED_SAMPLE_RATE);
-    expect(orca.validPunctuationSymbols.length).to.eq(EXPECTED_VALID_PUNCTUATION_SYMBOLS.length);
-    orca.validPunctuationSymbols.forEach((symbol: string, i: number) => {
-      expect(symbol).to.eq(EXPECTED_VALID_PUNCTUATION_SYMBOLS[i]);
+    expect(orca.validCharacters.length).to.eq(EXPECTED_VALID_CHARACTERS.length);
+    orca.validCharacters.forEach((symbol: string, i: number) => {
+      expect(symbol).to.eq(EXPECTED_VALID_CHARACTERS[i]);
     });
 
     if (orca instanceof OrcaWorker) {
