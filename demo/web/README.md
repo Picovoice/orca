@@ -37,10 +37,10 @@ Hit CTRL-C to stop the server
 Wait until Orca has initialized. Type in any text (in English only), and optionally select a desired speech rate. Click
 synthesize, and once Orca has finished synthesizing your text, click play and listen for the speech.
 
-**Optional**: If you wish, you may replace the model file in the `index.html` with a female model file for a female
+**Optional**: If you wish, you may replace the model file in the `index.html` with a male model file for a male
 voice:
 
 ```html
 
-<script type="application/javascript" src="orca_params_female.js"></script>
+<script type="application/javascript" src="orca_params_male.js"></script>
 ```

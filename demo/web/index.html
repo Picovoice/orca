@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <script src="node_modules/@picovoice/orca-web/dist/iife/index.js"></script>
-  <script type="application/javascript" src="orca_params_male.js"></script>
+  <script type="application/javascript" src="orca_params_female.js"></script>
   <script type="application/javascript">
     const ORCA_SAMPLE_RATE = 22050;
 
@@ -11,7 +11,7 @@
 
     function writeMessage(message) {
       console.log(message);
-      document.getElementById('status').innerHTML = message;
+      document.getElementById('status').innerText = message;
     }
 
     window.onload = function() {
@@ -39,6 +39,7 @@
       let isPlaying = false;
       let originalAudioSource;
       const textToSynthesizeEl = document.getElementById('text-to-synthesize');
+      const textToSynthesizeErrorEl = document.getElementById('text-to-synthesize-error');
       const speechRateSliderEl = document.getElementById('speech-rate');
       const synthesizeBtnEl = document.getElementById('synthesize-btn');
       const controlBtnEl = document.getElementById('control-btn');
@@ -48,21 +49,43 @@
         if (orca !== null && isPlaying === false) {
           synthesizeBtnEl.disabled = false;
           controlBtnEl.disabled = true;
-          controlBtnEl.innerHTML = 'Play';
+          controlBtnEl.innerText = 'Play';
         }
       }
 
-      function onSpeechRateSliderChange() {
-        speechRateDisplayEl.innerText = speechRateSliderEl.value;
+      function validateInput(input, orcaValidChars) {
+        let nonAllowedCharacters = [];
+        const validChars = [...orcaValidChars, ' '];
+
+        for (let i = 0; i < input.length; i++) {
+          if (!validChars.includes(input[i]) && !nonAllowedCharacters.includes(input[i])) {
+            nonAllowedCharacters.push(input[i]);
+          }
+        }
+
+        if (nonAllowedCharacters.length > 0) {
+          textToSynthesizeErrorEl.innerText = `Error: Character${nonAllowedCharacters.length > 1 ? 's' : ''} ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
+          synthesizeBtnEl.disabled = true;
+        } else {
+          textToSynthesizeErrorEl.innerHTML = '&nbsp;';
+          synthesizeBtnEl.disabled = false;
+        }
       }
 
-      textToSynthesizeEl.addEventListener('input', onSynthesizeParamChange);
-      speechRateSliderEl.addEventListener('change', onSynthesizeParamChange);
-      speechRateSliderEl.addEventListener('change', onSpeechRateSliderChange);
+      textToSynthesizeEl.addEventListener('input', (e) => {
+        onSynthesizeParamChange();
+        if (orca !== null) {
+          validateInput(e.target.value, orca.validCharacters);
+        }
+      });
+      speechRateSliderEl.addEventListener('change', () => {
+        onSynthesizeParamChange();
+        speechRateDisplayEl.innerText = speechRateSliderEl.value;
+      });
 
       function onAudioStop() {
         isPlaying = false;
-        controlBtnEl.innerHTML = 'Play';
+        controlBtnEl.innerText = 'Play';
         textToSynthesizeEl.disabled = false;
         speechRateSliderEl.disabled = false;
       }
@@ -76,7 +99,7 @@
           originalAudioSource.start();
 
           isPlaying = true;
-          controlBtnEl.innerHTML = 'Stop';
+          controlBtnEl.innerText = 'Stop';
           textToSynthesizeEl.disabled = true;
           speechRateSliderEl.disabled = true;
           synthesizeBtnEl.disabled = true;
@@ -137,10 +160,9 @@
 <p>This demo uses Orca for Web to:</p>
 <ol>
   <li>
-    Create an instance of Orca with the model file provided or default model
-    file.
+    Create an instance of Orca with the model file provided.
   </li>
-  <li>Convert text into audio speech data.</li>
+  <li>Convert text into speech audio data.</li>
 </ol>
 After entering the AccessKey, click the "Start Orca" button.
 <hr />
@@ -158,10 +180,9 @@ After entering the AccessKey, click the "Start Orca" button.
 <hr />
 <label for="text-to-synthesize">Text to synthesize (English)</label>
 <br />
-<textarea id="text-to-synthesize" rows="4" cols="50" disabled>
-</textarea
->
-<br />
+<textarea id="text-to-synthesize" rows="4" cols="50" disabled maxlength="200">
+</textarea>
+<p id="text-to-synthesize-error">&nbsp;</p>
 <label>
   Speech Rate: <span id="speech-rate-display">1.0</span>
   <input
