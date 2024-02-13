@@ -44,7 +44,7 @@ public class Orca {
     public var validCharacters: Set<String> {
         get throws {
             if _validCharacters == nil {
-                _validCharacters = try getValidChracters()
+                _validCharacters = try getValidCharacters()
             }
             return _validCharacters!
         }
@@ -255,7 +255,7 @@ public class Orca {
         return cParams
     }
 
-    private func getValidChracters() throws -> Set<String> {
+    private func getValidCharacters() throws -> Set<String> {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to get valid characters - resources have been released")
         }
