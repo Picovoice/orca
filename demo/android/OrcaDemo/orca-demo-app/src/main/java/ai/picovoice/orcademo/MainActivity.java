@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
 
     private Orca orca;
 
-    Button clearTextButton;
     TextView errorText;
     TextView infoTextView;
     TextView numCharsTextView;
@@ -73,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.orca_demo);
-        clearTextButton = findViewById(R.id.clearTextButton);
         errorText = findViewById(R.id.errorTextView);
         infoTextView = findViewById(R.id.infoTextView);
         numCharsTextView = findViewById(R.id.numCharsTextView);
@@ -138,7 +136,6 @@ public class MainActivity extends AppCompatActivity {
             switch (state) {
                 case EDIT:
                     infoTextView.setVisibility(View.INVISIBLE);
-                    clearTextButton.setEnabled(synthesizeEditText.getText().toString().length() > 0);
                     synthesizeButton.setVisibility(View.VISIBLE);
                     synthesizeButton.setEnabled(true);
                     synthesizeEditText.setEnabled(true);
@@ -146,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case PLAYBACK:
                     infoTextView.setVisibility(View.VISIBLE);
-                    clearTextButton.setEnabled(false);
                     synthesizeButton.setVisibility(View.VISIBLE);
                     synthesizeButton.setEnabled(true);
                     synthesizeEditText.setEnabled(false);
@@ -154,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case BUSY:
                     infoTextView.setVisibility(View.VISIBLE);
-                    clearTextButton.setEnabled(false);
                     synthesizeButton.setVisibility(View.INVISIBLE);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(false);
@@ -162,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case ERROR:
                     infoTextView.setVisibility(View.VISIBLE);
-                    clearTextButton.setEnabled(true);
                     errorText.setVisibility(View.INVISIBLE);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(true);
@@ -170,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case FATAL_ERROR:
                     infoTextView.setVisibility(View.INVISIBLE);
-                    clearTextButton.setEnabled(false);
                     errorText.setVisibility(View.VISIBLE);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(false);
@@ -205,10 +198,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateText(String text) {
         if (text.length() > 0) {
-            runOnUiThread(() -> {
-                clearTextButton.setEnabled(true);
-            });
-
             if (text.length() >= orca.getMaxCharacterLimit()) {
                 runOnUiThread(() -> {
                     setUIState(UIState.ERROR);
@@ -313,13 +302,6 @@ public class MainActivity extends AppCompatActivity {
         synthesizedPlayer.seekTo(0);
 
         runOnUiThread(() -> setUIState(UIState.EDIT));
-    }
-
-    public void onClearTextClick(View view) {
-        runOnUiThread(() -> {
-            clearTextButton.setEnabled(false);
-            synthesizeEditText.setText("");
-        });
     }
 
     public void onSynthesizeClick(View view) {

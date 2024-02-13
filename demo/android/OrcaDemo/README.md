@@ -16,5 +16,7 @@ with your AccessKey obtained from [Picovoice Console](https://console.picovoice.
 
 ## Usage
 
-1.
+1. Type a phrase that you'd like to synthesize into the textbox at the top.
+2. Press the `Synthesize` button to hear the synthesized speech.
+3. Press `Stop` if you wish to stop the playback before it completes on its own.
 

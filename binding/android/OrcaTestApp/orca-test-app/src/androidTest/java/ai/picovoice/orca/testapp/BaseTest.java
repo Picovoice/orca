@@ -25,12 +25,11 @@ import org.junit.Before;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 
 public class BaseTest {
@@ -56,7 +55,7 @@ public class BaseTest {
 
 
         FileReader reader = new FileReader(
-                new File(testResourcesPath,"test_data.json").getAbsolutePath()
+                new File(testResourcesPath, "test_data.json").getAbsolutePath()
         );
         testJson = new Gson().fromJson(reader, JsonObject.class);
         reader.close();
@@ -78,6 +77,7 @@ public class BaseTest {
                         "model_files/orca_params_male.pv").getAbsolutePath()
         };
     }
+
     private void extractAssetsRecursively(String path) throws IOException {
         String[] dirList = assetManager.list(path);
         if (dirList != null && dirList.length > 0) {
@@ -93,7 +93,7 @@ public class BaseTest {
             }
 
             for (String filename : dirList) {
-                String filepath = Paths.get(path).resolve(filename).toString();
+                String filepath = path + "/" + filename;
                 extractAssetsRecursively(filepath);
             }
         } else {
@@ -110,8 +110,9 @@ public class BaseTest {
                 appContext.getFilesDir(),
                 filepath);
         OutputStream os = new BufferedOutputStream(
-                Files.newOutputStream(absPath.toPath()),
+                new FileOutputStream(absPath),
                 256);
+
         int r;
         while ((r = is.read()) != -1) {
             os.write(r);

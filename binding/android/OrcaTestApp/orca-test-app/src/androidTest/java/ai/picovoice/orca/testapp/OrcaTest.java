@@ -28,9 +28,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaException;
@@ -87,9 +88,11 @@ public class OrcaTest {
 
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> initParameters() {
-            return Arrays.stream(getModelFiles())
-                    .map(modelFile -> new Object[]{modelFile})
-                    .collect(Collectors.toList());
+            List<Object[]> parameters = new ArrayList<>();
+            for (String modelFile : getModelFiles()) {
+                parameters.add(new Object[]{modelFile});
+            }
+            return parameters;
         }
 
         String text;

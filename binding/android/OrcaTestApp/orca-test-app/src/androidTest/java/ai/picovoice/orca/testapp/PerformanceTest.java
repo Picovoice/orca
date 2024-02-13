@@ -20,9 +20,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaSynthesizeParams;
@@ -34,9 +34,11 @@ public class PerformanceTest extends BaseTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> initParameters() {
-        return Arrays.stream(getModelFiles())
-                .map(modelFile -> new Object[]{modelFile})
-                .collect(Collectors.toList());
+        List<Object[]> parameters = new ArrayList<>();
+        for (String modelFile : getModelFiles()) {
+            parameters.add(new Object[]{modelFile});
+        }
+        return parameters;
     }
 
     int numTestIterations = 30;

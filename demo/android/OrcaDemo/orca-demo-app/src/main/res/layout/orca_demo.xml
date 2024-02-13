@@ -46,7 +46,7 @@
         android:inputType="textMultiLine"
         android:layout_margin="20dp"
         android:padding="10dp"
-        app:layout_constraintBottom_toTopOf="@+id/clearTextButton"
+        app:layout_constraintBottom_toTopOf="@+id/textViewBarrier"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -55,26 +55,13 @@
         android:gravity="top|start"
         android:hint="Type some text you want to synthesize..."/>
 
-    <Button
-        android:id="@+id/clearTextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:enabled="false"
-        android:onClick="onClearTextClick"
-        android:text="CLEAR"
-        android:textColor="@android:color/white"
-        android:textSize="10sp"
-        android:theme="@style/ButtonStyle"
-        app:layout_constraintStart_toStartOf="@+id/synthesizeEditText"
-        app:layout_constraintTop_toBottomOf="@+id/synthesizeEditText" />
-
     <TextView
         android:id="@+id/numCharsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:enabled="false"
         android:text=""
-        android:textSize="10sp"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="@+id/synthesizeEditText"
         app:layout_constraintTop_toBottomOf="@+id/synthesizeEditText" />
 
@@ -95,7 +82,7 @@
         android:layout_marginBottom="16dp"
         android:text=""
         android:textAlignment="center"
-        app:layout_constraintTop_toBottomOf="@+id/clearTextButton"
+        app:layout_constraintTop_toBottomOf="@+id/numCharsTextView"
         app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -113,7 +100,7 @@
         android:text="TextView"
         android:textColor="#FFFFFF"
         android:visibility="invisible"
-        app:layout_constraintTop_toBottomOf="@+id/clearTextButton"
+        app:layout_constraintTop_toBottomOf="@+id/numCharsTextView"
         app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
