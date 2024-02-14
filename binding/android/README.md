@@ -67,7 +67,7 @@ OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder().build();
 short[] pcm = orca.synthesize("${TEXT}", params);
 
 // Save the generated audio to a WAV file directly
-orca.synthesizeToFile("${OUTPUT_PATH}", "${TEXT}", params);
+orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
 ```
 
 Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When using `synthesize`, the generated pcm has a sample rate equal to the one returned by `getSampleRate()`. When using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit PCM WAV file. When done make sure to explicitly release the resources with `orca.delete()`.

@@ -9,3 +9,6 @@ cp ../../../lib/common/*.pv ./orca-test-app/src/androidTest/assets/test_resource
 
 echo "Copying test data file..."
 cp ../../../resources/.test/test_data.json ./orca-test-app/src/androidTest/assets/test_resources
+
+echo "Copying test model files ..."
+cp ../../../resources/.test/models/*.pv ./orca-test-app/src/androidTest/assets/test_resources/model_files

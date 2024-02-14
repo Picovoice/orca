@@ -122,8 +122,8 @@ public class MainActivity extends AppCompatActivity {
             File outputFile = new File(getApplicationContext().getFilesDir(), "out.wav");
 
             orca.synthesizeToFile(
-                    outputFile.getAbsolutePath(),
                     "Hello",
+                    outputFile.getAbsolutePath(),
                     new OrcaSynthesizeParams.Builder().build());
             if (outputFile.exists()) {
                 result.success = true;

@@ -33,6 +33,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import ai.picovoice.leopard.Leopard;
+
+import ai.picovoice.leopard.LeopardTranscript;
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaException;
 import ai.picovoice.orca.OrcaInvalidArgumentException;
@@ -100,6 +103,7 @@ public class OrcaTest {
         String textCustomPronunciation;
 
         float werThreshold;
+        String leopardModelPath;
 
         Orca orca;
 
@@ -112,6 +116,9 @@ public class OrcaTest {
             textNoPunctuation = testSentences.get("text_no_punctuation").getAsString();
             textCustomPronunciation = testSentences.get("text_custom_pronunciation").getAsString();
             werThreshold = testJson.get("wer_threshold").getAsFloat();
+            leopardModelPath = new File(
+                    testResourcesPath,
+                    "model_files/leopard_params.pv").getAbsolutePath();
 
             orca = new Orca.Builder()
                     .setAccessKey(accessKey)
@@ -151,24 +158,48 @@ public class OrcaTest {
         }
 
         @Test
-        public void testSynthesize() throws OrcaException {
+        public void testSynthesize() throws Exception {
+            Leopard leopard = new Leopard.Builder()
+                    .setAccessKey(accessKey)
+                    .setModelPath(leopardModelPath)
+                    .build(appContext);
+
             final short[] pcm = orca.synthesize(
                     text,
                     new OrcaSynthesizeParams.Builder().build());
-            assertTrue(pcm.length > 0);
+
+            LeopardTranscript leopardTranscript = leopard.process(pcm);
+            leopard.delete();
+            final float wer = getWordErrorRate(
+                    leopardTranscript.getTranscriptString(),
+                    textNoPunctuation,
+                    false);
+            assertTrue(wer < werThreshold);
         }
 
         @Test
-        public void testSynthesizeToFile() throws OrcaException {
+        public void testSynthesizeToFile() throws Exception {
+            Leopard leopard = new Leopard.Builder()
+                    .setAccessKey(accessKey)
+                    .setModelPath(leopardModelPath)
+                    .build(appContext);
+
             final File outputFile = new File(
                     appContext.getFilesDir(),
                     "text.wav");
             orca.synthesizeToFile(
-                    outputFile.getAbsolutePath(),
                     text,
+                    outputFile.getAbsolutePath(),
                     new OrcaSynthesizeParams.Builder().build());
-            assertTrue(outputFile.exists());
+
+            LeopardTranscript leopardTranscript = leopard.processFile(outputFile.getAbsolutePath());
             outputFile.delete();
+            leopard.delete();
+            final float wer = getWordErrorRate(
+                    leopardTranscript.getTranscriptString(),
+                    textNoPunctuation,
+                    false);
+            assertTrue(wer < werThreshold);
         }
 
         @Test

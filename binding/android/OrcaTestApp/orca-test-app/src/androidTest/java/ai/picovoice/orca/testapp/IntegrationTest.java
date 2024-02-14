@@ -77,7 +77,9 @@ class WaitForTextAction implements ViewAction {
 
         throw new PerformException.Builder()
                 .withActionDescription(this.getDescription())
-                .withCause(new TimeoutException(String.format("Waited for '%d' milliseconds", this.timeout)))
+                .withCause(new TimeoutException(String.format(
+                        "Waited for '%d' milliseconds",
+                        this.timeout)))
                 .withViewDescription(HumanReadables.describe(view))
                 .build();
     }
@@ -105,6 +107,7 @@ public class IntegrationTest {
 
     @After
     public void TearDown() {
+        // DO NOT REMOVE - this is required for AppCenter testing
         reportHelper.label("Stopping App");
     }
 

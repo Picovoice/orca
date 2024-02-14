@@ -113,19 +113,19 @@ public class Orca {
      * Generates audio from text and saves it to a file. The file contains the speech
      * representation of the text.
      *
-     * @param outputPath Absolute path to the output audio file. The output file is saved as
-     *                   `WAV (.wav)` and consists of a single mono channel.
      * @param text       Text to be converted to audio. The maximum length can be attained by calling
      *                   `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
      *                   `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
      *                   syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
      *                   e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+     * @param outputPath Absolute path to the output audio file. The output file is saved as
+     *                   `WAV (.wav)` and consists of a single mono channel.
      * @param params     Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
      * @throws OrcaException if there is an error while synthesizing audio to file.
      */
     public void synthesizeToFile(
-            String outputPath,
             String text,
+            String outputPath,
             OrcaSynthesizeParams params) throws OrcaException {
         if (handle == 0) {
             throw new OrcaInvalidStateException(
@@ -184,6 +184,7 @@ public class Orca {
                     "Attempted to call Orca getValidCharacters after delete."
             );
         }
+
         return OrcaNative.getValidCharacters(handle);
     }
 

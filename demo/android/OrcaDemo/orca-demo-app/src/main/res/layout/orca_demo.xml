@@ -53,7 +53,7 @@
         android:background="#eeeeee"
         android:scrollbars="vertical"
         android:gravity="top|start"
-        android:hint="Type some text you want to synthesize..."/>
+        android:hint="Enter some text you want to synthesize..."/>
 
     <TextView
         android:id="@+id/numCharsTextView"

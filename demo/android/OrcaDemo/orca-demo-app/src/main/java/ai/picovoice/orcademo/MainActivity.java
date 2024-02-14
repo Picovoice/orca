@@ -29,8 +29,11 @@ import android.widget.ToggleButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ai.picovoice.orca.Orca;
@@ -54,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private String synthesizedFilePath;
     private MediaPlayer synthesizedPlayer;
 
-    private boolean isTextSynthesized = false;
+    private String previousText = "";
 
     private Pattern validationRegex;
 
@@ -85,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
                     .setModelPath(MODEL_FILE)
                     .build(getApplicationContext());
             validationRegex = Pattern.compile(String.format(
-                    "[%s ]+",
+                    "[^%s ]",
                     String.join("", orca.getValidCharacters())));
             numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
         } catch (OrcaException e) {
@@ -108,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                isTextSynthesized = false;
                 runOnUiThread(() ->
                         numCharsTextView.setText(String.format(
                                 "%d/%d",
@@ -204,34 +206,50 @@ public class MainActivity extends AppCompatActivity {
                     infoTextView.setText("Too many characters");
                 });
             } else {
-                if (validationRegex.matcher(text).matches()) {
+                Set<Character> invalidChars = new HashSet<>();
+                Matcher m = validationRegex.matcher(text);
+                while(m.find()) {
+                    invalidChars.add(text.charAt(m.start()));
+                }
+
+                if (invalidChars.size() == 0) {
                     runOnUiThread(() -> {
                         setUIState(UIState.EDIT);
                         synthesizeButton.setEnabled(true);
                     });
                 } else {
+                    StringBuilder sb = new StringBuilder();
+                    for (Character c : invalidChars) {
+                        if (sb.length() > 0) {
+                            sb.append(", ");
+                        }
+                        sb.append(c);
+                    }
                     runOnUiThread(() -> {
                         setUIState(UIState.ERROR);
-                        infoTextView.setText("Invalid characters in text");
+                        infoTextView.setText(String.format(
+                                "Invalid characters in text: [%s]",
+                                sb
+                        ));
                     });
                 }
             }
         } else {
             runOnUiThread(() -> synthesizeButton.setEnabled(false));
+            infoTextView.setText("");
         }
     }
 
-    private void runSynthesis() {
+    private void runSynthesis(final String text) {
         runOnUiThread(() -> {
             setUIState(UIState.BUSY);
             infoTextView.setText("Synthesizing...");
         });
         executor.submit(() -> {
-            String text = synthesizeEditText.getText().toString();
             try {
                 orca.synthesizeToFile(
-                        synthesizedFilePath,
                         text,
+                        synthesizedFilePath,
                         new OrcaSynthesizeParams.Builder().build());
             } catch (OrcaException e) {
                 mainHandler.post(() -> onOrcaException(e));
@@ -240,20 +258,20 @@ public class MainActivity extends AppCompatActivity {
             synthesizedPlayer.reset();
             synthesizedPlayer.setAudioAttributes(
                     new AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                             .setUsage(AudioAttributes.USAGE_MEDIA)
                             .build()
             );
             synthesizedPlayer.setLooping(false);
             synthesizedPlayer.setOnCompletionListener(mediaPlayer -> {
-                runOnUiThread(() -> synthesizeButton.setChecked(false));
+                mainHandler.post(() -> synthesizeButton.setChecked(false));
                 stopPlayback();
             });
             try {
                 synthesizedPlayer.setDataSource(synthesizedFilePath);
                 synthesizedPlayer.prepare();
                 synthesizedPlayer.setVolume(1f, 1f);
-                isTextSynthesized = true;
+                previousText = text;
                 mainHandler.post(this::startPlayback);
             } catch (Exception e) {
                 mainHandler.post(() -> displayError(e.toString()));
@@ -312,8 +330,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (synthesizeButton.isChecked()) {
-            if (!isTextSynthesized) {
-                runSynthesis();
+            String text = synthesizeEditText.getText().toString();
+            if (!previousText.equals(text)) {
+                runSynthesis(text);
             } else {
                 startPlayback();
             }
