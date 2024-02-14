@@ -39,10 +39,17 @@ Create an instance of the engine
 import Orca
 
 let accessKey : String = // .. accessKey provided by Picovoice Console (https://console.picovoice.ai/)
+
+let modelPath = Bundle(for: type(of: self)).path(
+        forResource: "${MODEL_FILE}", // Name of the model file name for Orca
+        ofType: "pv")!
+
 do {
-    let orca = try Orca(accessKey: accessKey)
+    let orca = try Orca(accessKey: accessKey, modelPath: modelPath)
 } catch { }
 ```
+
+Alternatively, you can provide `modelPath` as an absolute path to the model file on device.
 
 You can synthesize speech by calling one of the `synthesize` methods:
 
@@ -82,11 +89,13 @@ To create an instance of the engine with a specific voice, use:
 import Orca
 
 do {
-    orca = try Orca(accessKey: accessKey, modelPath="${MODEL_PATH}")
+    let orca = try Orca(accessKey: accessKey, modelPath: "${MODEL_FILE_PATH}")
+    // or
+    let orca = try Orca(accessKey: accessKey, modelURL: "${MODEL_FILE_URL}")
 } catch { }
 ```
 
-and replace `${MODEL_PATH}` with the path to the model file with the desired voice.
+and replace `${MODEL_FILE_PATH}` or `${MODEL_FILE_URL}` with the path to the model file with the desired voice.
 
 ### Speech control
 
@@ -96,9 +105,9 @@ Orca allows for keyword arguments to be provided to the `synthesize` methods to 
   produces speech that is faster (slower). The default is `1.0`.
 
 ```swift
-pcm = orca.synthesize(
-    text="${TEXT}",
-    speechRate=1.0)
+let pcm = orca.synthesize(
+    text: "${TEXT}",
+    speechRate: 1.0)
 ```
 
 ### Orca properties
