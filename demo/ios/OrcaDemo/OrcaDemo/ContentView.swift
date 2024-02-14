@@ -12,6 +12,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject var viewModel = ViewModel()
     @State private var text = ""
+    @State private var isTextFocused = false
 
     let activeBlue = Color(red: 55 / 255, green: 125 / 255, blue: 1, opacity: 1)
     let dangerRed = Color(red: 1, green: 14 / 255, blue: 14 / 255, opacity: 1)
@@ -20,24 +21,35 @@ struct ContentView: View {
     var body: some View {
         let interactionDisabled =
             !viewModel.errorMessage.isEmpty || viewModel.state == UIState.PROCESSING
-            || viewModel.state == UIState.INIT || text.isEmpty
+            || viewModel.state == UIState.INIT || text.isEmpty || !viewModel.invalidTextMessage.isEmpty
         GeometryReader { _ in
             VStack(spacing: 10) {
                 GeometryReader { geometry in
                     VStack {
                         ScrollView {
-                            TextEditor(text: $text)
-                                .transparentScrolling()
-                                .padding()
-                                .frame(minWidth: 0,
-                                       maxWidth: .infinity,
-                                       minHeight: geometry.size.height,
-                                       maxHeight: .infinity)
-                                .font(.title3)
-                                .background(lightGray)
-                                .onChange(of: text) { _ in
-                                    text = String(text.prefix(Int(viewModel.maxCharacterLimit)))
+                            ZStack(alignment: .topLeading) {
+                                TextEditor(text: $text)
+                                    .transparentScrolling()
+                                    .padding()
+                                    .frame(minWidth: 0,
+                                           maxWidth: .infinity,
+                                           minHeight: geometry.size.height,
+                                           maxHeight: .infinity)
+                                    .font(.title3)
+                                    .background(lightGray)
+                                    .onChange(of: text) { _ in
+                                        text = String(text.prefix(Int(viewModel.maxCharacterLimit)))
+                                        viewModel.isValid(text: text)
+                                    }
+
+                                if text.count == 0 {
+                                    Text("Enter any text to be synthesized")
+                                        .padding(25)
+                                        .font(.title3)
+                                        .foregroundColor(Color.gray)
                                 }
+                            }
+
                         }
 
                         Text("\(text.count) / \(viewModel.maxCharacterLimit)")
@@ -48,10 +60,17 @@ struct ContentView: View {
                 }
 
                 if viewModel.state == .INIT || viewModel.state == .READY {
-                    Text("Enter any text to be synthesized")
-                        .padding()
-                        .font(.body)
-                        .foregroundColor(Color.black)
+                    if viewModel.invalidTextMessage.isEmpty {
+                        Text("Enter text and press synthesize")
+                            .padding()
+                            .font(.body)
+                            .foregroundColor(Color.black)
+                    } else {
+                        Text(viewModel.invalidTextMessage)
+                            .padding()
+                            .font(.body)
+                            .foregroundColor(Color.red)
+                    }
                 } else if viewModel.state == .PROCESSING {
                     Text("Processing text...")
                         .padding()
@@ -62,15 +81,6 @@ struct ContentView: View {
                         .padding()
                         .font(.body)
                         .foregroundColor(Color.black)
-                } else if viewModel.state == .SYNTHESIZE_ERROR {
-                    Text(viewModel.synthesizeError)
-                        .padding()
-                        .foregroundColor(Color.white)
-                        .frame(maxWidth: .infinity)
-                        .background(dangerRed)
-                        .font(.body)
-                        .opacity(viewModel.synthesizeError.isEmpty ? 0 : 1)
-                        .cornerRadius(10)
                 } else {
                     Text(viewModel.errorMessage)
                         .padding()
@@ -82,16 +92,19 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
 
-                Button(action: {
-                    viewModel.toggleSynthesize(text: text)
-                },
-                       label: {
-                    Text(viewModel.state == .PLAYING ? "Stop" : "Synthesize")
+                Button(
+                    action: {
+                        viewModel.toggleSynthesize(text: text)
+                    },
+                    label: {
+                        Text(viewModel.state == .PLAYING ? "Stop" : "Synthesize")
                         .padding()
+                        .frame(minWidth: 200)
                         .background(interactionDisabled ? Color.gray : activeBlue)
                         .foregroundColor(Color.white)
                         .font(.largeTitle)
-                })
+                    }
+                )
                 .disabled(interactionDisabled)
             }
             .onReceive(

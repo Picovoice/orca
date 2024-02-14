@@ -33,7 +33,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Usage
 
-Create an instance of the engine
+Create an instance of the engine:
 
 ```swift
 import Orca
@@ -85,7 +85,7 @@ Orca can synthesize speech with various voices, each of which is characterized b
 in [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common).
 To create an instance of the engine with a specific voice, use:
 
-```swift
+```df
 import Orca
 
 do {

@@ -91,6 +91,25 @@ class OrcaAppTestUITests: BaseTest {
         }
     }
 
+    func testSynthesizeToFile() throws {
+        let audioDir = try FileManager.default.url(
+                                    for: .documentDirectory,
+                                    in: .userDomainMask,
+                                    appropriateFor: nil,
+                                    create: false)
+        let audioFile = audioDir.appendingPathComponent("test.wav")
+
+        for orca in self.orcas {
+            try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputURL: audioFile)
+            XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            try FileManager().removeItem(at: audioFile)
+
+            try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputPath: audioFile.path)
+            XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            try FileManager().removeItem(at: audioFile)
+        }
+    }
+
     func testVersion() throws {
         XCTAssertGreaterThan(Orca.version.count, 0)
     }

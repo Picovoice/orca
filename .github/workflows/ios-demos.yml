@@ -41,7 +41,7 @@ jobs:
       - name: Run Cocoapods
         run: pod install
 
-      - name: Build English
+      - name: Build Demo
         run: xcrun xcodebuild build
           -configuration Debug
           -workspace OrcaDemo.xcworkspace
