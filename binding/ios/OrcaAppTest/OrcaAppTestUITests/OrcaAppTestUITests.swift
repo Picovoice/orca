@@ -96,6 +96,7 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testMessageStack() throws {
+        let bundle = Bundle(for: type(of: self))
         let modelPath: String = bundle.path(
                 forResource: "orca_params_female",
                 ofType: "pv",
@@ -119,6 +120,7 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testSynthesizeMessageStack() throws {
+        let bundle = Bundle(for: type(of: self))
         let modelPath: String = bundle.path(
                 forResource: "orca_params_female",
                 ofType: "pv",
