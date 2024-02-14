@@ -9,7 +9,7 @@
 
 import PvOrca
 
-/// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Cheetah library.
+/// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
 
     private var handle: OpaquePointer?
@@ -114,7 +114,7 @@ public class Orca {
     ///    `self.maxCharacterLimit`. Allowed characters can be retrieved by calling `self.validCharacters`.
     ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
-    ///   - speechRate: Rate of speech of the generated audio.
+    ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
     /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
     /// - Throws: OrcaError
     public func synthesize(text: String, speechRate: Double? = nil) throws -> [Int16] {
@@ -171,7 +171,7 @@ public class Orca {
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
-    ///   - speechRate: Rate of speech of the generated audio.
+    ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil) throws {
         if handle == nil {
@@ -181,22 +181,6 @@ public class Orca {
         if text.count > Orca.maxCharacterLimit {
             throw OrcaInvalidArgumentError(
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
-        }
-
-        let characters = try self.validCharacters
-        let regex = try NSRegularExpression(
-            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
-            options: .caseInsensitive)
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        let matches = regex.matches(in: text, range: range)
-
-        let unexpectedCharacters = matches.map {
-            String(text[Range($0.range, in: text)!])
-        }
-
-        if unexpectedCharacters.count > 0 {
-            throw OrcaInvalidArgumentError(
-                "Text contains the following invalid characters: `\(unexpectedCharacters.joined(separator: ", "))`")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
@@ -219,7 +203,7 @@ public class Orca {
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
-    ///   - speechRate: Rate of speech of the generated audio.
+    ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil) throws {
         try synthesizeToFile(text: text, outputPath: outputURL.path, speechRate: speechRate)

@@ -118,7 +118,7 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` wi
 
 ### iOS Demo
 
-Run the following from [demo/ios](demo/ios) to install the Cobra-iOS CocoaPod:
+Run the following from [demo/ios](demo/ios) to install the Orca-iOS CocoaPod:
 
 ```console
 pod install

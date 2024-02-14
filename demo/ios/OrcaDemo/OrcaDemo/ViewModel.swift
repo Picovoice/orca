@@ -15,7 +15,6 @@ enum UIState {
     case INIT
     case READY
     case PROCESSING
-    case SYNTHESIZE_ERROR
     case SYNTHESIZED
     case PLAYING
     case ERROR
@@ -32,10 +31,10 @@ class ViewModel: ObservableObject {
     private let audioFilePath = "temp.wav"
     private var audioFile: URL!
 
-    @Published var synthesizeError = ""
     @Published var errorMessage = ""
     @Published var state = UIState.INIT
     @Published var maxCharacterLimit = Orca.maxCharacterLimit
+    @Published var invalidTextMessage = ""
 
     init() {
         initialize()
@@ -90,15 +89,14 @@ class ViewModel: ObservableObject {
     public func toggleSynthesizeOn(text: String) {
         state = UIState.PROCESSING
 
-        let _: () = Future<[Int16]?, Error> { promise in
+        let _: () = Future<Void, Error> { promise in
             DispatchQueue.global().async {
                 do {
-                    var pcm: [Int16]?
                     if self.previousText != text {
                         try self.orca.synthesizeToFile(text: text, outputURL: self.audioFile)
                         self.previousText = text
                     }
-                    promise(.success(pcm))
+                    promise(.success(()))
                 } catch {
                     promise(.failure(error))
                 }
@@ -108,8 +106,8 @@ class ViewModel: ObservableObject {
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .failure(let error):
-                    self.synthesizeError = "\(error.localizedDescription)"
-                    self.state = UIState.SYNTHESIZE_ERROR
+                    self.errorMessage = "\(error.localizedDescription)"
+                    self.state = UIState.ERROR
                 case .finished:
                     break
                 }
@@ -126,5 +124,30 @@ class ViewModel: ObservableObject {
                 }
             })
             .store(in: &subscriptions)
+    }
+
+    public func isValid(text: String) {
+        do {
+            let characters = try orca.validCharacters
+            let regex = try NSRegularExpression(
+                pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
+                options: .caseInsensitive)
+            let range = NSRange(text.startIndex..<text.endIndex, in: text)
+            let matches = regex.matches(in: text, range: range)
+
+            let unexpectedCharacters = NSOrderedSet(array: matches.map {
+                String(text[Range($0.range, in: text)!])
+            })
+
+            if unexpectedCharacters.count > 0 {
+                let characterString = unexpectedCharacters.array.map { "\($0)" }.joined(separator: ", ")
+                self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
+            } else {
+                self.invalidTextMessage = ""
+            }
+        } catch {
+            self.errorMessage = "\(error.localizedDescription)"
+            self.state = UIState.ERROR
+        }
     }
 }
