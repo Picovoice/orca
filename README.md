@@ -182,8 +182,12 @@ Create an instance of the engine and synthesize:
 ```swift
 import Orca
 
+let modelPath = Bundle(for: type(of: self)).path(
+        forResource: "${MODEL_FILE}", // Name of the model file name for Orca
+        ofType: "pv")!
+
 do {
-  let orca = try Orca(accessKey: "${ACCESS_KEY}")
+  let orca = try Orca(accessKey: "${ACCESS_KEY}", modelPath: modelPath)
 } catch {}
 
 do {
@@ -191,7 +195,7 @@ do {
 } catch {}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/) and `${TEXT}` with
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}` with the model file name for Orca and `${TEXT}` with
 the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
 
 When done be sure to explicitly release the resources using `orca.delete()`.

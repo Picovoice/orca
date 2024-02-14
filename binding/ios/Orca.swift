@@ -12,19 +12,6 @@ import PvOrca
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Cheetah library.
 public class Orca {
 
-    static let resourceBundle: Bundle = {
-        let myBundle = Bundle(for: Orca.self)
-
-        guard let resourceBundleURL = myBundle.url(
-             forResource: "OrcaResources", withExtension: "bundle")
-        else { fatalError("OrcaResources.bundle not found") }
-
-        guard let resourceBundle = Bundle(url: resourceBundleURL)
-            else { fatalError("Could not open OrcaResources.bundle") }
-
-        return resourceBundle
-    }()
-
     private var handle: OpaquePointer?
     /// Orca valid symbols
     private var _validCharacters: Set<String>?
@@ -77,19 +64,11 @@ public class Orca {
     /// - Throws: OrcaError
     public init(
         accessKey: String,
-        modelPath: String? = nil) throws {
+        modelPath: String) throws {
 
         var modelPathArg = modelPath
-
-        if modelPath == nil {
-            modelPathArg  = Orca.resourceBundle.path(forResource: "orca_params_female", ofType: "pv")
-            if modelPathArg == nil {
-                throw OrcaIOError("Unable to find the default model path")
-            }
-        }
-
-        if !FileManager().fileExists(atPath: modelPathArg!) {
-            modelPathArg = try getResourcePath(modelPathArg!)
+        if !FileManager().fileExists(atPath: modelPathArg) {
+            modelPathArg = try getResourcePath(modelPathArg)
         }
 
         pv_set_sdk(Orca.sdk)

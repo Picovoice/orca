@@ -44,7 +44,7 @@ class ViewModel: ObservableObject {
     public func initialize() {
         state = UIState.INIT
         do {
-            try orca = Orca(accessKey: ACCESS_KEY)
+            try orca = Orca(accessKey: ACCESS_KEY, modelPath: "orca_params_female.pv")
             state = UIState.READY
 
             let audioDir = try FileManager.default.url(

@@ -12,6 +12,7 @@
 		02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02A1194C268D39AB00A2AC99 /* Assets.xcassets */; };
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
+		1E001B6A2B7D451200D8E72D /* orca_params_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_female.pv */; };
 		4A00B7EF2D4C1FA9D1C474E1 /* libPods-OrcaDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C8FD0A21A7AA22B5EB1EB2D /* libPods-OrcaDemo.a */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,7 @@
 		02A11951268D39AB00A2AC99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		1E001B692B7D451200D8E72D /* orca_params_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_female.pv; path = ../../../../lib/common/orca_params_female.pv; sourceTree = "<group>"; };
 		25220F02E797CC78BF7E6619 /* libPods-OrcaDemoUITests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaDemoUITests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		544345CBBDA09211F4620F3E /* Pods-OrcaDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.release.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.release.xcconfig"; sourceTree = "<group>"; };
 		72F8162D9843C0A1C546BE64 /* Pods-OrcaDemoUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemoUITests.debug.xcconfig"; path = "Target Support Files/Pods-OrcaDemoUITests/Pods-OrcaDemoUITests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 		02A11947268D39A700A2AC99 /* OrcaDemo */ = {
 			isa = PBXGroup;
 			children = (
+				1E001B692B7D451200D8E72D /* orca_params_female.pv */,
 				02A11948268D39A700A2AC99 /* OrcaDemoApp.swift */,
 				02A1194A268D39A700A2AC99 /* ContentView.swift */,
 				02A1194C268D39AB00A2AC99 /* Assets.xcassets */,
@@ -154,6 +157,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1E001B6A2B7D451200D8E72D /* orca_params_female.pv in Resources */,
 				02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

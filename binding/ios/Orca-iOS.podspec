@@ -22,11 +22,6 @@ Pod::Spec.new do |s|
     s.ios.deployment_target = '13.0'
     s.swift_version = '5.0'
     s.vendored_frameworks = 'lib/ios/PvOrca.xcframework'
-    s.resource_bundles = {
-      'OrcaResources' => [
-        'lib/common/orca_params_female.pv'
-      ]
-    }
     s.source_files = 'binding/ios/*.{swift}'
     s.exclude_files = 'binding/ios/OrcaAppTest/**'
   end
