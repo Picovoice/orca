@@ -85,7 +85,7 @@ Orca can synthesize speech with various voices, each of which is characterized b
 in [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common).
 To create an instance of the engine with a specific voice, use:
 
-```df
+```swift
 import Orca
 
 do {
