@@ -109,7 +109,6 @@
 				02A11942268D39A700A2AC99 /* Frameworks */,
 				02A11943268D39A700A2AC99 /* Resources */,
 				B387D574F16D312B6FFB5B42 /* [CP] Embed Pods Frameworks */,
-				E106B252FBB9CC820D6B089E /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -202,23 +201,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E106B252FBB9CC820D6B089E /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
