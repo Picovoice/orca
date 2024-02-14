@@ -19,8 +19,12 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.microsoft.appcenter.espresso.Factory;
+import com.microsoft.appcenter.espresso.ReportHelper;
 
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +37,9 @@ import java.io.OutputStream;
 
 
 public class BaseTest {
+
+    @Rule
+    public ReportHelper reportHelper = Factory.getReportHelper();
 
     Context testContext;
     Context appContext;
@@ -61,6 +68,11 @@ public class BaseTest {
         reader.close();
 
         accessKey = appContext.getString(R.string.pvTestingAccessKey);
+    }
+
+    @After
+    public void TearDown() {
+        reportHelper.label("Stopping App");
     }
 
     public static String[] getModelFiles() {
