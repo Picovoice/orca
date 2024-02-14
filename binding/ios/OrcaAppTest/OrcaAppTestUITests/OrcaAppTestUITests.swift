@@ -96,9 +96,14 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testMessageStack() throws {
+        let modelPath: String = bundle.path(
+                forResource: "orca_params_female",
+                ofType: "pv",
+                inDirectory: "test_resources/model_files")!
+
         var first_error: String = ""
         do {
-            let orca: Orca = try Orca(accessKey: "invalid")
+            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath)
             XCTAssertNil(orca)
         } catch {
             first_error = "\(error.localizedDescription)"
@@ -106,7 +111,7 @@ class OrcaAppTestUITests: BaseTest {
         }
 
         do {
-            let orca: Orca = try Orca(accessKey: "invalid")
+            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath)
             XCTAssertNil(orca)
         } catch {
             XCTAssert("\(error.localizedDescription)".count == first_error.count)
@@ -114,7 +119,12 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testSynthesizeMessageStack() throws {
-        let orca: Orca = try Orca(accessKey: accessKey)
+        let modelPath: String = bundle.path(
+                forResource: "orca_params_female",
+                ofType: "pv",
+                inDirectory: "test_resources/model_files")!
+
+        let orca: Orca = try Orca(accessKey: accessKey, modelPath: modelPath)
         orca.delete()
 
         do {
