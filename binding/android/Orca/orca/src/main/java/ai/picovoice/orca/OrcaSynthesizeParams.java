@@ -13,7 +13,7 @@
 package ai.picovoice.orca;
 
 /**
- *
+ * A class that exposes several properties that can control the audio synthesized by Orca.
  */
 public class OrcaSynthesizeParams {
 
@@ -27,7 +27,7 @@ public class OrcaSynthesizeParams {
     }
 
     /**
-     * Getter for the pace of the synthesized speech. Valid values are within [0.7, 1.3].
+     * Getter for the speech rate (i.e. the pace of the synthesized speech).
      *
      * @return Speech Rate.
      */
