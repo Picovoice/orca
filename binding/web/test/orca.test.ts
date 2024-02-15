@@ -169,8 +169,6 @@ const runProcTest = async (
     if (!isTestWER && !expectFailure) {
       expect(speech.length).gt(0);
     }
-    ;
-
   } catch (e) {
     if (expectFailure) {
       isFailed = true;
