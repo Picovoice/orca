@@ -49,7 +49,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setuptools.setup(
     name="pvorca",
-    version="0.1.3",
+    version="0.1.4",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Orca Text-to-Speech Engine.",
