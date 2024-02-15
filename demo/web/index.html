@@ -43,12 +43,14 @@
       const speechRateSliderEl = document.getElementById('speech-rate');
       const synthesizeBtnEl = document.getElementById('synthesize-btn');
       const controlBtnEl = document.getElementById('control-btn');
+      const downloadBtnEl = document.getElementById('download-btn');
       const speechRateDisplayEl = document.getElementById('speech-rate-display');
 
       function onSynthesizeParamChange() {
         if (orca !== null && isPlaying === false) {
           synthesizeBtnEl.disabled = false;
           controlBtnEl.disabled = true;
+          downloadBtnEl.disabled = true;
           controlBtnEl.innerText = 'Play';
         }
       }
@@ -115,6 +117,7 @@
       document.getElementById('text-to-synthesize').disabled = false;
       document.getElementById('speech-rate').disabled = false;
       document.getElementById('control-btn').disabled = false;
+      document.getElementById('download-btn').disabled = false;
     }
 
     async function startOrca(accessKey) {
@@ -145,12 +148,22 @@
         document.getElementById('speech-rate').disabled = true;
         document.getElementById('synthesize-btn').disabled = true;
         document.getElementById('control-btn').disabled = true;
+        document.getElementById('download-btn').disabled = true;
         const text = document.getElementById('text-to-synthesize').value;
         const speechRate = document.getElementById('speech-rate').value;
         await orca.synthesize(text, speechRate);
       } catch (err) {
         writeMessage(err);
       }
+    }
+
+    function downloadDumpAudio() {
+      let blob = new Blob([pcm]);
+      let a = document.createElement('a');
+      a.download = 'orca_speech_audio.pcm';
+      a.href = window.URL.createObjectURL(blob);
+      a.click();
+      document.removeChild(a);
     }
   </script>
 </head>
@@ -200,6 +213,7 @@ After entering the AccessKey, click the "Start Orca" button.
   Synthesize
 </button>
 <button id="control-btn" disabled>Play</button>
+<button id="download-btn" disabled onclick="downloadDumpAudio()">Download Audio</button>
 <br />
 <br />
 <div id="status" style="white-space: pre"></div>
