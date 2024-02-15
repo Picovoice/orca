@@ -3,7 +3,7 @@ import { defineConfig } from 'cypress';
 export default defineConfig({
   env: {
     'NUM_TEST_ITERATIONS': 20,
-    'INIT_PERFORMANCE_THRESHOLD_SEC': 3.5,
+    'INIT_PERFORMANCE_THRESHOLD_SEC': 3,
     'PROC_PERFORMANCE_THRESHOLD_SEC': 5,
   },
   e2e: {

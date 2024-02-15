@@ -67,10 +67,6 @@ async function testPerformance(
 describe('Orca binding performance test', () => {
   Cypress.config('defaultCommandTimeout', 120000);
 
-  it(`should be lower than performance threshold`, async () => {
-    await testPerformance(Orca, `/test/orca_params_male.pv`, testData.test_sentences.text);
-  });
-
   for (const instance of [Orca, OrcaWorker]) {
     const instanceString = (instance === OrcaWorker) ? 'worker' : 'main';
 
