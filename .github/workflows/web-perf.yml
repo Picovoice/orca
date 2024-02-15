@@ -28,9 +28,8 @@ jobs:
         node-version: [ lts/* ]
         include:
           - node-version: lts/*
-            num_test_iterations: 5
-            init_performance_threshold_sec: 5
-            proc_performance_threshold_sec: 15
+            num_test_iterations: 10
+            proc_performance_threshold_sec: 10
 
     steps:
       - uses: actions/checkout@v3
@@ -56,4 +55,4 @@ jobs:
         run: yarn setup-test
 
       - name: Test
-        run: yarn test-perf --env ACCESS_KEY=${{secrets.PV_VALID_ACCESS_KEY}},NUM_TEST_ITERATIONS=${{matrix.num_test_iterations}},INIT_PERFORMANCE_THRESHOLD_SEC=${{matrix.init_performance_threshold_sec}},PROC_PERFORMANCE_THRESHOLD_SEC=${{matrix.proc_performance_threshold_sec}}
+        run: yarn test-perf --env ACCESS_KEY=${{secrets.PV_VALID_ACCESS_KEY}},NUM_TEST_ITERATIONS=${{matrix.num_test_iterations}},PROC_PERFORMANCE_THRESHOLD_SEC=${{matrix.proc_performance_threshold_sec}}
