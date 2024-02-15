@@ -38,7 +38,6 @@ type pv_orca_delete_type = (object: number) => Promise<void>;
 type pv_orca_valid_characters_type = (object: number, numCharacters: number, validCharacters: number) => Promise<number>;
 type pv_orca_valid_characters_delete_type = (validCharacters: number) => Promise<void>;
 type pv_orca_sample_rate_type = (object: number, sampleRate: number) => Promise<number>;
-type pv_orca_max_character_limit_type = () => Promise<number>;
 type pv_orca_synthesize_params_init_type = (object: number) => Promise<number>;
 type pv_orca_synthesize_params_delete_type = (object: number) => Promise<void>;
 type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => Promise<number>;
@@ -83,6 +82,7 @@ type OrcaWasmOutput = {
 };
 
 const PV_STATUS_SUCCESS = 10000;
+const WEB_MAX_CHAR_LIMIT = 200;
 
 export class Orca {
   private readonly _pvOrcaDelete: pv_orca_delete_type;
@@ -447,7 +447,7 @@ export class Orca {
 
   private static async initWasm(accessKey: string, wasmBase64: string, modelPath: string): Promise<any> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
-    const memory = new WebAssembly.Memory({ initial: 60000 });
+    const memory = new WebAssembly.Memory({ initial: 7500 });
 
     const memoryBufferUint8 = new Uint8Array(memory.buffer);
 
@@ -462,7 +462,6 @@ export class Orca {
     const pv_orca_valid_characters = exports.pv_orca_valid_characters as pv_orca_valid_characters_type;
     const pv_orca_valid_characters_delete = exports.pv_orca_valid_characters_delete as pv_orca_valid_characters_delete_type;
     const pv_orca_sample_rate = exports.pv_orca_sample_rate as pv_orca_sample_rate_type;
-    const pv_orca_max_character_limit = exports.pv_orca_max_character_limit as pv_orca_max_character_limit_type;
     const pv_orca_synthesize_params_init = exports.pv_orca_synthesize_params_init as pv_orca_synthesize_params_init_type;
     const pv_orca_synthesize_params_delete = exports.pv_orca_synthesize_params_delete as pv_orca_synthesize_params_delete_type;
     const pv_orca_synthesize_params_set_speech_rate = exports.pv_orca_synthesize_params_set_speech_rate as pv_orca_synthesize_params_set_speech_rate_type;
@@ -634,8 +633,6 @@ export class Orca {
     await pv_free(validCharactersAddressAddressAddress);
     await pv_orca_valid_characters_delete(validCharactersAddressAddress);
 
-    const maxCharacterLimit = await pv_orca_max_character_limit();
-
     const versionAddress = await pv_orca_version();
     const version = arrayBufferToStringAtIndex(
       memoryBufferUint8,
@@ -650,7 +647,7 @@ export class Orca {
       objectAddress: objectAddress,
       version: version,
       sampleRate: sampleRate,
-      maxCharacterLimit: maxCharacterLimit,
+      maxCharacterLimit: WEB_MAX_CHAR_LIMIT,
       validCharacters: validCharacters,
       messageStackAddressAddressAddress: messageStackAddressAddressAddress,
       messageStackDepthAddress: messageStackDepthAddress,

@@ -12,9 +12,18 @@ import testData from '../cypress/fixtures/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
-const EXPECTED_VALID_CHARACTERS = ['.', ':', ',', '"', '?', '!'];
-const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
+const EXPECTED_MAX_CHARACTER_LIMIT = 200;
 const EXPECTED_SAMPLE_RATE = 22050;
+const EXPECTED_VALID_CHARACTERS = [
+  '.', ':', ',', '"', '?', '!', 'a', 'b',
+  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+  's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+  'Y', 'Z', '\'', '{', '}', '|', ' ', '-',
+];
 
 const levenshteinDistance = (words1: string[], words2: string[]) => {
   const res = Array.from(Array(words1.length + 1), () => new Array(words2.length + 1));
@@ -58,10 +67,11 @@ const runInitTest = async (
     expectFailure = false,
   } = params;
 
+  let orca = null;
   let isFailed = false;
 
   try {
-    const orca = await instance.create(accessKey, () => {
+    orca = await instance.create(accessKey, () => {
     }, model);
 
     expect(typeof orca.version).to.eq('string');
@@ -72,22 +82,26 @@ const runInitTest = async (
     orca.validCharacters.forEach((symbol: string, i: number) => {
       expect(symbol).to.eq(EXPECTED_VALID_CHARACTERS[i]);
     });
-
-    if (orca instanceof OrcaWorker) {
-      orca.terminate();
-    } else {
-      await orca.release();
-    }
   } catch (e) {
     if (expectFailure) {
       isFailed = true;
     } else {
       expect(e).to.be.undefined;
     }
+  } finally {
+    if (orca !== null) {
+      if (orca instanceof OrcaWorker) {
+        orca.terminate();
+      } else {
+        await orca.release();
+      }
+    }
   }
 
   if (expectFailure) {
     expect(isFailed).to.be.true;
+  } else {
+    expect(isFailed).to.be.false;
   }
 };
 
@@ -98,60 +112,83 @@ const runProcTest = async (
   params: {
     accessKey?: string;
     model?: PvModel;
-    isTestWER?: boolean
+    isTestWER?: boolean;
+    expectFailure?: boolean;
   } = {},
 ) => {
   const {
     accessKey = ACCESS_KEY,
     model = { publicPath: '/test/orca_params_male.pv', forceWrite: true },
     isTestWER = true,
+    expectFailure = false,
   } = params;
-  try {
-    const checkWER = async (pcm: Int16Array) => {
-      const leopard = await LeopardWorker.create(
-        accessKey,
-        { publicPath: '/test/leopard_params.pv', forceWrite: true },
-      );
 
-      const { transcript } = await leopard.process(pcm);
-      const wer = wordErrorRate(transcript, testData.test_sentences.text_no_punctuation);
-      expect(wer).lt(testData.wer_threshold);
-      leopard.terminate();
-    };
+  let orca = null;
+  let isFailed = false;
 
-    let orca: any = null;
-    const setOrcaSpeech = () => new Promise<Int16Array | null>(async (resolve, reject) => {
-      orca = await instance.create(
-        accessKey,
-        orcaSpeech => {
-          resolve(orcaSpeech.speech);
+  const checkWER = async (pcm: Int16Array) => {
+    const leopard = await LeopardWorker.create(
+      accessKey,
+      { publicPath: '/test/leopard_params.pv', forceWrite: true },
+    );
+
+    const { transcript } = await leopard.process(pcm);
+    const wer = wordErrorRate(transcript, testData.test_sentences.text_no_punctuation);
+    expect(wer).lt(testData.wer_threshold);
+    leopard.terminate();
+  };
+
+  const setOrcaSpeech = () => new Promise<Int16Array | null>(async (resolve, reject) => {
+    orca = await instance.create(
+      accessKey,
+      orcaSpeech => {
+        resolve(orcaSpeech.speech);
+      },
+      model,
+      {
+        synthesizeErrorCallback: () => {
+          isFailed = true;
+          reject(null);
         },
-        model,
-        {
-          synthesizeErrorCallback: (error: OrcaError) => {
-            expect(error.message).to.be.undefined;
-            reject(null);
-          },
-        },
-      );
+      },
+    );
 
+    try {
       await orca.synthesize(text, speechRate);
-    });
+    } catch (e) {
+      isFailed = true;
+    }
+  });
 
+  try {
     const speech = await setOrcaSpeech();
     if (isTestWER) {
       await checkWER(speech);
-    } else {
-      expect(speech.length).gt(0);
     }
 
-    if (orca instanceof OrcaWorker) {
-      orca.terminate();
-    } else if (orca instanceof Orca) {
-      await orca.release();
+    if (!isTestWER && !expectFailure) {
+      expect(speech.length).gt(0);
     }
+    ;
+
   } catch (e) {
-    expect(e).to.be.undefined;
+    if (expectFailure) {
+      isFailed = true;
+    }
+  } finally {
+    if (orca !== null) {
+      if (orca instanceof OrcaWorker) {
+        orca.terminate();
+      } else if (orca instanceof Orca) {
+        await orca.release();
+      }
+    }
+  }
+
+  if (expectFailure) {
+    expect(isFailed).to.be.true;
+  } else {
+    expect(isFailed).to.be.false;
   }
 };
 
@@ -197,10 +234,8 @@ describe('Orca Binding', function() {
     }
   });
 
-  for (const instance of [OrcaWorker]) {
+  for (const instance of [Orca, OrcaWorker]) {
     const instanceString = instance === OrcaWorker ? 'worker' : 'main';
-    // for (const instance of [Orca, OrcaWorker]) {
-    //   const instanceString = instance === OrcaWorker ? 'worker' : 'main';
 
     it(`should be able to handle invalid public path (${instanceString})`, () => {
       cy.wrap(null).then(async () => {
@@ -229,7 +264,7 @@ describe('Orca Binding', function() {
       });
     });
 
-    for (const modelFileSuffix of ['male']) {
+    for (const modelFileSuffix of ['male', 'female']) {
       const publicPath = modelFileSuffix === 'male' ? `/test/orca_params_male.pv` : `/test/orca_params_female.pv`;
       const base64Path = modelFileSuffix === 'male' ? orcaParamsMale : orcaParamsFemale;
 
@@ -415,6 +450,28 @@ describe('Orca Binding', function() {
           expect(e).to.be.undefined;
         }
       });
+
+      for (const failureCase of testData.test_sentences.text_invalid) {
+        it(`should handle invalid text (${failureCase}) [${modelFileSuffix}] (${instanceString})`, async () => {
+          try {
+            await runProcTest(
+              instance,
+              failureCase,
+              1.0,
+              {
+                model: {
+                  publicPath,
+                  forceWrite: true,
+                },
+                isTestWER: false,
+                expectFailure: true,
+              },
+            );
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        });
+      }
     }
   }
 });

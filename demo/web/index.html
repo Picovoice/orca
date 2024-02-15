@@ -53,9 +53,8 @@
         }
       }
 
-      function validateInput(input, orcaValidChars) {
+      function validateInput(input, validChars) {
         let nonAllowedCharacters = [];
-        const validChars = [...orcaValidChars, ' '];
 
         for (let i = 0; i < input.length; i++) {
           if (!validChars.includes(input[i]) && !nonAllowedCharacters.includes(input[i])) {
@@ -64,7 +63,7 @@
         }
 
         if (nonAllowedCharacters.length > 0) {
-          textToSynthesizeErrorEl.innerText = `Error: Character${nonAllowedCharacters.length > 1 ? 's' : ''} ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
+          textToSynthesizeErrorEl.innerText = `Error: Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
           synthesizeBtnEl.disabled = true;
         } else {
           textToSynthesizeErrorEl.innerHTML = '&nbsp;';
@@ -182,7 +181,7 @@ After entering the AccessKey, click the "Start Orca" button.
 <br />
 <textarea id="text-to-synthesize" rows="4" cols="50" disabled maxlength="200">
 </textarea>
-<p id="text-to-synthesize-error">&nbsp;</p>
+<div id="text-to-synthesize-error">&nbsp;</div>
 <label>
   Speech Rate: <span id="speech-rate-display">1.0</span>
   <input
