@@ -127,22 +127,6 @@ public class Orca {
                 "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
         }
 
-        let characters = try self.validCharacters
-        let regex = try NSRegularExpression(
-            pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
-            options: .caseInsensitive)
-        let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        let matches = regex.matches(in: text, range: range)
-
-        let unexpectedCharacters = matches.map {
-            String(text[Range($0.range, in: text)!])
-        }
-
-        if unexpectedCharacters.count > 0 {
-            throw OrcaInvalidArgumentError(
-                "Text contains the following invalid characters: `\(unexpectedCharacters.joined(separator: ", "))`")
-        }
-
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate)
 
         var cNumSamples: Int32 = 0
