@@ -35,7 +35,7 @@ class OrcaNative {
 
     static native void synthesizeToFile(
             long object,
-            String outputPath,
             String text,
+            String outputPath,
             float speechRate) throws OrcaException;
 }

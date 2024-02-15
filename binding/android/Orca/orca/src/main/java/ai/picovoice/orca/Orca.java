@@ -135,8 +135,8 @@ public class Orca {
 
         OrcaNative.synthesizeToFile(
                 handle,
-                outputPath,
                 text,
+                outputPath,
                 params.getSpeechRate());
     }
 
