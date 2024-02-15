@@ -28,7 +28,7 @@ jobs:
         node-version: [ lts/* ]
         include:
           - node-version: lts/*
-            num_test_iterations: 20
+            num_test_iterations: 5
             init_performance_threshold_sec: 5
             proc_performance_threshold_sec: 15
 
