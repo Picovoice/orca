@@ -108,4 +108,4 @@ OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder()
 
 ## Demos
 
-To see Orca used in an app, refer to our [Android demo app](../../demo/android).
+To see Orca used in an app, refer to our [Android demo app](../../demo/android/OrcaDemo).

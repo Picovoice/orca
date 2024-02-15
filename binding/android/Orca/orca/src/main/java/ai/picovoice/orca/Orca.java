@@ -219,9 +219,9 @@ public class Orca {
         }
 
         /**
-         * Validates properties and creates an instance of the Orca Speech-to-Text engine.
+         * Validates properties and creates an instance of the Orca Text-to-Speech engine.
          *
-         * @return An instance Orca Speech-to-Text engine
+         * @return An instance Orca Text-to-Speech engine
          * @throws OrcaException if there is an error while initializing Orca.
          */
         public Orca build(Context context) throws OrcaException {

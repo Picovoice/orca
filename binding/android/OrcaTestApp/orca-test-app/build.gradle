@@ -10,9 +10,6 @@ if (rootProject.file("local.properties").exists()) {
     if (project.hasProperty("numTestIterations")) {
         properties.put("numTestIterations", project.getProperty("numTestIterations"))
     }
-    if (project.hasProperty("enrollPerformanceThresholdSec")) {
-        properties.put("enrollPerformanceThresholdSec", project.getProperty("enrollPerformanceThresholdSec"))
-    }
     if (project.hasProperty("procPerformanceThresholdSec")) {
         properties.put("procPerformanceThresholdSec", project.getProperty("procPerformanceThresholdSec"))
     }
@@ -45,7 +42,6 @@ android {
 
         resValue 'string', 'pvTestingAccessKey', properties.getProperty("pvTestingAccessKey", "")
         resValue 'string', 'numTestIterations', properties.getProperty("numTestIterations", "")
-        resValue 'string', 'enrollPerformanceThresholdSec', properties.getProperty("enrollPerformanceThresholdSec", "")
         resValue 'string', 'procPerformanceThresholdSec', properties.getProperty("procPerformanceThresholdSec", "")
     }
 
