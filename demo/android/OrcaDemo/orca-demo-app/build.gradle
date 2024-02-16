@@ -1,0 +1,46 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdk defaultTargetSdkVersion
+
+    defaultConfig {
+        applicationId "ai.picovoice.orcademo"
+        minSdkVersion 21
+        targetSdkVersion defaultTargetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
+    }
+    namespace 'ai.picovoice.orcademo'
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'ai.picovoice:orca-android:0.1.0'
+}
+
+tasks.register('copyParams', Copy) {
+    from("${rootDir}/../../../lib/common")
+    include('orca_params_female.pv')
+    into("${rootDir}/orca-demo-app/src/main/assets")
+}
+
+preBuild.dependsOn(copyParams)

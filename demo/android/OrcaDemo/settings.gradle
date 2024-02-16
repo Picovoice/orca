@@ -1,0 +1,2 @@
+rootProject.name = "OrcaDemo"
+include ':orca-demo-app'

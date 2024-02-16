@@ -46,7 +46,6 @@
 
     // android
     "**/AndroidManifest.xml",
-    "**/activity_main.xml",
-    "**/orca_activity_demo.xml"
+    "**/orca_demo.xml"
   ]
 }

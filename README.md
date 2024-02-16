@@ -33,12 +33,16 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
         - [Audio output](#audio-output)
     - [Demos](#demos)
         - [Python](#python-demos)
+        - [iOS](#ios-demo)
         - [C](#c-demos)
         - [Web](#web-demos)
+        - [Android](#android-demo)
     - [SDKs](#sdks)
         - [Python](#python)
+        - [iOS](#ios)
         - [C](#c)
         - [Web](#web)
+        - [Android](#android)
     - [AccessKey](#accesskey)
     - [Releases](#releases)
     - [FAQ](#faq)
@@ -71,7 +75,7 @@ in  [lib/common](./lib/common).
 To synthesize speech with a specific voice, provide the associated model file as an argument to the orca init function.
 The following are the voices currently available:
 
-|                        Model name                         | Sample rate (Hz) | 
+|                        Model name                         | Sample rate (Hz) |
 |:---------------------------------------------------------:|:----------------:|
 | [orca_params_female.pv](lib/common/orca_params_female.pv) |      22050       |
 |   [orca_params_male.pv](lib/common/orca_params_male.pv)   |      22050       |
@@ -117,6 +121,21 @@ orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_P
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
+### iOS Demo
+
+Run the following from [demo/ios](demo/ios) to install the Orca-iOS CocoaPod:
+
+```console
+pod install
+```
+
+Replace `let ACCESS_KEY = "..."` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with yours
+obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+Then, using Xcode, open the generated OrcaDemo.xcworkspace and run the application.
+
+For more information about iOS demos go to [demo/ios](demo/ios).
+
 ### C Demos
 
 Build the demo:
@@ -149,6 +168,12 @@ npm run start
 
 Open `http://localhost:5000` in your browser to try the demo.
 
+### Android Demo
+
+Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project and then run the application.
+
+Replace `"${YOUR_ACCESS_KEY_HERE}"` in the file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) with your `AccessKey`.
+
 ## SDKs
 
 ### Python
@@ -178,6 +203,31 @@ orca.delete()
 ```
 
 For more details see [Python SDK](./binding/python/README.md).
+
+### iOS
+
+Create an instance of the engine and synthesize:
+
+```swift
+import Orca
+
+let modelPath = Bundle(for: type(of: self)).path(
+        forResource: "${MODEL_FILE}", // Name of the model file name for Orca
+        ofType: "pv")!
+
+do {
+  let orca = try Orca(accessKey: "${ACCESS_KEY}", modelPath: modelPath)
+} catch {}
+
+do {
+    let pcm = try orca.synthesize(text: "${TEXT}")
+} catch {}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}` with the model file name for Orca and `${TEXT}` with
+the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+When done be sure to explicitly release the resources using `orca.delete()`.
 
 ### C
 
@@ -258,6 +308,46 @@ const speechPcm = await orca.synthesize("${TEXT}")
 
 Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/). Finally, when done
 release the resources using `orca.release()`.
+
+### Android
+
+To include the Orca package in your Android project, ensure you have included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'ai.picovoice:orca-android:${LATEST_VERSION}'
+}
+```
+
+Create an instance of the engine and generate speech:
+
+```java
+import ai.picovoice.orca.*;
+
+final String accessKey = "${ACCESS_KEY}"; // AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
+final String modelPath = "${MODEL_FILE_PATH}";
+try {
+    Orca orca = new Orca.Builder()
+        .setAccessKey(accessKey)
+        .setModelPath(modelPath)
+        .build(appContext);
+
+    short[] pcm = orca.synthesize(
+        "${TEXT}",
+        new OrcaSynthesizeParams.Builder().build());
+
+} catch (OrcaException ex) { }
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with an Orca [voice model file](./lib/common) and `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+Finally, when done make sure to explicitly release the resources:
+
+```java
+orca.delete()
+```
+
+For more details, see the [Android SDK](./binding/android/README.md).
 
 ## Releases
 

@@ -1,0 +1,91 @@
+name: iOS Performance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lib/ios/**'
+      - 'lib/common/**'
+      - '.github/workflows/ios-perf.yml'
+  pull_request:
+    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    paths:
+      - 'lib/ios/**'
+      - 'lib/common/**'
+      - '.github/workflows/ios-perf.yml'
+
+defaults:
+  run:
+    working-directory: binding/ios/OrcaAppTest
+
+jobs:
+  build:
+    name: Run iOS Tests on AppCenter
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        device: [ios-perf]
+        include:
+        - device: ios-perf
+          performanceThresholdSec: 0.5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js LTS
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+
+      - name: Install Cocoapods
+        run: gem install cocoapods
+
+      - name: Install AppCenter CLI
+        run: npm install -g appcenter-cli
+
+      - name: Make build dir
+        run: mkdir ddp
+
+      - name: Install resource script dependency
+        run: |
+          brew update
+          brew install convmv
+
+      - name: Copy test_resources
+        run: ./copy_test_resources.sh
+
+      - name: Run Cocoapods
+        run: pod install
+
+      - name: Inject AppID
+        run: sed -i '.bak' 's:{TESTING_ACCESS_KEY_HERE}:${{secrets.PV_VALID_ACCESS_KEY}}:'
+          OrcaAppTestUITests/BaseTest.swift
+
+      - name: Inject Number of Iterations
+        run: sed -i '.bak' 's:{NUM_TEST_ITERATIONS}:30:'
+          PerformanceTest/PerformanceTest.swift
+
+      - name: Inject Performance Threshold
+        run: sed -i '.bak' 's:{PERFORMANCE_THRESHOLD_SEC}:${{ matrix.performanceThresholdSec }}:'
+          PerformanceTest/PerformanceTest.swift
+
+      - name: XCode Build
+        run: xcrun xcodebuild build-for-testing
+          -configuration Debug
+          -workspace OrcaAppTest.xcworkspace
+          -sdk iphoneos
+          -scheme PerformanceTest
+          -derivedDataPath ddp
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Run Tests on AppCenter
+        run: appcenter test run xcuitest
+          --token ${{secrets.APPCENTERAPITOKEN}}
+          --app "Picovoice/Orca-iOS"
+          --devices "Picovoice/${{ matrix.device }}"
+          --test-series "orca-ios"
+          --locale "en_US"
+          --build-dir ddp/Build/Products/Debug-iphoneos
