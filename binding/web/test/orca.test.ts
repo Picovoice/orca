@@ -10,7 +10,7 @@ import { PvModel } from '@picovoice/web-utils';
 
 import testData from '../cypress/fixtures/.test/test_data.json';
 
-const ACCESS_KEY = 'mW3jTf9S6NUBzDHDpN/lNLNE9k8wk2ERjIKPGeX3tM62LzxFbdFtIQ==';//Cypress.env('ACCESS_KEY');
+const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 200;
 const EXPECTED_SAMPLE_RATE = 22050;
