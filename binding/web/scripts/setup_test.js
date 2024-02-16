@@ -29,7 +29,8 @@ const testingModelFilesSourceDirectory = join(
   '..',
   '..',
   'resources',
-  '.test-model-files',
+  '.test',
+  'models',
 );
 
 try {
@@ -44,9 +45,7 @@ try {
   });
 
   fs.mkdirSync(join(fixturesDirectory, '.test'), { recursive: true });
-  fs.readdirSync(join(sourceDirectory, '.test')).forEach(file => {
-    fs.copyFileSync(join(sourceDirectory, '.test', file), join(fixturesDirectory, '.test', file));
-  });
+  fs.copyFileSync(join(sourceDirectory, '.test', 'test_data.json'), join(fixturesDirectory, '.test', 'test_data.json'));
 } catch (error) {
   console.error(error);
 }
