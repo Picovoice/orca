@@ -15,11 +15,11 @@ import { Mutex } from 'async-mutex';
 
 import {
   aligned_alloc_type,
-  pv_free_type,
-  buildWasm,
   arrayBufferToStringAtIndex,
+  buildWasm,
   isAccessKeyValid,
   loadModel,
+  pv_free_type,
   PvError,
 } from '@picovoice/web-utils';
 
