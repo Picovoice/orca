@@ -13,30 +13,13 @@ async function testPerformance(
   const procPerfResults: number[] = [];
 
   for (let j = 0; j < NUM_TEST_ITERATIONS; j++) {
-    let isSynthesized = false;
-
     const orca = await instance.create(
       ACCESS_KEY,
-      orcaTranscript => {
-        if (orcaTranscript.speech) {
-          isSynthesized = true;
-        }
-      },
       { publicPath: publicPath, forceWrite: true },
     );
 
-    const waitUntil = (): Promise<void> =>
-      new Promise(resolve => {
-        setInterval(() => {
-          if (isSynthesized) {
-            resolve();
-          }
-        }, 100);
-      });
-
     let start = Date.now();
     await orca.synthesize(text);
-    await waitUntil();
     let end = Date.now();
     procPerfResults.push((end - start) / 1000);
 
