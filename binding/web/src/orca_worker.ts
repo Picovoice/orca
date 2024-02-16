@@ -188,7 +188,7 @@ export class OrcaWorker {
    * Synthesizes speech in a worker.
    * The speech result will be supplied with the callback provided when initializing the worker either
    * by 'fromBase64' or 'fromPublicDirectory'.
-   * Can also send a message directly using 'this.worker.postMessage({command: "syntheize", text: "..."})'.
+   * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
    *
    * @param text A string of text.
    * @param speechRate Optional rate of speech desired for the output audio.
