@@ -4,6 +4,8 @@ armv
 camelcase
 Compat
 constraintlayout
+Cocoapod
+Cocoapods
 copywasm
 downsample
 editdistance
@@ -22,6 +24,7 @@ Picovoice
 pluginutils
 pvbase
 pvleopard
+Podfile
 pvorca
 pvorcademo
 Readables
@@ -32,3 +35,8 @@ stdlib
 testapp
 vorbis
 wargv
+wargv
+Sevilla
+editdistance
+pvleopard
+xcworkspace

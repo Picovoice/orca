@@ -32,10 +32,12 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
         - [Audio output](#audio-output)
     - [Demos](#demos)
         - [Python](#python-demos)
+        - [iOS](#ios-demo)
         - [C](#c-demos)
         - [Android](#android-demo)
     - [SDKs](#sdks)
         - [Python](#python)
+        - [iOS](#ios)
         - [C](#c)
         - [Android](#android)
     - [AccessKey](#accesskey)
@@ -116,6 +118,21 @@ orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_P
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
+### iOS Demo
+
+Run the following from [demo/ios](demo/ios) to install the Orca-iOS CocoaPod:
+
+```console
+pod install
+```
+
+Replace `let ACCESS_KEY = "..."` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with yours
+obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+Then, using Xcode, open the generated OrcaDemo.xcworkspace and run the application.
+
+For more information about iOS demos go to [demo/ios](demo/ios).
+
 ### C Demos
 
 Build the demo:
@@ -165,6 +182,31 @@ orca.delete()
 ```
 
 For more details see [Python SDK](./binding/python/README.md).
+
+### iOS
+
+Create an instance of the engine and synthesize:
+
+```swift
+import Orca
+
+let modelPath = Bundle(for: type(of: self)).path(
+        forResource: "${MODEL_FILE}", // Name of the model file name for Orca
+        ofType: "pv")!
+
+do {
+  let orca = try Orca(accessKey: "${ACCESS_KEY}", modelPath: modelPath)
+} catch {}
+
+do {
+    let pcm = try orca.synthesize(text: "${TEXT}")
+} catch {}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}` with the model file name for Orca and `${TEXT}` with
+the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+When done be sure to explicitly release the resources using `orca.delete()`.
 
 ### C
 

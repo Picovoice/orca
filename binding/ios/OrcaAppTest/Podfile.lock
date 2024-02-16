@@ -1,0 +1,20 @@
+PODS:
+  - Leopard-iOS (2.0.1)
+  - Orca-iOS (0.1.0)
+
+DEPENDENCIES:
+  - Leopard-iOS (~> 2.0.1)
+  - Orca-iOS (~> 0.1.0)
+
+SPEC REPOS:
+  trunk:
+    - Leopard-iOS
+    - Orca-iOS
+
+SPEC CHECKSUMS:
+  Leopard-iOS: 8c94dcf886800b4ed361c1c6af763780ef16f722
+  Orca-iOS: 808b4c77678454905ea0a0c1408eff8f9255e3ac
+
+PODFILE CHECKSUM: 1ab9a668595c361f16dadb12876e074b4092d531
+
+COCOAPODS: 1.11.3
