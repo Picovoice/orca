@@ -1,0 +1,43 @@
+apply plugin: 'com.android.library'
+
+ext {
+    PUBLISH_GROUP_ID = 'ai.picovoice'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'orca-android'
+}
+
+android {
+    namespace "ai.picovoice.orca"
+
+    compileSdk defaultTargetSdkVersion
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion defaultTargetSdkVersion
+        versionCode 1
+        versionName "0.1"
+
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+if (file("${rootDir}/publish-mavencentral.gradle").exists()) {
+    apply from: "${rootDir}/publish-mavencentral.gradle"
+}
+
+dependencies {
+}
+
+tasks.register('copyLibs', Copy) {
+    from("${rootDir}/../../../lib/android")
+    into("${rootDir}/orca/src/main/jniLibs")
+}
+
+preBuild.dependsOn(copyLibs)
