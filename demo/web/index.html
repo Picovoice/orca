@@ -111,15 +111,6 @@
       });
     };
 
-    function orcaSpeechCallback(orcaSpeech) {
-      pcm = orcaSpeech.speech;
-      writeMessage('Synthesizing complete!');
-      document.getElementById('text-to-synthesize').disabled = false;
-      document.getElementById('speech-rate').disabled = false;
-      document.getElementById('control-btn').disabled = false;
-      document.getElementById('download-btn').disabled = false;
-    }
-
     async function startOrca(accessKey) {
       writeMessage('Orca is loading. Please wait...');
       try {
@@ -128,9 +119,7 @@
 
         orca = await OrcaWeb.OrcaWorker.create(
           accessKey,
-          orcaSpeechCallback,
           { base64: modelParams, forceWrite: true },
-          { synthesizeErrorCallback: (e) => writeMessage(e) },
         );
 
         document.getElementById('text-to-synthesize').disabled = false;
@@ -151,9 +140,15 @@
         document.getElementById('download-btn').disabled = true;
         const text = document.getElementById('text-to-synthesize').value;
         const speechRate = document.getElementById('speech-rate').value;
-        await orca.synthesize(text, speechRate);
+        pcm = await orca.synthesize(text, speechRate);
+        writeMessage('Synthesizing complete!');
+        document.getElementById('control-btn').disabled = false;
+        document.getElementById('download-btn').disabled = false;
       } catch (err) {
         writeMessage(err);
+      } finally {
+        document.getElementById('text-to-synthesize').disabled = false;
+        document.getElementById('speech-rate').disabled = false;
       }
     }
 

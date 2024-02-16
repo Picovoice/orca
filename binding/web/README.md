@@ -102,37 +102,14 @@ const orcaModel = {
 }
 ```
 
-### Init Options
-
-Set `synthesizeErrorCallback` to handle any errors that occur while synthesizing.
-
-```typescript
-// Optional
-const options = {
-  synthesizeErrorCallback: (error) => {
-  }
-}
-```
-
 ### Initialize Orca
-
-Create a `speechCallback` function to get the synthesized speech result
-from the engine:
-
-```typescript
-function speechCallback(orcaSpeech: OrcaSpeech) {
-  console.log(orcaSpeech.speech)
-}
-```
 
 Create an instance of `Orca` on the main thread:
 
 ```typescript
 const orca = await Orca.create(
   "${ACCESS_KEY}",
-  speechCallback,
-  orcaModel,
-  options // optional options
+  orcaModel
 );
 ```
 
@@ -141,9 +118,7 @@ Or create an instance of `Orca` in a worker thread:
 ```typescript
 const orca = await OrcaWorker.create(
   "${ACCESS_KEY}",
-  speechCallback,
-  orcaModel,
-  options // optional options
+  orcaModel
 );
 ```
 
@@ -158,11 +133,10 @@ is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for e
 
 ### Synthesize Speech
 
-The `synthesize` function will send the text to the engine.
-The speech audio is received from `speechCallback` as mentioned above.
+The `synthesize` function will send the text to the engine and return the speech audio as an `Int16Array`.
 
 ```typescript
-orca.synthesize("${TEXT}");
+const speechPcm = await orca.synthesize("${TEXT}");
 ```
 
 ### Speech Control
@@ -175,7 +149,7 @@ Orca allows for an additional argument to be provided to the `synthesize` method
 ```typescript
 const speechRate = 1.3;
 
-orca.synthesize(TEXT, speechRate);
+const speechPcm = await orca.synthesize("${TEXT}", speechRate);
 ```
 
 ### Orca Properties

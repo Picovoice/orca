@@ -245,20 +245,15 @@ npm install --save @picovoice/orca-web
 Create an instance of the engine using `OrcaWorker` and synthesize speech:
 
 ```typescript
-import { OrcaWorker, OrcaSpeech } from "@picovoice/orca-web";
+import { OrcaWorker } from "@picovoice/orca-web";
 import orcaParams from "${PATH_TO_BASE64_ORCA_PARAMS}";
-
-function orcaSpeechCallback(orcaSpeech: OrcaSpeech) {
-  const pcm = orcaSpeech.orcaSpeech;
-}
 
 const orca = await OrcaWorker.create(
   "${ACCESS_KEY}",
-  orcaSpeechCallback,
   { base64: orcaParams }
 );
 
-await orca.synthesize("${TEXT}")
+const speechPcm = await orca.synthesize("${TEXT}")
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/). Finally, when done

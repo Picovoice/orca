@@ -1,10 +1,8 @@
-import {Orca} from './orca';
-import {OrcaWorker} from './orca_worker';
+import { Orca } from './orca';
+import { OrcaWorker } from './orca_worker';
 
 import {
   OrcaModel,
-  OrcaOptions,
-  OrcaSpeech,
   OrcaWorkerInitRequest,
   OrcaWorkerSynthesizeRequest,
   OrcaWorkerReleaseRequest,
@@ -29,8 +27,6 @@ OrcaWorker.setWasmSimd(orcaWasmSimd);
 export {
   Orca,
   OrcaModel,
-  OrcaOptions,
-  OrcaSpeech,
   OrcaWorker,
   OrcaWorkerInitRequest,
   OrcaWorkerSynthesizeRequest,

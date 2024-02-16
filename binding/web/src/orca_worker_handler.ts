@@ -13,26 +13,10 @@
 /// <reference lib="webworker" />
 
 import { Orca } from './orca';
-import { OrcaSpeech, OrcaWorkerRequest, PvStatus } from './types';
+import { OrcaWorkerRequest, PvStatus } from './types';
 import { OrcaError } from './orca_errors';
 
 let orca: Orca | null = null;
-
-const speechCallback = (orcaSpeech: OrcaSpeech): void => {
-  self.postMessage({
-    command: 'ok',
-    orcaSpeech: orcaSpeech,
-  });
-};
-
-const synthesizeErrorCallback = (error: OrcaError): void => {
-  self.postMessage({
-    command: 'error',
-    status: error.status,
-    shortMessage: error.shortMessage,
-    messageStack: error.messageStack,
-  });
-};
 
 /**
  * Orca worker handler.
@@ -55,9 +39,7 @@ self.onmessage = async function(
         Orca.setWasmSimd(event.data.wasmSimd);
         orca = await Orca._init(
           event.data.accessKey,
-          speechCallback,
           event.data.modelPath,
-          { ...event.data.options, synthesizeErrorCallback },
         );
         self.postMessage({
           command: 'ok',
@@ -92,7 +74,27 @@ self.onmessage = async function(
         });
         return;
       }
-      await orca.synthesize(event.data.text, event.data.speechRate);
+      try {
+        self.postMessage({
+          command: 'ok',
+          result: await orca.synthesize(event.data.text, event.data.speechRate),
+        });
+      } catch (e: any) {
+        if (e instanceof OrcaError) {
+          self.postMessage({
+            command: 'error',
+            status: e.status,
+            shortMessage: e.shortMessage,
+            messageStack: e.messageStack,
+          });
+        } else {
+          self.postMessage({
+            command: 'error',
+            status: PvStatus.INVALID_STATE,
+            shortMessage: 'Orca synthesize error',
+          });
+        }
+      }
       break;
     case 'release':
       if (orca !== null) {

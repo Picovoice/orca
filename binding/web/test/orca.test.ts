@@ -10,7 +10,7 @@ import { PvModel } from '@picovoice/web-utils';
 
 import testData from '../cypress/fixtures/.test/test_data.json';
 
-const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+const ACCESS_KEY = 'mW3jTf9S6NUBzDHDpN/lNLNE9k8wk2ERjIKPGeX3tM62LzxFbdFtIQ==';//Cypress.env('ACCESS_KEY');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 200;
 const EXPECTED_SAMPLE_RATE = 22050;
@@ -51,8 +51,6 @@ const wordErrorRate = (reference: string, hypothesis: string, useCER = false): n
   return ed / reference.length;
 };
 
-const delay = (time: number) => new Promise(resolve => setTimeout(resolve, time));
-
 const runInitTest = async (
   instance: typeof Orca | typeof OrcaWorker,
   params: {
@@ -71,8 +69,7 @@ const runInitTest = async (
   let isFailed = false;
 
   try {
-    orca = await instance.create(accessKey, () => {
-    }, model);
+    orca = await instance.create(accessKey, model);
 
     expect(typeof orca.version).to.eq('string');
     expect(orca.version.length).to.be.greaterThan(0);
@@ -123,9 +120,6 @@ const runProcTest = async (
     expectFailure = false,
   } = params;
 
-  let orca = null;
-  let isFailed = false;
-
   const checkWER = async (pcm: Int16Array) => {
     const leopard = await LeopardWorker.create(
       accessKey,
@@ -138,41 +132,18 @@ const runProcTest = async (
     leopard.terminate();
   };
 
-  const setOrcaSpeech = () => new Promise<Int16Array | null>(async (resolve, reject) => {
-    orca = await instance.create(
-      accessKey,
-      orcaSpeech => {
-        resolve(orcaSpeech.speech);
-      },
-      model,
-      {
-        synthesizeErrorCallback: () => {
-          isFailed = true;
-          reject(null);
-        },
-      },
-    );
-
-    try {
-      await orca.synthesize(text, speechRate);
-    } catch (e) {
-      isFailed = true;
-    }
-  });
+  let isFailed = false;
+  const orca = await instance.create(accessKey, model);
 
   try {
-    const speech = await setOrcaSpeech();
+    const speech = await orca.synthesize(text, speechRate);
     if (isTestWER) {
       await checkWER(speech);
-    }
-
-    if (!isTestWER && !expectFailure) {
+    } else if (!expectFailure) {
       expect(speech.length).gt(0);
     }
   } catch (e) {
-    if (expectFailure) {
-      isFailed = true;
-    }
+    isFailed = true;
   } finally {
     if (orca !== null) {
       if (orca instanceof OrcaWorker) {
@@ -191,47 +162,6 @@ const runProcTest = async (
 };
 
 describe('Orca Binding', function() {
-  it(`should return process and flush error message stack`, async () => {
-    // @ts-ignore
-    let errors: [OrcaError] = [];
-
-    const runProcess = () => new Promise<void>(async resolve => {
-      const orca = await Orca.create(
-        ACCESS_KEY,
-        () => {
-        },
-        { publicPath: '/test/orca_params_male.pv', forceWrite: true },
-        {
-          synthesizeErrorCallback: (e: OrcaError) => {
-            errors.push(e);
-            resolve();
-          },
-        },
-      );
-
-      // @ts-ignore
-      const objectAddress = orca._objectAddress;
-
-      // @ts-ignore
-      orca._objectAddress = 0;
-      await orca.synthesize('test', 1.0);
-
-      await delay(1000);
-
-      // @ts-ignore
-      orca._objectAddress = objectAddress;
-      await orca.release();
-    });
-
-    await runProcess();
-    expect(errors.length).to.be.gte(0);
-
-    for (let i = 0; i < errors.length; i++) {
-      expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
-      expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
-    }
-  });
-
   for (const instance of [Orca, OrcaWorker]) {
     const instanceString = instance === OrcaWorker ? 'worker' : 'main';
 
@@ -266,11 +196,41 @@ describe('Orca Binding', function() {
       const publicPath = modelFileSuffix === 'male' ? `/test/orca_params_male.pv` : `/test/orca_params_female.pv`;
       const base64Path = modelFileSuffix === 'male' ? orcaParamsMale : orcaParamsFemale;
 
+      it(`should return process and flush error message stack`, async () => {
+        const orca = await Orca.create(
+          ACCESS_KEY,
+          { publicPath: publicPath, forceWrite: true },
+        );
+
+        // @ts-ignore
+        const objectAddress = orca._objectAddress;
+
+        // @ts-ignore
+        orca._objectAddress = 0;
+
+        const errors: OrcaError[] = [];
+        try {
+          await orca.synthesize('test', 1.0);
+        } catch (e) {
+          errors.push(e);
+        }
+
+        // @ts-ignore
+        orca._objectAddress = objectAddress;
+        await orca.release();
+
+        expect(errors.length).to.be.gte(0);
+
+        for (let i = 0; i < errors.length; i++) {
+          expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
+          expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
+        }
+      });
+
       it(`should return correct error message stack [${modelFileSuffix}] (${instanceString})`, async () => {
         let messageStack = [];
         try {
-          const orca = await instance.create('invalidAccessKey', () => {
-          }, {
+          const orca = await instance.create('invalidAccessKey', {
             publicPath,
             forceWrite: true,
           });
@@ -283,8 +243,7 @@ describe('Orca Binding', function() {
         expect(messageStack.length).to.be.lte(8);
 
         try {
-          const orca = await instance.create('invalidAccessKey', () => {
-          }, {
+          const orca = await instance.create('invalidAccessKey', {
             publicPath,
             forceWrite: true,
           });
@@ -328,21 +287,13 @@ describe('Orca Binding', function() {
       it(`should be able to handle different speech rates [${modelFileSuffix}] (${instanceString})`, () => {
         cy.wrap(null).then(async () => {
           try {
-            let orca: any = null;
+            const orca = await instance.create(
+              ACCESS_KEY,
+              { publicPath, forceWrite: true },
+            );
 
-            const setOrcaSpeech = (customSpeechRate: number) => new Promise<Int16Array | null>(async (resolve, reject) => {
-              orca = await instance.create(
-                ACCESS_KEY,
-                orcaSpeech => resolve(orcaSpeech.speech),
-                { publicPath, forceWrite: true },
-                { synthesizeErrorCallback: () => reject(null) },
-              );
-
-              await orca.synthesize(testData.test_sentences.text, customSpeechRate);
-            });
-
-            const speechSlow = await setOrcaSpeech(0.7);
-            const speechFast = await setOrcaSpeech(1.3);
+            const speechSlow = await orca.synthesize(testData.test_sentences.text, 0.7);
+            const speechFast = await orca.synthesize(testData.test_sentences.text, 1.3);
             expect(speechSlow.length).gt(speechFast.length);
 
             if (orca instanceof OrcaWorker) {
@@ -359,24 +310,13 @@ describe('Orca Binding', function() {
       it(`should be able to handle max num characters [${modelFileSuffix}] (${instanceString})`, () => {
         cy.wrap(null).then(async () => {
           try {
-            let orca: any = null;
+            const orca = await instance.create(
+              ACCESS_KEY,
+              { publicPath, forceWrite: true },
+            );
 
-            const setOrcaSpeech = () => new Promise<Int16Array | null>(async resolve => {
-              orca = await instance.create(
-                ACCESS_KEY,
-                orcaSpeech => {
-                  resolve(orcaSpeech.speech);
-                },
-                {
-                  publicPath,
-                  forceWrite: true,
-                },
-              );
-              const maxNumChars = orca.maxCharacterLimit;
-              await orca.synthesize('a'.repeat(maxNumChars));
-            });
-
-            const speech = await setOrcaSpeech();
+            const maxNumChars = orca.maxCharacterLimit;
+            const speech = await orca.synthesize('a'.repeat(maxNumChars));
             expect(speech.length).gt(0);
 
             if (orca instanceof OrcaWorker) {

@@ -33,20 +33,10 @@ export enum PvStatus {
  */
 export type OrcaModel = PvModel;
 
-export type OrcaOptions = {
-  /** @defaultValue undefined */
-  synthesizeErrorCallback?: (error: OrcaError) => void;
-};
-
-export type OrcaSpeech = {
-  speech: Int16Array;
-};
-
 export type OrcaWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  options: OrcaOptions;
   wasm: string;
   wasmSimd: string;
   sdk: string;
@@ -89,7 +79,7 @@ export type OrcaWorkerSynthesizeResponse =
   | OrcaWorkerFailureResponse
   | {
   command: 'ok';
-  orcaSpeech: OrcaSpeech;
+  result: Int16Array;
 };
 
 export type OrcaWorkerReleaseResponse =

@@ -13,8 +13,6 @@ import PvWorker from 'web-worker:./orca_worker_handler.ts';
 
 import {
   OrcaModel,
-  OrcaOptions,
-  OrcaSpeech,
   OrcaWorkerInitResponse,
   OrcaWorkerSynthesizeResponse,
   OrcaWorkerReleaseResponse,
@@ -71,7 +69,7 @@ export class OrcaWorker {
   }
 
   /**
-   * Get valid punctuation symbols.
+   * Get valid characters.
    */
   get validCharacters(): string[] {
     return this._validCharacters;
@@ -114,7 +112,6 @@ export class OrcaWorker {
    * it can create an instance.
    *
    * @param accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
-   * @param speechCallback User-defined callback to run after receiving speech result.
    * @param model Orca model options.
    * @param model.base64 The model in base64 string to initialize Orca.
    * @param model.publicPath The model path relative to the public directory.
@@ -122,20 +119,13 @@ export class OrcaWorker {
    * Set to a different name to use multiple models across `orca` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param options Optional configuration arguments.
-   * @param options.synthesizeErrorCallback User-defined callback invoked if any error happens
-   * while synthesizing speech. Its only input argument is the error message.
    *
    * @returns An instance of OrcaWorker.
    */
   public static async create(
     accessKey: string,
-    speechCallback: (orcaSpeech: OrcaSpeech) => void,
     model: OrcaModel,
-    options: OrcaOptions = {},
   ): Promise<OrcaWorker> {
-    const { synthesizeErrorCallback, ...workerOptions } = options;
-
     const customWritePath = model.customWritePath
       ? model.customWritePath
       : 'orca_model';
@@ -151,38 +141,6 @@ export class OrcaWorker {
         ): void => {
           switch (event.data.command) {
             case 'ok':
-              worker.onmessage = (
-                ev: MessageEvent<OrcaWorkerSynthesizeResponse>,
-              ): void => {
-                switch (ev.data.command) {
-                  case 'ok':
-                    speechCallback(ev.data.orcaSpeech);
-                    break;
-                  case 'failed':
-                  case 'error':
-                    // eslint-disable-next-line no-case-declarations
-                    const error = pvStatusToException(
-                      ev.data.status,
-                      ev.data.shortMessage,
-                      ev.data.messageStack,
-                    );
-                    if (synthesizeErrorCallback) {
-                      synthesizeErrorCallback(error);
-                    } else {
-                      // eslint-disable-next-line no-console
-                      console.error(error);
-                    }
-                    break;
-                  default:
-                    // @ts-ignore
-                    synthesizeErrorCallback(
-                      pvStatusToException(
-                        PvStatus.RUNTIME_ERROR,
-                        `Unrecognized command: ${event.data.command}`,
-                      ),
-                    );
-                }
-              };
               resolve(
                 new OrcaWorker(
                   worker,
@@ -218,7 +176,6 @@ export class OrcaWorker {
       command: 'init',
       accessKey: accessKey,
       modelPath: modelPath,
-      options: workerOptions,
       wasm: this._wasm,
       wasmSimd: this._wasmSimd,
       sdk: this._sdk,
@@ -228,20 +185,61 @@ export class OrcaWorker {
   }
 
   /**
-   * Processes text in a worker.
+   * Synthesizes speech in a worker.
    * The speech result will be supplied with the callback provided when initializing the worker either
    * by 'fromBase64' or 'fromPublicDirectory'.
-   * Can also send a message directly using 'this.worker.postMessage({command: "process", pcm: [...]})'.
+   * Can also send a message directly using 'this.worker.postMessage({command: "syntheize", text: "..."})'.
    *
    * @param text A string of text.
    * @param speechRate Optional rate of speech desired for the output audio.
+   *
+   * @return An Int16Array.
    */
-  public synthesize(text: string, speechRate: number = 1.0): void {
-    this._worker.postMessage({
-      command: 'synthesize',
-      text: text,
-      speechRate: speechRate,
-    });
+  public async synthesize(
+    text: string,
+    speechRate: number = 1.0,
+  ): Promise<Int16Array> {
+    const returnPromise: Promise<Int16Array> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<OrcaWorkerSynthesizeResponse>,
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.result);
+              break;
+            case 'failed':
+            case 'error':
+              reject(
+                pvStatusToException(
+                  event.data.status,
+                  event.data.shortMessage,
+                  event.data.messageStack,
+                ),
+              );
+              break;
+            default:
+              reject(
+                pvStatusToException(
+                  PvStatus.RUNTIME_ERROR,
+                  // @ts-ignore
+                  `Unrecognized command: ${event.data.command}`,
+                ),
+              );
+          }
+        };
+      },
+    );
+
+    this._worker.postMessage(
+      {
+        command: 'synthesize',
+        text: text,
+        speechRate: speechRate,
+      },
+    );
+
+    return returnPromise;
   }
 
   /**
