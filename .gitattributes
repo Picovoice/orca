@@ -3,6 +3,7 @@ lib/** linguist-detectable=false
 res/** linguist-detectable=false
 
 binding/android/** linguist-detectable=false
+binding/android/Orca/orca/src/main/java/ai/picovoice/orca/Orca.java linguist-detectable=true
 binding/ios/OrcaAppTest/** linguist-detectable=false
 binding/rust/tests/** linguist-detectable=false
 binding/web/** linguist-detectable=false
