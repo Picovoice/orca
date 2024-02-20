@@ -1,4 +1,11 @@
-*.py linguist-detectable=true
 demo/** linguist-detectable=false
 lib/** linguist-detectable=false
-resources/** linguist-detectable=false
+res/** linguist-detectable=false
+
+binding/android/** linguist-detectable=false
+binding/ios/OrcaAppTest/** linguist-detectable=false
+binding/rust/tests/** linguist-detectable=false
+binding/web/** linguist-detectable=false
+binding/web/src/orca.ts linguist-detectable=true
+
+*.py linguist-detectable=true
