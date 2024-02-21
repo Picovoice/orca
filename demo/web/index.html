@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="node_modules/@picovoice/orca-web/dist/iife/index.js"></script>
+  <script type="application/javascript" src="orca_params_female.js"></script>
+  <script type="application/javascript">
+    const ORCA_SAMPLE_RATE = 22050;
+
+    let orca = null;
+    let pcm = null;
+
+    function writeMessage(message) {
+      console.log(message);
+      document.getElementById('status').innerText = message;
+    }
+
+    window.onload = function() {
+      const audioContext = new (window.AudioContext ||
+        window.webKitAudioContext)({ sampleRate: ORCA_SAMPLE_RATE });
+
+      const originalAudioGain = audioContext.createGain();
+      originalAudioGain.gain.value = 1;
+      originalAudioGain.connect(audioContext.destination);
+
+      function createBuffer(data) {
+        const buffer = audioContext.createBuffer(
+          1,
+          data.length,
+          ORCA_SAMPLE_RATE,
+        );
+        const source = new Float32Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+          source[i] = data[i] < 0 ? data[i] / 32768 : data[i] / 32767;
+        }
+        buffer.copyToChannel(source, 0);
+        return buffer;
+      }
+
+      let isPlaying = false;
+      let originalAudioSource;
+      const textToSynthesizeEl = document.getElementById('text-to-synthesize');
+      const textToSynthesizeErrorEl = document.getElementById('text-to-synthesize-error');
+      const speechRateSliderEl = document.getElementById('speech-rate');
+      const synthesizeBtnEl = document.getElementById('synthesize-btn');
+      const controlBtnEl = document.getElementById('control-btn');
+      const downloadBtnEl = document.getElementById('download-btn');
+      const speechRateDisplayEl = document.getElementById('speech-rate-display');
+
+      function onSynthesizeParamChange() {
+        if (orca !== null && isPlaying === false) {
+          synthesizeBtnEl.disabled = false;
+          controlBtnEl.disabled = true;
+          downloadBtnEl.disabled = true;
+          controlBtnEl.innerText = 'Play';
+        }
+      }
+
+      function validateInput(input, validChars) {
+        let nonAllowedCharacters = [];
+
+        for (let i = 0; i < input.length; i++) {
+          if (!validChars.includes(input[i]) && !nonAllowedCharacters.includes(input[i])) {
+            nonAllowedCharacters.push(input[i]);
+          }
+        }
+
+        if (nonAllowedCharacters.length > 0) {
+          textToSynthesizeErrorEl.innerText = `Error: Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
+          synthesizeBtnEl.disabled = true;
+        } else {
+          textToSynthesizeErrorEl.innerHTML = '&nbsp;';
+          synthesizeBtnEl.disabled = false;
+        }
+      }
+
+      textToSynthesizeEl.addEventListener('input', (e) => {
+        onSynthesizeParamChange();
+        if (orca !== null) {
+          validateInput(e.target.value, orca.validCharacters);
+        }
+      });
+      speechRateSliderEl.addEventListener('change', () => {
+        onSynthesizeParamChange();
+        speechRateDisplayEl.innerText = speechRateSliderEl.value;
+      });
+
+      function onAudioStop() {
+        isPlaying = false;
+        controlBtnEl.innerText = 'Play';
+        textToSynthesizeEl.disabled = false;
+        speechRateSliderEl.disabled = false;
+      }
+
+      controlBtnEl.addEventListener('click', () => {
+        if (!isPlaying) {
+          originalAudioSource = audioContext.createBufferSource();
+          originalAudioSource.addEventListener('ended', onAudioStop);
+          originalAudioSource.buffer = createBuffer(pcm);
+          originalAudioSource.connect(originalAudioGain);
+          originalAudioSource.start();
+
+          isPlaying = true;
+          controlBtnEl.innerText = 'Stop';
+          textToSynthesizeEl.disabled = true;
+          speechRateSliderEl.disabled = true;
+          synthesizeBtnEl.disabled = true;
+        } else {
+          originalAudioSource.stop();
+          onAudioStop();
+        }
+      });
+    };
+
+    async function startOrca(accessKey) {
+      writeMessage('Orca is loading. Please wait...');
+      try {
+        document.getElementById('start-orca').disabled = true;
+        document.getElementById('text-to-synthesize').disabled = true;
+
+        orca = await OrcaWeb.OrcaWorker.create(
+          accessKey,
+          { base64: modelParams, forceWrite: true },
+        );
+
+        document.getElementById('text-to-synthesize').disabled = false;
+        document.getElementById('speech-rate').disabled = false;
+        writeMessage('Orca worker ready!');
+      } catch (err) {
+        writeMessage(err);
+      }
+    }
+
+    async function synthesize() {
+      writeMessage('Synthesizing. Please wait...');
+      try {
+        document.getElementById('text-to-synthesize').disabled = true;
+        document.getElementById('speech-rate').disabled = true;
+        document.getElementById('synthesize-btn').disabled = true;
+        document.getElementById('control-btn').disabled = true;
+        document.getElementById('download-btn').disabled = true;
+        const text = document.getElementById('text-to-synthesize').value;
+        const speechRate = document.getElementById('speech-rate').value;
+        pcm = await orca.synthesize(text, { speechRate });
+        writeMessage('Synthesizing complete!');
+        document.getElementById('control-btn').disabled = false;
+        document.getElementById('download-btn').disabled = false;
+      } catch (err) {
+        writeMessage(err);
+      } finally {
+        document.getElementById('text-to-synthesize').disabled = false;
+        document.getElementById('speech-rate').disabled = false;
+      }
+    }
+
+    function downloadDumpAudio() {
+      let blob = new Blob([pcm]);
+      let a = document.createElement('a');
+      a.download = 'orca_speech_audio.pcm';
+      a.href = window.URL.createObjectURL(blob);
+      a.click();
+      document.removeChild(a);
+    }
+  </script>
+</head>
+<body>
+<h1>Orca Web Demo</h1>
+<p>This demo uses Orca for Web to:</p>
+<ol>
+  <li>
+    Create an instance of Orca with the model file provided.
+  </li>
+  <li>Convert text into speech audio data.</li>
+</ol>
+After entering the AccessKey, click the "Start Orca" button.
+<hr />
+<label for="accessKey"
+>AccessKey obtained from
+  <a href="https://console.picovoice.ai/">Picovoice Console</a>:</label
+>
+<input type="text" id="accessKey" name="accessKey" />
+<input
+  id="start-orca"
+  type="button"
+  value="Start Orca"
+  onclick="startOrca(document.getElementById('accessKey').value)"
+/>
+<hr />
+<label for="text-to-synthesize">Text to synthesize (English)</label>
+<br />
+<textarea id="text-to-synthesize" rows="4" cols="50" disabled maxlength="200">
+</textarea>
+<div id="text-to-synthesize-error">&nbsp;</div>
+<label>
+  Speech Rate: <span id="speech-rate-display">1.0</span>
+  <input
+    id="speech-rate"
+    type="range"
+    min="0.7"
+    max="1.3"
+    value="1"
+    step="0.1"
+    disabled
+  />
+</label>
+<br />
+<hr />
+<button id="synthesize-btn" onclick="synthesize()" disabled>
+  Synthesize
+</button>
+<button id="control-btn" disabled>Play</button>
+<button id="download-btn" disabled onclick="downloadDumpAudio()">Download Audio</button>
+<br />
+<br />
+<div id="status" style="white-space: pre"></div>
+</body>
+</html>

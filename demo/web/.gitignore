@@ -1,0 +1,8 @@
+node_modules
+.rts2_cache/
+.idea/
+dist/
+*.log
+.DS_Store
+orca_params_male.js
+orca_params_female.js
