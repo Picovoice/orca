@@ -260,10 +260,14 @@ export class Orca {
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    */
-  public async synthesize(text: string, synthesizeParams: SynthesizeParams = { speechRate: 1.0 }): Promise<Int16Array> {
+  public async synthesize(text: string, synthesizeParams: SynthesizeParams = {}): Promise<Int16Array> {
     if (typeof text !== 'string') {
       throw new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
     }
+
+    const {
+      speechRate = 1.0,
+    } = synthesizeParams;
 
     return new Promise<Int16Array>((resolve, reject) => {
       this._synthesizeMutex
@@ -313,7 +317,7 @@ export class Orca {
 
           const synthesizeParamsAddress = memoryBufferView.getInt32(synthesizeParamsAddressAddress, true);
           await this._pvFree(synthesizeParamsAddressAddress);
-          const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, synthesizeParams.speechRate);
+          const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, speechRate);
           if (setSpeechRateStatus !== PV_STATUS_SUCCESS) {
             const messageStack = await Orca.getMessageStack(
               this._pvGetErrorStack,

@@ -199,7 +199,7 @@ export class OrcaWorker {
    */
   public async synthesize(
     text: string,
-    synthesizeParams?: SynthesizeParams,
+    synthesizeParams: SynthesizeParams = {},
   ): Promise<Int16Array> {
     const returnPromise: Promise<Int16Array> = new Promise(
       (resolve, reject) => {

@@ -28,7 +28,7 @@ export enum PvStatus {
 }
 
 export type SynthesizeParams = {
-  speechRate: number
+  speechRate?: number
 }
 
 /**
