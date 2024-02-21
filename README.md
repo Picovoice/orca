@@ -3,6 +3,7 @@
 [![GitHub](https://img.shields.io/github/license/Picovoice/picovoice)](https://github.com/Picovoice/picovoice/)
 
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
+[![npm](https://img.shields.io/npm/v/@picovoice/orca-web)](https://www.npmjs.com/package/@picovoice/orca-web)
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -170,9 +171,12 @@ Open `http://localhost:5000` in your browser to try the demo.
 
 ### Android Demo
 
-Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project and then run the application.
+Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project and then run the
+application.
 
-Replace `"${YOUR_ACCESS_KEY_HERE}"` in the file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) with your `AccessKey`.
+Replace `"${YOUR_ACCESS_KEY_HERE}"` in the
+file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java)
+with your `AccessKey`.
 
 ## SDKs
 
@@ -224,7 +228,8 @@ do {
 } catch {}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}` with the model file name for Orca and `${TEXT}` with
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}`
+with the model file name for Orca and `${TEXT}` with
 the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
 
 When done be sure to explicitly release the resources using `orca.delete()`.
@@ -311,7 +316,8 @@ release the resources using `orca.release()`.
 
 ### Android
 
-To include the Orca package in your Android project, ensure you have included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
+To include the Orca package in your Android project, ensure you have included `mavenCentral()` in your
+top-level `build.gradle` file and then add the following to your app's `build.gradle`:
 
 ```groovy
 dependencies {
@@ -339,7 +345,9 @@ try {
 } catch (OrcaException ex) { }
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with an Orca [voice model file](./lib/common) and `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with an
+Orca [voice model file](./lib/common) and `${TEXT}` with the text to be synthesized including
+potential [custom pronunciations](#custom-pronunciations).
 
 Finally, when done make sure to explicitly release the resources:
 
