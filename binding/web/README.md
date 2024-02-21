@@ -177,4 +177,4 @@ await orca.terminate();
 
 ## Demo
 
-For example usage refer to our [Web demo application](../../demo/web).
+For example usage refer to our [Web demo application](https://github.com/Picovoice/orca/tree/main/demo/web).
