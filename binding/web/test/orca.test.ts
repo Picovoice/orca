@@ -210,7 +210,7 @@ describe('Orca Binding', function() {
 
         const errors: OrcaError[] = [];
         try {
-          await orca.synthesize('test', 1.0);
+          await orca.synthesize('test');
         } catch (e) {
           errors.push(e);
         }
@@ -292,8 +292,8 @@ describe('Orca Binding', function() {
               { publicPath, forceWrite: true },
             );
 
-            const speechSlow = await orca.synthesize(testData.test_sentences.text, 0.7);
-            const speechFast = await orca.synthesize(testData.test_sentences.text, 1.3);
+            const speechSlow = await orca.synthesize(testData.test_sentences.text, { speechRate: 0.7 });
+            const speechFast = await orca.synthesize(testData.test_sentences.text, { speechRate: 1.3 });
             expect(speechSlow.length).gt(speechFast.length);
 
             if (orca instanceof OrcaWorker) {
