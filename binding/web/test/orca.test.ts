@@ -136,7 +136,7 @@ const runProcTest = async (
   const orca = await instance.create(accessKey, model);
 
   try {
-    const speech = await orca.synthesize(text, speechRate);
+    const speech = await orca.synthesize(text, { speechRate });
     if (isTestWER) {
       await checkWER(speech);
     } else if (!expectFailure) {

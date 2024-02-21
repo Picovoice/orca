@@ -140,7 +140,7 @@
         document.getElementById('download-btn').disabled = true;
         const text = document.getElementById('text-to-synthesize').value;
         const speechRate = document.getElementById('speech-rate').value;
-        pcm = await orca.synthesize(text, speechRate);
+        pcm = await orca.synthesize(text, { speechRate });
         writeMessage('Synthesizing complete!');
         document.getElementById('control-btn').disabled = false;
         document.getElementById('download-btn').disabled = false;

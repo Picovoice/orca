@@ -143,13 +143,15 @@ const speechPcm = await orca.synthesize("${TEXT}");
 
 Orca allows for an additional argument to be provided to the `synthesize` method to control the synthesized speech:
 
-- `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value
-  produces speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
+- `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value produces
+  speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
 
 ```typescript
-const speechRate = 1.3;
+const synthesizeParams = {
+  speechRate: 1.3
+};
 
-const speechPcm = await orca.synthesize("${TEXT}", speechRate);
+const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
 ```
 
 ### Orca Properties

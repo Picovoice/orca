@@ -27,6 +27,10 @@ export enum PvStatus {
   ACTIVATION_REFUSED,
 }
 
+export type SynthesizeParams = {
+  speechRate: number
+}
+
 /**
  * OrcaModel types
  */
@@ -44,7 +48,7 @@ export type OrcaWorkerInitRequest = {
 export type OrcaWorkerSynthesizeRequest = {
   command: 'synthesize';
   text: string;
-  speechRate?: number;
+  synthesizeParams?: SynthesizeParams;
 };
 
 export type OrcaWorkerReleaseRequest = {

@@ -25,7 +25,7 @@ import {
 
 import { simd } from 'wasm-feature-detect';
 
-import { OrcaModel, PvStatus } from './types';
+import { OrcaModel, PvStatus, SynthesizeParams } from './types';
 
 import * as OrcaErrors from './orca_errors';
 import { pvStatusToException } from './orca_errors';
@@ -209,7 +209,6 @@ export class Orca {
    * Set to a different name to use multiple models across `orca` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
-   * @param options Optional configuration arguments.
    *
    * @returns An instance of the Orca engine.
    */
@@ -258,9 +257,10 @@ export class Orca {
    * Allowed characters are lower-case and upper-case letters and punctuation marks that can be retrieved with `.validCharacters`.
    * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
    * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
-   * @param speechRate Optional argument to configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams Optional configuration arguments.
+   * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    */
-  public async synthesize(text: string, speechRate: number = 1.0): Promise<Int16Array> {
+  public async synthesize(text: string, synthesizeParams: SynthesizeParams = { speechRate: 1.0 }): Promise<Int16Array> {
     if (typeof text !== 'string') {
       throw new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
     }
@@ -313,7 +313,7 @@ export class Orca {
 
           const synthesizeParamsAddress = memoryBufferView.getInt32(synthesizeParamsAddressAddress, true);
           await this._pvFree(synthesizeParamsAddressAddress);
-          const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, speechRate);
+          const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, synthesizeParams.speechRate);
           if (setSpeechRateStatus !== PV_STATUS_SUCCESS) {
             const messageStack = await Orca.getMessageStack(
               this._pvGetErrorStack,

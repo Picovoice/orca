@@ -17,6 +17,7 @@ import {
   OrcaWorkerSynthesizeResponse,
   OrcaWorkerReleaseResponse,
   PvStatus,
+  SynthesizeParams,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
@@ -191,13 +192,14 @@ export class OrcaWorker {
    * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
    *
    * @param text A string of text.
-   * @param speechRate Optional rate of speech desired for the output audio.
+   * @param synthesizeParams Optional configuration arguments.
+   * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    *
    * @return An Int16Array.
    */
   public async synthesize(
     text: string,
-    speechRate: number = 1.0,
+    synthesizeParams?: SynthesizeParams,
   ): Promise<Int16Array> {
     const returnPromise: Promise<Int16Array> = new Promise(
       (resolve, reject) => {
@@ -235,7 +237,7 @@ export class OrcaWorker {
       {
         command: 'synthesize',
         text: text,
-        speechRate: speechRate,
+        synthesizeParams: synthesizeParams,
       },
     );
 

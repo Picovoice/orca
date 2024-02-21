@@ -77,7 +77,7 @@ self.onmessage = async function(
       try {
         self.postMessage({
           command: 'ok',
-          result: await orca.synthesize(event.data.text, event.data.speechRate),
+          result: await orca.synthesize(event.data.text, event.data.synthesizeParams),
         });
       } catch (e: any) {
         if (e instanceof OrcaError) {
