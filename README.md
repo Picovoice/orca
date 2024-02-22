@@ -17,6 +17,7 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 - Private; All voice processing runs locally.
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
+    - Android and iOS
     - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
     - Chrome, Safari, Firefox, and Edge
 
