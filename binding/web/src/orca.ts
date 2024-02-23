@@ -83,7 +83,6 @@ type OrcaWasmOutput = {
 };
 
 const PV_STATUS_SUCCESS = 10000;
-const WEB_MAX_CHAR_LIMIT = 200;
 
 export class Orca {
   private readonly _pvOrcaDelete: pv_orca_delete_type;
@@ -263,10 +262,6 @@ export class Orca {
   public async synthesize(text: string, synthesizeParams: SynthesizeParams = {}): Promise<Int16Array> {
     if (typeof text !== 'string') {
       throw new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
-    }
-
-    if (text.length > this.maxCharacterLimit) {
-      throw new OrcaErrors.OrcaInvalidArgumentError(`The number of characters in \'text\' must be less than .maxCharacterLimit (${this.maxCharacterLimit})`);
     }
 
     const {
@@ -615,8 +610,7 @@ export class Orca {
     await pv_free(validCharactersAddressAddressAddress);
     await pv_orca_valid_characters_delete(validCharactersAddressAddress);
 
-    const orcaMaxCharacterLimit = await pv_orca_max_character_limit();
-    const maxCharacterLimit = Math.min(WEB_MAX_CHAR_LIMIT, orcaMaxCharacterLimit);
+    const maxCharacterLimit = await pv_orca_max_character_limit();
 
     const versionAddress = await pv_orca_version();
     const version = arrayBufferToStringAtIndex(
