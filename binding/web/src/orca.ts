@@ -265,6 +265,10 @@ export class Orca {
       throw new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
     }
 
+    if (text.length > this.maxCharacterLimit) {
+      throw new OrcaErrors.OrcaInvalidArgumentError(`The number of characters in \'text\' must be less than .maxCharacterLimit (${this.maxCharacterLimit})`);
+    }
+
     const {
       speechRate = 1.0,
     } = synthesizeParams;
