@@ -83,7 +83,6 @@ type OrcaWasmOutput = {
 };
 
 const PV_STATUS_SUCCESS = 10000;
-const WEB_MAX_CHAR_LIMIT = 200;
 
 export class Orca {
   private readonly _pvOrcaDelete: pv_orca_delete_type;
@@ -611,8 +610,7 @@ export class Orca {
     await pv_free(validCharactersAddressAddressAddress);
     await pv_orca_valid_characters_delete(validCharactersAddressAddress);
 
-    const orcaMaxCharacterLimit = await pv_orca_max_character_limit();
-    const maxCharacterLimit = Math.min(WEB_MAX_CHAR_LIMIT, orcaMaxCharacterLimit);
+    const maxCharacterLimit = await pv_orca_max_character_limit();
 
     const versionAddress = await pv_orca_version();
     const version = arrayBufferToStringAtIndex(

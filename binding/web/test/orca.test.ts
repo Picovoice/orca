@@ -12,7 +12,7 @@ import testData from '../cypress/fixtures/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
-const EXPECTED_MAX_CHARACTER_LIMIT = 200;
+const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 const EXPECTED_VALID_CHARACTERS = [
   '.', ':', ',', '"', '?', '!', 'a', 'b',
