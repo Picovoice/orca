@@ -28,6 +28,7 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 - [Orca](#orca)
     - [Table of Contents](#table-of-contents)
+    - [Language Support](#language-support)
     - [Overview](#overview)
         - [Custom pronunciations](#custom-pronunciations)
         - [Voices](#voices)
@@ -48,6 +49,11 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
     - [AccessKey](#accesskey)
     - [Releases](#releases)
     - [FAQ](#faq)
+
+## Language Support
+
+- English
+- Support for additional languages is available for commercial customers on a case-by-case basis.
 
 ## Overview
 
