@@ -52,8 +52,9 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Language Support
 
-- English
-- Support for additional languages is available for commercial customers on a case-by-case basis.
+- Orca Text-to-Speech currently supports English only.
+- Support for [additional languages is available for commercial customers](https://picovoice.ai/consulting/) on a
+  case-by-case basis.
 
 ## Overview
 
