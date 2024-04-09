@@ -1,2 +1,1 @@
-editdistance>=0.6.1
-pvleopard==2.0.1
+soundfile

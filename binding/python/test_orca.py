@@ -15,22 +15,17 @@ import sys
 import unittest
 from typing import List, Sequence
 
-import editdistance
-import pvleopard
-from pvleopard import Leopard
-
 from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
-from test_util import get_model_paths, get_test_data
+from test_util import get_model_paths, get_test_data, read_wav_file
 
-test_sentences, wer_threshold = get_test_data()
-
-RANDOM_STATE = 42
+test_data = get_test_data()
 
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
     orcas: List[Orca]
+    model_paths: List[str]
 
     @classmethod
     def setUpClass(cls):
@@ -40,29 +35,17 @@ class OrcaTestCase(unittest.TestCase):
                 model_path=model_path,
                 library_path=default_library_path('../..'))
             for model_path in get_model_paths()]
+        cls.model_paths = get_model_paths()
 
     @classmethod
     def tearDownClass(cls):
         for orca in cls.orcas:
             orca.delete()
 
-    def test_valid_characters(self) -> None:
-        for orca in self.orcas:
-            characters = orca.valid_characters
-            self.assertGreaterEqual(len(characters), 0)
-            self.assertTrue(all(isinstance(x, str) for x in characters))
-            self.assertTrue("," in characters)
-
-    def _test_word_error_rate(self, leopard: Leopard, pcm: Sequence[int], ground_truth: Sequence[str]) -> None:
-        predicted, _ = leopard.process(pcm)
-
-        wer = editdistance.eval(predicted.split(), ground_truth) / len(ground_truth)
-
-        if wer > wer_threshold:
-            print("Ground truth transcript: `%s`" % " ".join(ground_truth))
-            print("Predicted transcript from synthesized audio: `%s`" % " ".join(predicted))
-            print("=> WER: %.2f" % wer)
-        self.assertTrue(wer <= wer_threshold)
+    def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
+        self.assertEqual(len(pcm), len(ground_truth))
+        for i in range(len(pcm)):
+            self.assertAlmostEqual(pcm[i], ground_truth[i])
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
         self.assertAlmostEqual(timestamp, timestamp_truth, places=3)
@@ -81,6 +64,21 @@ class OrcaTestCase(unittest.TestCase):
             phoneme_truth = word_truth.phonemes[i]
             self._test_phoneme_equal(phoneme, phoneme_truth)
 
+    @staticmethod
+    def _get_pcm(model_path: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
+        test_wav_folder = os.path.join(os.path.dirname(__file__), "../../", audio_data_folder)
+        model_name = os.path.basename(model_path)
+        test_wav_path = \
+            os.path.join(f"{test_wav_folder}", model_name.replace(".pv", f"_{synthesis_type}.wav"))
+        return read_wav_file(test_wav_path)
+
+    def test_valid_characters(self) -> None:
+        for orca in self.orcas:
+            characters = orca.valid_characters
+            self.assertGreaterEqual(len(characters), 0)
+            self.assertTrue(all(isinstance(x, str) for x in characters))
+            self.assertTrue("," in characters)
+
     def test_max_character_limit(self) -> None:
         for orca in self.orcas:
             self.assertGreaterEqual(orca.max_character_limit, 0)
@@ -90,67 +88,57 @@ class OrcaTestCase(unittest.TestCase):
             self.assertGreater(orca.sample_rate, 0)
 
     def test_synthesize(self) -> None:
-        leopard = None
-        try:
-            leopard = pvleopard.create(access_key=self.access_key)
-        except NotImplementedError as e:
-            pass
-
-        for orca in self.orcas:
-            pcm, alignment = orca.synthesize(test_sentences.text, random_state=RANDOM_STATE)
+        for i, orca in enumerate(self.orcas):
+            pcm, alignment = orca.synthesize(test_data.text, random_state=test_data.random_state)
             self.assertGreater(len(pcm), 0)
 
-            if leopard is None:
-                continue
+            ground_truth = self._get_pcm(
+                model_path=self.model_paths[i],
+                audio_data_folder=test_data.audio_data_folder,
+                synthesis_type="single")
 
-            ground_truth = test_sentences.text_no_punctuation.split()
-            self._test_word_error_rate(leopard=leopard, pcm=pcm, ground_truth=ground_truth)
+            self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
     def test_synthesize_alignment(self) -> None:
         orca = self.orcas[0]
-        pcm, alignments = orca.synthesize(test_sentences.text_alignment, random_state=RANDOM_STATE)
+        pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
         for i, word in enumerate(alignments):
-            word_truth = test_sentences.alignments[i]
+            word_truth = test_data.alignments[i]
             self._test_word_equal(word, word_truth)
 
     def test_streaming_synthesis(self) -> None:
-        leopard = None
-        try:
-            leopard = pvleopard.create(access_key=self.access_key)
-        except NotImplementedError as e:
-            pass
-
-        for orca in self.orcas:
-            stream = orca.open_stream(random_state=RANDOM_STATE)
+        for i, orca in enumerate(self.orcas):
+            stream = orca.open_stream(random_state=test_data.random_state)
             pcm = []
-            for c in test_sentences.text:
+            for c in test_data.text:
                 pcm_chunk = stream.synthesize(c)
                 pcm.extend(pcm_chunk)
             pcm.extend(stream.flush())
             stream.close()
 
-            if leopard is None:
-                continue
+            ground_truth = self._get_pcm(
+                model_path=self.model_paths[i],
+                audio_data_folder=test_data.audio_data_folder,
+                synthesis_type="stream")
 
-            ground_truth = test_sentences.text_no_punctuation.split()
-            self._test_word_error_rate(leopard=leopard, pcm=pcm, ground_truth=ground_truth)
+            self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
     def test_synthesize_custom_pron(self) -> None:
         for orca in self.orcas:
-            pcm, _ = orca.synthesize(test_sentences.text_custom_pronunciation)
+            pcm, _ = orca.synthesize(test_data.text_custom_pronunciation)
             self.assertGreater(len(pcm), 0)
 
     def test_synthesize_speech_rate(self) -> None:
         for orca in self.orcas:
-            pcm_fast, _ = orca.synthesize(test_sentences.text, speech_rate=1.3)
-            pcm_slow, _ = orca.synthesize(test_sentences.text, speech_rate=0.7)
+            pcm_fast, _ = orca.synthesize(test_data.text, speech_rate=1.3)
+            pcm_slow, _ = orca.synthesize(test_data.text, speech_rate=0.7)
 
             self.assertLess(len(pcm_fast), len(pcm_slow))
 
             try:
-                _ = orca.synthesize(test_sentences.text, speech_rate=9999)
+                _ = orca.synthesize(test_data.text, speech_rate=9999)
             except OrcaError:
                 pass
             else:
@@ -159,7 +147,7 @@ class OrcaTestCase(unittest.TestCase):
     def test_synthesize_to_file(self) -> None:
         for orca in self.orcas:
             output_path = os.path.join(os.path.dirname(__file__), "output.wav")
-            orca.synthesize_to_file(test_sentences.text, output_path=output_path)
+            orca.synthesize_to_file(test_data.text, output_path=output_path)
             self.assertTrue(os.path.isfile(output_path))
             os.remove(output_path)
 
@@ -171,7 +159,7 @@ class OrcaTestCase(unittest.TestCase):
 
     def test_invalid_input(self) -> None:
         for orca in self.orcas:
-            for sentence in test_sentences.text_invalid:
+            for sentence in test_data.text_invalid:
                 with self.assertRaises(OrcaInvalidArgumentError):
                     orca.synthesize(sentence)
 
@@ -213,7 +201,7 @@ class OrcaTestCase(unittest.TestCase):
         orca._handle = None
 
         try:
-            res = orca.synthesize(test_sentences.text)
+            res = orca.synthesize(test_data.text)
             self.assertEqual(len(res), 0)
         except OrcaError as e:
             self.assertGreater(len(e.message_stack), 0)

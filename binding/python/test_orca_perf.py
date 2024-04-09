@@ -19,7 +19,7 @@ from _orca import Orca
 from _util import default_library_path
 from test_util import get_model_paths, get_test_data
 
-test_sentences, _ = get_test_data()
+test_data = get_test_data()
 
 
 class OrcaPerformanceTestCase(unittest.TestCase):
@@ -37,7 +37,7 @@ class OrcaPerformanceTestCase(unittest.TestCase):
             perf_results = list()
             for i in range(self.num_test_iterations):
                 start = perf_counter()
-                _ = orca.synthesize(test_sentences.text)
+                _ = orca.synthesize(test_data.text)
                 if i > 0:
                     perf_results.append(perf_counter() - start)
 

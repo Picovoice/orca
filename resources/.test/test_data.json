@@ -4,94 +4,6 @@
     "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
     "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!",
     "text_alignment": "test alignment.",
-    "alignments": [
-      {
-        "word": "TEST",
-        "start_sec": 0.000,
-        "end_sec": 0.313,
-        "phonemes": [
-          {
-            "phoneme": "T",
-            "start_sec": 0.000,
-            "end_sec": 0.093
-          },
-          {
-            "phoneme": "EH",
-            "start_sec": 0.093,
-            "end_sec": 0.151
-          },
-          {
-            "phoneme": "S",
-            "start_sec": 0.151,
-            "end_sec": 0.221
-          },
-          {
-            "phoneme": "T",
-            "start_sec": 0.221,
-            "end_sec": 0.313
-          }
-        ]
-      },
-      {
-        "word": "ALIGNMENT",
-        "start_sec": 0.313,
-        "end_sec": 0.882,
-        "phonemes": [
-          {
-            "phoneme": "AH",
-            "start_sec": 0.313,
-            "end_sec": 0.383
-          },
-          {
-            "phoneme": "L",
-            "start_sec": 0.383,
-            "end_sec": 0.464
-          },
-          {
-            "phoneme": "AY",
-            "start_sec": 0.464,
-            "end_sec": 0.546
-          },
-          {
-            "phoneme": "N",
-            "start_sec": 0.546,
-            "end_sec": 0.639
-          },
-          {
-            "phoneme": "M",
-            "start_sec": 0.639,
-            "end_sec": 0.685
-          },
-          {
-            "phoneme": "AH",
-            "start_sec": 0.685,
-            "end_sec": 0.731
-          },
-          {
-            "phoneme": "N",
-            "start_sec": 0.731,
-            "end_sec": 0.778
-          },
-          {
-            "phoneme": "T",
-            "start_sec": 0.778,
-            "end_sec": 0.882
-          }
-        ]
-      },
-      {
-        "word": ".",
-        "start_sec": 0.882,
-        "end_sec": 0.940,
-        "phonemes": [
-          {
-            "phoneme": ".",
-            "start_sec": 0.882,
-            "end_sec": 0.940
-          }
-        ]
-      }
-    ],
     "text_invalid": [
       "Symbols *$",
       "Escape characters \n",
@@ -109,5 +21,94 @@
       "Wrong {custom|K AH S T AM } pron"
     ]
   },
-  "wer_threshold": 0.2
+  "random_state": 42,
+  "alignments": [
+    {
+      "word": "TEST",
+      "start_sec": 0.000,
+      "end_sec": 0.313,
+      "phonemes": [
+        {
+          "phoneme": "T",
+          "start_sec": 0.000,
+          "end_sec": 0.093
+        },
+        {
+          "phoneme": "EH",
+          "start_sec": 0.093,
+          "end_sec": 0.151
+        },
+        {
+          "phoneme": "S",
+          "start_sec": 0.151,
+          "end_sec": 0.221
+        },
+        {
+          "phoneme": "T",
+          "start_sec": 0.221,
+          "end_sec": 0.313
+        }
+      ]
+    },
+    {
+      "word": "ALIGNMENT",
+      "start_sec": 0.313,
+      "end_sec": 0.882,
+      "phonemes": [
+        {
+          "phoneme": "AH",
+          "start_sec": 0.313,
+          "end_sec": 0.383
+        },
+        {
+          "phoneme": "L",
+          "start_sec": 0.383,
+          "end_sec": 0.464
+        },
+        {
+          "phoneme": "AY",
+          "start_sec": 0.464,
+          "end_sec": 0.546
+        },
+        {
+          "phoneme": "N",
+          "start_sec": 0.546,
+          "end_sec": 0.639
+        },
+        {
+          "phoneme": "M",
+          "start_sec": 0.639,
+          "end_sec": 0.685
+        },
+        {
+          "phoneme": "AH",
+          "start_sec": 0.685,
+          "end_sec": 0.731
+        },
+        {
+          "phoneme": "N",
+          "start_sec": 0.731,
+          "end_sec": 0.778
+        },
+        {
+          "phoneme": "T",
+          "start_sec": 0.778,
+          "end_sec": 0.882
+        }
+      ]
+    },
+    {
+      "word": ".",
+      "start_sec": 0.882,
+      "end_sec": 0.940,
+      "phonemes": [
+        {
+          "phoneme": ".",
+          "start_sec": 0.882,
+          "end_sec": 0.940
+        }
+      ]
+    }
+  ],
+  "audio_data_folder": "resources/.test/wav/"
 }

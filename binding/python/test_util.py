@@ -12,29 +12,42 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import Sequence, Tuple
+from typing import List, Sequence, Set
 
-from typing import List
+import soundfile
 
 from _orca import Orca
 
 
 @dataclass
-class TestSentences:
+class TestData:
     text: str
     text_no_punctuation: str
     text_custom_pronunciation: str
     text_alignment: str
-    alignments: Sequence[Orca.WordAlignment]
     text_invalid: Sequence[str]
+    alignments: Sequence[Orca.WordAlignment]
+    random_state: int
+    audio_data_folder: str
 
 
-def get_test_data() -> Tuple[TestSentences, float]:
+def read_wav_file(path: str) -> Sequence[int]:
+    pcm, _ = soundfile.read(path)
+    pcm = list((pcm * 32768))
+    return pcm
+
+
+def get_model_paths() -> List[str]:
+    model_folder = os.path.join(os.path.dirname(__file__), "../../lib/common")
+    return [os.path.join(model_folder, model_name) for model_name in os.listdir(model_folder)]
+
+
+def get_test_data() -> TestData:
     data_file_path = os.path.join(os.path.dirname(__file__), "../../resources/.test/test_data.json")
     with open(data_file_path, encoding="utf8") as data_file:
         test_data = json.loads(data_file.read())
 
-    alignment_data = test_data["test_sentences"].pop("alignments")
+    alignment_data = test_data["alignments"]
 
     alignments = []
     for word_data in alignment_data:
@@ -53,17 +66,17 @@ def get_test_data() -> Tuple[TestSentences, float]:
             phonemes=phonemes)
         alignments.append(word)
 
-    test_data["test_sentences"]["alignments"] = alignments
+    test_data = TestData(
+        alignments=alignments,
+        random_state=test_data["random_state"],
+        audio_data_folder=test_data["audio_data_folder"],
+        **test_data["test_sentences"])
 
-    return TestSentences(**test_data["test_sentences"]), test_data["wer_threshold"]
-
-
-def get_model_paths() -> List[str]:
-    model_folder = os.path.join(os.path.dirname(__file__), "../../lib/common")
-    return [os.path.join(model_folder, model_name) for model_name in os.listdir(model_folder)]
+    return test_data
 
 
 __all__ = [
     "get_test_data",
     "get_model_paths",
+    "read_wav_file",
 ]
