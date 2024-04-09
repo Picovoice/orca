@@ -45,7 +45,7 @@ def main():
 
     try:
         print('Orca version: %s' % orca.version)
-        pcm = orca.synthesize(args.text)
+        pcm, _ = orca.synthesize(args.text)
         length_sec = len(pcm) / orca.sample_rate
         with wave.open(args.output_path, 'wb') as output_file:
             output_file.setnchannels(1)

@@ -51,10 +51,12 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Overview
 
+### Single synthesis & streaming input synthesis
+
 ### Text input
 
-Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, as well as
-common punctuation marks. You can get a list of all supported characters by calling the
+Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers, 
+basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
 `valid_characters()` method provided in the Orca SDK you are using.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
@@ -195,7 +197,7 @@ Create an instance of the engine and generate speech:
 import pvorca
 
 orca = pvorca.create(access_key='${ACCESS_KEY}')
-pcm = orca.synthesize('${TEXT}')
+pcm, alignments = orca.synthesize('${TEXT}')
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/) and `${TEXT}` with
@@ -266,12 +268,16 @@ Now, the `handle` and `synthesize_params` object can be used to synthesize speec
 ```c
 int32_t num_samples = 0;
 int16_t *synthesized_pcm = NULL;
+int32_t num_alignments = 0;
+pv_orca_word_alignment_t **alignments = NULL;
 status = pv_orca_synthesize(
     handle,
     "${TEXT}",
     synthesize_params,
     &num_samples,
-    &synthesized_pcm);
+    &synthesized_pcm,
+    &num_alignments,
+    &alignments);
 ```
 
 Replace `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
@@ -279,6 +285,7 @@ Replace `${TEXT}` with the text to be synthesized including potential [custom pr
 Finally, when done make sure to release the acquired resources:
 
 ```c
+pv_orca_word_alignments_delete(num_alignments, alignments);
 pv_orca_delete_pcm(pcm);
 pv_orca_synthesize_params_delete(synthesize_params);
 pv_orca_delete(handle);

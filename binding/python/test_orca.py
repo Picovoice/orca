@@ -13,16 +13,19 @@ import argparse
 import os
 import sys
 import unittest
-from typing import List
+from typing import List, Sequence
 
 import editdistance
 import pvleopard
+from pvleopard import Leopard
 
 from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
 from test_util import get_model_paths, get_test_data
 
 test_sentences, wer_threshold = get_test_data()
+
+RANDOM_STATE = 42
 
 
 class OrcaTestCase(unittest.TestCase):
@@ -50,6 +53,34 @@ class OrcaTestCase(unittest.TestCase):
             self.assertTrue(all(isinstance(x, str) for x in characters))
             self.assertTrue("," in characters)
 
+    def _test_word_error_rate(self, leopard: Leopard, pcm: Sequence[int], ground_truth: Sequence[str]) -> None:
+        predicted, _ = leopard.process(pcm)
+
+        wer = editdistance.eval(predicted.split(), ground_truth) / len(ground_truth)
+
+        if wer > wer_threshold:
+            print("Ground truth transcript: `%s`" % " ".join(ground_truth))
+            print("Predicted transcript from synthesized audio: `%s`" % " ".join(predicted))
+            print("=> WER: %.2f" % wer)
+        self.assertTrue(wer <= wer_threshold)
+
+    def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
+        self.assertAlmostEqual(timestamp, timestamp_truth, places=3)
+
+    def _test_phoneme_equal(self, phoneme: Orca.PhonemeAlignment, phoneme_truth: Orca.PhonemeAlignment) -> None:
+        self.assertEqual(phoneme.phoneme, phoneme_truth.phoneme)
+        self._test_equal_timestamp(phoneme.start_sec, phoneme_truth.start_sec)
+        self._test_equal_timestamp(phoneme.end_sec, phoneme_truth.end_sec)
+
+    def _test_word_equal(self, word: Orca.WordAlignment, word_truth: Orca.WordAlignment) -> None:
+        self.assertEqual(word.word, word_truth.word)
+        self._test_equal_timestamp(word.start_sec, word_truth.start_sec)
+        self._test_equal_timestamp(word.end_sec, word_truth.end_sec)
+
+        for i, phoneme in enumerate(word.phonemes):
+            phoneme_truth = word_truth.phonemes[i]
+            self._test_phoneme_equal(phoneme, phoneme_truth)
+
     def test_max_character_limit(self) -> None:
         for orca in self.orcas:
             self.assertGreaterEqual(orca.max_character_limit, 0)
@@ -66,32 +97,55 @@ class OrcaTestCase(unittest.TestCase):
             pass
 
         for orca in self.orcas:
-            pcm = orca.synthesize(test_sentences.text)
+            pcm, alignment = orca.synthesize(test_sentences.text, random_state=RANDOM_STATE)
             self.assertGreater(len(pcm), 0)
 
             if leopard is None:
                 continue
 
             ground_truth = test_sentences.text_no_punctuation.split()
-            predicted, _ = leopard.process(pcm)
+            self._test_word_error_rate(leopard=leopard, pcm=pcm, ground_truth=ground_truth)
 
-            wer = editdistance.eval(predicted.split(), ground_truth) / len(ground_truth)
+    def test_synthesize_alignment(self) -> None:
+        orca = self.orcas[0]
+        pcm, alignments = orca.synthesize(test_sentences.text_alignment, random_state=RANDOM_STATE)
+        self.assertGreater(len(pcm), 0)
 
-            if wer > wer_threshold:
-                print("Ground truth transcript: `%s`" % " ".join(ground_truth))
-                print("Predicted transcript from synthesized audio: `%s`" % predicted)
-                print("=> WER: %.2f" % wer)
-            self.assertTrue(wer <= wer_threshold)
+        for i, word in enumerate(alignments):
+            word_truth = test_sentences.alignments[i]
+            self._test_word_equal(word, word_truth)
+
+    def test_streaming_synthesis(self) -> None:
+        leopard = None
+        try:
+            leopard = pvleopard.create(access_key=self.access_key)
+        except NotImplementedError as e:
+            pass
+
+        for orca in self.orcas:
+            stream = orca.open_stream(random_state=RANDOM_STATE)
+            pcm = []
+            for c in test_sentences.text:
+                pcm_chunk = stream.synthesize(c)
+                pcm.extend(pcm_chunk)
+            pcm.extend(stream.flush())
+            stream.close()
+
+            if leopard is None:
+                continue
+
+            ground_truth = test_sentences.text_no_punctuation.split()
+            self._test_word_error_rate(leopard=leopard, pcm=pcm, ground_truth=ground_truth)
 
     def test_synthesize_custom_pron(self) -> None:
         for orca in self.orcas:
-            pcm_custom = orca.synthesize(test_sentences.text_custom_pronunciation)
-            self.assertGreater(len(pcm_custom), 0)
+            pcm, _ = orca.synthesize(test_sentences.text_custom_pronunciation)
+            self.assertGreater(len(pcm), 0)
 
     def test_synthesize_speech_rate(self) -> None:
         for orca in self.orcas:
-            pcm_fast = orca.synthesize(test_sentences.text, speech_rate=1.3)
-            pcm_slow = orca.synthesize(test_sentences.text, speech_rate=0.7)
+            pcm_fast, _ = orca.synthesize(test_sentences.text, speech_rate=1.3)
+            pcm_slow, _ = orca.synthesize(test_sentences.text, speech_rate=0.7)
 
             self.assertLess(len(pcm_fast), len(pcm_slow))
 

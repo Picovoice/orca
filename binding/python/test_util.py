@@ -16,12 +16,16 @@ from typing import Sequence, Tuple
 
 from typing import List
 
+from _orca import Orca
+
 
 @dataclass
 class TestSentences:
     text: str
     text_no_punctuation: str
     text_custom_pronunciation: str
+    text_alignment: str
+    alignments: Sequence[Orca.WordAlignment]
     text_invalid: Sequence[str]
 
 
@@ -29,6 +33,28 @@ def get_test_data() -> Tuple[TestSentences, float]:
     data_file_path = os.path.join(os.path.dirname(__file__), "../../resources/.test/test_data.json")
     with open(data_file_path, encoding="utf8") as data_file:
         test_data = json.loads(data_file.read())
+
+    alignment_data = test_data["test_sentences"].pop("alignments")
+
+    alignments = []
+    for word_data in alignment_data:
+        phonemes = []
+        for phoneme_data in word_data["phonemes"]:
+            phoneme = Orca.PhonemeAlignment(
+                phoneme=phoneme_data["phoneme"],
+                start_sec=phoneme_data["start_sec"],
+                end_sec=phoneme_data["end_sec"])
+            phonemes.append(phoneme)
+
+        word = Orca.WordAlignment(
+            word=word_data["word"],
+            start_sec=word_data["start_sec"],
+            end_sec=word_data["end_sec"],
+            phonemes=phonemes)
+        alignments.append(word)
+
+    test_data["test_sentences"]["alignments"] = alignments
+
     return TestSentences(**test_data["test_sentences"]), test_data["wer_threshold"]
 
 
