@@ -1,5 +1,5 @@
 /*
-    Copyright 2024 Picovoice Inc.
+    Copyright 2018-2023 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
     file accompanying this source.
@@ -71,8 +71,6 @@ PV_API pv_status_t pv_get_error_stack(
  * @param message_stack Array of messages relating to the failure, allocated from `pv_get_error_stack`.
  */
 PV_API void pv_free_error_stack(char **message_stack);
-
-PV_API void pv_set_sdk(const char *sdk);
 
 #ifdef __cplusplus
 }
