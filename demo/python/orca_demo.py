@@ -20,21 +20,26 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--access_key',
+        '-a',
         required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     parser.add_argument(
         '--text',
+        '-t',
         required=True,
         help='Text to be synthesized')
     parser.add_argument(
         '--output_path',
+        '-o',
         required=True,
         help='Absolute path to .wav file where the generated audio will be stored')
     parser.add_argument(
         '--library_path',
+        '-l',
         help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
     parser.add_argument(
         '--model_path',
+        '-m',
         help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
     args = parser.parse_args()
 
@@ -45,7 +50,20 @@ def main():
 
     try:
         print('Orca version: %s' % orca.version)
-        pcm, _ = orca.synthesize(args.text)
+        pcm, alignment = orca.synthesize(args.text)
+
+        # print in json format
+        for word in alignment:
+            print(f'Word: {word.word}')
+            print(f'Pronunciation: {word.word}')
+            print(f'Start time: {word.start_sec:.3f}')
+            print(f'End time: {word.end_sec:.3f}')
+            for phoneme in word.phonemes:
+                print(f'    Phoneme: {phoneme.phoneme}')
+                print(f'    Start time: {phoneme.start_sec:.3f}')
+                print(f'    End time: {phoneme.end_sec:.3f}')
+            print('')
+
         length_sec = len(pcm) / orca.sample_rate
         with wave.open(args.output_path, 'wb') as output_file:
             output_file.setnchannels(1)
