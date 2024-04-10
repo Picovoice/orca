@@ -203,6 +203,7 @@ def main(args: argparse.Namespace) -> None:
     access_key = args.access_key
     model_path = args.model_path
     library_path = args.library_path
+    tokens_per_second = args.tokens_per_second
 
     orca = create(access_key=access_key, model_path=model_path, library_path=library_path)
 
@@ -228,7 +229,7 @@ def main(args: argparse.Namespace) -> None:
     except KeyboardInterrupt:
         terminate()
 
-    generator = get_text_generator(token_delay=0.1)
+    generator = get_text_generator(token_delay=1 / tokens_per_second)
     timestamp_deltas = TimestampDeltas()
 
     text = ""
@@ -258,7 +259,7 @@ def main(args: argparse.Namespace) -> None:
     orca_thread.wait_and_terminate()
     output_device.wait_and_terminate()
 
-    print(f"\nSimulated tokens / second: ~{num_tokens / (end - start):.2f}")
+    print(f"\nImitated tokens / second: ~{num_tokens / (end - start):.0f}")
     print(f"Time to generate text: {timestamp_deltas.time_to_last_llm_token:.2f} seconds")
     print(f"Time to first audio: {timestamp_deltas.time_to_first_audio:.2f} seconds", end="")
     if orca_thread.first_audio_time_delay > 0:
@@ -276,5 +277,11 @@ if __name__ == "__main__":
     parser.add_argument("--access_key", "-a", required=True, help="AccessKey obtained from Picovoice Console")
     parser.add_argument("--model_path", "-m", help="Path to the model parameters file")
     parser.add_argument("--library_path", "-l", help="Path to Orca's dynamic library")
+    parser.add_argument(
+        "--tokens-per-second",
+        "-t",
+        default=8,
+        type=float,
+        help="Imitated tokens per second")
 
     main(parser.parse_args())
