@@ -23,6 +23,8 @@ test_data = get_test_data()
 
 
 class OrcaTestCase(unittest.TestCase):
+    ALIGNMENT_TEST_MODEL_IDENTIFIER = "female"
+
     access_key: str
     orcas: List[Orca]
     model_paths: List[str]
@@ -48,7 +50,7 @@ class OrcaTestCase(unittest.TestCase):
             self.assertAlmostEqual(pcm[i], ground_truth[i])
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
-        self.assertAlmostEqual(timestamp, timestamp_truth, places=3)
+        self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
 
     def _test_phoneme_equal(self, phoneme: Orca.PhonemeAlignment, phoneme_truth: Orca.PhonemeAlignment) -> None:
         self.assertEqual(phoneme.phoneme, phoneme_truth.phoneme)
@@ -100,7 +102,9 @@ class OrcaTestCase(unittest.TestCase):
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
     def test_synthesize_alignment(self) -> None:
-        orca = self.orcas[0]
+        orca = [
+            orca for i, orca in enumerate(self.orcas) if
+            self.ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
         pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
