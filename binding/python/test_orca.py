@@ -23,7 +23,7 @@ test_data = get_test_data()
 
 
 class OrcaTestCase(unittest.TestCase):
-    ALIGNMENT_TEST_MODEL_IDENTIFIER = "female"
+    EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = "female"
 
     access_key: str
     orcas: List[Orca]
@@ -101,16 +101,37 @@ class OrcaTestCase(unittest.TestCase):
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
-    def test_synthesize_alignment(self) -> None:
+    def test_synthesize_alignment_exact(self) -> None:
         orca = [
             orca for i, orca in enumerate(self.orcas) if
-            self.ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
+            self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
         pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
         for i, word in enumerate(alignments):
             word_truth = test_data.alignments[i]
             self._test_word_equal(word, word_truth)
+
+    def test_synthesize_alignment(self) -> None:
+        for i, orca in enumerate(self.orcas):
+            if self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER not in self.model_paths[i]:
+
+                pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
+                self.assertGreater(len(pcm), 0)
+
+                previous_word_end_sec = 0
+                previous_phoneme_end_sec = 0
+                for word in alignments:
+                    self.assertTrue(word.start_sec == previous_word_end_sec)
+                    self.assertTrue(word.end_sec > word.start_sec)
+                    previous_word_end_sec = word.end_sec
+
+                    for phoneme in word.phonemes:
+                        self.assertTrue(phoneme.start_sec == previous_phoneme_end_sec)
+                        self.assertTrue(phoneme.start_sec >= word.start_sec)
+                        self.assertTrue(phoneme.end_sec <= word.end_sec)
+                        self.assertTrue(phoneme.end_sec > phoneme.start_sec)
+                        previous_phoneme_end_sec = phoneme.end_sec
 
     def test_streaming_synthesis(self) -> None:
         for i, orca in enumerate(self.orcas):

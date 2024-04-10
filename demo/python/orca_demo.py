@@ -51,19 +51,6 @@ def main():
     try:
         print('Orca version: %s' % orca.version)
         pcm, alignment = orca.synthesize(args.text)
-
-        # print in json format
-        for word in alignment:
-            print(f'Word: {word.word}')
-            print(f'Pronunciation: {word.word}')
-            print(f'Start time: {word.start_sec:.3f}')
-            print(f'End time: {word.end_sec:.3f}')
-            for phoneme in word.phonemes:
-                print(f'    Phoneme: {phoneme.phoneme}')
-                print(f'    Start time: {phoneme.start_sec:.3f}')
-                print(f'    End time: {phoneme.end_sec:.3f}')
-            print('')
-
         length_sec = len(pcm) / orca.sample_rate
         with wave.open(args.output_path, 'wb') as output_file:
             output_file.setnchannels(1)
