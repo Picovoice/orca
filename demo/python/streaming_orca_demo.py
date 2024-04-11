@@ -10,9 +10,8 @@
 #
 
 import argparse
-import time
 
-from demo_util import *
+from util import *
 
 
 def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
@@ -68,70 +67,54 @@ def main(args: argparse.Namespace) -> None:
 
     audio_output.start(sample_rate=synthesizer.sample_rate)
 
-    synthesize_text_callback = synthesizer.synthesize if synthesizer.input_streamable else None
-
     llm_init_kwargs = get_llm_init_kwargs(args)
-    llm = LLM.create(
-        llm_type, 
-        synthesize_text_callback=synthesize_text_callback,
-        **llm_init_kwargs)
+    llm = LLM.create(llm_type, **llm_init_kwargs)
 
     print("PICOVOICE ORCA STREAMING TTS DEMO")
-    print("This demo let's you chat with an LLM. The response is read out loud by a TTS system. Press Ctrl+C to exit.\n")
+    print(
+        "This demo let's you chat with an LLM. The response is read out loud by a TTS system. Press Ctrl+C to exit.\n")
 
     try:
         while True:
+            timestamps.reset()
+
             text = llm.get_user_input()
+
+            timestamps.log_time_llm_request()
             generator = llm.chat(user_input=text)
 
             llm_message = ""
-            num_tokens = 0
-            
-            while True:
-                try:
-                    if timestamps.time_llm_request < 0:
-                        timestamps.time_llm_request = time.time()
-                    token = next(generator)  # TODO: change to standard loop 
+            for token in generator:
+                if token is None:
+                    continue
 
-                    if timestamps.time_first_llm_token < 0:
-                        timestamps.time_first_llm_token = time.time()
+                print(token, end="", flush=True)
 
-                    if token is not None:
-                        print(token, end="", flush=True)
+                timestamps.increment_num_tokens()
 
-                    if token is not None:
-                        llm_message += token
-                except StopIteration:
-                    print(" (waiting for audio to finish...)", flush=True)
-                    timestamps.time_last_llm_token = time.time()
+                llm_message += token
 
-                    if synthesizer.input_streamable:
-                        synthesizer.flush()
-                        synthesizer.wait()
-                    else:
-                        synthesizer.synthesize(llm_message)
+                if synthesizer.input_streamable:
+                    synthesizer.synthesize(token)
 
-                    audio_output.wait()
+            print(" (waiting for audio to finish...)", flush=True)
+            timestamps.log_time_last_llm_token()
 
-                    if synthesizer.input_streamable:
-                        synthesizer.reset()
+            if synthesizer.input_streamable:
+                synthesizer.flush()
+            else:
+                synthesizer.synthesize(llm_message)
 
-                    break
+            audio_output.wait()
 
-                num_tokens += 1
-
-            timestamps.pretty_print_diffs(num_tokens=num_tokens)
+            timestamps.pretty_print_diffs()
             timestamps.reset()
 
     except KeyboardInterrupt:
         pass
 
-    if synthesizer.input_streamable:
-        synthesizer.wait_and_terminate()
-
+    synthesizer.terminate()
     audio_output.wait_and_terminate()
-
-    synthesizer.delete()
 
 
 if __name__ == "__main__":
