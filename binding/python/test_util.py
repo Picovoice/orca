@@ -11,10 +11,10 @@
 
 import json
 import os
+import struct
+import wave
 from dataclasses import dataclass
 from typing import List, Sequence
-
-import soundfile
 
 from _orca import Orca
 
@@ -32,9 +32,10 @@ class TestData:
 
 
 def read_wav_file(path: str) -> Sequence[int]:
-    pcm, _ = soundfile.read(path)
-    pcm = list(pcm * 32768)
-    return pcm
+    with wave.open(path, 'rb') as f:
+        buffer = f.readframes(f.getnframes())
+        # minus 4 because of the header
+        return struct.unpack(f"{f.getnframes() - 4}h", buffer)
 
 
 def get_model_paths() -> List[str]:

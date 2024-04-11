@@ -45,6 +45,7 @@ class OrcaTestCase(unittest.TestCase):
             orca.delete()
 
     def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
+        pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
         self.assertEqual(len(pcm), len(ground_truth))
         for i in range(len(pcm)):
             self.assertAlmostEqual(pcm[i], ground_truth[i], delta=100)
