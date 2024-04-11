@@ -89,25 +89,33 @@ class LLM:
     Keep the conversation flowing. 
     Ask relevant follow-up questions. 
     """
+    DEFAULT_USER_PROMPT = "Your prompt: "
+    DEFAULT_ASSISTANT_PROMPT = "Assistant: "
 
     def __init__(
             self,
             synthesize_text_callback: Optional[Callable[[str], None]],
+            user_prompt: Optional[str] = None,
+            assistant_prompt: Optional[str] = None,
     ) -> None:
         self._synthesize_text_callback = synthesize_text_callback
 
+        self._user_prompt = user_prompt if user_prompt is not None else self.DEFAULT_USER_PROMPT
+        self._assistant_prompt = assistant_prompt if assistant_prompt is not None else self.DEFAULT_ASSISTANT_PROMPT
+
     def chat(self, user_input: str) -> Generator[str, None, None]:
+        print(self._assistant_prompt, end="")
         for token in self._chat(user_input=user_input):
             if token is not None and self._synthesize_text_callback is not None:
-                    self._synthesize_text_callback(token)
+                self._synthesize_text_callback(token)
             yield token
 
     def _chat(self, user_input: str) -> Generator[str, None, None]:
         raise NotImplementedError(
             f"Method `chat_stream` must be implemented in a subclass of {self.__class__.__name__}")
 
-    def user_prompt(self, user_prompt: str) -> str:
-        return input(user_prompt)
+    def get_user_input(self) -> str:
+        return input(self._user_prompt)
 
     @classmethod
     def create(cls, llm_type: LLMs, **kwargs) -> 'LLM':
@@ -123,10 +131,11 @@ class LLM:
 
 
 class DummyLLM(LLM):
-    USER_PROMPT = "Press ENTER to generate a demo LLM response"
+    USER_PROMPT = "Press ENTER to generate a demo LLM response\n"
+    ASSISTANT_PROMPT = ""
 
     def __init__(self, tokens_per_second: int = 8, **kwargs: Any) -> None:
-        super().__init__(user_prompt=self.USER_PROMPT, **kwargs)
+        super().__init__(user_prompt=self.USER_PROMPT, assistant_prompt=self.ASSISTANT_PROMPT, **kwargs)
 
         self._encoder = tiktoken.encoding_for_model("gpt-4")
         self._tokens_delay = 1 / tokens_per_second
@@ -153,6 +162,7 @@ class DummyLLM(LLM):
 
 class OpenAILLM(LLM):
     MODEL_NAME = "gpt-3.5-turbo"
+
     def __init__(
             self,
             access_key: str,

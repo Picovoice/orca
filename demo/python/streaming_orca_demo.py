@@ -14,9 +14,6 @@ import time
 
 from demo_util import *
 
-USER_PROMPT = "Your prompt:\n"
-ASSISTANT_PROMPT = "Assistant:"
-
 
 def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
     kwargs = dict()
@@ -76,7 +73,7 @@ def main(args: argparse.Namespace) -> None:
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(
         llm_type, 
-        synthesize_text_callback=synthesize_text_callback, 
+        synthesize_text_callback=synthesize_text_callback,
         **llm_init_kwargs)
 
     print("PICOVOICE ORCA STREAMING TTS DEMO")
@@ -84,23 +81,23 @@ def main(args: argparse.Namespace) -> None:
 
     try:
         while True:
-            text = llm.user_prompt(user_prompt=USER_PROMPT)        
+            text = llm.get_user_input()
             generator = llm.chat(user_input=text)
 
             llm_message = ""
             num_tokens = 0
             
-            print(ASSISTANT_PROMPT)
             while True:
                 try:
                     if timestamps.time_llm_request < 0:
                         timestamps.time_llm_request = time.time()
                     token = next(generator)  # TODO: change to standard loop 
 
-                    if token is not None:
-                        print(token, end="", flush=True)
                     if timestamps.time_first_llm_token < 0:
                         timestamps.time_first_llm_token = time.time()
+
+                    if token is not None:
+                        print(token, end="", flush=True)
 
                     if token is not None:
                         llm_message += token

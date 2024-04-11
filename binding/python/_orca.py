@@ -141,16 +141,31 @@ class Orca:
 
     class Stream:
         """
-        TODO
+        Orca Stream object that allows to convert a stream of text to a stream of audio.
         """
+
         def __init__(self, handle: POINTER('Orca.COrcaStream'), orca: 'Orca') -> None:
             self._handle = handle
             self._orca = orca
 
         def synthesize(self, text: str) -> Optional[Sequence[int]]:
             """
-            TODO
+            Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
+            This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+            The incoming text is buffered as it arrives until the length is long enough to convert a chunk of the
+            buffered text into audio. The caller needs to use `pv_orca_stream_flush()` to generate the audio chunk
+            for the remaining text that has not yet been synthesized.
+            The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
+
+            :param text: A chunk of text from a text input stream, comprised of valid characters.
+            Valid characters can be retrieved by calling `pv_orca_valid_characters()`.
+            Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+            They need to be added in a single call to this function.
+            The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `NULL` if no
+            audio chunk has been produced.
             """
+
             c_num_samples = c_int32()
             c_pcm = POINTER(c_int16)()
 
@@ -172,8 +187,14 @@ class Orca:
 
         def flush(self) -> Optional[Sequence[int]]:
             """
-            TODO
+            Generates audio for all the buffered text that was added to the OrcaStream object
+            via `pv_orca_stream_synthesize()`.
+            The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
+
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `NULL` if no
+            audio chunk has been produced.
             """
+
             c_num_samples = c_int32()
             c_pcm = POINTER(c_int16)()
 
@@ -194,8 +215,9 @@ class Orca:
 
         def close(self) -> None:
             """
-            TODO
+            Releases the resources acquired by the OrcaStream object.
             """
+
             self._orca._stream_close_func(self._handle)
 
     def __init__(self, access_key: str, model_path: str, library_path: str) -> None:
@@ -555,7 +577,7 @@ class Orca:
 
     def open_stream(self, speech_rate: Optional[float] = None, random_state: Optional[int] = None) -> 'Orca.Stream':
         """
-        Opens a stream for streaming synthesis.
+        Opens a stream for streaming text synthesis.
 
         :param speech_rate: Rate of speech of the generated audio.
         :param random_state: Random seed for the synthesis process.
