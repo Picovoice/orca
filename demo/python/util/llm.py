@@ -72,7 +72,7 @@ class DummyLLM(LLM):
         with open(data_file_path, encoding="utf8") as data_file:
             self._sentences = json.loads(data_file.read())["demo_sentences"]
 
-        random.seed(777)
+        random.seed(7777)
 
     def _tokenize(self, text: str) -> Sequence[str]:
         tokens = [self._encoder.decode([i]) for i in self._encoder.encode(text)]

@@ -6,6 +6,7 @@ from datetime import datetime
 @dataclass
 class Colors:
     GREEN = "\033[92m"
+    DARK_GREEN = "\u001B[32m"
     GREY = "\033[90m"
     RESET = "\033[0m"
 
@@ -72,16 +73,21 @@ class Timestamps:
         def to_ms(t: float) -> float:
             return round(t * 1_000, -1)
 
-        print(Colors.GREEN)
+        print(Colors.DARK_GREEN)
 
+        # print(
+        #     f"Tokens / second: ~{self._num_tokens / (self.time_last_llm_token - self.time_llm_request):.0f}",
+        #     end="")
+        # print(f" (delay until first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms)")
+        #
+        print(f"Time to first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms")
+        print(f"Time to generate text: {to_ms(self.time_last_llm_token - self.time_first_llm_token):.0f}ms ", end="")
+        print(f"(tokens / second = ~{self._num_tokens / (self.time_last_llm_token - self.time_first_llm_token):.0f})")
         print(
-            f"Tokens / second: ~{self._num_tokens / (self.time_last_llm_token - self.time_llm_request):.0f}",
+            f"Time to first audio after first token: "
+            f"{Colors.GREEN}{to_ms(self.time_first_audio - self.time_first_llm_token):.0f}ms{Colors.DARK_GREEN}",
             end="")
-        print(f" (delay until first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms)")
-
-        print(f"Time to generate text: {to_ms(self.time_last_llm_token - self.time_first_llm_token):.0f}ms")
-        print(f"Time to first audio: {to_ms(self.time_first_audio - self.time_first_llm_token):.0f}ms", end="")
-        if self.initial_audio_delay > 0:
+        if self.initial_audio_delay > 0.1:
             print(
                 f" (added delay of `{to_ms(self.initial_audio_delay):.0f}ms` "
                 "to ensure continuous audio)")
