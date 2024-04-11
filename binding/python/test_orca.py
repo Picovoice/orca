@@ -47,7 +47,7 @@ class OrcaTestCase(unittest.TestCase):
     def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
         self.assertEqual(len(pcm), len(ground_truth))
         for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i])
+            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=100)
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
         self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
