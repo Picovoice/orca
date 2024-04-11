@@ -55,11 +55,11 @@ def main():
         pcm, alignment = orca.synthesize(args.text)
         processing_time = time.time() - start
         length_sec = len(pcm) / orca.sample_rate
-        with wave.open(args.output_path, 'wb') as output_file:
+        with wave.open(args.output_path, "wb") as output_file:
             output_file.setnchannels(1)
             output_file.setsampwidth(2)
             output_file.setframerate(orca.sample_rate)
-            output_file.writeframes(struct.pack('%dh' % len(pcm), *pcm))
+            output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
         print(
             f"Orca took {processing_time:.2f} seconds to synthesize {length_sec:.2f} seconds of speech which is "
             f"~{length_sec / processing_time:.0f} times faster than real-time.")

@@ -12,7 +12,7 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Sequence, Set
+from typing import List, Sequence
 
 import soundfile
 
@@ -33,7 +33,7 @@ class TestData:
 
 def read_wav_file(path: str) -> Sequence[int]:
     pcm, _ = soundfile.read(path)
-    pcm = list((pcm * 32768))
+    pcm = list(pcm * 32768)
     return pcm
 
 
@@ -47,10 +47,8 @@ def get_test_data() -> TestData:
     with open(data_file_path, encoding="utf8") as data_file:
         test_data = json.loads(data_file.read())
 
-    alignment_data = test_data["alignments"]
-
     alignments = []
-    for word_data in alignment_data:
+    for word_data in test_data["alignments"]:
         phonemes = []
         for phoneme_data in word_data["phonemes"]:
             phoneme = Orca.PhonemeAlignment(

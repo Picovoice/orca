@@ -62,8 +62,8 @@ class OrcaTestCase(unittest.TestCase):
         self._test_equal_timestamp(word.start_sec, word_truth.start_sec)
         self._test_equal_timestamp(word.end_sec, word_truth.end_sec)
 
-        for i, phoneme in enumerate(word.phonemes):
-            phoneme_truth = word_truth.phonemes[i]
+        self.assertEqual(len(word.phonemes), len(word_truth.phonemes))
+        for phoneme, phoneme_truth in zip(word.phonemes, word_truth.phonemes):
             self._test_phoneme_equal(phoneme, phoneme_truth)
 
     @staticmethod
@@ -108,30 +108,31 @@ class OrcaTestCase(unittest.TestCase):
         pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
-        for i, word in enumerate(alignments):
-            word_truth = test_data.alignments[i]
+        self.assertTrue(len(alignments) == len(test_data.alignments))
+        for word, word_truth in zip(alignments, test_data.alignments):
             self._test_word_equal(word, word_truth)
 
     def test_synthesize_alignment(self) -> None:
         for i, orca in enumerate(self.orcas):
-            if self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER not in self.model_paths[i]:
+            if self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]:
+                continue
 
-                pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
-                self.assertGreater(len(pcm), 0)
+            pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
+            self.assertGreater(len(pcm), 0)
 
-                previous_word_end_sec = 0
-                previous_phoneme_end_sec = 0
-                for word in alignments:
-                    self.assertTrue(word.start_sec == previous_word_end_sec)
-                    self.assertTrue(word.end_sec > word.start_sec)
-                    previous_word_end_sec = word.end_sec
+            previous_word_end_sec = 0
+            previous_phoneme_end_sec = 0
+            for word in alignments:
+                self.assertTrue(word.start_sec == previous_word_end_sec)
+                self.assertTrue(word.end_sec > word.start_sec)
+                previous_word_end_sec = word.end_sec
 
-                    for phoneme in word.phonemes:
-                        self.assertTrue(phoneme.start_sec == previous_phoneme_end_sec)
-                        self.assertTrue(phoneme.start_sec >= word.start_sec)
-                        self.assertTrue(phoneme.end_sec <= word.end_sec)
-                        self.assertTrue(phoneme.end_sec > phoneme.start_sec)
-                        previous_phoneme_end_sec = phoneme.end_sec
+                for phoneme in word.phonemes:
+                    self.assertTrue(phoneme.start_sec == previous_phoneme_end_sec)
+                    self.assertTrue(phoneme.start_sec >= word.start_sec)
+                    self.assertTrue(phoneme.end_sec <= word.end_sec)
+                    self.assertTrue(phoneme.end_sec > phoneme.start_sec)
+                    previous_phoneme_end_sec = phoneme.end_sec
 
     def test_streaming_synthesis(self) -> None:
         for i, orca in enumerate(self.orcas):
@@ -162,12 +163,8 @@ class OrcaTestCase(unittest.TestCase):
 
             self.assertLess(len(pcm_fast), len(pcm_slow))
 
-            try:
+            with self.assertRaises(OrcaError):
                 _ = orca.synthesize(test_data.text, speech_rate=9999)
-            except OrcaError:
-                pass
-            else:
-                self.fail("Expected OrcaError")
 
     def test_synthesize_to_file(self) -> None:
         for orca in self.orcas:

@@ -79,11 +79,7 @@ class DummyLLM(LLM):
         return tokens
 
     def _chat(self, user_input: str) -> Generator[str, None, None]:
-        try:
-            text_index = int(user_input)
-            sentence = self._sentences[text_index]
-        except ValueError:
-            sentence = self._sentences[random.randint(0, len(self._sentences) - 1)]
+        sentence = self._sentences[random.randint(0, len(self._sentences) - 1)]
 
         for i in self._tokenize(text=sentence):
             time.sleep(self._tokens_delay)
