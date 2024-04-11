@@ -11,7 +11,7 @@
 
 import argparse
 
-from util import *
+from src import *
 
 
 def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
@@ -56,7 +56,7 @@ def main(args: argparse.Namespace) -> None:
 
     timestamps = Timestamps()
 
-    audio_output = StreamingAudioOutput.from_default_device()
+    audio_output = StreamingAudioDevice.from_default_device()
 
     synthesizer_init_kwargs = get_synthesizer_init_kwargs(args)
     synthesizer = Synthesizer.create(

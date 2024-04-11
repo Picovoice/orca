@@ -75,12 +75,7 @@ class Timestamps:
 
         print(Colors.DARK_GREEN)
 
-        # print(
-        #     f"Tokens / second: ~{self._num_tokens / (self.time_last_llm_token - self.time_llm_request):.0f}",
-        #     end="")
-        # print(f" (delay until first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms)")
-        #
-        print(f"Time to first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms")
+        print(f"Delay for first text token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms")
         print(f"Time to generate text: {to_ms(self.time_last_llm_token - self.time_first_llm_token):.0f}ms ", end="")
         print(f"(tokens / second = ~{self._num_tokens / (self.time_last_llm_token - self.time_first_llm_token):.0f})")
         print(

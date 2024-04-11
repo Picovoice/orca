@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from sounddevice import OutputStream, query_devices
 
 
-class StreamingAudioOutput:
+class StreamingAudioDevice:
     def __init__(self, device_info: dict) -> None:
         self._device_info = device_info
         self._queue: Queue[NDArray] = Queue()
@@ -35,9 +35,6 @@ class StreamingAudioOutput:
             return
         data = self._queue.get()
         outdata[:, 0] = data
-
-    def set_sample_rate(self, sample_rate: int) -> None:
-        self._sample_rate = sample_rate
 
     def play(self, pcm_chunk: Optional[Union[Sequence[int], NDArray]] = None) -> None:
         if self._stream is None:
@@ -89,5 +86,5 @@ class StreamingAudioOutput:
 
 
 __all__ = [
-    "StreamingAudioOutput",
+    "StreamingAudioDevice",
 ]
