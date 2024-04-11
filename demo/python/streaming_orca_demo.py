@@ -14,16 +14,20 @@ import time
 
 from demo_util import *
 
+USER_PROMPT = "Your prompt:\n"
+ASSISTANT_PROMPT = "Assistant:"
+
 
 def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
     kwargs = dict()
     llm_type = LLMs(args.llm)
+
     if llm_type is LLMs.OPENAI:
         if not args.openai_access_key:
             raise ValueError(
                 f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
-
         kwargs["access_key"] = args.openai_access_key
+
     elif llm_type is LLMs.DUMMY:
         kwargs["tokens_per_second"] = args.tokens_per_second
 
@@ -33,13 +37,19 @@ def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
 def get_synthesizer_init_kwargs(args: argparse.Namespace) -> dict:
     kwargs = dict()
     synthesizer_type = Synthesizers(args.synthesizer)
-    if synthesizer_type is Synthesizers.PICOVOICE_ORCA or synthesizer_type is Synthesizers.PICOVOICE_ORCA_STREAMING:
+
+    if synthesizer_type is Synthesizers.PICOVOICE_ORCA:
         if not args.picovoice_access_key:
             raise ValueError("Picovoice access key is required when using Picovoice TTS")
-
         kwargs["access_key"] = args.picovoice_access_key
         kwargs["model_path"] = args.picovoice_model_path
         kwargs["library_path"] = args.picovoice_library_path
+
+    elif synthesizer_type is Synthesizers.OPENAI:
+        if not args.openai_access_key:
+            raise ValueError(
+                f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
+        kwargs["access_key"] = args.openai_access_key
 
     return kwargs
 
@@ -59,36 +69,43 @@ def main(args: argparse.Namespace) -> None:
         timestamps=timestamps,
         **synthesizer_init_kwargs)
 
-    llm_init_kwargs = get_llm_init_kwargs(args)
+    audio_output.start(sample_rate=synthesizer.sample_rate)
+
     synthesize_text_callback = synthesizer.synthesize if synthesizer.input_streamable else None
-    llm = LLM.create(llm_type, synthesize_text_callback=synthesize_text_callback, **llm_init_kwargs)
 
-    if synthesizer.input_streamable:
-        synthesizer.start()
-    audio_output.start(sample_rate=synthesizer.samplerate)
+    llm_init_kwargs = get_llm_init_kwargs(args)
+    llm = LLM.create(
+        llm_type, 
+        synthesize_text_callback=synthesize_text_callback, 
+        **llm_init_kwargs)
 
-    print(f"Picovoice Orca Streaming Demo")
-    print("The following let's you chat with an LLM model using Orca for TTS. Press Ctrl+C to exit.\n")
+    print("PICOVOICE ORCA STREAMING TTS DEMO")
+    print("This demo let's you chat with an LLM. The response is read out loud by a TTS system. Press Ctrl+C to exit.\n")
 
     try:
         while True:
-            text = llm.user_prompt()
-            generator = llm.chat(text)
+            text = llm.user_prompt(user_prompt=USER_PROMPT)        
+            generator = llm.chat(user_input=text)
 
             llm_message = ""
             num_tokens = 0
+            
+            print(ASSISTANT_PROMPT)
             while True:
                 try:
                     if timestamps.time_llm_request < 0:
                         timestamps.time_llm_request = time.time()
-                    token = next(generator)
+                    token = next(generator)  # TODO: change to standard loop 
+
+                    if token is not None:
+                        print(token, end="", flush=True)
                     if timestamps.time_first_llm_token < 0:
                         timestamps.time_first_llm_token = time.time()
 
                     if token is not None:
                         llm_message += token
                 except StopIteration:
-                    print(" (waiting for audio ...)", flush=True)
+                    print(" (waiting for audio to finish...)", flush=True)
                     timestamps.time_last_llm_token = time.time()
 
                     if synthesizer.input_streamable:
@@ -116,9 +133,6 @@ def main(args: argparse.Namespace) -> None:
         synthesizer.wait_and_terminate()
 
     audio_output.wait_and_terminate()
-
-    # TODO:
-    # Give final stats (TTS delay)
 
     synthesizer.delete()
 

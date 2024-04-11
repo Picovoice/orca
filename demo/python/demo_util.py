@@ -5,6 +5,7 @@ import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
+from io import BytesIO
 from enum import Enum
 from queue import Queue
 from typing import *
@@ -15,6 +16,13 @@ import sounddevice as sd
 import tiktoken
 from numpy.typing import NDArray
 from pvorca import Orca, OrcaInvalidArgumentError
+
+
+@dataclass
+class Colors:
+    GREEN = "\033[92m"
+    GREY = "\033[90m"
+    RESET = "\033[0m"
 
 
 @dataclass
@@ -35,27 +43,26 @@ class Timestamps:
         self.initial_audio_delay = 0.0
 
     def pretty_print_diffs(self, num_tokens: int) -> None:
-        print("\033[90m", end="")
-        print("\n** Responsiveness metrics **")
+        def to_ms(t: float) -> float:
+            return round(t * 1_000, -1)
 
-        api_request_delay = max(self.time_first_llm_token - self.time_llm_request, 0.01)
+        print(Colors.GREEN)
+
         print(
-            f"Estimated tokens / second: ~{num_tokens / (self.time_last_llm_token - self.time_llm_request):.0f}",
+            f"Tokens / second: ~{num_tokens / (self.time_last_llm_token - self.time_llm_request):.0f}",
             end="")
-        print(
-            "" if api_request_delay == 0.01 else
-            f" (includes delay of API request of `{api_request_delay:.2f}` seconds).")
+        print(f" (delay until first token: {to_ms(self.time_first_llm_token - self.time_llm_request):.0f}ms)")
 
-        print(f"Time to generate text: {self.time_last_llm_token - self.time_first_llm_token:.2f} seconds")
-        print(f"Time to first audio: {self.time_first_audio - self.time_first_llm_token:.2f} seconds", end="")
+        print(f"Time to generate text: {to_ms(self.time_last_llm_token - self.time_first_llm_token):.0f}ms")
+        print(f"Time to first audio: {to_ms(self.time_first_audio - self.time_first_llm_token):.0f}ms", end="")
         if self.initial_audio_delay > 0:
             print(
-                f" (+ applied initial delay of `{self.initial_audio_delay:.2f} seconds` "
+                f" (added delay of `{to_ms(self.initial_audio_delay):.0f}ms` "
                 "to ensure continuous audio)")
 
         else:
             print()
-        print("\033[0m")
+        print(Colors.RESET)
 
     def debug_print(self) -> None:
         def to_hms(t: float) -> str:
@@ -82,31 +89,25 @@ class LLM:
     Keep the conversation flowing. 
     Ask relevant follow-up questions. 
     """
-    DEFAULT_USER_PROMPT = "USER PROMPT:\n"
 
     def __init__(
             self,
             synthesize_text_callback: Optional[Callable[[str], None]],
-            user_prompt: Optional[str] = None,
     ) -> None:
         self._synthesize_text_callback = synthesize_text_callback
-        self._user_prompt = user_prompt if user_prompt is not None else self.DEFAULT_USER_PROMPT
 
-    def chat(self, prompt: str) -> Generator[str, None, None]:
-        print("LLM RESPONSE:")
-        for token in self._chat(prompt=prompt):
-            if token is not None:
-                if self._synthesize_text_callback is not None:
+    def chat(self, user_input: str) -> Generator[str, None, None]:
+        for token in self._chat(user_input=user_input):
+            if token is not None and self._synthesize_text_callback is not None:
                     self._synthesize_text_callback(token)
-                print(token, end="", flush=True)
             yield token
 
-    def _chat(self, prompt: str) -> Generator[str, None, None]:
+    def _chat(self, user_input: str) -> Generator[str, None, None]:
         raise NotImplementedError(
             f"Method `chat_stream` must be implemented in a subclass of {self.__class__.__name__}")
 
-    def user_prompt(self) -> str:
-        return input(self._user_prompt)
+    def user_prompt(self, user_prompt: str) -> str:
+        return input(user_prompt)
 
     @classmethod
     def create(cls, llm_type: LLMs, **kwargs) -> 'LLM':
@@ -122,7 +123,7 @@ class LLM:
 
 
 class DummyLLM(LLM):
-    USER_PROMPT = "Press ENTER to generate a demo LLM response\n"
+    USER_PROMPT = "Press ENTER to generate a demo LLM response"
 
     def __init__(self, tokens_per_second: int = 8, **kwargs: Any) -> None:
         super().__init__(user_prompt=self.USER_PROMPT, **kwargs)
@@ -132,16 +133,15 @@ class DummyLLM(LLM):
 
         data_file_path = os.path.join(os.path.dirname(__file__), "../../resources/demo/demo_data.json")
         with open(data_file_path, encoding="utf8") as data_file:
-            demo_data = json.loads(data_file.read())
-        self._sentences = demo_data["demo_sentences"]
+            self._sentences = json.loads(data_file.read())["demo_sentences"]
 
     def _tokenize(self, text: str) -> Sequence[str]:
         tokens = [self._encoder.decode([i]) for i in self._encoder.encode(text)]
         return tokens
 
-    def _chat(self, prompt: str) -> Generator[str, None, None]:
+    def _chat(self, user_input: str) -> Generator[str, None, None]:
         try:
-            text_index = int(prompt)
+            text_index = int(user_input)
             sentence = self._sentences[text_index]
         except ValueError:
             sentence = self._sentences[random.randint(0, len(self._sentences) - 1)]
@@ -152,11 +152,13 @@ class DummyLLM(LLM):
 
 
 class OpenAILLM(LLM):
+    MODEL_NAME = "gpt-3.5-turbo"
     def __init__(
             self,
             access_key: str,
-            model_name: str = "gpt-3.5-turbo",
-            **kwargs: Any) -> None:
+            model_name: str = MODEL_NAME,
+            **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
 
         from openai import OpenAI
@@ -171,11 +173,12 @@ class OpenAILLM(LLM):
     def _append_assistant_message(self, message: str) -> None:
         self._message_stack.append({"role": "assistant", "content": message})
 
-    def _chat(self, prompt: str) -> Generator[str, None, None]:
-        self._append_user_message(prompt)
+    def _chat(self, user_input: str) -> Generator[str, None, None]:
+        self._append_user_message(user_input)
         stream = self._client.chat.completions.create(
             model=self._model_name,
             messages=self._message_stack,
+            seed=777,
             stream=True)
         assistant_message = ""
         for chunk in stream:
@@ -189,22 +192,23 @@ class OpenAILLM(LLM):
 class Synthesizers(Enum):
     OPENAI = "openai"
     PICOVOICE_ORCA = "picovoice_orca"
-    PICOVOICE_ORCA_STREAMING = "picovoice_orca_streaming"
 
 
 class Synthesizer:
     def __init__(
             self,
-            samplerate: int,
-            play_audio_callback: Callable,
+            sample_rate: int,
+            play_audio_callback: Callable[[Union[Sequence[int], NDArray]], None],
             timestamps: Timestamps,
             input_streamable: bool = False,
     ) -> None:
-        self.samplerate = samplerate
+        self.sample_rate = sample_rate
         self.input_streamable = input_streamable
 
         self._play_audio_callback = play_audio_callback
         self._timestamps = timestamps
+
+        self._first_request = True
 
     def synthesize(self, text: str, **kwargs: Any) -> None:
         self._timestamps.time_first_synthesis_request = time.time()
@@ -216,10 +220,7 @@ class Synthesizer:
         pass
 
     def reset(self) -> None:
-        pass
-
-    def start(self) -> None:
-        pass
+        self._first_request = True
 
     def wait(self) -> None:
         pass
@@ -230,7 +231,7 @@ class Synthesizer:
     def delete(self) -> None:
         pass
 
-    def _synthesize(self, text: str, **kwargs: Any) -> NDArray:
+    def _synthesize(self, text: str, **kwargs: Any) -> Union[Sequence[int], NDArray]:
         raise NotImplementedError(
             f"Method `_synthesize` must be implemented in a subclass of {self.__class__.__name__}")
 
@@ -238,7 +239,6 @@ class Synthesizer:
     def create(cls, engine: Union[str, Synthesizers], **kwargs: Any) -> 'Synthesizer':
         classes = {
             Synthesizers.PICOVOICE_ORCA: PicovoiceOrcaSynthesizer,
-            Synthesizers.PICOVOICE_ORCA_STREAMING: PicovoiceOrcaStreamingSynthesizer,
             Synthesizers.OPENAI: OpenAISynthesizer,
         }
 
@@ -249,37 +249,47 @@ class Synthesizer:
 
 
 class OpenAISynthesizer(Synthesizer):
-    pass
+    MODEL_NAME = "tts-1"
+    VOICE_NAME = "shimmer"
+    SAMPLE_RATE = 24000
 
-
-class PicovoiceOrcaSynthesizer(Synthesizer):
     def __init__(
             self,
             access_key: str,
-            model_path: Optional[str] = None,
-            library_path: Optional[str] = None,
-            **kwargs: Any,
+            model_name: str = MODEL_NAME,
+            **kwargs: Any
     ) -> None:
-        self._orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
+        from openai import OpenAI
 
-        super().__init__(samplerate=self._orca.sample_rate, **kwargs)
+        super().__init__(sample_rate=self.SAMPLE_RATE, **kwargs)
 
-    @staticmethod
-    def _clean_text(text: str) -> str:
-        text = text.replace("\n", " ")
-        text = text.replace("\r", " ")
-        text = text.replace("\t", " ")
-        return text
+        self._model_name = model_name
+        self._client = OpenAI(api_key=access_key)
 
-    def _synthesize(self, text: str, **kwargs: Any) -> Sequence[int]:
-        cleaned_text = self._clean_text(text)
-        return self._orca.synthesize(text=cleaned_text)[0]
+    def _decode(self, bytes: bytes) -> NDArray:
+        pcm = np.frombuffer(BytesIO(bytes).read(), dtype=np.int16)
+        return pcm
 
-    def delete(self) -> None:
-        self._orca.delete()
+    def _synthesize(self, text: str, **kwargs: Any) -> None:
+        if self._first_request:
+            self._timestamps.time_first_synthesis_request = time.time()
+            self._first_request = False
+
+        response = self._client.audio.speech.create(
+            model=self._model_name,
+            voice=self.VOICE_NAME,
+            response_format="pcm",
+            input=text)
+
+        for chunk in response.iter_bytes(chunk_size=1024):
+            if self._timestamps.time_first_audio < 0.0:
+                self._timestamps.time_first_audio = time.time()
+
+            pcm = self._decode(chunk)
+            self._play_audio_callback(pcm)
 
 
-class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
+class PicovoiceOrcaSynthesizer(Synthesizer):
     NUM_TOKENS_PER_PCM_CHUNK = 8
 
     @dataclass
@@ -289,7 +299,7 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
 
     def __init__(
             self,
-            play_audio_callback: Callable,
+            play_audio_callback: Callable[[Union[Sequence[int], NDArray]], None],
             timestamps: Timestamps,
             access_key: str,
             model_path: Optional[str] = None,
@@ -297,7 +307,7 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
     ) -> None:
         self._orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
         super().__init__(
-            samplerate=self._orca.sample_rate,
+            sample_rate=self._orca.sample_rate,
             play_audio_callback=play_audio_callback,
             timestamps=timestamps,
             input_streamable=True)
@@ -305,16 +315,17 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
         self._orca_stream = self._orca.open_stream()
         self._sample_rate = self._orca.sample_rate
 
-        self._queue: Queue[Optional[PicovoiceOrcaStreamingSynthesizer.OrcaTextInput]] = Queue()
+        self._queue: Queue[Optional[PicovoiceOrcaSynthesizer.OrcaTextInput]] = Queue()
         self._play_audio_callback = play_audio_callback
 
         self._thread = threading.Thread(target=self._run)
+        self._thread.start()
 
         self._timestamps = timestamps
         self._total_processing_time = 0.0
 
         self._num_tokens = 0
-        self._first_token = True
+        self._is_flushed = False
 
     def _compute_first_audio_delay(self, pcm: Sequence[int], processing_time: float) -> float:
         seconds_audio = len(pcm) / self._sample_rate
@@ -331,9 +342,9 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
             if orca_input is None:
                 break
 
-            if self._first_token:
+            if self._first_request:
                 self._timestamps.time_first_synthesis_request = time.time()
-                self._first_token = False
+                self._first_request = False
 
             self._num_tokens += 1
 
@@ -360,6 +371,8 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
 
                 self._play_audio_callback(pcm)
 
+            self._is_flushed = orca_input.flush
+
     @property
     def total_processing_time(self) -> float:
         return self._total_processing_time
@@ -370,20 +383,18 @@ class PicovoiceOrcaStreamingSynthesizer(Synthesizer):
     def flush(self) -> None:
         self._queue.put_nowait(self.OrcaTextInput(text="", flush=True))
 
-    def start(self) -> None:
-        self._thread.start()
-
     def reset(self) -> None:
+        super().reset()
         self._num_tokens = 0
-        self._first_token = True
+        self._is_flushed = False
 
     def wait_and_terminate(self) -> None:
         self.wait()
         self.terminate()
 
     def wait(self):
-        while not self._queue.empty():
-            time.sleep(0.1)
+        while not self._queue.empty() or not self._is_flushed:
+            time.sleep(0.01)
 
     def terminate(self):
         self._queue.put_nowait(None)
@@ -404,33 +415,6 @@ class StreamingAudioOutput:
         self._sample_rate = None
         self._blocksize = None
 
-    def _callback(self, outdata: NDArray, frames: int, time: Any, status: Any) -> None:
-        if self._queue.empty():
-            outdata[:] = 0
-            return
-        data = self._queue.get()
-        outdata[:, 0] = data
-
-    def set_sample_rate(self, sample_rate: int) -> None:
-        self._sample_rate = sample_rate
-
-    def play(self, pcm_chunk: Sequence[int]) -> None:
-        if self._stream is None:
-            raise ValueError("Stream is not started. Call `start` method first.")
-
-        pcm_chunk = np.array(pcm_chunk, dtype=np.int16)
-
-        if self._buffer is not None:
-            pcm_chunk = np.concatenate([self._buffer, pcm_chunk])
-            self._buffer = None
-
-        length = pcm_chunk.shape[0]
-        for index_block in range(0, length, self._blocksize):
-            if (length - index_block) < self._blocksize:
-                self._buffer = pcm_chunk[index_block: index_block + (length - index_block)]
-            else:
-                self._queue.put_nowait(pcm_chunk[index_block: index_block + self._blocksize])
-
     def start(self, sample_rate: int) -> None:
         self._sample_rate = sample_rate
         self._blocksize = self._sample_rate // 20
@@ -442,6 +426,40 @@ class StreamingAudioOutput:
             callback=self._callback,
             blocksize=self._blocksize)
         self._stream.start()
+
+    def _callback(self, outdata: NDArray, frames: int, time: Any, status: Any) -> None:
+        if self._queue.empty():
+            outdata[:] = 0
+            return
+        data = self._queue.get()
+        outdata[:, 0] = data
+
+    def set_sample_rate(self, sample_rate: int) -> None:
+        self._sample_rate = sample_rate
+
+    def play(self, pcm_chunk: Optional[Union[Sequence[int], NDArray]] = None) -> None:
+        if self._stream is None:
+            raise ValueError("Stream is not started. Call `start` method first.")
+
+        if pcm_chunk is not None and isinstance(pcm_chunk, list):
+            pcm_chunk = np.array(pcm_chunk, dtype=np.int16)
+
+        if self._buffer is not None:
+            if pcm_chunk is not None:
+                pcm_chunk = np.concatenate([self._buffer, pcm_chunk])
+            else:
+                pcm_chunk = self._buffer
+            self._buffer = None
+
+        if pcm_chunk is None:
+            return
+        
+        length = pcm_chunk.shape[0]
+        for index_block in range(0, length, self._blocksize):
+            if (length - index_block) < self._blocksize:
+                self._buffer = pcm_chunk[index_block: index_block + (length - index_block)]
+            else:
+                self._queue.put_nowait(pcm_chunk[index_block: index_block + self._blocksize])
 
     def wait_and_terminate(self) -> None:
         self.wait()
