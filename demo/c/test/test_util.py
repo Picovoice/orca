@@ -29,6 +29,7 @@ def get_test_data() -> TestSentences:
     with open(data_file_path, encoding="utf8") as data_file:
         json_test_data = data_file.read()
     test_data = json.loads(json_test_data)['test_sentences']
+    test_data.pop("text_alignment")
     return TestSentences(**test_data)
 
 

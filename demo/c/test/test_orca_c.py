@@ -16,7 +16,7 @@ import unittest
 
 from test_util import get_model_paths, get_test_data
 
-test_sentences = get_test_data()
+test_data = get_test_data()
 
 
 class OrcaCTestCase(unittest.TestCase):
@@ -52,7 +52,7 @@ class OrcaCTestCase(unittest.TestCase):
             "-a", self._access_key,
             "-l", self._get_library_file(),
             "-m", model_path,
-            "-t", test_sentences.text,
+            "-t", test_data.text,
             "-o", output_path,
         ]
 
