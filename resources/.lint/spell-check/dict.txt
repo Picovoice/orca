@@ -40,3 +40,11 @@ Sevilla
 editdistance
 pvleopard
 xcworkspace
+sounddevice
+tiktoken
+samplerate
+dtype
+outdata
+AILLM
+streamable
+frombuffer
