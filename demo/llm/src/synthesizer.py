@@ -56,11 +56,16 @@ class Synthesizer:
 
         return classes[engine](**kwargs)
 
+    def __str__(self) -> str:
+        raise NotImplementedError(
+            f"Method `__str__` must be implemented in a subclass of {self.__class__.__name__}")
+
 
 class OpenAISynthesizer(Synthesizer):
     MODEL_NAME = "tts-1"
     VOICE_NAME = "shimmer"
     SAMPLE_RATE = 24000
+    NAME = "OpenAI TTS"
 
     def __init__(
             self,
@@ -92,6 +97,9 @@ class OpenAISynthesizer(Synthesizer):
 
             pcm = self._decode(chunk)
             self._play_audio_callback(pcm)
+
+    def __str__(self) -> str:
+        return f"{self.NAME}, model={self.MODEL_NAME}, voice={self.VOICE_NAME}"
 
 
 class PicovoiceOrcaSynthesizer(Synthesizer):
@@ -194,6 +202,9 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         self._close_thread_blocking()
         self._orca_stream.close()
         self._orca.delete()
+
+    def __str__(self) -> str:
+        return f"Picovoice Orca v{self._orca.version}"
 
 
 __all__ = [

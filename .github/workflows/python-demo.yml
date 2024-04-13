@@ -68,7 +68,7 @@ jobs:
       # TODO: remove after release
       - name: Build dependencies
         run: |
-          pip install wheel && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-0.1.4-py3-none-any.whl
+          pip install wheel && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install --force-reinstall dist/pvorca-0.1.4-py3-none-any.whl
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt

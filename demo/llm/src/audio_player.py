@@ -64,7 +64,7 @@ class StreamingAudioDevice:
         self.wait()
         self.terminate()
 
-    def wait(self):
+    def wait(self) -> None:
         if self._buffer is not None:
             chunk = np.zeros(self._blocksize, dtype=np.int16)
             chunk[:self._buffer.shape[0]] = self._buffer
@@ -76,12 +76,12 @@ class StreamingAudioDevice:
 
         time.sleep(time_interval)
 
-    def terminate(self):
+    def terminate(self) -> None:
         self._stream.stop()
         self._stream.close()
 
     @classmethod
-    def from_default_device(cls):
+    def from_default_device(cls) -> 'StreamingAudioDevice':
         return cls(device_info=query_devices(kind="output"))
 
 
