@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 from openai import OpenAI
 from pvorca import OrcaInvalidArgumentError
 
-from .util import Timestamps
+from .util import Timer
 
 
 class Synthesizers(Enum):
@@ -25,14 +25,14 @@ class Synthesizer:
             self,
             sample_rate: int,
             play_audio_callback: Callable[[Union[Sequence[int], NDArray]], None],
-            timestamps: Timestamps,
+            timer: Timer,
             input_streamable: bool = False,
     ) -> None:
         self.sample_rate = sample_rate
         self.input_streamable = input_streamable
 
         self._play_audio_callback = play_audio_callback
-        self._timestamps = timestamps
+        self._timer = timer
 
     def synthesize(self, text: str) -> None:
         raise NotImplementedError(
@@ -84,7 +84,7 @@ class OpenAISynthesizer(Synthesizer):
         return pcm
 
     def synthesize(self, text: str) -> None:
-        self._timestamps.maybe_log_time_first_synthesis_request()
+        self._timer.maybe_log_time_first_synthesis_request()
 
         response = self._client.audio.speech.create(
             model=self._model_name,
@@ -93,7 +93,7 @@ class OpenAISynthesizer(Synthesizer):
             input=text)
 
         for chunk in response.iter_bytes(chunk_size=1024):
-            self._timestamps.maybe_log_time_first_audio()
+            self._timer.maybe_log_time_first_audio()
 
             pcm = self._decode(chunk)
             self._play_audio_callback(pcm)
@@ -113,7 +113,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
     def __init__(
             self,
             play_audio_callback: Callable[[Union[Sequence[int], NDArray]], None],
-            timestamps: Timestamps,
+            timer: Timer,
             access_key: str,
             model_path: Optional[str] = None,
             library_path: Optional[str] = None,
@@ -122,17 +122,14 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         super().__init__(
             sample_rate=self._orca.sample_rate,
             play_audio_callback=play_audio_callback,
-            timestamps=timestamps,
+            timer=timer,
             input_streamable=True)
 
         self._orca_stream = self._orca.open_stream()
-        self._sample_rate = self._orca.sample_rate
 
         self._queue: Queue[Optional[PicovoiceOrcaSynthesizer.OrcaTextInput]] = Queue()
-        self._play_audio_callback = play_audio_callback
 
         self._num_tokens = 0
-        self._timestamps = timestamps
 
         self._thread = None
         self._start_thread()
@@ -149,8 +146,8 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         self._num_tokens = 0
 
     def _compute_first_audio_delay(self, pcm: Sequence[int], processing_time: float) -> float:
-        seconds_audio = len(pcm) / self._sample_rate
-        tokens_per_sec = self._num_tokens / (time.time() - self._timestamps.time_first_synthesis_request)
+        seconds_audio = len(pcm) / self.sample_rate
+        tokens_per_sec = self._num_tokens / (time.time() - self._timer.time_first_synthesis_request)
         time_delay = \
             max(((self.NUM_TOKENS_PER_PCM_CHUNK / (
                     tokens_per_sec + 1e-4)) - seconds_audio) + processing_time,
@@ -163,7 +160,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
             if orca_input is None:
                 break
 
-            self._timestamps.maybe_log_time_first_synthesis_request()
+            self._timer.maybe_log_time_first_synthesis_request()
 
             self._num_tokens += 1
 
@@ -179,11 +176,11 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
             processing_time = time.time() - start
 
             if len(pcm) > 0:
-                if self._timestamps.is_first_audio:
-                    self._timestamps.maybe_log_time_first_audio()
+                if self._timer.is_first_audio:
+                    self._timer.maybe_log_time_first_audio()
 
                     initial_audio_delay = self._compute_first_audio_delay(pcm=pcm, processing_time=processing_time)
-                    self._timestamps.set_initial_audio_delay(initial_audio_delay)
+                    self._timer.set_initial_audio_delay(initial_audio_delay)
 
                     time.sleep(initial_audio_delay)
 

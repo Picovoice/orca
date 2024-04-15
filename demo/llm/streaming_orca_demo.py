@@ -10,11 +10,15 @@
 #
 
 import argparse
+import time
+from typing import Dict, Sequence
 
 from src import *
 
+MAX_WAIT_TIME_FIRST_AUDIO = 5
 
-def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
+
+def get_llm_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     kwargs = dict()
     llm_type = LLMs(args.llm)
 
@@ -30,42 +34,46 @@ def get_llm_init_kwargs(args: argparse.Namespace) -> dict:
     return kwargs
 
 
-def get_synthesizer_init_kwargs(args: argparse.Namespace) -> dict:
-    kwargs = dict()
-    synthesizer_type = Synthesizers(args.synthesizer)
+def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Sequence[Dict[str, str]]:
+    kwargs = []
 
-    if synthesizer_type is Synthesizers.PICOVOICE_ORCA:
-        if not args.picovoice_access_key:
-            raise ValueError("Picovoice access key is required when using Picovoice TTS")
-        kwargs["access_key"] = args.picovoice_access_key
-        kwargs["model_path"] = args.picovoice_model_path
-        kwargs["library_path"] = args.picovoice_library_path
+    for synthesizer_type_string in args.synthesizers:
+        synthesizer_type = Synthesizers(synthesizer_type_string)
 
-    elif synthesizer_type is Synthesizers.OPENAI:
-        if not args.openai_access_key:
-            raise ValueError(
-                f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
-        kwargs["access_key"] = args.openai_access_key
+        kwargs.append(dict())
+        kwargs[-1]["synthesizer_type"] = synthesizer_type
+
+        if synthesizer_type is Synthesizers.PICOVOICE_ORCA:
+            if not args.picovoice_access_key:
+                raise ValueError("Picovoice access key is required when using Picovoice TTS")
+            kwargs[-1]["access_key"] = args.picovoice_access_key
+            kwargs[-1]["model_path"] = args.picovoice_model_path
+            kwargs[-1]["library_path"] = args.picovoice_library_path
+
+        elif synthesizer_type is Synthesizers.OPENAI:
+            if not args.openai_access_key:
+                raise ValueError(
+                    f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
+            kwargs[-1]["access_key"] = args.openai_access_key
 
     return kwargs
 
 
 def main(args: argparse.Namespace) -> None:
     llm_type = LLMs(args.llm)
-    synthesizer_type = Synthesizers(args.synthesizer)
 
-    timestamps = Timestamps()
+    timer = Timer()
 
     audio_output = StreamingAudioDevice.from_default_device()
 
+    synthesizers = []
     synthesizer_init_kwargs = get_synthesizer_init_kwargs(args)
-    synthesizer = Synthesizer.create(
-        synthesizer_type,
-        play_audio_callback=audio_output.play,
-        timestamps=timestamps,
-        **synthesizer_init_kwargs)
-
-    audio_output.start(sample_rate=synthesizer.sample_rate)
+    for kwargs in synthesizer_init_kwargs:
+        synthesizers.append(Synthesizer.create(
+            kwargs.pop("synthesizer_type"),
+            play_audio_callback=audio_output.play,
+            timer=timer,
+            **kwargs))
 
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(llm_type, **llm_init_kwargs)
@@ -74,46 +82,82 @@ def main(args: argparse.Namespace) -> None:
     print(
         "This demo let's you chat with an LLM. The response is read out loud by a TTS system. Press Ctrl+C to exit.\n")
 
+    progress_printer = ProgressPrinter(
+        llm_response_init_message="LLM response: ",
+        timer_init_message="Time to first audio: ",
+    )
+
     try:
         while True:
-            timestamps.reset()
+            previous_prompt = None
+            for synthesizer in synthesizers:
+                timer.reset()
 
-            text = llm.get_user_input()
+                audio_output.start(sample_rate=synthesizer.sample_rate)
+                # dashboard_printer.setup(synthesizer_name=str(synthesizer))
 
-            timestamps.log_time_llm_request()
-            generator = llm.chat(user_input=text)
+                text = llm.get_user_input(previous_prompt=previous_prompt)
+                previous_prompt = text
 
-            llm_message = ""
-            for token in generator:
-                if token is None:
-                    continue
+                progress_printer.start(f"Using {synthesizer}")
 
-                print(token, end="", flush=True)
+                timer.log_time_llm_request()
+                generator = llm.chat(user_input=text)
 
-                timestamps.increment_num_tokens()
+                llm_message = ""
+                for token in generator:
+                    if token is None:
+                        continue
 
-                llm_message += token
+                    progress_printer.update_llm_response(token)
+                    if timer.is_first_token:
+                        progress_printer.update_timer(start=True)
+                    timer.increment_num_tokens()
+
+                    # print(token, flush=True, end="")
+
+                    llm_message += token
+
+                    if synthesizer.input_streamable:
+                        synthesizer.synthesize(token)
+
+                    if not timer.is_first_audio:
+                        progress_printer.update_timer(num_milliseconds=timer.get_time_to_first_audio())
+                        # progress_printer.print_first_audio_message(num=timer.get_time_to_first_audio())
+                    # else:
+                    #     progress_printer.print_first_audio_message(progress_printer.PROGRESS_BAR_SYMBOL)
+
+                # dashboard_printer.print_assistant_message(" (waiting for audio to finish...)")
+                # print(" (waiting for audio to finish...)", flush=True, end="")
+                timer.log_time_last_llm_token()
 
                 if synthesizer.input_streamable:
-                    synthesizer.synthesize(token)
+                    synthesizer.flush()
+                else:
+                    synthesizer.synthesize(llm_message)
 
-            print(" (waiting for audio to finish...)", flush=True)
-            timestamps.log_time_last_llm_token()
+                wait_seconds = 0
+                while timer.is_first_audio:
+                    increment = 0.01
+                    time.sleep(increment)
+                    wait_seconds += increment
+                    if wait_seconds > MAX_WAIT_TIME_FIRST_AUDIO:
+                        break
 
-            if synthesizer.input_streamable:
-                synthesizer.flush()
-            else:
-                synthesizer.synthesize(llm_message)
+                progress_printer.stop()
+                # dashboard_printer.print_first_audio_message(num=timestamps.get_time_to_first_audio())
+                # dashboard_printer.reset()
 
-            audio_output.wait()
+                audio_output.wait_and_terminate()
 
-            timestamps.pretty_print_diffs()
-            timestamps.reset()
+                # timer.pretty_print_diffs()
+                # dashboard_printer.cursor_down()
 
     except KeyboardInterrupt:
         pass
 
-    synthesizer.terminate()
+    for synthesizer in synthesizers:
+        synthesizer.terminate()
     audio_output.wait_and_terminate()
 
 
@@ -135,8 +179,9 @@ if __name__ == "__main__":
         help="Imitated tokens per second")
 
     parser.add_argument(
-        "--synthesizer",
-        default=Synthesizers.PICOVOICE_ORCA.value,
+        "--synthesizers",
+        nargs="+",
+        default=[Synthesizers.PICOVOICE_ORCA.value, Synthesizers.OPENAI.value],
         choices=[s.value for s in Synthesizers],
         help="Choose voice synthesizer to use")
     parser.add_argument("--picovoice-access-key", "-a", help="AccessKey obtained from Picovoice Console")

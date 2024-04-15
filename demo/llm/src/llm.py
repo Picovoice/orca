@@ -14,13 +14,19 @@ class LLMs(Enum):
 
 
 class LLM:
+    # SYSTEM_PROMPT = """
+    # You are a voice assistant.
+    # Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
+    # Only use english letters and punctuation, no special characters.
+    # Don't ever use numbers directly. Verbalize them (e.g. "five" instead of "5").
+    # Keep the conversation flowing.
+    # Ask relevant follow-up questions.
+    # """
     SYSTEM_PROMPT = """
-    You are a voice assistant. 
-    Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
-    Only use english letters and punctuation, no special characters. 
-    Don't ever use numbers directly. Verbalize them (e.g. "five" instead of "5").
-    Keep the conversation flowing. 
-    Ask relevant follow-up questions. 
+    You are a penetration tester who is tasked with testing the robustness of a TTS system.
+    The TTS system takes text as input and generates audio as output.
+    Your goal is to break the system by providing it with challenging inputs.
+    You are allowed to provide any text as input.
     """
     DEFAULT_USER_PROMPT = "Your prompt: "
     DEFAULT_ASSISTANT_PROMPT = "Assistant: "
@@ -34,7 +40,6 @@ class LLM:
         self._assistant_prompt = assistant_prompt if assistant_prompt is not None else self.DEFAULT_ASSISTANT_PROMPT
 
     def chat(self, user_input: str) -> Generator[str, None, None]:
-        print(self._assistant_prompt, end="")
         for token in self._chat(user_input=user_input):
             yield token
 
@@ -42,8 +47,15 @@ class LLM:
         raise NotImplementedError(
             f"Method `chat_stream` must be implemented in a subclass of {self.__class__.__name__}")
 
-    def get_user_input(self) -> str:
-        return input(self._user_prompt)
+    def get_user_input(self, previous_prompt: Optional[str] = None) -> str:
+        if isinstance(self, DummyLLM):
+            return input(self._user_prompt)
+
+        prompt = self._user_prompt
+        if previous_prompt is not None:
+            prompt = f"{prompt}(type `s` to choose previous prompt: `{previous_prompt}`): "
+        text = input(prompt)
+        return text if text != "s" else previous_prompt
 
     @classmethod
     def create(cls, llm_type: LLMs, **kwargs) -> 'LLM':
@@ -88,6 +100,7 @@ class DummyLLM(LLM):
 
 class OpenAILLM(LLM):
     MODEL_NAME = "gpt-3.5-turbo"
+    RANDOM_SEED = 7777
 
     def __init__(
             self,
@@ -103,6 +116,9 @@ class OpenAILLM(LLM):
 
         self._message_stack = [{"role": "system", "content": self.SYSTEM_PROMPT}]
 
+    def _remove_user_message(self, message: str) -> None:
+        self._message_stack = self._message_stack[:-1]
+
     def _append_user_message(self, message: str) -> None:
         self._message_stack.append({"role": "user", "content": message})
 
@@ -114,7 +130,7 @@ class OpenAILLM(LLM):
         stream = self._client.chat.completions.create(
             model=self._model_name,
             messages=self._message_stack,
-            seed=777,
+            seed=self.RANDOM_SEED,
             stream=True)
         assistant_message = ""
         for chunk in stream:
@@ -122,7 +138,8 @@ class OpenAILLM(LLM):
             yield token
             if token is not None:
                 assistant_message += token
-        self._append_assistant_message(message=assistant_message)
+        #self._remove_user_message(user_input)
+        self._append_assistant_message(assistant_message)
 
 
 __all__ = [
