@@ -38,6 +38,10 @@ class Synthesizer:
         raise NotImplementedError(
             f"Method `synthesize` must be implemented in a subclass of {self.__class__.__name__}")
 
+    def info(self) -> str:
+        raise NotImplementedError(
+            f"Method `info` must be implemented in a subclass of {self.__class__.__name__}")
+
     def flush(self) -> None:
         pass
 
@@ -98,8 +102,12 @@ class OpenAISynthesizer(Synthesizer):
             pcm = self._decode(chunk)
             self._play_audio_callback(pcm)
 
+    @property
+    def info(self) -> str:
+        return f"{self.NAME} (model: {self.MODEL_NAME}, voice: {self.VOICE_NAME})"
+
     def __str__(self) -> str:
-        return f"{self.NAME}, model={self.MODEL_NAME}, voice={self.VOICE_NAME}"
+        return f"{self.NAME}"
 
 
 class PicovoiceOrcaSynthesizer(Synthesizer):
@@ -200,8 +208,11 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         self._orca_stream.close()
         self._orca.delete()
 
-    def __str__(self) -> str:
+    def info(self) -> str:
         return f"Picovoice Orca v{self._orca.version}"
+
+    def __str__(self) -> str:
+        return f"Orca v{self._orca.version}"
 
 
 __all__ = [

@@ -123,7 +123,7 @@ class Timer:
 
 
 class ProgressPrinter:
-    PROGRESS_BAR_PRINT_INTERVAL_SECONDS = 0.015
+    PROGRESS_BAR_PRINT_INTERVAL_SECONDS = 0.02
     PROGRESS_BAR_SYMBOL = "#"
 
     @dataclass

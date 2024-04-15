@@ -1,3 +1,4 @@
 sounddevice==0.4.6
 tiktoken==0.6.0
 openai==1.17.0
+rich==13.7.0

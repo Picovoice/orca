@@ -59,6 +59,14 @@ def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Sequence[Dict[str, 
     return kwargs
 
 
+def print_welcome_message() -> None:
+    print("Orca instant audio generation demo!\n")
+    print("Step 1: Enter a question to forward to ChatGPT.")
+    print("Step 2: Listen to the audio response of Orca, while the text is being generated.")
+    print("Step 3: Repeat Step 2, but this time using OpenAI's Text-To-Speech instead of Orca.")
+    print()
+
+
 def main(args: argparse.Namespace) -> None:
     llm_type = LLMs(args.llm)
 
@@ -78,14 +86,12 @@ def main(args: argparse.Namespace) -> None:
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
-    print("PICOVOICE ORCA STREAMING TTS DEMO")
-    print(
-        "This demo let's you chat with an LLM. The response is read out loud by a TTS system. Press Ctrl+C to exit.\n")
-
     progress_printer = ProgressPrinter(
-        llm_response_init_message="LLM response: ",
-        timer_init_message="Time to first audio: ",
+        llm_response_init_message="ChatGPT response: ",
+        timer_init_message="Time to start playing audio: ",
     )
+
+    print_welcome_message()
 
     try:
         while True:
@@ -94,9 +100,8 @@ def main(args: argparse.Namespace) -> None:
                 timer.reset()
 
                 audio_output.start(sample_rate=synthesizer.sample_rate)
-                # dashboard_printer.setup(synthesizer_name=str(synthesizer))
 
-                text = llm.get_user_input(previous_prompt=previous_prompt)
+                text = llm.get_user_input(previous_prompt=previous_prompt, synthesizer_name=str(synthesizer))
                 previous_prompt = text
 
                 progress_printer.start(f"Using {synthesizer}")
@@ -114,8 +119,6 @@ def main(args: argparse.Namespace) -> None:
                         progress_printer.update_timer(start=True)
                     timer.increment_num_tokens()
 
-                    # print(token, flush=True, end="")
-
                     llm_message += token
 
                     if synthesizer.input_streamable:
@@ -123,12 +126,7 @@ def main(args: argparse.Namespace) -> None:
 
                     if not timer.is_first_audio:
                         progress_printer.update_timer(num_milliseconds=timer.get_time_to_first_audio())
-                        # progress_printer.print_first_audio_message(num=timer.get_time_to_first_audio())
-                    # else:
-                    #     progress_printer.print_first_audio_message(progress_printer.PROGRESS_BAR_SYMBOL)
 
-                # dashboard_printer.print_assistant_message(" (waiting for audio to finish...)")
-                # print(" (waiting for audio to finish...)", flush=True, end="")
                 timer.log_time_last_llm_token()
 
                 if synthesizer.input_streamable:
@@ -144,14 +142,10 @@ def main(args: argparse.Namespace) -> None:
                     if wait_seconds > MAX_WAIT_TIME_FIRST_AUDIO:
                         break
 
+                progress_printer.update_timer(num_milliseconds=timer.get_time_to_first_audio())
+
                 progress_printer.stop()
-                # dashboard_printer.print_first_audio_message(num=timestamps.get_time_to_first_audio())
-                # dashboard_printer.reset()
-
                 audio_output.wait_and_terminate()
-
-                # timer.pretty_print_diffs()
-                # dashboard_printer.cursor_down()
 
     except KeyboardInterrupt:
         pass
@@ -174,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tokens-per-second",
         "-t",
-        default=10,
+        default=25,
         type=int,
         help="Imitated tokens per second")
 

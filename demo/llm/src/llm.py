@@ -14,21 +14,14 @@ class LLMs(Enum):
 
 
 class LLM:
-    # SYSTEM_PROMPT = """
-    # You are a voice assistant.
-    # Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
-    # Only use english letters and punctuation, no special characters.
-    # Don't ever use numbers directly. Verbalize them (e.g. "five" instead of "5").
-    # Keep the conversation flowing.
-    # Ask relevant follow-up questions.
-    # """
     SYSTEM_PROMPT = """
-    You are a penetration tester who is tasked with testing the robustness of a TTS system.
-    The TTS system takes text as input and generates audio as output.
-    Your goal is to break the system by providing it with challenging inputs.
-    You are allowed to provide any text as input.
+    You are a voice assistant in customer service.
+    Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
+    Only use english letters and punctuation, no special characters.
+    Don't ever use numbers directly. Verbalize them (e.g. "five" instead of "5").
+    If the user asks for anything specific, invent some example data that would be typical in customer service.
     """
-    DEFAULT_USER_PROMPT = "Your prompt: "
+    DEFAULT_USER_PROMPT = "Your question: "
     DEFAULT_ASSISTANT_PROMPT = "Assistant: "
 
     def __init__(
@@ -47,15 +40,13 @@ class LLM:
         raise NotImplementedError(
             f"Method `chat_stream` must be implemented in a subclass of {self.__class__.__name__}")
 
-    def get_user_input(self, previous_prompt: Optional[str] = None) -> str:
-        if isinstance(self, DummyLLM):
-            return input(self._user_prompt)
-
-        prompt = self._user_prompt
+    def get_user_input(self, previous_prompt: Optional[str] = None, synthesizer_name: Optional[str] = None) -> str:
         if previous_prompt is not None:
-            prompt = f"{prompt}(type `s` to choose previous prompt: `{previous_prompt}`): "
-        text = input(prompt)
-        return text if text != "s" else previous_prompt
+            assert synthesizer_name
+            input(f"Press Enter to run the same program again but using {synthesizer_name} ")
+            return previous_prompt
+
+        return input(self._user_prompt)
 
     @classmethod
     def create(cls, llm_type: LLMs, **kwargs) -> 'LLM':
@@ -114,22 +105,22 @@ class OpenAILLM(LLM):
         self._model_name = model_name
         self._client = OpenAI(api_key=access_key)
 
-        self._message_stack = [{"role": "system", "content": self.SYSTEM_PROMPT}]
+        self._message_history = [{"role": "system", "content": self.SYSTEM_PROMPT}]
 
-    def _remove_user_message(self, message: str) -> None:
-        self._message_stack = self._message_stack[:-1]
+    def _remove_last_user_message(self) -> None:
+        self._message_history = self._message_history[:-1]
 
     def _append_user_message(self, message: str) -> None:
-        self._message_stack.append({"role": "user", "content": message})
+        self._message_history.append({"role": "user", "content": message})
 
     def _append_assistant_message(self, message: str) -> None:
-        self._message_stack.append({"role": "assistant", "content": message})
+        self._message_history.append({"role": "assistant", "content": message})
 
-    def _chat(self, user_input: str) -> Generator[str, None, None]:
+    def _chat(self, user_input: str, append_to_history: bool = False) -> Generator[str, None, None]:
         self._append_user_message(user_input)
         stream = self._client.chat.completions.create(
             model=self._model_name,
-            messages=self._message_stack,
+            messages=self._message_history,
             seed=self.RANDOM_SEED,
             stream=True)
         assistant_message = ""
@@ -138,8 +129,8 @@ class OpenAILLM(LLM):
             yield token
             if token is not None:
                 assistant_message += token
-        #self._remove_user_message(user_input)
-        self._append_assistant_message(assistant_message)
+        if not append_to_history:
+            self._remove_last_user_message()
 
 
 __all__ = [
