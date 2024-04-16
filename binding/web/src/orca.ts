@@ -42,6 +42,7 @@ type pv_orca_max_character_limit_type = (object: number, maxCharacterLimit: numb
 type pv_orca_synthesize_params_init_type = (object: number) => Promise<number>;
 type pv_orca_synthesize_params_delete_type = (object: number) => Promise<void>;
 type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => Promise<number>;
+type pv_orca_synthesize_params_set_random_state_type = (object: number, randomState: number) => Promise<number>;
 type pv_orca_synthesize_type = (object: number, text: number, synthesizeParams: number, numSamples: number, pcm: number) => Promise<number>;
 type pv_orca_delete_pcm_type = (object: number) => Promise<void>;
 type pv_orca_version_type = () => Promise<number>;
@@ -67,7 +68,6 @@ type OrcaWasmOutput = {
   objectAddress: number;
   inputBufferAddress: number;
   synthesizeParamsAddressAddress: number;
-  speechRateAddress: number;
   messageStackAddressAddressAddress: number;
   messageStackDepthAddress: number;
 
@@ -76,6 +76,7 @@ type OrcaWasmOutput = {
   pvOrcaSynthesizeParamsInit: pv_orca_synthesize_params_init_type;
   pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete_type;
   pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate_type
+  pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state_type
   pvOrcaDeletePcm: pv_orca_delete_pcm_type;
   pvStatusToString: pv_status_to_string_type;
   pvGetErrorStack: pv_get_error_stack_type;
@@ -90,6 +91,7 @@ export class Orca {
   private readonly _pvOrcaSynthesizeParamsInit: pv_orca_synthesize_params_init_type;
   private readonly _pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete_type;
   private readonly _pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate_type;
+  private readonly _pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state_type;
   private readonly _pvOrcaDeletePcm: pv_orca_delete_pcm_type;
   private readonly _pvGetErrorStack: pv_get_error_stack_type;
   private readonly _pvFreeErrorStack: pv_free_error_stack_type;
@@ -128,6 +130,7 @@ export class Orca {
     this._pvOrcaSynthesizeParamsInit = handleWasm.pvOrcaSynthesizeParamsInit;
     this._pvOrcaSynthesizeParamsDelete = handleWasm.pvOrcaSynthesizeParamsDelete;
     this._pvOrcaSynthesizeParamsSetSpeechRate = handleWasm.pvOrcaSynthesizeParamsSetSpeechRate;
+    this._pvOrcaSynthesizeParamsSetRandomState = handleWasm.pvOrcaSynthesizeParamsSetRandomState;
     this._pvOrcaDeletePcm = handleWasm.pvOrcaDeletePcm;
     this._pvGetErrorStack = handleWasm.pvGetErrorStack;
     this._pvFreeErrorStack = handleWasm.pvFreeErrorStack;
@@ -258,6 +261,7 @@ export class Orca {
    * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    */
   public async synthesize(text: string, synthesizeParams: SynthesizeParams = {}): Promise<Int16Array> {
     if (typeof text !== 'string') {
@@ -266,6 +270,7 @@ export class Orca {
 
     const {
       speechRate = 1.0,
+      randomState = -1,
     } = synthesizeParams;
 
     return new Promise<Int16Array>((resolve, reject) => {
@@ -316,6 +321,7 @@ export class Orca {
 
           const synthesizeParamsAddress = memoryBufferView.getInt32(synthesizeParamsAddressAddress, true);
           await this._pvFree(synthesizeParamsAddressAddress);
+
           const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, speechRate);
           if (setSpeechRateStatus !== PV_STATUS_SUCCESS) {
             const messageStack = await Orca.getMessageStack(
@@ -328,6 +334,20 @@ export class Orca {
             );
 
             throw pvStatusToException(setSpeechRateStatus, 'Synthesizing failed', messageStack);
+          }
+
+          const setRandomStateStatus = await this._pvOrcaSynthesizeParamsSetRandomState(synthesizeParamsAddress, randomState);
+          if (setRandomStateStatus !== PV_STATUS_SUCCESS) {
+            const messageStack = await Orca.getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8,
+            );
+
+            throw pvStatusToException(setRandomStateStatus, 'Synthesizing failed', messageStack);
           }
 
           const numSamplesAddress = await this._alignedAlloc(
@@ -413,7 +433,7 @@ export class Orca {
   async onmessage(e: MessageEvent): Promise<void> {
     switch (e.data.command) {
       case 'synthesize':
-        await this.synthesize(e.data.text, e.data.speechRate);
+        await this.synthesize(e.data.text, { speechRate: e.data.speechRate, randomState: e.data.randomState });
         break;
       default:
         // eslint-disable-next-line no-console
@@ -442,6 +462,7 @@ export class Orca {
     const pv_orca_synthesize_params_init = exports.pv_orca_synthesize_params_init as pv_orca_synthesize_params_init_type;
     const pv_orca_synthesize_params_delete = exports.pv_orca_synthesize_params_delete as pv_orca_synthesize_params_delete_type;
     const pv_orca_synthesize_params_set_speech_rate = exports.pv_orca_synthesize_params_set_speech_rate as pv_orca_synthesize_params_set_speech_rate_type;
+    const pv_orca_synthesize_params_set_random_state = exports.pv_orca_synthesize_params_set_random_state as pv_orca_synthesize_params_set_random_state_type;
     const pv_orca_synthesize = exports.pv_orca_synthesize as pv_orca_synthesize_type;
     const pv_orca_delete_pcm = exports.pv_orca_delete_pcm as pv_orca_delete_pcm_type;
     const pv_orca_version = exports.pv_orca_version as pv_orca_version_type;
@@ -657,6 +678,7 @@ export class Orca {
       pvOrcaSynthesizeParamsInit: pv_orca_synthesize_params_init,
       pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete,
       pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate,
+      pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state,
       pvOrcaSynthesize: pv_orca_synthesize,
       pvStatusToString: pv_status_to_string,
       pvOrcaDeletePcm: pv_orca_delete_pcm,

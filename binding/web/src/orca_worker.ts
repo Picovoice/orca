@@ -194,6 +194,7 @@ export class OrcaWorker {
    * @param text A string of text.
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    *
    * @return An Int16Array.
    */
