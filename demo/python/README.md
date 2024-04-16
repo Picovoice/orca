@@ -32,7 +32,20 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Usage
 
-To synthesize speech, run the following:
+Orca supports two modes of operation: streaming and single synthesis.
+In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous
+audio playback as demonstrated in the Orca streaming demo.
+In the single synthesis mode, the text is synthesized in a single call to the Orca engine.
+
+To run the streaming synthesis demo, run the following:
+
+```console
+orca_demo_streaming --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+```
+
+If you have an audio device connected to your system, you will hear the synthesized audio as soon as it is generated.
+
+To synthesize speech in a single call to Orca and without audio playback, run the following:
 
 ```console
 orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
