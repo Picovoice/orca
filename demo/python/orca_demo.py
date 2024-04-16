@@ -17,7 +17,45 @@ import wave
 from pvorca import create, OrcaActivationLimitError
 
 
-def main():
+def main(args: argparse.Namespace) -> None:
+    access_key = args.access_key
+    model_path = args.model_path
+    library_path = args.library_path
+    output_path = args.output_path
+    text = args.text
+
+    if not output_path.lower().endswith('.wav'):
+        raise ValueError('Given argument --output_path must have WAV file extension')
+
+    orca = create(access_key=access_key, model_path=model_path, library_path=library_path)
+
+    try:
+        print(f"Orca version: {orca.version}")
+
+        start = time.time()
+
+        pcm, alignment = orca.synthesize(text)
+
+        processing_time = time.time() - start
+        length_sec = len(pcm) / orca.sample_rate
+
+        with wave.open(output_path, "wb") as output_file:
+            output_file.setnchannels(1)
+            output_file.setsampwidth(2)
+            output_file.setframerate(orca.sample_rate)
+            output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
+
+        print(
+            f"Orca took {processing_time:.2f} seconds to synthesize {length_sec:.2f} seconds of speech which is "
+            f"~{length_sec / processing_time:.0f} times faster than real-time.")
+        print(f"Audio written to `{output_path}`.")
+    except OrcaActivationLimitError:
+        print("AccessKey has reached its processing limit")
+    finally:
+        orca.delete()
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--access_key',
@@ -42,33 +80,5 @@ def main():
         '--model_path',
         '-m',
         help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
-    args = parser.parse_args()
 
-    if not args.output_path.lower().endswith('.wav'):
-        raise ValueError('Given argument --output_path must have WAV file extension')
-
-    orca = create(access_key=args.access_key, model_path=args.model_path, library_path=args.library_path)
-
-    try:
-        print(f"Orca version: {orca.version}")
-        start = time.time()
-        pcm, alignment = orca.synthesize(args.text)
-        processing_time = time.time() - start
-        length_sec = len(pcm) / orca.sample_rate
-        with wave.open(args.output_path, "wb") as output_file:
-            output_file.setnchannels(1)
-            output_file.setsampwidth(2)
-            output_file.setframerate(orca.sample_rate)
-            output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
-        print(
-            f"Orca took {processing_time:.2f} seconds to synthesize {length_sec:.2f} seconds of speech which is "
-            f"~{length_sec / processing_time:.0f} times faster than real-time.")
-        print(f"Audio written to `{args.output_path}`.")
-    except OrcaActivationLimitError:
-        print("AccessKey has reached its processing limit")
-    finally:
-        orca.delete()
-
-
-if __name__ == "__main__":
-    main()
+    main(parser.parse_args())

@@ -1,1 +1,3 @@
+numpy==1.22.0
 pvorca==0.1.4
+sounddevice==0.4.6
