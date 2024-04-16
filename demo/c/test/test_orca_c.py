@@ -64,6 +64,25 @@ class OrcaCTestCase(unittest.TestCase):
         self.assertTrue("Saved audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
+    def run_orca_streaming(self, model_path: str) -> None:
+        output_path = os.path.join(os.path.dirname(__file__), "output.wav")
+        args = [
+            os.path.join(os.path.dirname(__file__), "../build/orca_demo_streaming"),
+            "-a", self._access_key,
+            "-l", self._get_library_file(),
+            "-m", model_path,
+            "-t", test_data.text,
+            "-o", output_path,
+        ]
+
+        process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        self.assertEqual(process.poll(), 0)
+        self.assertEqual(stderr.decode('utf-8'), '')
+        self.assertTrue("Saved audio" in stdout.decode('utf-8'))
+        os.remove(output_path)
+
     def test_orca(self) -> None:
         for model_path in get_model_paths():
             self.run_orca(model_path=model_path)

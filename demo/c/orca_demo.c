@@ -164,20 +164,6 @@ int picovoice_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_valid_characters_func)(pv_orca_t *, int32_t *, const char *const **) =
-            load_symbol(orca_library, "pv_orca_valid_characters");
-    if (!pv_orca_valid_characters_func) {
-        print_dl_error("Failed to load 'pv_orca_valid_characters'");
-        exit(EXIT_FAILURE);
-    }
-
-    pv_status_t (*pv_orca_sample_rate_func)(pv_orca_t *, int32_t *) =
-            load_symbol(orca_library, "pv_orca_sample_rate");
-    if (!pv_orca_sample_rate_func) {
-        print_dl_error("Failed to load 'pv_orca_sample_rate'");
-        exit(EXIT_FAILURE);
-    }
-
     pv_status_t (*pv_orca_synthesize_params_init_func)(pv_orca_synthesize_params_t **) =
             load_symbol(orca_library, "pv_orca_synthesize_params_init");
     if (!pv_orca_synthesize_params_init_func) {
@@ -192,13 +178,6 @@ int picovoice_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_synthesize_params_set_speech_rate_func)(pv_orca_synthesize_params_t *, float) =
-            load_symbol(orca_library, "pv_orca_synthesize_params_set_speech_rate");
-    if (!pv_orca_synthesize_params_set_speech_rate_func) {
-        print_dl_error("Failed to load 'pv_orca_synthesize_params_set_speech_rate'");
-        exit(EXIT_FAILURE);
-    }
-
     pv_status_t (*pv_orca_synthesize_to_file_func)(
             pv_orca_t *,
             const char *,
@@ -209,6 +188,13 @@ int picovoice_main(int argc, char **argv) {
             load_symbol(orca_library, "pv_orca_synthesize_to_file");
     if (!pv_orca_synthesize_to_file_func) {
         print_dl_error("Failed to load 'pv_orca_synthesize_to_file'");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_orca_word_alignments_delete_func)(int32_t, pv_orca_word_alignment_t **) =
+            load_symbol(orca_library, "pv_orca_word_alignments_delete");
+    if (!pv_orca_word_alignments_delete_func) {
+        print_dl_error("Failed to load 'pv_orca_word_alignments_delete'");
         exit(EXIT_FAILURE);
     }
 
@@ -266,8 +252,9 @@ int picovoice_main(int argc, char **argv) {
     struct timeval after;
     gettimeofday(&after, NULL);
 
-    double init_sec = ((double) (after.tv_sec - before.tv_sec) +
-                       ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
+    double init_sec =
+            ((double) (after.tv_sec - before.tv_sec) +
+             ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
     fprintf(stdout, "Initialized Orca in %.1f sec\n", init_sec);
 
     pv_orca_synthesize_params_t *synthesize_params = NULL;
@@ -332,11 +319,18 @@ int picovoice_main(int argc, char **argv) {
 
     gettimeofday(&after, NULL);
 
-    proc_sec += ((double) (after.tv_sec - before.tv_sec) +
-                 ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
+    proc_sec +=
+            ((double) (after.tv_sec - before.tv_sec) +
+             ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
 
     fprintf(stdout, "Synthesized text in %.1f sec\n", proc_sec);
     fprintf(stdout, "Saved audio to `%s`\n", output_path);
+
+    pv_status_t delete_status = pv_orca_word_alignments_delete_func(num_alignments, alignments);
+    if (delete_status != PV_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to delete word alignments with `%s`.\n", pv_status_to_string_func(delete_status));
+        exit(EXIT_FAILURE);
+    }
 
     pv_orca_synthesize_params_delete_func(synthesize_params);
     pv_orca_delete_func(orca);
