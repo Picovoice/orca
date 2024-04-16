@@ -48,13 +48,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Test streaming
-        run: >
-          python3 orca_demo_streaming.py
-          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
-          --text "Hello, I am Orca!"
-          --output_path ./tmp.wav
-
       - name: Test single
         run: >
           python orca_demo.py

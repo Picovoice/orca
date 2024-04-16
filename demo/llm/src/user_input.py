@@ -52,18 +52,15 @@ class VoiceUserInput(UserInput):
             self._recorder.start()
 
         transcript = ""
-        start = time.time()
         try:
             while True:
                 partial_transcript, is_endpoint = self._transcriber.process(self._recorder.read())
                 transcript += partial_transcript
-                if is_endpoint or (time.time() - start) > 2:
+                if is_endpoint:
                     final_transcript = self._transcriber.flush()
                     transcript += final_transcript
                     self._recorder.stop()
                     animation.stop(message=self.STOP_MESSAGE)
-                    if transcript == "":
-                        transcript = "What's the best places to visit in South America?"
                     return transcript
         except Exception as e:
             self._recorder.stop()

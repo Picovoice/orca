@@ -48,3 +48,9 @@ outdata
 AILLM
 streamable
 frombuffer
+drwav
+wchars
+pvrecorder
+pvcheetah
+itok
+numpy
