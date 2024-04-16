@@ -116,12 +116,13 @@ class OpenAILLM(LLM):
     def _append_assistant_message(self, message: str) -> None:
         self._message_history.append({"role": "assistant", "content": message})
 
-    def _chat(self, user_input: str, append_to_history: bool = False) -> Generator[str, None, None]:
+    def _chat(self, user_input: str, append_to_history: bool = True) -> Generator[str, None, None]:
         self._append_user_message(user_input)
         stream = self._client.chat.completions.create(
             model=self._model_name,
             messages=self._message_history,
             seed=self.RANDOM_SEED,
+            temperature=0,
             stream=True)
         assistant_message = ""
         for chunk in stream:

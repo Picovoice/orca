@@ -11,11 +11,37 @@
 
 import argparse
 import time
-from typing import Dict, Sequence
+from typing import Dict
+
+from pvrecorder import PvRecorder
 
 from src import *
 
-MAX_WAIT_TIME_FIRST_AUDIO = 5
+MAX_WAIT_TIME_FIRST_AUDIO = 10
+
+DEFAULT_USER_PROMPT = "Your question: "
+
+
+def get_user_input_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
+    kwargs = dict()
+    user_input_type = UserInputs(args.user_input)
+
+    if user_input_type is UserInputs.TEXT:
+        kwargs["prompt"] = DEFAULT_USER_PROMPT
+
+    elif user_input_type is UserInputs.VOICE:
+        kwargs["audio_device_index"] = args.audio_device_index
+        kwargs["transcriber"] = args.transcriber
+
+        kwargs["transcriber_params"] = dict()
+        transcriber_type = Transcribers(args.transcriber)
+        if transcriber_type is Transcribers.PICOVOICE_CHEETAH:
+            if not args.picovoice_access_key:
+                raise ValueError("Picovoice access key is required when using voice user input")
+            kwargs["transcriber_params"]["access_key"] = args.picovoice_access_key
+            kwargs["transcriber_params"]["endpoint_duration_sec"] = args.endpoint_duration_sec
+
+    return kwargs
 
 
 def get_llm_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
@@ -34,37 +60,28 @@ def get_llm_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     return kwargs
 
 
-def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Sequence[Dict[str, str]]:
-    kwargs = []
+def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
+    kwargs = dict()
+    synthesizer_type = Synthesizers(args.synthesizer)
 
-    for synthesizer_type_string in args.synthesizers:
-        synthesizer_type = Synthesizers(synthesizer_type_string)
+    if synthesizer_type is Synthesizers.PICOVOICE_ORCA:
+        if not args.picovoice_access_key:
+            raise ValueError("Picovoice access key is required when using Picovoice TTS")
+        kwargs["access_key"] = args.picovoice_access_key
+        kwargs["model_path"] = args.orca_model_path
+        kwargs["library_path"] = args.orca_library_path
 
-        kwargs.append(dict())
-        kwargs[-1]["synthesizer_type"] = synthesizer_type
-
-        if synthesizer_type is Synthesizers.PICOVOICE_ORCA:
-            if not args.picovoice_access_key:
-                raise ValueError("Picovoice access key is required when using Picovoice TTS")
-            kwargs[-1]["access_key"] = args.picovoice_access_key
-            kwargs[-1]["model_path"] = args.picovoice_model_path
-            kwargs[-1]["library_path"] = args.picovoice_library_path
-
-        elif synthesizer_type is Synthesizers.OPENAI:
-            if not args.openai_access_key:
-                raise ValueError(
-                    f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
-            kwargs[-1]["access_key"] = args.openai_access_key
+    elif synthesizer_type is Synthesizers.OPENAI:
+        if not args.openai_access_key:
+            raise ValueError(
+                f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
+        kwargs["access_key"] = args.openai_access_key
 
     return kwargs
 
 
 def print_welcome_message() -> None:
     print("Orca instant audio generation demo!\n")
-    print("Step 1: Enter a question to forward to ChatGPT.")
-    print("Step 2: Listen to the audio response of Orca, while the text is being generated.")
-    print("Step 3: Repeat Step 2, but this time using OpenAI's Text-To-Speech instead of Orca.")
-    print()
 
 
 def main(args: argparse.Namespace) -> None:
@@ -72,91 +89,124 @@ def main(args: argparse.Namespace) -> None:
 
     timer = Timer()
 
+    user_input_init_kwargs = get_user_input_init_kwargs(args)
+    user_input = UserInput.create(UserInputs(args.user_input), **user_input_init_kwargs)
+
     audio_output = StreamingAudioDevice.from_default_device()
 
-    synthesizers = []
     synthesizer_init_kwargs = get_synthesizer_init_kwargs(args)
-    for kwargs in synthesizer_init_kwargs:
-        synthesizers.append(Synthesizer.create(
-            kwargs.pop("synthesizer_type"),
-            play_audio_callback=audio_output.play,
-            timer=timer,
-            **kwargs))
+    synthesizer = Synthesizer.create(
+        Synthesizers(args.synthesizer),
+        play_audio_callback=audio_output.play,
+        timer=timer,
+        **synthesizer_init_kwargs)
 
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
     progress_printer = ProgressPrinter(
-        llm_response_init_message="ChatGPT response: ",
-        timer_init_message="Time to start playing audio: ",
+        show_llm_response=False,
+        llm_response_init_message="LLM response: ",
+        timer_llm_init_message="Wait for LLM: ",
+        timer_tts_init_message="Wait for TTS: ",
     )
 
     print_welcome_message()
 
     try:
         while True:
-            previous_prompt = None
-            for synthesizer in synthesizers:
-                timer.reset()
+            timer.reset()
 
-                audio_output.start(sample_rate=synthesizer.sample_rate)
+            audio_output.start(sample_rate=synthesizer.sample_rate)
 
-                text = llm.get_user_input(previous_prompt=previous_prompt, synthesizer_name=str(synthesizer))
-                previous_prompt = text
+            text = user_input.get_user_prompt()
 
-                progress_printer.start(f"Using {synthesizer}")
+            progress_printer.start(f"Using {synthesizer}")
 
-                timer.log_time_llm_request()
-                generator = llm.chat(user_input=text)
+            timer.log_time_llm_request()
 
-                llm_message = ""
-                for token in generator:
-                    if token is None:
-                        continue
+            progress_printer.update_timer_llm(ProgressPrinter.TimerEvent(start=True))
 
-                    progress_printer.update_llm_response(token)
-                    if timer.is_first_token:
-                        progress_printer.update_timer(start=True)
-                    timer.increment_num_tokens()
+            generator = llm.chat(user_input=text)
 
-                    llm_message += token
+            llm_message = ""
+            for token in generator:
+                if token is None:
+                    continue
 
-                    if synthesizer.input_streamable:
-                        synthesizer.synthesize(token)
+                if timer.is_first_token:
+                    timer.log_time_first_llm_token()
+                    progress_printer.update_timer_llm(
+                        ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_token()))
+                    progress_printer.update_timer_tts(ProgressPrinter.TimerEvent(start=True))
 
-                    if not timer.is_first_audio:
-                        progress_printer.update_timer(num_milliseconds=timer.get_time_to_first_audio())
+                progress_printer.update_llm_response(token)
 
-                timer.log_time_last_llm_token()
+                llm_message += token
 
                 if synthesizer.input_streamable:
-                    synthesizer.flush()
-                else:
-                    synthesizer.synthesize(llm_message)
+                    synthesizer.synthesize(token)
 
-                wait_seconds = 0
-                while timer.is_first_audio:
-                    increment = 0.01
-                    time.sleep(increment)
-                    wait_seconds += increment
-                    if wait_seconds > MAX_WAIT_TIME_FIRST_AUDIO:
-                        break
+                if not timer.before_first_audio:
+                    progress_printer.update_timer_tts(
+                        ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_audio()))
 
-                progress_printer.update_timer(num_milliseconds=timer.get_time_to_first_audio())
+                timer.increment_num_tokens()
 
-                progress_printer.stop()
-                audio_output.wait_and_terminate()
+            timer.log_time_last_llm_token()
+
+            if synthesizer.input_streamable:
+                synthesizer.flush()
+            else:
+                synthesizer.synthesize(llm_message)
+
+            wait_start_time = time.time()
+            while timer.before_first_audio:
+                if time.time() - wait_start_time > MAX_WAIT_TIME_FIRST_AUDIO:
+                    print(f"Waited for {MAX_WAIT_TIME_FIRST_AUDIO}s for first audio but did not receive any. Exiting")
+                    break
+
+            progress_printer.update_timer_tts(
+                ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_audio()))
+
+            progress_printer.stop()
+            audio_output.wait_and_terminate()
 
     except KeyboardInterrupt:
         pass
 
-    for synthesizer in synthesizers:
-        synthesizer.terminate()
+    synthesizer.terminate()
     audio_output.wait_and_terminate()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Text-to-speech streaming synthesis")
+
+    parser.add_argument(
+        "--user-input",
+        default=UserInputs.TEXT.value,
+        choices=[u.value for u in UserInputs],
+        help="Choose user input type")
+    parser.add_argument(
+        "--transcriber",
+        default=Transcribers.PICOVOICE_CHEETAH.value,
+        choices=[t.value for t in Transcribers],
+        help="Choose transcriber to use if `--user-input` is set to voice")
+    parser.add_argument(
+        "--audio-device-index",
+        type=int,
+        default=-1,
+        help="Index of input audio device")
+    parser.add_argument(
+        "--endpoint-duration-sec",
+        type=float,
+        default=1.,
+        help="Duration in seconds for speechless audio to be considered an endpoint")
+    parser.add_argument(
+        "--show-audio-devices",
+        action="store_true",
+        help="Only list available devices and exit")
+
     parser.add_argument(
         "--llm",
         default=LLMs.DUMMY.value,
@@ -167,19 +217,24 @@ if __name__ == "__main__":
         help="Open AI access key. Needed when using openai models")
     parser.add_argument(
         "--tokens-per-second",
-        "-t",
         default=25,
         type=int,
         help="Imitated tokens per second")
 
     parser.add_argument(
-        "--synthesizers",
-        nargs="+",
-        default=[Synthesizers.PICOVOICE_ORCA.value, Synthesizers.OPENAI.value],
+        "--synthesizer",
+        default=Synthesizers.PICOVOICE_ORCA.value,
         choices=[s.value for s in Synthesizers],
         help="Choose voice synthesizer to use")
     parser.add_argument("--picovoice-access-key", "-a", help="AccessKey obtained from Picovoice Console")
-    parser.add_argument("--picovoice-model-path", "-m", help="Path to the model parameters file")
-    parser.add_argument("--picovoice-library-path", "-l", help="Path to Orca's dynamic library")
+    parser.add_argument("--orca-model-path", "-m", help="Path to the model parameters file")
+    parser.add_argument("--orca-library-path", "-l", help="Path to Orca's dynamic library")
 
-    main(parser.parse_args())
+    arg = parser.parse_args()
+
+    if arg.show_audio_devices:
+        for index, name in enumerate(PvRecorder.get_available_devices()):
+            print('Device #%d: %s' % (index, name))
+        exit(0)
+
+    main(arg)
