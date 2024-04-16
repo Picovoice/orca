@@ -38,7 +38,7 @@ type pv_orca_delete_type = (object: number) => Promise<void>;
 type pv_orca_valid_characters_type = (object: number, numCharacters: number, validCharacters: number) => Promise<number>;
 type pv_orca_valid_characters_delete_type = (validCharacters: number) => Promise<void>;
 type pv_orca_sample_rate_type = (object: number, sampleRate: number) => Promise<number>;
-type pv_orca_max_character_limit_type = () => Promise<number>;
+type pv_orca_max_character_limit_type = (object: number, maxCharacterLimit: number) => Promise<number>;
 type pv_orca_synthesize_params_init_type = (object: number) => Promise<number>;
 type pv_orca_synthesize_params_delete_type = (object: number) => Promise<void>;
 type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => Promise<number>;
@@ -558,6 +558,30 @@ export class Orca {
     const sampleRate = memoryBufferView.getInt32(sampleRateAddress, true);
     await pv_free(sampleRateAddress);
 
+    const maxCharacterLimitAddress = await aligned_alloc(
+      Int32Array.BYTES_PER_ELEMENT,
+      Int32Array.BYTES_PER_ELEMENT,
+    );
+    if (maxCharacterLimitAddress === 0) {
+      throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+    }
+    const maxCharacterLimitStatus = await pv_orca_max_character_limit(objectAddress, maxCharacterLimitAddress);
+    if (maxCharacterLimitStatus !== PV_STATUS_SUCCESS) {
+      const messageStack = await Orca.getMessageStack(
+        pv_get_error_stack,
+        pv_free_error_stack,
+        messageStackAddressAddressAddress,
+        messageStackDepthAddress,
+        memoryBufferView,
+        memoryBufferUint8,
+      );
+
+      throw pvStatusToException(maxCharacterLimitStatus, 'Get max character limit failed', messageStack, pvError);
+    }
+
+    const maxCharacterLimit = memoryBufferView.getInt32(maxCharacterLimitAddress, true);
+    await pv_free(maxCharacterLimitAddress);
+
     const numCharactersAddress = await aligned_alloc(
       Int32Array.BYTES_PER_ELEMENT,
       Int32Array.BYTES_PER_ELEMENT,
@@ -609,8 +633,6 @@ export class Orca {
     await pv_free(numCharactersAddress);
     await pv_free(validCharactersAddressAddressAddress);
     await pv_orca_valid_characters_delete(validCharactersAddressAddress);
-
-    const maxCharacterLimit = await pv_orca_max_character_limit();
 
     const versionAddress = await pv_orca_version();
     const version = arrayBufferToStringAtIndex(
