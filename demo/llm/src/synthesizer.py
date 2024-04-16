@@ -183,7 +183,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
                 continue
             processing_time = time.time() - start
 
-            if len(pcm) > 0:
+            if pcm is not None:
                 if self._timer.before_first_audio:
                     self._timer.maybe_log_time_first_audio()
 

@@ -105,7 +105,7 @@ def main(args: argparse.Namespace) -> None:
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
     progress_printer = ProgressPrinter(
-        show_llm_response=False,
+        show_llm_response=True,
         llm_response_init_message="LLM response: ",
         timer_llm_init_message="Wait for LLM: ",
         timer_tts_init_message="Wait for TTS: ",

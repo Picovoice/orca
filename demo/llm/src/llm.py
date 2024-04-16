@@ -18,7 +18,8 @@ class LLM:
     You are a voice assistant in customer service.
     Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
     Only use english letters and punctuation, no special characters.
-    Don't ever use numbers directly. Verbalize them (e.g. "five" instead of "5").
+    Don't ever use special characters. Verbalize them (e.g. "dollar" instead of "$").
+    Keep the conversation flowing.
     If the user asks for anything specific, invent some example data that would be typical in customer service.
     """
     DEFAULT_USER_PROMPT = "Your question: "
@@ -123,6 +124,7 @@ class OpenAILLM(LLM):
             messages=self._message_history,
             seed=self.RANDOM_SEED,
             temperature=0,
+            top_p=0.05,
             stream=True)
         assistant_message = ""
         for chunk in stream:
