@@ -16,8 +16,9 @@ import {
   OrcaWorkerInitResponse,
   OrcaWorkerSynthesizeResponse,
   OrcaWorkerReleaseResponse,
+  OrcaSynthesizeParams,
+  OrcaSynthesizeResult,
   PvStatus,
-  SynthesizeParams,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
@@ -195,14 +196,13 @@ export class OrcaWorker {
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
-   *
-   * @return An Int16Array.
+   * @return The synthesize result object.
    */
   public async synthesize(
     text: string,
-    synthesizeParams: SynthesizeParams = {},
-  ): Promise<Int16Array> {
-    const returnPromise: Promise<Int16Array> = new Promise(
+    synthesizeParams: OrcaSynthesizeParams = {},
+  ): Promise<OrcaSynthesizeResult> {
+    const returnPromise: Promise<OrcaSynthesizeResult> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<OrcaWorkerSynthesizeResponse>,

@@ -25,7 +25,7 @@ import {
 
 import { simd } from 'wasm-feature-detect';
 
-import { OrcaModel, PvStatus, SynthesizeParams } from './types';
+import { OrcaAlignment, OrcaModel, OrcaPhoneme, OrcaSynthesizeParams, OrcaSynthesizeResult, PvStatus } from './types';
 
 import * as OrcaErrors from './orca_errors';
 import { pvStatusToException } from './orca_errors';
@@ -43,8 +43,9 @@ type pv_orca_synthesize_params_init_type = (object: number) => Promise<number>;
 type pv_orca_synthesize_params_delete_type = (object: number) => Promise<void>;
 type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => Promise<number>;
 type pv_orca_synthesize_params_set_random_state_type = (object: number, randomState: number) => Promise<number>;
-type pv_orca_synthesize_type = (object: number, text: number, synthesizeParams: number, numSamples: number, pcm: number) => Promise<number>;
-type pv_orca_delete_pcm_type = (object: number) => Promise<void>;
+type pv_orca_synthesize_type = (object: number, text: number, synthesizeParams: number, numSamples: number, pcm: number, numAlignments: number, alignments: number) => Promise<number>;
+type pv_orca_pcm_delete_type = (object: number) => Promise<void>;
+type pv_orca_word_alignments_delete_type = (numAlignments: number, alignments: number) => Promise<void>;
 type pv_orca_version_type = () => Promise<number>;
 type pv_status_to_string_type = (status: number) => Promise<number>
 type pv_set_sdk_type = (sdk: number) => Promise<void>;
@@ -77,7 +78,8 @@ type OrcaWasmOutput = {
   pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete_type;
   pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate_type
   pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state_type
-  pvOrcaDeletePcm: pv_orca_delete_pcm_type;
+  pvOrcaPcmDelete: pv_orca_pcm_delete_type;
+  pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete_type;
   pvStatusToString: pv_status_to_string_type;
   pvGetErrorStack: pv_get_error_stack_type;
   pvFreeErrorStack: pv_free_error_stack_type;
@@ -92,7 +94,8 @@ export class Orca {
   private readonly _pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete_type;
   private readonly _pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate_type;
   private readonly _pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state_type;
-  private readonly _pvOrcaDeletePcm: pv_orca_delete_pcm_type;
+  private readonly _pvOrcaPcmDelete: pv_orca_pcm_delete_type;
+  private readonly _pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete_type;
   private readonly _pvGetErrorStack: pv_get_error_stack_type;
   private readonly _pvFreeErrorStack: pv_free_error_stack_type;
 
@@ -131,7 +134,8 @@ export class Orca {
     this._pvOrcaSynthesizeParamsDelete = handleWasm.pvOrcaSynthesizeParamsDelete;
     this._pvOrcaSynthesizeParamsSetSpeechRate = handleWasm.pvOrcaSynthesizeParamsSetSpeechRate;
     this._pvOrcaSynthesizeParamsSetRandomState = handleWasm.pvOrcaSynthesizeParamsSetRandomState;
-    this._pvOrcaDeletePcm = handleWasm.pvOrcaDeletePcm;
+    this._pvOrcaPcmDelete = handleWasm.pvOrcaPcmDelete;
+    this._pvOrcaWordAlignmentsDelete = handleWasm.pvOrcaWordAlignmentsDelete;
     this._pvGetErrorStack = handleWasm.pvGetErrorStack;
     this._pvFreeErrorStack = handleWasm.pvFreeErrorStack;
 
@@ -262,8 +266,9 @@ export class Orca {
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
+   * @return The synthesize result object.
    */
-  public async synthesize(text: string, synthesizeParams: SynthesizeParams = {}): Promise<Int16Array> {
+  public async synthesize(text: string, synthesizeParams: OrcaSynthesizeParams = {}): Promise<OrcaSynthesizeResult> {
     if (typeof text !== 'string') {
       throw new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
     }
@@ -273,7 +278,7 @@ export class Orca {
       randomState = -1,
     } = synthesizeParams;
 
-    return new Promise<Int16Array>((resolve, reject) => {
+    return new Promise<OrcaSynthesizeResult>((resolve, reject) => {
       this._synthesizeMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
@@ -282,6 +287,7 @@ export class Orca {
 
           const memoryBufferView = new DataView(this._wasmMemory.buffer);
 
+          // --- TEXT ---
           const memoryBufferText = new Uint8Array(this._wasmMemory.buffer);
           const encodedText = new TextEncoder().encode(text);
           const textAddress = await this._alignedAlloc(
@@ -296,6 +302,7 @@ export class Orca {
           memoryBufferText.set(encodedText, textAddress);
           memoryBufferText[textAddress + encodedText.length] = 0;
 
+          // --- SYNTHESIZE PARAMS ---
           const synthesizeParamsAddressAddress = await this._alignedAlloc(
             Int32Array.BYTES_PER_ELEMENT,
             Int32Array.BYTES_PER_ELEMENT,
@@ -304,6 +311,7 @@ export class Orca {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
+          // init
           const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
           const initStatus = await this._pvOrcaSynthesizeParamsInit(synthesizeParamsAddressAddress);
           if (initStatus !== PV_STATUS_SUCCESS) {
@@ -322,6 +330,7 @@ export class Orca {
           const synthesizeParamsAddress = memoryBufferView.getInt32(synthesizeParamsAddressAddress, true);
           await this._pvFree(synthesizeParamsAddressAddress);
 
+          // set speech rate
           const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, speechRate);
           if (setSpeechRateStatus !== PV_STATUS_SUCCESS) {
             const messageStack = await Orca.getMessageStack(
@@ -336,6 +345,7 @@ export class Orca {
             throw pvStatusToException(setSpeechRateStatus, 'Synthesizing failed', messageStack);
           }
 
+          // set random state
           const setRandomStateStatus = await this._pvOrcaSynthesizeParamsSetRandomState(synthesizeParamsAddress, randomState);
           if (setRandomStateStatus !== PV_STATUS_SUCCESS) {
             const messageStack = await Orca.getMessageStack(
@@ -350,6 +360,7 @@ export class Orca {
             throw pvStatusToException(setRandomStateStatus, 'Synthesizing failed', messageStack);
           }
 
+          // --- NUM SAMPLES ---
           const numSamplesAddress = await this._alignedAlloc(
             Int32Array.BYTES_PER_ELEMENT,
             Int32Array.BYTES_PER_ELEMENT,
@@ -358,20 +369,42 @@ export class Orca {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const speechAddressAddress = await this._alignedAlloc(
+          // --- NUM ALIGNMENTS ---
+          const numAlignmentsAddress = await this._alignedAlloc(
             Int32Array.BYTES_PER_ELEMENT,
             Int32Array.BYTES_PER_ELEMENT,
           );
-          if (speechAddressAddress === 0) {
+          if (numAlignmentsAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
+          // --- PCM ---
+          const pcmAddressAddress = await this._alignedAlloc(
+            Int32Array.BYTES_PER_ELEMENT,
+            Int32Array.BYTES_PER_ELEMENT,
+          );
+          if (pcmAddressAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+          }
+
+          // --- ALIGNMENTS ---
+          const alignmentsAddressAddressAddress = await this._alignedAlloc(
+            Int32Array.BYTES_PER_ELEMENT,
+            Int32Array.BYTES_PER_ELEMENT,
+          );
+          if (alignmentsAddressAddressAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+          }
+
+          // *** SYNTHESIZE ***
           const synthesizeStatus = await this._pvOrcaSynthesize(
             this._objectAddress,
             textAddress,
             synthesizeParamsAddress,
             numSamplesAddress,
-            speechAddressAddress,
+            pcmAddressAddress,
+            numAlignmentsAddress,
+            alignmentsAddressAddressAddress,
           );
           await this._pvFree(textAddress);
           await this._pvOrcaSynthesizeParamsDelete(synthesizeParamsAddress);
@@ -389,11 +422,12 @@ export class Orca {
             throw pvStatusToException(synthesizeStatus, 'Synthesizing failed', messageStack);
           }
 
-          const speechAddress = memoryBufferView.getInt32(
-            speechAddressAddress,
+          // Get pcm with num samples
+          const pcmAddress = memoryBufferView.getInt32(
+            pcmAddressAddress,
             true,
           );
-          await this._pvFree(speechAddressAddress);
+          await this._pvFree(pcmAddressAddress);
 
           const numSamples = memoryBufferView.getInt32(
             numSamplesAddress,
@@ -402,14 +436,58 @@ export class Orca {
           await this._pvFree(numSamplesAddress);
 
           const outputMemoryBuffer = new Int16Array(this._wasmMemory.buffer);
-          const speech = outputMemoryBuffer.slice(
-            speechAddress / Int16Array.BYTES_PER_ELEMENT,
-            (speechAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
+          const pcm = outputMemoryBuffer.slice(
+            pcmAddress / Int16Array.BYTES_PER_ELEMENT,
+            (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
           );
-          await this._pvOrcaDeletePcm(speechAddress);
-          return speech;
+          await this._pvOrcaPcmDelete(pcmAddress);
+
+          // Get alignments with num alignments
+          const numAlignments = memoryBufferView.getInt32(numAlignmentsAddress, true);
+          const alignmentsAddressAddress = memoryBufferView.getInt32(alignmentsAddressAddressAddress, true);
+
+          let ptr = alignmentsAddressAddress;
+          const alignments: OrcaAlignment[] = [];
+          for (let i = 0; i < numAlignments; i++) {
+            const wordAddress = memoryBufferView.getInt32(ptr, true);
+            const word = arrayBufferToStringAtIndex(
+              memoryBufferUint8,
+              wordAddress,
+            );
+            ptr += Uint32Array.BYTES_PER_ELEMENT;
+            const startSec = memoryBufferView.getFloat32(ptr, true);
+            ptr += Uint32Array.BYTES_PER_ELEMENT;
+            const endSec = memoryBufferView.getFloat32(ptr, true);
+            ptr += Uint32Array.BYTES_PER_ELEMENT;
+            const numPhonemes = memoryBufferView.getFloat32(ptr, true);
+            ptr += Uint32Array.BYTES_PER_ELEMENT;
+            const phonemesAddress = memoryBufferView.getFloat32(ptr, true);
+            ptr += Uint32Array.BYTES_PER_ELEMENT;
+            let phonemesPtr = phonemesAddress;
+            const phonemes: OrcaPhoneme[] = [];
+            for (let j = 0; j < numPhonemes; j++) {
+              const phonemeAddress = memoryBufferView.getInt32(phonemesPtr, true);
+              const phoneme = arrayBufferToStringAtIndex(
+                memoryBufferUint8,
+                phonemeAddress,
+              );
+              phonemesPtr += Uint32Array.BYTES_PER_ELEMENT;
+              const pStartSec = memoryBufferView.getFloat32(phonemesPtr, true);
+              phonemesPtr += Uint32Array.BYTES_PER_ELEMENT;
+              const pEndSec = memoryBufferView.getFloat32(phonemesPtr, true);
+              phonemesPtr += Uint32Array.BYTES_PER_ELEMENT;
+              phonemes.push({ phoneme, startSec: pStartSec, endSec: pEndSec });
+            }
+            alignments.push({ word, startSec, endSec, phonemes });
+          }
+          await this._pvFree(numAlignments);
+          await this._pvFree(alignmentsAddressAddressAddress);
+          await this._pvOrcaWordAlignmentsDelete(numAlignments, alignmentsAddressAddress);
+
+          // return pcm & alignments
+          return { pcm, alignments };
         })
-        .then((result: Int16Array) => {
+        .then((result: OrcaSynthesizeResult) => {
           resolve(result);
         })
         .catch(async (error: any) => {
@@ -464,7 +542,8 @@ export class Orca {
     const pv_orca_synthesize_params_set_speech_rate = exports.pv_orca_synthesize_params_set_speech_rate as pv_orca_synthesize_params_set_speech_rate_type;
     const pv_orca_synthesize_params_set_random_state = exports.pv_orca_synthesize_params_set_random_state as pv_orca_synthesize_params_set_random_state_type;
     const pv_orca_synthesize = exports.pv_orca_synthesize as pv_orca_synthesize_type;
-    const pv_orca_delete_pcm = exports.pv_orca_delete_pcm as pv_orca_delete_pcm_type;
+    const pv_orca_pcm_delete = exports.pv_orca_pcm_delete as pv_orca_pcm_delete_type;
+    const pv_orca_word_alignments_delete = exports.pv_orca_word_alignments_delete as pv_orca_word_alignments_delete_type;
     const pv_orca_version = exports.pv_orca_version as pv_orca_version_type;
     const pv_status_to_string = exports.pv_status_to_string_type as pv_status_to_string_type;
     const pv_set_sdk = exports.pv_set_sdk as pv_set_sdk_type;
@@ -681,7 +760,8 @@ export class Orca {
       pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state,
       pvOrcaSynthesize: pv_orca_synthesize,
       pvStatusToString: pv_status_to_string,
-      pvOrcaDeletePcm: pv_orca_delete_pcm,
+      pvOrcaPcmDelete: pv_orca_pcm_delete,
+      pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete,
       pvGetErrorStack: pv_get_error_stack,
       pvFreeErrorStack: pv_free_error_stack,
     };
@@ -711,7 +791,7 @@ export class Orca {
       messageStack.push(message);
     }
 
-    pv_free_error_stack(messageStackAddressAddress);
+    await pv_free_error_stack(messageStackAddressAddress);
 
     return messageStack;
   }

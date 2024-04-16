@@ -27,9 +27,27 @@ export enum PvStatus {
   ACTIVATION_REFUSED,
 }
 
-export type SynthesizeParams = {
+export type OrcaSynthesizeParams = {
   speechRate?: number
   randomState?: number
+}
+
+export type OrcaPhoneme = {
+  phoneme: string
+  startSec: number
+  endSec: number
+}
+
+export type OrcaAlignment = {
+  word: string
+  startSec: number
+  endSec: number
+  phonemes: OrcaPhoneme[]
+}
+
+export type OrcaSynthesizeResult = {
+  pcm: Int16Array
+  alignments: OrcaAlignment[]
 }
 
 /**
@@ -49,7 +67,7 @@ export type OrcaWorkerInitRequest = {
 export type OrcaWorkerSynthesizeRequest = {
   command: 'synthesize';
   text: string;
-  synthesizeParams?: SynthesizeParams;
+  synthesizeParams?: OrcaSynthesizeParams;
 };
 
 export type OrcaWorkerReleaseRequest = {
@@ -83,7 +101,7 @@ export type OrcaWorkerSynthesizeResponse =
   | OrcaWorkerFailureResponse
   | {
   command: 'ok';
-  result: Int16Array;
+  result: OrcaSynthesizeResult;
 };
 
 export type OrcaWorkerReleaseResponse =
