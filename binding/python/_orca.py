@@ -180,7 +180,10 @@ class Orca:
                     message="Unable to synthesize text in Orca stream",
                     message_stack=self._orca._get_error_stack())
 
-            pcm = [c_pcm[i] for i in range(c_num_samples.value)]
+            pcm = None
+            if c_num_samples.value > 0:
+                pcm = [c_pcm[i] for i in range(c_num_samples.value)]
+
             self._orca._pcm_delete_func(c_pcm)
 
             return pcm

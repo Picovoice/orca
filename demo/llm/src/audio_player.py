@@ -29,6 +29,8 @@ class StreamingAudioDevice:
             blocksize=self._blocksize)
         self._stream.start()
 
+    # noinspection PyShadowingNames
+    # noinspection PyUnusedLocal
     def _callback(self, outdata: NDArray, frames: int, time: Any, status: Any) -> None:
         if self._queue.empty():
             outdata[:] = 0

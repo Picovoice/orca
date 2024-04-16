@@ -1,3 +1,3 @@
 [submodule "demo/c/dr_libs"]
 	path = demo/c/dr_libs
-	url = git@github.com:mackron/dr_libs.git
+	url = ../../mackron/dr_libs.git
