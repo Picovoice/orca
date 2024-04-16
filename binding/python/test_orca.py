@@ -141,8 +141,11 @@ class OrcaTestCase(unittest.TestCase):
             pcm = []
             for c in test_data.text:
                 pcm_chunk = stream.synthesize(c)
+                if pcm_chunk is not None:
+                    pcm.extend(pcm_chunk)
+            pcm_chunk = stream.flush()
+            if pcm_chunk is not None:
                 pcm.extend(pcm_chunk)
-            pcm.extend(stream.flush())
             stream.close()
 
             ground_truth = self._get_pcm(
