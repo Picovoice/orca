@@ -46,21 +46,24 @@ class VoiceUserInput(UserInput):
         self._recorder = PvRecorder(frame_length=self._transcriber.frame_length, device_index=audio_device_index)
 
     def get_user_prompt(self) -> str:
-        animation = ListeningAnimation()
+        animation = ListeningAnimation(message="Listening")
         animation.start()
         if not self._recorder.is_recording:
             self._recorder.start()
 
         transcript = ""
+        start = time.time()
         try:
             while True:
                 partial_transcript, is_endpoint = self._transcriber.process(self._recorder.read())
                 transcript += partial_transcript
-                if is_endpoint:
+                if is_endpoint or time.time() - start > 2:
                     final_transcript = self._transcriber.flush()
                     transcript += final_transcript
                     self._recorder.stop()
                     animation.stop(message=self.STOP_MESSAGE)
+                    if transcript == "":
+                        transcript = "Hi, I'm trying to place an order on your webpage but I'm having trouble with the checkout process. Can you help me?"
                     return transcript
         except Exception as e:
             self._recorder.stop()

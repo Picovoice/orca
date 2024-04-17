@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from queue import Empty, Queue
 from threading import Thread
-from typing import *
+from typing import Optional
 
 from rich.console import Group
 from rich.live import Live
@@ -126,8 +126,13 @@ class Timer:
         print(f"time first audio {to_hms(self.time_first_audio)}")
 
 
+def clean_console_line() -> None:
+    print("\033[K", end="\r", flush=True)
+
+
 class ListeningAnimation(Thread):
-    def __init__(self, sleep_time_sec=0.2):
+    def __init__(self, message: str, sleep_time_sec=0.2):
+        self._message = message
         self._sleep_time_sec = sleep_time_sec
         self._frames = [
             " .  ",
@@ -146,11 +151,15 @@ class ListeningAnimation(Thread):
             for frame in self._frames:
                 if self._done:
                     break
-                print(f"Listening{frame}", end="\r", flush=True)
+                print(f"{self._message}{frame}", end="\r", flush=True)
                 time.sleep(self._sleep_time_sec)
 
+    def change_message(self, message: str):
+        self._message = message
+
     def stop(self, message: str):
-        print(message)
+        clean_console_line()
+        print(message, flush=True)
         self._done = True
 
 
@@ -172,6 +181,7 @@ class ProgressPrinter:
             self,
             llm_response_init_message: str = "",
             show_llm_response: bool = False,
+            show_live_progress_bar: bool = False,
             timer_tts_init_message: str = "",
             timer_llm_init_message: str = "",
             progress_bar_print_interval_seconds: float = PROGRESS_BAR_PRINT_INTERVAL_SECONDS,
@@ -179,6 +189,8 @@ class ProgressPrinter:
     ) -> None:
         self._progress_bar_print_interval_seconds = progress_bar_print_interval_seconds
         self._progress_bar_symbol = progress_bar_symbol
+
+        self._show_live_progress_bar = show_live_progress_bar
 
         self._thread_dashboard: Optional[Thread] = None
 
@@ -213,13 +225,19 @@ class ProgressPrinter:
 
     def _worker_timer_tts(self) -> None:
         active = False
+        progress_bar_text = ""
         while True:
             try:
                 timer_event = self._queue_timer_tts.get_nowait()
                 if timer_event.start:
                     active = True
                 elif timer_event.num_milliseconds is not None:
-                    self._text_timer_tts.append(f" {round(timer_event.num_milliseconds, -1):.0f}ms")
+                    proc_time_text = f" {round(timer_event.num_milliseconds, -1):.0f}ms"
+                    if self._show_live_progress_bar:
+                        self._text_timer_tts.append(proc_time_text)
+                    else:
+                        progress_bar_text += proc_time_text
+                        self._text_timer_tts.append(progress_bar_text)
                     self._text_timer_tts.stylize("bold")
                     active = False
                     break
@@ -227,65 +245,90 @@ class ProgressPrinter:
                 pass
             finally:
                 if active:
-                    self._text_timer_tts.append(self._progress_bar_symbol)
+                    progress_bar_text += self._progress_bar_symbol
+                    if self._show_live_progress_bar:
+                        self._text_timer_tts.append(self._progress_bar_symbol)
                     time.sleep(self._progress_bar_print_interval_seconds)
 
     def _worker_timer_llm(self) -> None:
         active = False
+        progress_bar_text = ""
         while True:
             try:
                 timer_event = self._queue_timer_llm.get_nowait()
                 if timer_event.start:
                     active = True
                 elif timer_event.num_milliseconds is not None:
-                    self._text_timer_llm.append(f" {round(timer_event.num_milliseconds, -1):.0f}ms")
+                    proc_time_text = f" {round(timer_event.num_milliseconds, -1):.0f}ms"
+                    if self._show_live_progress_bar:
+                        self._text_timer_llm.append(proc_time_text)
+                    else:
+                        progress_bar_text += proc_time_text
+                        self._text_timer_llm.append(progress_bar_text)
                     active = False
                     break
             except Empty:
                 pass
             finally:
                 if active:
-                    self._text_timer_llm.append(self._progress_bar_symbol)
+                    progress_bar_text += self._progress_bar_symbol
+                    if self._show_live_progress_bar:
+                        self._text_timer_tts.append(self._progress_bar_symbol)
                     time.sleep(self._progress_bar_print_interval_seconds)
 
     def _worker(self, title: str) -> None:
-        print()
-        pad_text = Text("\n")
-        inner_group = Group(
-            title,
-            Padding(self._text_timer_llm, pad=(1, 0, 0, 1)),
-            Padding(self._text_timer_tts, pad=(0, 0, 0, 1)),
-            Padding(self._text_message, pad=(0, 0, 1, 1)),
-        )
-        if not self._show_llm_response:
-            inner_group = Group(
-                title,
-                self._text_timer_llm,
-                self._text_timer_tts,
-            )
-        rows = Group(
-            Panel(
-                inner_group,
-            ),
-            pad_text)
-
         thread_timer_llm = Thread(target=self._worker_timer_llm)
         thread_timer_tts = Thread(target=self._worker_timer_tts)
-        thread_message = None
-        if self._show_llm_response:
-            thread_message = Thread(target=self._worker_message)
+        thread_message = Thread(target=self._worker_message)
 
-        with Live(rows, refresh_per_second=1 / self._progress_bar_print_interval_seconds):
-            thread_timer_llm.start()
-            thread_timer_tts.start()
-            if self._show_llm_response:
+        if self._show_live_progress_bar:
+            print()
+            pad_text = Text("\n")
+            inner_group = Group(
+                title,
+                Padding(self._text_timer_llm, pad=(1, 0, 0, 1)),
+                Padding(self._text_timer_tts, pad=(0, 0, 0, 1)),
+                Padding(self._text_message, pad=(0, 0, 1, 1)),
+            )
+            if not self._show_llm_response:
+                inner_group = Group(
+                    title,
+                    self._text_timer_llm,
+                    self._text_timer_tts,
+                )
+            rows = Group(
+                Panel(
+                    inner_group,
+                ),
+                pad_text)
+
+            with Live(rows, refresh_per_second=1 / self._progress_bar_print_interval_seconds):
+                thread_timer_llm.start()
+                thread_timer_tts.start()
                 thread_message.start()
 
+                thread_timer_llm.join()
+                thread_timer_tts.join()
+                thread_message.join()
+                pad_text.remove_suffix("\n")
+        else:
+            print()
+            thread_message.start()
+            animation = ListeningAnimation(message=f"Generating answer with {title}")
+            animation.start()
+            thread_timer_llm.start()
+            thread_timer_tts.start()
             thread_timer_llm.join()
             thread_timer_tts.join()
+            clean_console_line()
+            print(f"{Colors.DARK_GREEN}{self._text_timer_llm.plain}{Colors.RESET}")
+            print(f"{Colors.GREEN}{self._text_timer_tts.plain}{Colors.RESET}")
+            animation.change_message(f"Answering with {title}")
             if self._show_llm_response:
-                thread_message.join()
-            pad_text.remove_suffix("\n")
+                print(self._text_message.plain)
+            thread_message.join()
+            animation.stop(f"Answered with {title}!")
+            print()
 
     def start(self, title: str) -> None:
         self._reset()

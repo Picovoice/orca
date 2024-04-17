@@ -105,15 +105,21 @@ def main(args: argparse.Namespace) -> None:
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
     progress_printer = ProgressPrinter(
-        show_llm_response=True,
+        show_llm_response=False,
         llm_response_init_message="LLM response: ",
-        timer_llm_init_message="Wait for LLM: ",
-        timer_tts_init_message="Wait for TTS: ",
+        show_live_progress_bar=False,
+        timer_llm_init_message="Wait time for LLM: ",
+        timer_tts_init_message="Wait time for TTS: ",
+        progress_bar_symbol=">",
+        # show_live_progress_bar=True,
+        # timer_llm_init_message="Wait for LLM: ",
+        # timer_tts_init_message="Wait for TTS: ",
     )
 
     print_welcome_message()
 
     try:
+        num_interactions = 0
         while True:
             timer.reset()
 
@@ -121,7 +127,7 @@ def main(args: argparse.Namespace) -> None:
 
             text = user_input.get_user_prompt()
 
-            progress_printer.start(f"Using {synthesizer}")
+            progress_printer.start(f"{synthesizer}")
 
             timer.log_time_llm_request()
 
@@ -169,14 +175,18 @@ def main(args: argparse.Namespace) -> None:
             progress_printer.update_timer_tts(
                 ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_audio()))
 
-            progress_printer.stop()
             audio_output.wait_and_terminate()
+            progress_printer.stop()
+
+            num_interactions += 1
+
+            if num_interactions == 2:
+                break
 
     except KeyboardInterrupt:
         pass
 
     synthesizer.terminate()
-    audio_output.wait_and_terminate()
 
 
 if __name__ == "__main__":
