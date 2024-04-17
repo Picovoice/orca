@@ -8,7 +8,6 @@ from typing import (
 from pvrecorder import PvRecorder
 
 from .transcriber import Transcriber, Transcribers
-from .util import ListeningAnimation
 
 
 class UserInputs(Enum):
@@ -46,8 +45,7 @@ class VoiceUserInput(UserInput):
         self._recorder = PvRecorder(frame_length=self._transcriber.frame_length, device_index=audio_device_index)
 
     def get_user_prompt(self) -> str:
-        animation = ListeningAnimation(message="Listening")
-        animation.start()
+        print("Listening ...")
         if not self._recorder.is_recording:
             self._recorder.start()
 
@@ -61,13 +59,11 @@ class VoiceUserInput(UserInput):
                     final_transcript = self._transcriber.flush()
                     transcript += final_transcript
                     self._recorder.stop()
-                    animation.stop(message=self.STOP_MESSAGE)
                     if transcript == "":
                         transcript = "Hi, I'm trying to place an order on your webpage but I'm having trouble with the checkout process. Can you help me?"
                     return transcript
         except Exception as e:
             self._recorder.stop()
-            animation.stop(message=self.STOP_MESSAGE)
             raise e
 
 

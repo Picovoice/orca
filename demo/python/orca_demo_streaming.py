@@ -19,7 +19,6 @@ from typing import (
     Sequence,
 )
 
-from demo_util import StreamingAudioDevice
 from pvorca import create, OrcaActivationLimitError
 
 
@@ -57,6 +56,7 @@ def main(args: argparse.Namespace) -> None:
 
         audio_device = None
         if not no_audio:
+            from demo_util import StreamingAudioDevice
             audio_device = StreamingAudioDevice.from_default_device()
             audio_device.start(sample_rate=orca.sample_rate)
 

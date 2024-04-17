@@ -105,15 +105,9 @@ def main(args: argparse.Namespace) -> None:
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
     progress_printer = ProgressPrinter(
-        show_llm_response=False,
-        llm_response_init_message="LLM response: ",
-        show_live_progress_bar=False,
-        timer_llm_init_message="Wait time for LLM: ",
-        timer_tts_init_message="Wait time for TTS: ",
+        timer_llm_message="Time to wait for LLM: ",
+        timer_tts_message="Time to wait for TTS: ",
         progress_bar_symbol=">",
-        # show_live_progress_bar=True,
-        # timer_llm_init_message="Wait for LLM: ",
-        # timer_tts_init_message="Wait for TTS: ",
     )
 
     print_welcome_message()
@@ -127,35 +121,31 @@ def main(args: argparse.Namespace) -> None:
 
             text = user_input.get_user_prompt()
 
-            progress_printer.start(f"{synthesizer}")
-
             timer.log_time_llm_request()
-
-            progress_printer.update_timer_llm(ProgressPrinter.TimerEvent(start=True))
-
             generator = llm.chat(user_input=text)
 
             llm_message = ""
+            printed_stats = False
             for token in generator:
                 if token is None:
                     continue
 
                 if timer.is_first_token:
                     timer.log_time_first_llm_token()
-                    progress_printer.update_timer_llm(
-                        ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_token()))
-                    progress_printer.update_timer_tts(ProgressPrinter.TimerEvent(start=True))
-
-                progress_printer.update_llm_response(token)
 
                 llm_message += token
 
                 if synthesizer.input_streamable:
                     synthesizer.synthesize(token)
 
-                if not timer.before_first_audio:
-                    progress_printer.update_timer_tts(
-                        ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_audio()))
+                if not timer.before_first_audio and not printed_stats:
+                    print()
+                    progress_printer.print_timing_stats(
+                        num_seconds_first_llm_token=timer.num_seconds_to_first_token(),
+                        num_seconds_first_audio=timer.num_seconds_to_first_audio(),
+                    )
+                    printed_stats = True
+                    print(f"Answering with {synthesizer} ...")
 
                 timer.increment_num_tokens()
 
@@ -166,22 +156,28 @@ def main(args: argparse.Namespace) -> None:
             else:
                 synthesizer.synthesize(llm_message)
 
-            wait_start_time = time.time()
-            while timer.before_first_audio:
-                if time.time() - wait_start_time > MAX_WAIT_TIME_FIRST_AUDIO:
-                    print(f"Waited for {MAX_WAIT_TIME_FIRST_AUDIO}s for first audio but did not receive any. Exiting")
-                    break
+                wait_start_time = time.time()
+                while timer.before_first_audio:
+                    if time.time() - wait_start_time > MAX_WAIT_TIME_FIRST_AUDIO:
+                        print(
+                            f"Waited for {MAX_WAIT_TIME_FIRST_AUDIO}s for first audio but did not receive any. Exiting")
+                        break
 
-            progress_printer.update_timer_tts(
-                ProgressPrinter.TimerEvent(num_milliseconds=timer.get_time_to_first_audio()))
+                print()
+                progress_printer.print_timing_stats(
+                    num_seconds_first_llm_token=timer.num_seconds_to_first_token(),
+                    num_seconds_first_audio=timer.num_seconds_to_first_audio(),
+                )
+                print(f"Answering with {synthesizer} ...")
 
             audio_output.wait_and_terminate()
-            progress_printer.stop()
 
             num_interactions += 1
 
             if num_interactions == 2:
                 break
+
+            print()
 
     except KeyboardInterrupt:
         pass
