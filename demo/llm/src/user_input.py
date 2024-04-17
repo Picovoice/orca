@@ -3,10 +3,12 @@ from enum import Enum
 from typing import (
     Any,
     Dict,
+    Optional,
 )
 
 from pvrecorder import PvRecorder
 
+from .llm import LLMs
 from .transcriber import Transcriber, Transcribers
 
 
@@ -33,8 +35,6 @@ class UserInput:
 
 
 class VoiceUserInput(UserInput):
-    STOP_MESSAGE = "Sent question to LLM!"
-
     def __init__(
             self,
             audio_device_index: int,
@@ -68,8 +68,14 @@ class VoiceUserInput(UserInput):
 
 
 class TextUserInput(UserInput):
-    def __init__(self, prompt: str) -> None:
-        self._prompt = prompt
+    USER_PROMPT = "Your question: "
+    USER_PROMPT_DUMMY_LLM = "Press ENTER to generate a demo LLM response "
+
+    def __init__(self, llm_type: LLMs, prompt: Optional[str] = None) -> None:
+        if prompt is not None:
+            self._prompt = prompt
+        else:
+            self._prompt = self.USER_PROMPT_DUMMY_LLM if llm_type is LLMs.DUMMY else self.USER_PROMPT
 
     def get_user_prompt(self) -> str:
         return input(self._prompt)

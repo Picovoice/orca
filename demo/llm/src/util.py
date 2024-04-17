@@ -120,27 +120,30 @@ class Timer:
 
 
 class ProgressPrinter:
-    PROGRESS_BAR_MAX_RED_SECONDS = 2.0
-    PROGRESS_BAR_SYMBOLS_PER_SECONDS = 50
-    PROGRESS_BAR_SYMBOL = "#"
+    TIMER_BAR_MAX_RED_SECONDS = 2.0
+    TIMER_BAR_SYMBOLS_PER_SECONDS = 50
+    TIMER_BAR_SYMBOL = ">"
 
-    MAX_GREEN_VALUE = 0.7
-    MAX_RED_VALUE = 0.85
+    TIMER_MESSAGE_LLM = "Time to wait for LLM: "
+    TIMER_MESSAGE_TTS = "Time to wait for TTS: "
+
+    MAX_GREEN_VALUE = 0.6
+    MAX_RED_VALUE = 0.75
 
     def __init__(
             self,
-            timer_tts_message: str = "",
-            timer_llm_message: str = "",
-            progress_bar_max_red_seconds: float = PROGRESS_BAR_MAX_RED_SECONDS,
-            progress_bar_symbols_per_second: float = PROGRESS_BAR_SYMBOLS_PER_SECONDS,
-            progress_bar_symbol: str = PROGRESS_BAR_SYMBOL,
+            timer_message_llm: str = TIMER_MESSAGE_LLM,
+            timer_message_tts: str = TIMER_MESSAGE_TTS,
+            timer_bar_max_red_seconds: float = TIMER_BAR_MAX_RED_SECONDS,
+            timer_bar_symbols_per_second: float = TIMER_BAR_SYMBOLS_PER_SECONDS,
+            timer_bar_symbol: str = TIMER_BAR_SYMBOL,
     ) -> None:
-        self._progress_bar_symbols_per_second = progress_bar_symbols_per_second
-        self._progress_bar_color_max = progress_bar_max_red_seconds * progress_bar_symbols_per_second
-        self._progress_bar_symbol = progress_bar_symbol
+        self._progress_bar_symbols_per_second = timer_bar_symbols_per_second
+        self._progress_bar_color_max = timer_bar_max_red_seconds * timer_bar_symbols_per_second
+        self._progress_bar_symbol = timer_bar_symbol
 
-        self._timer_tts_message = timer_tts_message
-        self._timer_llm_message = timer_llm_message
+        self._timer_message_llm = timer_message_llm
+        self._timer_message_tts = timer_message_tts
 
     @staticmethod
     def _colored_string(text: str, red: float, green: float, blue: float, bold: bool = False) -> str:
@@ -168,16 +171,26 @@ class ProgressPrinter:
 
         return red, green, blue
 
-    def print_timing_stats(self, num_seconds_first_llm_token: float, num_seconds_first_audio: float) -> None:
-        print(self._colored_string(self._timer_llm_message, 0, self.MAX_GREEN_VALUE, 0), end="")
+    def _print_timer_bar_llm(self, num_seconds_first_llm_token: float) -> None:
+        print(self._colored_string(self._timer_message_llm, 0, self.MAX_GREEN_VALUE, 0), end="")
+
         red, green, blue = self._print_colored_progress_bar(num_seconds_first_llm_token)
+
         num_seconds_string = f"{round(num_seconds_first_llm_token, 1):.1f}s"
         print(f" {self._colored_string(num_seconds_string, red, green, blue)}", flush=True)
 
-        print(self._colored_string(self._timer_tts_message, 0, self.MAX_GREEN_VALUE, 0, bold=True), end="")
+    def _print_timer_bar_tts(self, num_seconds_first_audio: float) -> None:
+        print(self._colored_string(self._timer_message_tts, 0, self.MAX_GREEN_VALUE, 0, bold=True), end="")
+
         red, green, blue = self._print_colored_progress_bar(num_seconds_first_audio, bold=True)
+
         num_seconds_string = f"{round(num_seconds_first_audio, 1):.1f}s"
         print(f" {self._colored_string(num_seconds_string, red, green, blue, bold=True)}", flush=True)
+
+    def print_timing_stats(self, num_seconds_first_llm_token: float, num_seconds_first_audio: float) -> None:
+        print()
+        self._print_timer_bar_llm(num_seconds_first_llm_token)
+        self._print_timer_bar_tts(num_seconds_first_audio)
 
 
 __all__ = [

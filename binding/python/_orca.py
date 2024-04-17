@@ -442,7 +442,8 @@ class Orca:
         `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
         Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
         The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
-        :param speech_rate: Rate of speech of the synthesized audio.
+        :param speech_rate: Rate of speech of the synthesized audio. Higher numbers correspond to faster speech.
+        Valid values are within [0.7, 1.3].
         :param random_state: Random seed for the synthesis process.
         :return: A tuple containing the generated audio as a sequence of 16-bit linearly-encoded integers
         and a sequence of OrcaWordAlignment objects representing the word alignments.
@@ -471,36 +472,7 @@ class Orca:
         pcm = [c_pcm[i] for i in range(c_num_samples.value)]
         self._pcm_delete_func(c_pcm)
 
-        alignments = []
-        for i in range(c_num_alignments.value):
-            word_alignment = c_alignments[i].contents
-            word = word_alignment.word.decode("utf-8")
-            start_sec = word_alignment.start_sec
-            end_sec = word_alignment.end_sec
-            num_phonemes = word_alignment.num_phonemes
-            phoneme_alignments = []
-            for j in range(num_phonemes):
-                phoneme_alignment = word_alignment.phonemes[j].contents
-                phoneme = phoneme_alignment.phoneme.decode("utf-8")
-                phoneme_start_sec = phoneme_alignment.start_sec
-                phoneme_end_sec = phoneme_alignment.end_sec
-                phoneme_alignment = self.PhonemeAlignment(
-                    phoneme=phoneme,
-                    start_sec=phoneme_start_sec,
-                    end_sec=phoneme_end_sec)
-                phoneme_alignments.append(phoneme_alignment)
-            word_alignment = self.WordAlignment(
-                word=word,
-                start_sec=start_sec,
-                end_sec=end_sec,
-                phonemes=phoneme_alignments)
-            alignments.append(word_alignment)
-
-        status = self._word_alignments_delete_func(c_num_alignments.value, c_alignments)
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to delete Orca word alignments",
-                message_stack=self._get_error_stack())
+        alignments = self._get_alignments(c_num_alignments=c_num_alignments, c_alignments=c_alignments)
 
         self._synthesize_params_delete_func(c_synthesize_params)
 
@@ -543,36 +515,7 @@ class Orca:
                 message="Unable to synthesize speech",
                 message_stack=self._get_error_stack())
 
-        alignments = []
-        for i in range(c_num_alignments.value):
-            word_alignment = c_alignments[i].contents
-            word = word_alignment.word.decode("utf-8")
-            start_sec = word_alignment.start_sec
-            end_sec = word_alignment.end_sec
-            num_phonemes = word_alignment.num_phonemes
-            phoneme_alignments = []
-            for j in range(num_phonemes):
-                phoneme_alignment = word_alignment.phonemes[j].contents
-                phoneme = phoneme_alignment.phoneme.decode("utf-8")
-                phoneme_start_sec = phoneme_alignment.start_sec
-                phoneme_end_sec = phoneme_alignment.end_sec
-                phoneme_alignment = self.PhonemeAlignment(
-                    phoneme=phoneme,
-                    start_sec=phoneme_start_sec,
-                    end_sec=phoneme_end_sec)
-                phoneme_alignments.append(phoneme_alignment)
-            word_alignment = self.WordAlignment(
-                word=word,
-                start_sec=start_sec,
-                end_sec=end_sec,
-                phonemes=phoneme_alignments)
-            alignments.append(word_alignment)
-
-        status = self._word_alignments_delete_func(c_num_alignments.value, c_alignments)
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to delete Orca word alignments",
-                message_stack=self._get_error_stack())
+        alignments = self._get_alignments(c_num_alignments=c_num_alignments, c_alignments=c_alignments)
 
         self._synthesize_params_delete_func(c_synthesize_params)
 
@@ -608,6 +551,43 @@ class Orca:
         """Version."""
 
         return self._version
+
+    def _get_alignments(
+            self,
+            c_num_alignments: c_int32,
+            c_alignments: POINTER(POINTER(COrcaWordAlignment))) -> Sequence[WordAlignment]:
+        alignments = []
+        for i in range(c_num_alignments.value):
+            word_alignment = c_alignments[i].contents
+            word = word_alignment.word.decode("utf-8")
+            start_sec = word_alignment.start_sec
+            end_sec = word_alignment.end_sec
+            num_phonemes = word_alignment.num_phonemes
+            phoneme_alignments = []
+            for j in range(num_phonemes):
+                phoneme_alignment = word_alignment.phonemes[j].contents
+                phoneme = phoneme_alignment.phoneme.decode("utf-8")
+                phoneme_start_sec = phoneme_alignment.start_sec
+                phoneme_end_sec = phoneme_alignment.end_sec
+                phoneme_alignment = self.PhonemeAlignment(
+                    phoneme=phoneme,
+                    start_sec=phoneme_start_sec,
+                    end_sec=phoneme_end_sec)
+                phoneme_alignments.append(phoneme_alignment)
+            word_alignment = self.WordAlignment(
+                word=word,
+                start_sec=start_sec,
+                end_sec=end_sec,
+                phonemes=phoneme_alignments)
+            alignments.append(word_alignment)
+
+        status = self._word_alignments_delete_func(c_num_alignments.value, c_alignments)
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to delete Orca word alignments",
+                message_stack=self._get_error_stack())
+
+        return alignments
 
     def _get_c_synthesize_params(
             self,

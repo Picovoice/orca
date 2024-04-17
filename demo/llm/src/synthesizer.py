@@ -4,7 +4,14 @@ from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from queue import Queue
-from typing import Callable, Any, Union, Optional, Sequence
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import numpy as np
 import pvorca
@@ -66,20 +73,23 @@ class Synthesizer:
 
 
 class OpenAISynthesizer(Synthesizer):
-    MODEL_NAME = "tts-1"
-    VOICE_NAME = "shimmer"
     SAMPLE_RATE = 24000
     NAME = "OpenAI TTS"
+
+    DEFAULT_MODEL_NAME = "tts-1"
+    DEFAULT_VOICE_NAME = "shimmer"
 
     def __init__(
             self,
             access_key: str,
-            model_name: str = MODEL_NAME,
+            model_name: str = DEFAULT_MODEL_NAME,
+            voice_name: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"] = DEFAULT_VOICE_NAME,
             **kwargs: Any
     ) -> None:
         super().__init__(sample_rate=self.SAMPLE_RATE, **kwargs)
 
         self._model_name = model_name
+        self._voice_name = voice_name
         self._client = OpenAI(api_key=access_key)
 
     @staticmethod
@@ -92,7 +102,7 @@ class OpenAISynthesizer(Synthesizer):
 
         response = self._client.audio.speech.create(
             model=self._model_name,
-            voice=self.VOICE_NAME,
+            voice=self._voice_name,
             response_format="pcm",
             input=text)
 
@@ -104,7 +114,7 @@ class OpenAISynthesizer(Synthesizer):
 
     @property
     def info(self) -> str:
-        return f"{self.NAME} (model: {self.MODEL_NAME}, voice: {self.VOICE_NAME})"
+        return f"{self.NAME} (model: {self.DEFAULT_MODEL_NAME}, voice: {self.DEFAULT_VOICE_NAME})"
 
     def __str__(self) -> str:
         return f"{self.NAME}"

@@ -19,17 +19,13 @@ from src import *
 
 MAX_WAIT_TIME_FIRST_AUDIO = 10
 
-DEFAULT_USER_PROMPT = "Your question: "
-
 
 def get_user_input_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     kwargs = dict()
+    kwargs["llm_type"] = LLMs(args.llm)
+
     user_input_type = UserInputs(args.user_input)
-
-    if user_input_type is UserInputs.TEXT:
-        kwargs["prompt"] = DEFAULT_USER_PROMPT
-
-    elif user_input_type is UserInputs.VOICE:
+    if user_input_type is UserInputs.VOICE:
         kwargs["audio_device_index"] = args.audio_device_index
         kwargs["transcriber"] = args.transcriber
 
@@ -52,10 +48,15 @@ def get_llm_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
         if not args.openai_access_key:
             raise ValueError(
                 f"An OpenAI access key is required when using OpenAI models. Specify with `--openai-access-key`.")
+        if args.tokens_per_second is not None:
+            raise ValueError(f"Tokens per second is not supported for `{llm_type}`")
+
         kwargs["access_key"] = args.openai_access_key
+        kwargs["system_message"] = args.system_message
 
     elif llm_type is LLMs.DUMMY:
-        kwargs["tokens_per_second"] = args.tokens_per_second
+        if args.tokens_per_second is not None:
+            kwargs["tokens_per_second"] = args.tokens_per_second
 
     return kwargs
 
@@ -80,10 +81,6 @@ def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     return kwargs
 
 
-def print_welcome_message() -> None:
-    print("Orca instant audio generation demo!\n")
-
-
 def main(args: argparse.Namespace) -> None:
     llm_type = LLMs(args.llm)
 
@@ -104,13 +101,7 @@ def main(args: argparse.Namespace) -> None:
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
-    progress_printer = ProgressPrinter(
-        timer_llm_message="Time to wait for LLM: ",
-        timer_tts_message="Time to wait for TTS: ",
-        progress_bar_symbol=">",
-    )
-
-    print_welcome_message()
+    progress_printer = ProgressPrinter()
 
     try:
         num_interactions = 0
@@ -139,7 +130,6 @@ def main(args: argparse.Namespace) -> None:
                     synthesizer.synthesize(token)
 
                 if not timer.before_first_audio and not printed_stats:
-                    print()
                     progress_printer.print_timing_stats(
                         num_seconds_first_llm_token=timer.num_seconds_to_first_token(),
                         num_seconds_first_audio=timer.num_seconds_to_first_audio(),
@@ -156,18 +146,17 @@ def main(args: argparse.Namespace) -> None:
             else:
                 synthesizer.synthesize(llm_message)
 
-                wait_start_time = time.time()
-                while timer.before_first_audio:
-                    if time.time() - wait_start_time > MAX_WAIT_TIME_FIRST_AUDIO:
-                        print(
-                            f"Waited for {MAX_WAIT_TIME_FIRST_AUDIO}s for first audio but did not receive any. Exiting")
-                        break
+            wait_start_time = time.time()
+            while timer.before_first_audio:
+                if time.time() - wait_start_time > MAX_WAIT_TIME_FIRST_AUDIO:
+                    print(
+                        f"Waited for {MAX_WAIT_TIME_FIRST_AUDIO}s for first audio but did not receive any. Exiting")
+                    break
 
-                print()
+            if not printed_stats:
                 progress_printer.print_timing_stats(
                     num_seconds_first_llm_token=timer.num_seconds_to_first_token(),
-                    num_seconds_first_audio=timer.num_seconds_to_first_audio(),
-                )
+                    num_seconds_first_audio=timer.num_seconds_to_first_audio())
                 print(f"Answering with {synthesizer} ...")
 
             audio_output.wait_and_terminate()
@@ -175,6 +164,7 @@ def main(args: argparse.Namespace) -> None:
             num_interactions += 1
 
             if num_interactions == 2:
+                print("\nDemo complete!")
                 break
 
             print()
@@ -222,8 +212,12 @@ if __name__ == "__main__":
         "--openai-access-key",
         help="Open AI access key. Needed when using openai models")
     parser.add_argument(
+        "--system-message",
+        default=None,
+        help="The system message to use for the LLM")
+    parser.add_argument(
         "--tokens-per-second",
-        default=25,
+        default=None,
         type=int,
         help="Imitated tokens per second")
 
