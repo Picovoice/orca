@@ -23,25 +23,11 @@ const sourceDirectory = join(
   'resources',
 );
 
-const testingModelFilesSourceDirectory = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'resources',
-  '.test',
-  'models',
-);
-
 try {
   fs.mkdirSync(testDirectory, { recursive: true });
 
   fs.readdirSync(paramsSourceDirectory).forEach(file => {
     fs.copyFileSync(join(paramsSourceDirectory, file), join(testDirectory, file));
-  });
-
-  fs.readdirSync(testingModelFilesSourceDirectory).forEach(file => {
-    fs.copyFileSync(join(testingModelFilesSourceDirectory, file), join(testDirectory, file));
   });
 
   fs.mkdirSync(join(fixturesDirectory, '.test'), { recursive: true });

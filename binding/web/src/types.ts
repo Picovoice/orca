@@ -50,6 +50,11 @@ export type OrcaSynthesizeResult = {
   alignments: OrcaAlignment[]
 }
 
+export type OrcaStreamSynthesizeResult = {
+  pcm: Int16Array
+  isFlushed: boolean
+}
+
 /**
  * OrcaModel types
  */
