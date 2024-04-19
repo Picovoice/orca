@@ -1,6 +1,6 @@
 node_modules
 dist
 lib/pv_orca*.wasm
-cypress/fixtures/.test/*
+cypress/fixtures/resources/*
 test/orca_params*.js
 test/orca_params*.pv
