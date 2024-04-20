@@ -168,7 +168,7 @@ export class Orca {
     this._pvOrcaStreamSynthesize = handleWasm.pvOrcaStreamSynthesize;
     this._pvOrcaStreamFlush = handleWasm.pvOrcaStreamFlush;
     this._pvOrcaStreamClose = handleWasm.pvOrcaStreamClose;
-    this._synthesizeMutex = new Mutex();
+    this._synthesizeMutex = new Mutex(); // TODO: ???
 
     class OrcaStream {
       private readonly _wasmMemory: WebAssembly.Memory | undefined;
@@ -775,6 +775,7 @@ export class Orca {
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    * @param streamSynthesizeErrorCallback Optional user-defined error callback to run if error.
    */
+  // TODO: Refactor? Since 2nd and 3rd args are both optional
   public async streamOpen(
     streamSynthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
     synthesizeParams: OrcaSynthesizeParams = {},
@@ -920,6 +921,9 @@ export class Orca {
     await this._pvOrcaDelete(this._objectAddress);
     await this._pvFree(this._messageStackAddressAddressAddress);
     await this._pvFree(this._messageStackDepthAddress);
+
+    // TODO: if called before stream is closed, throws an error. Handle this.
+    // await this._pvFree(this._streamPcmAddressAddress);
     delete this._wasmMemory;
     this._wasmMemory = undefined;
   }

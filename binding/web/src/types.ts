@@ -10,6 +10,7 @@
 */
 
 import { PvModel } from '@picovoice/web-utils';
+import * as OrcaErrors from './orca_errors';
 
 // eslint-disable-next-line no-shadow
 export enum PvStatus {
@@ -79,10 +80,34 @@ export type OrcaWorkerReleaseRequest = {
   command: 'release';
 };
 
+export type OrcaWorkerStreamOpenRequest = {
+  command: 'streamOpen';
+  streamSynthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void;
+  synthesizeParams?: OrcaSynthesizeParams;
+  streamSynthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void;
+}
+
+export type OrcaWorkerStreamSynthesizeRequest = {
+  command: 'streamSynthesize';
+  text: string;
+};
+
+export type OrcaWorkerStreamFlushRequest = {
+  command: 'streamFlush';
+};
+
+export type OrcaWorkerStreamCloseRequest = {
+  command: 'streamClose';
+};
+
 export type OrcaWorkerRequest =
   | OrcaWorkerInitRequest
   | OrcaWorkerSynthesizeRequest
-  | OrcaWorkerReleaseRequest;
+  | OrcaWorkerReleaseRequest
+  | OrcaWorkerStreamOpenRequest
+  | OrcaWorkerStreamSynthesizeRequest
+  | OrcaWorkerStreamFlushRequest
+  | OrcaWorkerStreamCloseRequest;
 
 export type OrcaWorkerFailureResponse = {
   command: 'failed' | 'error';
@@ -113,6 +138,20 @@ export type OrcaWorkerReleaseResponse =
   | OrcaWorkerFailureResponse
   | {
   command: 'ok';
+};
+
+export type OrcaWorkerStreamOpenResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: any; // TODO: OrcaStream
+};
+
+export type OrcaWorkerStreamSynthesizeResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: OrcaStreamSynthesizeResult;
 };
 
 export type OrcaWorkerResponse =

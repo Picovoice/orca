@@ -13,10 +13,27 @@
 /// <reference lib="webworker" />
 
 import { Orca } from './orca';
-import { OrcaWorkerRequest, PvStatus } from './types';
+import { OrcaStreamSynthesizeResult, OrcaWorkerRequest, PvStatus } from './types';
 import { OrcaError } from './orca_errors';
 
 let orca: Orca | null = null;
+let orcaStream: any = null;
+
+const streamSynthesizeCallback = (synthesizeResult: OrcaStreamSynthesizeResult): void => {
+  self.postMessage({
+    command: 'ok',
+    result: synthesizeResult,
+  });
+};
+
+const streamSynthesizeErrorCallback = (error: OrcaError): void => {
+  self.postMessage({
+    command: 'error',
+    status: error.status,
+    shortMessage: error.shortMessage,
+    messageStack: error.messageStack,
+  });
+};
 
 /**
  * Orca worker handler.
@@ -105,6 +122,115 @@ self.onmessage = async function(
       self.postMessage({
         command: 'ok',
       });
+      break;
+    case 'streamOpen':
+      if (orca === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca not initialized',
+        });
+        return;
+      }
+      try {
+        orcaStream = await orca.streamOpen(
+          streamSynthesizeCallback,
+          event.data.synthesizeParams,
+          streamSynthesizeErrorCallback,
+        );
+        self.postMessage({
+          command: 'ok',
+        });
+      } catch (e: any) {
+        if (e instanceof OrcaError) {
+          self.postMessage({
+            command: 'error',
+            status: e.status,
+            shortMessage: e.shortMessage,
+            messageStack: e.messageStack,
+          });
+        } else {
+          self.postMessage({
+            command: 'error',
+            status: PvStatus.INVALID_STATE,
+            shortMessage: 'Orca stream open error',
+          });
+        }
+      }
+      break;
+    case 'streamSynthesize':
+      if (orca === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca not initialized',
+        });
+        return;
+      }
+      if (orcaStream === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca stream not initialized',
+        });
+        return;
+      }
+      try {
+        await orcaStream.synthesize(event.data.text);
+      } catch (e: any) {
+        if (e instanceof OrcaError) {
+          self.postMessage({
+            command: 'error',
+            status: e.status,
+            shortMessage: e.shortMessage,
+            messageStack: e.messageStack,
+          });
+        } else {
+          self.postMessage({
+            command: 'error',
+            status: PvStatus.INVALID_STATE,
+            shortMessage: 'Orca synthesize error',
+          });
+        }
+      }
+      break;
+    case 'streamFlush':
+      if (orca === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca not initialized',
+        });
+        return;
+      }
+      if (orcaStream === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca stream not initialized',
+        });
+        return;
+      }
+      await orcaStream.flush();
+      break;
+    case 'streamClose':
+      if (orca === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca not initialized',
+        });
+        return;
+      }
+      if (orcaStream === null) {
+        self.postMessage({
+          command: 'error',
+          status: PvStatus.INVALID_STATE,
+          shortMessage: 'Orca stream not initialized',
+        });
+        return;
+      }
+      await orcaStream.close();
       break;
     default:
       self.postMessage({

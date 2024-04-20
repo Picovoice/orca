@@ -89,7 +89,7 @@ const runInitTest = async (
 
 describe('Orca Binding', function() {
   for (const instance of [Orca, OrcaWorker]) {
-    const instanceString = instance === OrcaWorker ? 'worker' : 'main';
+    const instanceString = instance === Orca ? 'main' : 'worker';
 
     it(`should be able to handle invalid public path (${instanceString})`, async () => {
       await runInitTest(instance, {
@@ -135,7 +135,7 @@ describe('Orca Binding', function() {
         });
       });
 
-      it.only(`should be able to process text streaming [${modelFileSuffix}] (${instanceString})`, () => {
+      it(`should be able to process text streaming [${modelFileSuffix}] (${instanceString})`, () => {
         try {
           cy.getFramesFromFile(`${testData.audio_data_folder}orca_params_${modelFileSuffix}_stream.wav`).then(
             async (rawPcm: Int16Array) => {
@@ -145,22 +145,28 @@ describe('Orca Binding', function() {
               );
 
               const streamPcm = [];
-              const streamSynthesisCb = ({ pcm, isFlushed }) => {
-                streamPcm.push(...pcm);
-                if (isFlushed) {
+              const streamSynthesizeCallback = (res: any) => {
+                streamPcm.push(...res.pcm);
+                if (res.isFlushed) {
                   compareArrays(new Int16Array(streamPcm), rawPcm, 500);
                 }
               };
 
+              const streamSynthesizeErrorCallback = (err: any) => {
+                expect(err).to.be.undefined;
+              };
+
               const orcaStream = await orca.streamOpen(
-                streamSynthesisCb,
+                streamSynthesizeCallback,
                 { randomState: testData.random_state },
+                streamSynthesizeErrorCallback,
               );
 
               for (const c of testData.test_sentences.text.split('')) {
                 await orcaStream.synthesize(c);
               }
 
+              // TODO: calling release should also close orcaStream if not manually closed?
               await orcaStream.flush();
               await orcaStream.close();
 
@@ -361,25 +367,23 @@ describe('Orca Binding', function() {
       });
 
       it(`should handle invalid input [${modelFileSuffix}] (${instanceString})`, async () => {
-        for (const failureCase of testData.test_sentences.text_invalid) {
-          let orca: Orca | OrcaWorker | null = null;
-          let isFailed = false;
-          try {
-            orca = await instance.create(
-              ACCESS_KEY,
-              { publicPath, forceWrite: true },
-            );
+        const orca = await instance.create(
+          ACCESS_KEY,
+          { publicPath, forceWrite: true },
+        );
 
-            const res = await orca.synthesize(failureCase);
+        for (const failureCase of testData.test_sentences.text_invalid) {
+          try {
+            await orca.synthesize(failureCase);
           } catch (e) {
-            isFailed = true;
+            expect(e).not.to.be.undefined;
           }
-          if (orca instanceof OrcaWorker) {
-            orca.terminate();
-          } else if (orca instanceof Orca) {
-            await orca.release();
-          }
-          expect(isFailed).eq(true);
+        }
+
+        if (orca instanceof OrcaWorker) {
+          orca.terminate();
+        } else if (orca instanceof Orca) {
+          await orca.release();
         }
       });
 

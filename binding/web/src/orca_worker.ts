@@ -18,11 +18,16 @@ import {
   OrcaWorkerReleaseResponse,
   OrcaSynthesizeParams,
   OrcaSynthesizeResult,
+  OrcaStreamSynthesizeResult,
+  OrcaWorkerStreamOpenResponse,
+  OrcaWorkerStreamSynthesizeResponse,
   PvStatus,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
 import { pvStatusToException } from './orca_errors';
+
+import * as OrcaErrors from './orca_errors';
 
 export class OrcaWorker {
   private readonly _worker: Worker;
@@ -34,6 +39,8 @@ export class OrcaWorker {
   private static _wasm: string;
   private static _wasmSimd: string;
   private static _sdk: string = 'web';
+
+  private readonly OrcaStream: any;
 
   private constructor(
     worker: Worker,
@@ -47,6 +54,106 @@ export class OrcaWorker {
     this._sampleRate = sampleRate;
     this._maxCharacterLimit = maxCharacterLimit;
     this._validCharacters = validCharacters;
+
+    class OrcaStream {
+      private readonly _streamWorker: Worker;
+      private readonly _synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void;
+      private readonly _synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void;
+
+      private constructor(
+        streamWorker: Worker,
+        synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
+        synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void,
+      ) {
+        this._streamWorker = streamWorker;
+        this._synthesizeCallback = synthesizeCallback;
+        this._synthesizeErrorCallback = synthesizeErrorCallback;
+      }
+
+      /**
+       * Synthesizes speech in a worker.
+       * The speech result will be supplied with the callback provided when initializing the worker either
+       * by 'fromBase64' or 'fromPublicDirectory'.
+       * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
+       *
+       * @param text A string of text.
+       * @return The synthesize result object.
+       */
+      public async synthesize(
+        text: string,
+      ): Promise<OrcaStreamSynthesizeResult> {
+        const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
+          (resolve, reject) => {
+            this._streamWorker.onmessage = (
+              event: MessageEvent<OrcaWorkerStreamSynthesizeResponse>,
+            ): void => {
+              switch (event.data.command) {
+                case 'ok':
+                  this._synthesizeCallback(event.data.result);
+                  resolve(event.data.result);
+                  break;
+                case 'failed':
+                case 'error':
+                  reject(
+                    pvStatusToException(
+                      event.data.status,
+                      event.data.shortMessage,
+                      event.data.messageStack,
+                    ),
+                  );
+                  break;
+                default:
+                  reject(
+                    pvStatusToException(
+                      PvStatus.RUNTIME_ERROR,
+                      // @ts-ignore
+                      `Unrecognized command: ${event.data.command}`,
+                    ),
+                  );
+              }
+            };
+          },
+        );
+
+        this._streamWorker.postMessage(
+          {
+            command: 'streamSynthesize',
+            text: text,
+          },
+        );
+
+        return returnPromise;
+      }
+
+      public flush(): void {
+        this._streamWorker.postMessage({
+          command: 'streamFlush',
+        });
+      }
+
+      public close(): void {
+        this._streamWorker.postMessage({
+          command: 'streamClose',
+        });
+      }
+
+      // /**
+      //  * Synthesizes streaming speech in a worker.
+      //  * The speech result will be supplied with the callback provided when initializing the worker either
+      //  * by 'fromBase64' or 'fromPublicDirectory'.
+      //  * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
+      //  *
+      //  * @param text A string of text.
+      //  */
+      // public synthesize(text: string): void {
+      //   this._streamWorker.postMessage({
+      //     command: 'streamSynthesize',
+      //     text: text,
+      //   });
+      // }
+    }
+
+    this.OrcaStream = OrcaStream;
   }
 
   /**
@@ -280,6 +387,68 @@ export class OrcaWorker {
     this._worker.postMessage({
       command: 'release',
     });
+
+    return returnPromise;
+  }
+
+
+  /**
+   * Opens a new OrcaStream object in a worker.
+   *
+   * @param streamSynthesizeCallback User-defined callback to run after receiving pcm result.
+   * @param synthesizeParams Optional configuration arguments.
+   * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
+   * @param streamSynthesizeErrorCallback Optional user-defined error callback to run if error.
+   */
+  public async streamOpen(
+    streamSynthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
+    synthesizeParams: OrcaSynthesizeParams = {},
+    streamSynthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void,
+  ): Promise<any> { // TODO: any = OrcaStream
+
+    const returnPromise: Promise<any> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<OrcaWorkerStreamOpenResponse>,
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(new this.OrcaStream(
+                this._worker,
+                streamSynthesizeCallback,
+                streamSynthesizeErrorCallback,
+              ));
+              break;
+            case 'failed':
+            case 'error':
+              reject(
+                pvStatusToException(
+                  event.data.status,
+                  event.data.shortMessage,
+                  event.data.messageStack,
+                ),
+              );
+              break;
+            default:
+              reject(
+                pvStatusToException(
+                  PvStatus.RUNTIME_ERROR,
+                  // @ts-ignore
+                  `Unrecognized command: ${event.data.command}`,
+                ),
+              );
+          }
+        };
+      },
+    );
+
+    this._worker.postMessage(
+      {
+        command: 'streamOpen',
+        synthesizeParams: synthesizeParams,
+      },
+    );
 
     return returnPromise;
   }
