@@ -10,16 +10,25 @@
 #
 
 import argparse
+import json
+import os
 import struct
 import time
 import wave
 from dataclasses import dataclass
 from typing import (
     Generator,
+    Optional,
     Sequence,
 )
 
 from pvorca import create, OrcaActivationLimitError
+
+
+@dataclass
+class TokenMetadata:
+    string: str
+    pcm: Optional[Sequence[int]] = None
 
 
 @dataclass
@@ -29,12 +38,45 @@ class ChunkMetadata:
     proc_seconds: float
 
 
+def save_wav(output_path: str, pcm: Sequence[int], sample_rate: int) -> None:
+    with wave.open(output_path, "wb") as output_file:
+        output_file.setnchannels(1)
+        output_file.setsampwidth(2)
+        output_file.setframerate(sample_rate)
+        output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
+
+
+def save_token_metadata(output_folder: str, token_metadata: Sequence[TokenMetadata], sample_rate: int) -> None:
+    output_path = os.path.join(output_folder, "0.wav")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    json_data = []
+    for i, metadata in enumerate(token_metadata):
+        pcm_path = None
+        if metadata.pcm is not None:
+            pcm_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(output_path), 
+                    f"{os.path.basename(output_path)[:-4]}{i}.wav"))
+            save_wav(
+                output_path=pcm_path, 
+                pcm=metadata.pcm, 
+                sample_rate=sample_rate)
+    
+        json_data.append({"string": metadata.string, "pcm_path": pcm_path})
+        
+    with open(os.path.join(os.path.dirname(output_path), "metadata.json"), "w") as json_file:
+        json.dump(json_data, json_file)
+
+    print(f"Metadata saved to `{output_path}`.")
+        
+
 def token_generator(text: str) -> Generator[str, None, None]:
     for itok, tok in enumerate(text.split()):
-        if itok == 0:
+        if itok == len(text.split()) - 1:
             yield tok
         else:
-            yield f" {tok}"
+            yield f"{tok} "
 
 
 def main(args: argparse.Namespace) -> None:
@@ -44,6 +86,7 @@ def main(args: argparse.Namespace) -> None:
     output_path = args.output_path
     text = args.text
     no_audio = args.no_audio
+    save_metadata_folder = args.save_metadata_folder
 
     if not output_path.lower().endswith('.wav'):
         raise ValueError('Given argument --output_path must have WAV file extension')
@@ -61,6 +104,7 @@ def main(args: argparse.Namespace) -> None:
             audio_device.start(sample_rate=orca.sample_rate)
 
         pcm_chunks_metadata = []
+        token_metadata = []
         initial_tic = time.time()
 
         tic = initial_tic
@@ -81,6 +125,8 @@ def main(args: argparse.Namespace) -> None:
 
                 tic = time.time()
 
+            token_metadata.append(TokenMetadata(string=token, pcm=pcm_chunk))
+
         pcm_chunk = orca_stream.flush()
         if pcm_chunk is not None:
             toc = time.time()
@@ -94,16 +140,14 @@ def main(args: argparse.Namespace) -> None:
                 proc_seconds=toc - tic)
             pcm_chunks_metadata.append(pcm_chunk_metadata)
 
+            token_metadata.append(TokenMetadata(string="", pcm=pcm_chunk))
+
         final_toc = time.time()
         processing_time = final_toc - initial_tic
 
         pcm = [sample for chunk_metadata in pcm_chunks_metadata for sample in chunk_metadata.pcm]
 
-        with wave.open(output_path, "wb") as output_file:
-            output_file.setnchannels(1)
-            output_file.setsampwidth(2)
-            output_file.setframerate(orca.sample_rate)
-            output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
+        save_wav(output_path=output_path, pcm=pcm, sample_rate=orca.sample_rate)
 
         print(
             f"Generated {len(pcm_chunks_metadata)} audio chunk{'' if len(pcm_chunks_metadata) == 1 else 's'} "
@@ -114,6 +158,12 @@ def main(args: argparse.Namespace) -> None:
                 f"processing time = {chunk_metadata.proc_seconds:.2f}s.")
         print()
         print(f"Final audio written to `{output_path}`.")
+
+        if save_metadata_folder:
+            save_token_metadata(
+                output_folder=save_metadata_folder,
+                token_metadata=token_metadata,
+                sample_rate=orca.sample_rate)
 
         if audio_device is not None:
             audio_device.wait_and_terminate()
@@ -153,5 +203,10 @@ if __name__ == "__main__":
         '--no-audio',
         action='store_true',
         help='Do not play audio')
+    parser.add_argument(
+        '--save-metadata-folder',
+        default=None,
+        help='Path to save metadata for creating animations',
+    )
 
     main(parser.parse_args())
