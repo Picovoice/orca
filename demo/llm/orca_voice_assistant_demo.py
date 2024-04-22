@@ -22,7 +22,6 @@ MAX_WAIT_TIME_FIRST_AUDIO = 10
 
 def get_user_input_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     kwargs = dict()
-    kwargs["llm_type"] = LLMs(args.llm)
 
     user_input_type = UserInputs(args.user_input)
     if user_input_type is UserInputs.VOICE:
@@ -37,6 +36,9 @@ def get_user_input_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
                 raise ValueError("Picovoice access key is required when using voice user input")
             kwargs["transcriber_params"]["access_key"] = args.picovoice_access_key
             kwargs["transcriber_params"]["endpoint_duration_sec"] = args.endpoint_duration_sec
+
+    elif user_input_type is UserInputs.TEXT:
+        kwargs["llm_type"] = LLMs(args.llm)
 
     return kwargs
 

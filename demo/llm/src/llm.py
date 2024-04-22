@@ -71,7 +71,7 @@ class OpenAILLM(LLM):
         self._model_name = model_name
         self._client = OpenAI(api_key=access_key)
 
-        self._message_history = [{"role": "system", "content": self.SYSTEM_PROMPT}]
+        self._message_history = [{"role": "system", "content": self._system_message}]
 
         # Dummy request to avoid long wait times.
         # The first request takes significantly longer than subsequent ones.
@@ -84,7 +84,6 @@ class OpenAILLM(LLM):
             stream=True)
         for chunk in stream:
             pass
-
 
     def _remove_last_user_message(self) -> None:
         self._message_history = self._message_history[:-1]
