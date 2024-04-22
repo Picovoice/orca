@@ -50,12 +50,12 @@ class VoiceUserInput(UserInput):
             self._recorder.start()
 
         transcript = ""
-        start = time.time()
+        #start = time.time()
         try:
             while True:
                 partial_transcript, is_endpoint = self._transcriber.process(self._recorder.read())
                 transcript += partial_transcript
-                if is_endpoint or time.time() - start > 2:
+                if is_endpoint:  # or time.time() - start > 2:
                     final_transcript = self._transcriber.flush()
                     transcript += final_transcript
                     self._recorder.stop()
