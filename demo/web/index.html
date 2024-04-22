@@ -8,6 +8,9 @@
 
     let orca = null;
     let pcm = null;
+    let alignments = null;
+    let orcaStream = null;
+    let streamPcm = [];
 
     function writeMessage(message) {
       console.log(message);
@@ -38,6 +41,91 @@
 
       let isPlaying = false;
       let originalAudioSource;
+
+      // Choose mode
+      const choiceBtnsEl = document.getElementById('choice-btns');
+      const chooseStreamingBtnEl = document.getElementById('choose-streaming-btn');
+      const chooseSingleBtnEl = document.getElementById('choose-single-btn');
+      const streamingSynthesisEl = document.getElementById('streaming-synthesis');
+      const singleSynthesisEl = document.getElementById('single-synthesis');
+
+      chooseStreamingBtnEl.addEventListener('click', () => {
+        choiceBtnsEl.style.display = 'none';
+        streamingSynthesisEl.style.display = 'block';
+        writeMessage('Streaming synthesis selected!');
+      });
+
+      chooseSingleBtnEl.addEventListener('click', () => {
+        choiceBtnsEl.style.display = 'none';
+        singleSynthesisEl.style.display = 'block';
+        writeMessage('Single synthesis selected!');
+      });
+
+      // Streaming synthesis controls
+      const speechRateSliderStreamEl = document.getElementById('speech-rate-stream');
+      const speechRateDisplayStreamEl = document.getElementById('speech-rate-stream-display');
+      const streamOpenBtnEl = document.getElementById('stream-open');
+      const textToSynthesizeStreamEl = document.getElementById('text-to-synthesize-stream');
+      const textToSynthesizeErrorStreamEl = document.getElementById('text-to-synthesize-stream-error');
+      const streamFlushBtnEl = document.getElementById('stream-flush');
+      const downloadBtnStreamEl = document.getElementById('download-stream-btn');
+
+      function synthesizeCallback(synthesizeResult) {
+        if (synthesizeResult.pcm.length > 0) {
+          originalAudioSource = audioContext.createBufferSource();
+          originalAudioSource.buffer = createBuffer(synthesizeResult.pcm);
+          originalAudioSource.connect(originalAudioGain);
+          originalAudioSource.start();
+          streamPcm.push(...synthesizeResult.pcm);
+        }
+      }
+
+      async function streamOpen() {
+        writeMessage('Opening stream. Please wait...');
+        try {
+          document.getElementById('start-orca').disabled = true;
+          textToSynthesizeStreamEl.disabled = true;
+          speechRateSliderStreamEl.disabled = true;
+          streamOpenBtnEl.disabled = true;
+          const speechRate = speechRateSliderStreamEl.value;
+
+          orcaStream = await orca.streamOpen(
+            synthesizeCallback,
+            { synthesizeParams: { speechRate } },
+          );
+
+          textToSynthesizeStreamEl.disabled = false;
+
+          let previousValue = '';
+          textToSynthesizeStreamEl.addEventListener('input', async (e) => {
+            const currentValue = e.target.value;
+            const addedText = currentValue.substring(previousValue.length);
+            const isValidInput = validateInput(addedText, orca.validCharacters);
+            if (isValidInput) {
+              await orcaStream.synthesize(addedText);
+              previousValue = currentValue;
+              streamFlushBtnEl.disabled = false;
+              downloadBtnStreamEl.disabled = false;
+            }
+          });
+
+          writeMessage('Orca stream open! Start typing to synthesize speech. Click "Flush" when done.');
+        } catch (err) {
+          writeMessage(err);
+        }
+      }
+
+      async function streamFlush() {
+        await orcaStream.flush();
+      }
+
+      speechRateSliderStreamEl.addEventListener('change', () =>
+        speechRateDisplayStreamEl.innerText = speechRateSliderStreamEl.value,
+      );
+      streamOpenBtnEl.addEventListener('click', streamOpen);
+      streamFlushBtnEl.addEventListener('click', streamFlush);
+
+      // Single synthesis controls
       const textToSynthesizeEl = document.getElementById('text-to-synthesize');
       const textToSynthesizeErrorEl = document.getElementById('text-to-synthesize-error');
       const speechRateSliderEl = document.getElementById('speech-rate');
@@ -45,6 +133,7 @@
       const controlBtnEl = document.getElementById('control-btn');
       const downloadBtnEl = document.getElementById('download-btn');
       const speechRateDisplayEl = document.getElementById('speech-rate-display');
+      const alignmentsTableEl = document.getElementById('alignments-table');
 
       function onSynthesizeParamChange() {
         if (orca !== null && isPlaying === false) {
@@ -65,12 +154,86 @@
         }
 
         if (nonAllowedCharacters.length > 0) {
-          textToSynthesizeErrorEl.innerText = `Error: Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
+          const text = `Error: Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
+          textToSynthesizeErrorEl.innerText = text;
+          textToSynthesizeErrorStreamEl.innerText = text;
           synthesizeBtnEl.disabled = true;
+          return false;
         } else {
-          textToSynthesizeErrorEl.innerHTML = '&nbsp;';
+          const text = '&nbsp;';
+          textToSynthesizeErrorEl.innerHTML = text;
+          textToSynthesizeErrorStreamEl.innerHTML = text;
           synthesizeBtnEl.disabled = false;
+          return true;
         }
+      }
+
+      function setAlignmentsTable(alignments) {
+        alignmentsTableEl.style.display = 'block';
+        const rowCount = alignmentsTableEl.rows.length;
+        for (let i = 1; i < rowCount; i++) {
+          alignmentsTableEl.deleteRow(1);
+        }
+        alignments.forEach((a) => {
+          const row = alignmentsTableEl.insertRow(-1);
+          row.style.verticalAlign = 'top';
+          const word = row.insertCell(0);
+          const start = row.insertCell(1);
+          const end = row.insertCell(2);
+          const phonemes = row.insertCell(3);
+
+          word.innerHTML = `${a.word}`;
+          start.innerHTML = `${a.startSec.toFixed(3)}`;
+          end.innerHTML = `${a.endSec.toFixed(3)}`;
+          const phonemesInnerHTML = a.phonemes.map(p => {
+            return `<tr>
+              <td style="text-align: left">${p.phoneme}</td>
+              <td style="text-align: left">[${p.startSec.toFixed(3)} - ${p.endSec.toFixed(3)}s]</td>
+            </tr>`;
+          }).join('');
+          phonemes.innerHTML = `
+            <table>
+              <colgroup>
+                <col span="1" style="width: 25%" />
+                <col span="1" style="width: 75%" />
+              </colgroup>
+              ${phonemesInnerHTML}
+            </table>
+          `;
+        });
+      }
+
+      async function synthesize() {
+        writeMessage('Synthesizing. Please wait...');
+        try {
+          textToSynthesizeEl.disabled = true;
+          speechRateSliderEl.disabled = true;
+          synthesizeBtnEl.disabled = true;
+          controlBtnEl.disabled = true;
+          downloadBtnEl.disabled = true;
+
+          const text = textToSynthesizeEl.value;
+          const speechRate = speechRateSliderEl.value;
+          const result = await orca.synthesize(text, { speechRate });
+          pcm = result.pcm;
+          setAlignmentsTable(result.alignments);
+          writeMessage('Synthesizing complete!');
+
+          controlBtnEl.disabled = false;
+          downloadBtnEl.disabled = false;
+        } catch (err) {
+          writeMessage(err);
+        } finally {
+          textToSynthesizeEl.disabled = false;
+          speechRateSliderEl.disabled = false;
+        }
+      }
+
+      function onAudioStop() {
+        isPlaying = false;
+        controlBtnEl.innerText = 'Play';
+        textToSynthesizeEl.disabled = false;
+        speechRateSliderEl.disabled = false;
       }
 
       textToSynthesizeEl.addEventListener('input', (e) => {
@@ -79,17 +242,13 @@
           validateInput(e.target.value, orca.validCharacters);
         }
       });
+
       speechRateSliderEl.addEventListener('change', () => {
         onSynthesizeParamChange();
         speechRateDisplayEl.innerText = speechRateSliderEl.value;
       });
 
-      function onAudioStop() {
-        isPlaying = false;
-        controlBtnEl.innerText = 'Play';
-        textToSynthesizeEl.disabled = false;
-        speechRateSliderEl.disabled = false;
-      }
+      synthesizeBtnEl.addEventListener('click', async () => await synthesize());
 
       controlBtnEl.addEventListener('click', () => {
         if (!isPlaying) {
@@ -115,40 +274,16 @@
       writeMessage('Orca is loading. Please wait...');
       try {
         document.getElementById('start-orca').disabled = true;
-        document.getElementById('text-to-synthesize').disabled = true;
 
         orca = await OrcaWeb.OrcaWorker.create(
           accessKey,
           { base64: modelParams, forceWrite: true },
         );
 
-        document.getElementById('text-to-synthesize').disabled = false;
-        document.getElementById('speech-rate').disabled = false;
+        document.getElementById('choice-btns').style.display = 'block';
         writeMessage('Orca worker ready!');
       } catch (err) {
         writeMessage(err);
-      }
-    }
-
-    async function synthesize() {
-      writeMessage('Synthesizing. Please wait...');
-      try {
-        document.getElementById('text-to-synthesize').disabled = true;
-        document.getElementById('speech-rate').disabled = true;
-        document.getElementById('synthesize-btn').disabled = true;
-        document.getElementById('control-btn').disabled = true;
-        document.getElementById('download-btn').disabled = true;
-        const text = document.getElementById('text-to-synthesize').value;
-        const speechRate = document.getElementById('speech-rate').value;
-        pcm = await orca.synthesize(text, { speechRate });
-        writeMessage('Synthesizing complete!');
-        document.getElementById('control-btn').disabled = false;
-        document.getElementById('download-btn').disabled = false;
-      } catch (err) {
-        writeMessage(err);
-      } finally {
-        document.getElementById('text-to-synthesize').disabled = false;
-        document.getElementById('speech-rate').disabled = false;
       }
     }
 
@@ -158,7 +293,14 @@
       a.download = 'orca_speech_audio.pcm';
       a.href = window.URL.createObjectURL(blob);
       a.click();
-      document.removeChild(a);
+    }
+
+    function downloadStreamDumpAudio() {
+      let blob = new Blob([new Int16Array(streamPcm)]);
+      let a = document.createElement('a');
+      a.download = 'orca_streaming_speech_audio.pcm';
+      a.href = window.URL.createObjectURL(blob);
+      a.click();
     }
   </script>
 </head>
@@ -184,33 +326,102 @@ After entering the AccessKey, click the "Start Orca" button.
   value="Start Orca"
   onclick="startOrca(document.getElementById('accessKey').value)"
 />
-<hr />
-<label for="text-to-synthesize">Text to synthesize (English)</label>
-<br />
-<textarea id="text-to-synthesize" rows="4" cols="50" disabled maxlength="200">
-</textarea>
-<div id="text-to-synthesize-error">&nbsp;</div>
-<label>
-  Speech Rate: <span id="speech-rate-display">1.0</span>
+<div id="choice-btns" style="display: none">
+  <hr />
+  Synthesize a live stream of text: <input
+  id="choose-streaming-btn"
+  type="button"
+  value="Streaming Synthesis"
+/>
+  <br />
+  <br />
+  <b>OR</b>
+  <br />
+  <br />
+  Synthesize a string of text in one call: <input
+  id="choose-single-btn"
+  type="button"
+  value="Single Synthesis"
+/>
+  <hr />
+</div>
+<div id="streaming-synthesis" style="display: none">
+  <hr />
+  <label>
+    Speech Rate: <span id="speech-rate-stream-display">1.0</span>
+    <input
+      id="speech-rate-stream"
+      type="range"
+      min="0.7"
+      max="1.3"
+      value="1"
+      step="0.1"
+    />
+  </label>
+  <br />
+  <br />
   <input
-    id="speech-rate"
-    type="range"
-    min="0.7"
-    max="1.3"
-    value="1"
-    step="0.1"
+    id="stream-open"
+    type="button"
+    value="Open Stream"
+  />
+  <br />
+  <br />
+  <label for="text-to-synthesize-stream">Text to synthesize</label>
+  <br />
+  <textarea id="text-to-synthesize-stream" rows="4" cols="50" maxlength="200" disabled></textarea>
+  <div id="text-to-synthesize-stream-error">&nbsp;</div>
+  <input
+    id="stream-flush"
+    type="button"
+    value="Flush Stream"
     disabled
   />
-</label>
-<br />
-<hr />
-<button id="synthesize-btn" onclick="synthesize()" disabled>
-  Synthesize
-</button>
-<button id="control-btn" disabled>Play</button>
-<button id="download-btn" disabled onclick="downloadDumpAudio()">Download Audio</button>
+  <button id="download-stream-btn" onclick="downloadStreamDumpAudio()" disabled>Download Audio</button>
+</div>
+<div id="single-synthesis" style="display: none">
+  <hr />
+  <label for="text-to-synthesize">Text to synthesize</label>
+  <br />
+  <textarea id="text-to-synthesize" rows="4" cols="50" maxlength="200">
+</textarea>
+  <div id="text-to-synthesize-error">&nbsp;</div>
+  <label>
+    Speech Rate: <span id="speech-rate-display">1.0</span>
+    <input
+      id="speech-rate"
+      type="range"
+      min="0.7"
+      max="1.3"
+      value="1"
+      step="0.1"
+    />
+  </label>
+  <br />
+  <hr />
+  <button id="synthesize-btn">
+    Synthesize
+  </button>
+  <button id="control-btn" disabled>Play</button>
+  <button id="download-btn" disabled onclick="downloadDumpAudio()">Download Audio</button>
+</div>
 <br />
 <br />
 <div id="status" style="white-space: pre"></div>
+<br />
+<table id="alignments-table" style="display: none">
+  <colgroup>
+    <col span="1" style="width: 20%" />
+    <col span="1" style="width: 20%" />
+    <col span="1" style="width: 20%" />
+    <col span="1" style="width: 40%" />
+  </colgroup>
+  <tr>
+    <th style="text-align: left">Word</th>
+    <th style="text-align: left">Start time (s)</th>
+    <th style="text-align: left">End time (s)</th>
+    <th style="text-align: left">Phonemes</th>
+  </tr>
+</table>
 </body>
 </html>

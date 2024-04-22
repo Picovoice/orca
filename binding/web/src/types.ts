@@ -10,7 +10,7 @@
 */
 
 import { PvModel } from '@picovoice/web-utils';
-import * as OrcaErrors from './orca_errors';
+import { OrcaError } from './orca_errors';
 
 // eslint-disable-next-line no-shadow
 export enum PvStatus {
@@ -28,9 +28,14 @@ export enum PvStatus {
   ACTIVATION_REFUSED,
 }
 
+/**
+ * OrcaModel types
+ */
+export type OrcaModel = PvModel;
+
 export type OrcaSynthesizeParams = {
   speechRate?: number
-  randomState?: number
+  randomState?: number | null
 }
 
 export type OrcaPhoneme = {
@@ -51,15 +56,15 @@ export type OrcaSynthesizeResult = {
   alignments: OrcaAlignment[]
 }
 
+export type OrcaStreamOpenOptions = {
+  synthesizeParams?: OrcaSynthesizeParams,
+  synthesizeErrorCallback?: (error: OrcaError) => void,
+}
+
 export type OrcaStreamSynthesizeResult = {
   pcm: Int16Array
   isFlushed: boolean
 }
-
-/**
- * OrcaModel types
- */
-export type OrcaModel = PvModel;
 
 export type OrcaWorkerInitRequest = {
   command: 'init';
@@ -73,7 +78,7 @@ export type OrcaWorkerInitRequest = {
 export type OrcaWorkerSynthesizeRequest = {
   command: 'synthesize';
   text: string;
-  synthesizeParams?: OrcaSynthesizeParams;
+  synthesizeParams: OrcaSynthesizeParams;
 };
 
 export type OrcaWorkerReleaseRequest = {
@@ -82,9 +87,7 @@ export type OrcaWorkerReleaseRequest = {
 
 export type OrcaWorkerStreamOpenRequest = {
   command: 'streamOpen';
-  streamSynthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void;
-  synthesizeParams?: OrcaSynthesizeParams;
-  streamSynthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void;
+  synthesizeParams: OrcaSynthesizeParams;
 }
 
 export type OrcaWorkerStreamSynthesizeRequest = {
@@ -144,7 +147,7 @@ export type OrcaWorkerStreamOpenResponse =
   | OrcaWorkerFailureResponse
   | {
   command: 'ok';
-  result: any; // TODO: OrcaStream
+  result: any;
 };
 
 export type OrcaWorkerStreamSynthesizeResponse =
@@ -154,7 +157,17 @@ export type OrcaWorkerStreamSynthesizeResponse =
   result: OrcaStreamSynthesizeResult;
 };
 
+export type OrcaWorkerStreamFlushResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: OrcaStreamSynthesizeResult;
+};
+
 export type OrcaWorkerResponse =
   | OrcaWorkerInitResponse
   | OrcaWorkerSynthesizeResponse
-  | OrcaWorkerReleaseResponse;
+  | OrcaWorkerReleaseResponse
+  | OrcaWorkerStreamOpenResponse
+  | OrcaWorkerStreamSynthesizeResponse
+  | OrcaWorkerStreamFlushResponse;

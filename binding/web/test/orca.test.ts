@@ -12,7 +12,7 @@ import orcaParamsFemale from './orca_params_female';
 
 import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
-const ACCESS_KEY = '';// Cypress.env('ACCESS_KEY');
+const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
@@ -112,7 +112,6 @@ describe('Orca Binding', function() {
       });
     });
 
-
     for (const modelFileSuffix of ['male', 'female']) {
       const publicPath = modelFileSuffix === 'male' ? `/test/orca_params_male.pv` : `/test/orca_params_female.pv`;
       const base64Path = modelFileSuffix === 'male' ? orcaParamsMale : orcaParamsFemale;
@@ -152,21 +151,22 @@ describe('Orca Binding', function() {
                 }
               };
 
-              const streamSynthesizeErrorCallback = (err: any) => {
+              const synthesizeErrorCallback = (err: any) => {
                 expect(err).to.be.undefined;
               };
 
               const orcaStream = await orca.streamOpen(
                 streamSynthesizeCallback,
-                { randomState: testData.random_state },
-                streamSynthesizeErrorCallback,
+                {
+                  synthesizeParams: { randomState: testData.random_state },
+                  synthesizeErrorCallback,
+                },
               );
 
               for (const c of testData.test_sentences.text.split('')) {
                 await orcaStream.synthesize(c);
               }
 
-              // TODO: calling release should also close orcaStream if not manually closed?
               await orcaStream.flush();
               await orcaStream.close();
 
@@ -387,7 +387,7 @@ describe('Orca Binding', function() {
         }
       });
 
-      it(`should return process and flush error message stack`, async () => {
+      it(`should return process and flush error message stack [${modelFileSuffix}] (${instanceString})`, async () => {
         const orca = await Orca.create(
           ACCESS_KEY,
           { publicPath: publicPath, forceWrite: true },
