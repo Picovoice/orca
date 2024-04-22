@@ -81,7 +81,6 @@ def get_synthesizer_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
 
     return kwargs
 
-
 def main(args: argparse.Namespace) -> None:
     llm_type = LLMs(args.llm)
 
@@ -218,7 +217,8 @@ if __name__ == "__main__":
         help="Imitated tokens per second")
 
     parser.add_argument(
-        "--synthesizer",
+        "--tts",
+        dest="synthesizer",
         default=Synthesizers.PICOVOICE_ORCA.value,
         choices=[s.value for s in Synthesizers],
         help="Choose voice synthesizer to use")

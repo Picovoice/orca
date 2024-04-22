@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass
+from typing import Tuple
 
 
 @dataclass
@@ -111,7 +112,7 @@ class ProgressPrinter:
         s = f"{s}\033[38;2;{int(red * 255)};{int(green * 255)};{int(blue * 255)}m{text}\033[0m"
         return s
 
-    def _print_colored_progress_bar(self, num_seconds: float, bold: bool = False) -> tuple[float, float, float]:
+    def _print_colored_progress_bar(self, num_seconds: float, bold: bool = False) -> Tuple[float, float, float]:
 
         red = 0
         green = self.MAX_GREEN_VALUE

@@ -71,7 +71,23 @@ class OpenAILLM(LLM):
         self._model_name = model_name
         self._client = OpenAI(api_key=access_key)
 
-        self._message_history = [{"role": "system", "content": self._system_message}]
+        self._message_history = [{"role": "system", "content": self.SYSTEM_PROMPT}]
+
+        # Dummy request to avoid long wait times.
+        # The first request takes significantly longer than subsequent ones.
+        stream = self._client.chat.completions.create(
+            model=self._model_name,
+            messages=[{"role": "system", "content": "dummy"}, {"role": "user", "content": "dummy"}],
+            seed=self.RANDOM_SEED,
+            temperature=0,
+            top_p=0.05,
+            stream=True)
+        for chunk in stream:
+            pass
+
+
+    def _remove_last_user_message(self) -> None:
+        self._message_history = self._message_history[:-1]
 
     def _append_user_message(self, message: str) -> None:
         self._message_history.append({"role": "user", "content": message})
