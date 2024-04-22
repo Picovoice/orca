@@ -10,6 +10,7 @@
 #
 
 import argparse
+import re
 import struct
 import time
 import wave
@@ -21,6 +22,11 @@ from typing import (
 
 from pvorca import create, OrcaActivationLimitError
 
+CUSTOM_PRON_OPENING_MARKER = "{"
+CUSTOM_PRON_CLOSING_MARKER = "}"
+CUSTOM_PRON_SEPARATOR = "|"
+CUSTOM_PRON_PATTERN = r"\s\{(.*?\|.*?)\}\s"
+
 
 @dataclass
 class ChunkMetadata:
@@ -30,11 +36,20 @@ class ChunkMetadata:
 
 
 def token_generator(text: str) -> Generator[str, None, None]:
+    text = re.sub(CUSTOM_PRON_PATTERN, lambda x: " {" + x.group(1).replace(' ', '_') + "} ", text)
+
+    def is_valid_custom_pron(token: str) -> bool:
+        return (token.startswith(CUSTOM_PRON_OPENING_MARKER) and
+                token.endswith(CUSTOM_PRON_CLOSING_MARKER) and
+                CUSTOM_PRON_SEPARATOR in token)
+
     for itok, tok in enumerate(text.split()):
-        if itok == 0:
+        if is_valid_custom_pron(tok):
+            tok = tok.replace('_', ' ')
+        if itok == len(text.split()) - 1:
             yield tok
         else:
-            yield f" {tok}"
+            yield f"{tok} "
 
 
 def main(args: argparse.Namespace) -> None:
@@ -44,6 +59,7 @@ def main(args: argparse.Namespace) -> None:
     output_path = args.output_path
     text = args.text
     no_audio = args.no_audio
+    save_audio_chunks = args.save_audio_chunks
 
     if not output_path.lower().endswith('.wav'):
         raise ValueError('Given argument --output_path must have WAV file extension')
@@ -105,6 +121,15 @@ def main(args: argparse.Namespace) -> None:
             output_file.setframerate(orca.sample_rate)
             output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
 
+        if save_audio_chunks:
+            for i, chunk_metadata in enumerate(pcm_chunks_metadata):
+                pcm = chunk_metadata.pcm
+                with wave.open(output_path.replace('.wav', f'_{i}.wav'), "wb") as output_file:
+                    output_file.setnchannels(1)
+                    output_file.setsampwidth(2)
+                    output_file.setframerate(orca.sample_rate)
+                    output_file.writeframes(struct.pack(f"{len(pcm)}h", *pcm))
+
         print(
             f"Generated {len(pcm_chunks_metadata)} audio chunk{'' if len(pcm_chunks_metadata) == 1 else 's'} "
             f"in {processing_time:.2f} seconds.")
@@ -153,5 +178,11 @@ if __name__ == "__main__":
         '--no-audio',
         action='store_true',
         help='Do not play audio')
+    parser.add_argument(
+        '--save-audio-chunks',
+        action='store_true',
+        help=
+        'Saves audio chunks as separate WAV files with the same name as the output file but with '
+        'an index appended to the name.')
 
     main(parser.parse_args())

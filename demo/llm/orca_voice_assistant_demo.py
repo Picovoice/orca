@@ -27,10 +27,11 @@ def get_user_input_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
     user_input_type = UserInputs(args.user_input)
     if user_input_type is UserInputs.VOICE:
         kwargs["audio_device_index"] = args.audio_device_index
-        kwargs["transcriber"] = args.transcriber
+
+        transcriber_type = Transcribers.PICOVOICE_CHEETAH
+        kwargs["transcriber"] = transcriber_type
 
         kwargs["transcriber_params"] = dict()
-        transcriber_type = Transcribers(args.transcriber)
         if transcriber_type is Transcribers.PICOVOICE_CHEETAH:
             if not args.picovoice_access_key:
                 raise ValueError("Picovoice access key is required when using voice user input")
@@ -180,14 +181,9 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--user-input",
-        default=UserInputs.TEXT.value,
+        default=UserInputs.VOICE.value,
         choices=[u.value for u in UserInputs],
-        help="Choose user input type")
-    parser.add_argument(
-        "--transcriber",
-        default=Transcribers.PICOVOICE_CHEETAH.value,
-        choices=[t.value for t in Transcribers],
-        help="Choose transcriber to use if `--user-input` is set to voice")
+        help="Choose type of input type")
     parser.add_argument(
         "--audio-device-index",
         type=int,

@@ -1,17 +1,11 @@
 import time
 from dataclasses import dataclass
-from datetime import datetime
 
 
 @dataclass
 class Colors:
     GREEN = "\033[92m"
-    DARK_GREEN = "\u001B[32m"
-    GREY = "\033[90m"
-    BLUE = "\033[94m"
     RESET = "\033[0m"
-    ORANGE = "\033[93m"
-    RED = "\033[91m"
     BOLD = "\033[1m"
 
 
@@ -26,7 +20,6 @@ class Timer:
 
     before_first_audio: bool = True
     _is_first_synthesis_request: bool = True
-
     _num_tokens: int = 0
 
     @staticmethod
@@ -84,39 +77,6 @@ class Timer:
 
     def num_seconds_to_first_token(self) -> float:
         return self.time_first_llm_token - self.time_llm_request
-
-    def pretty_print_diffs(self) -> None:
-        print(Colors.DARK_GREEN)
-
-        print(
-            f"Delay for first text token: {self._to_rounded_string(self.time_first_llm_token - self.time_llm_request)}")
-        print(
-            f"Time to generate text: {self._to_rounded_string(self.time_last_llm_token - self.time_first_llm_token)} ",
-            end="")
-        print(f"(tokens / second = ~{self._num_tokens / (self.time_last_llm_token - self.time_first_llm_token)})")
-        print(
-            f"Time to first audio after first token: "
-            f"{Colors.GREEN}{self._to_rounded_string(self.num_seconds_to_first_audio())}{Colors.DARK_GREEN}",
-            end="")
-        if self.initial_audio_delay > 0.1:
-            print(
-                f" (added delay of `{self._to_rounded_string(self.initial_audio_delay)}` "
-                "to ensure continuous audio)")
-
-        else:
-            print()
-        print(Colors.RESET)
-
-    def debug_print(self) -> None:
-        def to_hms(t: float) -> str:
-            date_object = datetime.fromtimestamp(t)
-            return date_object.strftime("%H:%M:%S.%f")[:-3]
-
-        print(f"time LLM request {to_hms(self.time_llm_request)}")
-        print(f"time first LLM token {to_hms(self.time_first_llm_token)}")
-        print(f"time last LLM token {to_hms(self.time_last_llm_token)}")
-        print(f"time first synthesis request {to_hms(self.time_first_synthesis_request)}")
-        print(f"time first audio {to_hms(self.time_first_audio)}")
 
 
 class ProgressPrinter:
