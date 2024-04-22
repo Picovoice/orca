@@ -34,8 +34,31 @@ Available on:
 Hit CTRL-C to stop the server
 ```
 
-Wait until Orca has initialized. Type in any text (in English only), and optionally select a desired speech rate. Click
-synthesize, and once Orca has finished synthesizing your text, click play and listen for the speech.
+Copy in your AccessKey from Picovoice Console, and click "Start Orca".
+
+## Usage
+
+Orca supports two modes of operation: streaming and single synthesis.
+
+In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
+the single synthesis mode, the text is synthesized in a single call to the
+Orca engine.
+
+Click on either "Streaming Synthesis" or "Single Synthesis" to continue.
+
+### Streaming Synthesis
+
+1. Change the speech rate (optional)
+2. Click "Open Stream"
+3. Type in any text (in English only). Once enough text has been inputted, listen for the generated speech.
+4. When you're done, click "Flush" to synthesize any remaining text.
+
+### Single Synthesis
+
+1. Type in any text (in English only)
+2. Change the speech rate (optional)
+3. Click "Synthesize"
+4. Click "Play" and listen for the generated speech.
 
 **Optional**: If you wish, you may replace the model file in the `index.html` with a male model file for a male
 voice:

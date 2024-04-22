@@ -9,6 +9,7 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 - Private; All voice processing runs locally.
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), and Windows (x86_64)
+    - Android and iOS
     - Chrome, Safari, Firefox, and Edge
     - Raspberry Pi (3, 4, 5) and NVIDIA Jetson Nano
 
@@ -131,33 +132,86 @@ is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for e
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Synthesize Speech
+### Orca Properties
 
-The `synthesize` function will send the text to the engine and return the speech audio as an `Int16Array`.
+To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
+characters allowed, call `.maxCharacterLimit`. The sample rate of the generated `Int16Array` is `.sampleRate`.
+
+### Single vs. Streaming Synthesis
+
+Orca supports two modes of operation: streaming and single synthesis.
+
+In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
+the single synthesis mode, the text is synthesized in a single call to the Orca engine.
+
+#### Single Synthesis
+
+To use single synthesis, simply call `synthesize` directly on the `Orca` instance. The `synthesize` function will send
+the text to the engine and return the speech audio as an `Int16Array`.
 
 ```typescript
 const speechPcm = await orca.synthesize("${TEXT}");
 ```
 
+#### Streaming Synthesis
+
+To use streaming synthesis, call `streamOpen` to create an instance of `OrcaStream`. Make sure to initialize with
+a `synthesizeCallback` function to handle the live generated speech. You may also initialize with
+a `synthesizeErrorCallback` to handle any errors that occur during streaming synthesis.
+
+```typescript
+import { OrcaStreamSynthesizeResult } from './types';
+import { OrcaError } from './orca_errors';
+
+const completeSpeech = []
+const synthesizeCallback = (result: OrcaStreamSynthesizeResult) => {
+  const { pcm, isFlushed } = result;
+  completeSpeech.push(...pcm);
+}
+
+const synthesizeErrorCallback = (error: OrcaError) => {
+  console.log(error);
+}
+
+const OrcaStream = await orca.streamOpen(synthesizeCallback, { synthesizeErrorCallback })
+```
+
+Synthesize a live stream of text:
+
+```typescript
+const textStream = "${TEXT}"
+
+for (const word of textStream.split(" ")) {
+  await OrcaStream.synthesize(word);
+}
+
+OrcaStream.flush(); // runs `synthesizeCallback` on remaining text.
+OrcaStream.close(); // deletes the OrcaStream object.
+```
+
 ### Speech Control
 
-Orca allows for an additional argument to be provided to the `synthesize` method to control the synthesized speech:
+Orca allows for additional arguments to be provided to the `synthesize` method to control the synthesized speech:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value produces
   speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
+- `randomState`: Random seed for the synthesis process. The default value is `null`.
 
 ```typescript
 const synthesizeParams = {
-  speechRate: 1.3
+  speechRate: 1.3,
+  randomState: 42
 };
 
+// Single synthesis
 const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
+
+// Streaming synthesis
+const OrcaStream = await orca.streamOpen(
+  synthesizeCallback,
+  { synthesizeParams }
+)
 ```
-
-### Orca Properties
-
-To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
-characters allowed, call `.maxCharacterLimit`. The sample rate of Orca is `.sampleRate`.
 
 ### Clean Up
 
