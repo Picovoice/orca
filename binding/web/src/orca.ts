@@ -172,19 +172,13 @@ export class Orca {
     this._OrcaStream = class OrcaStream {
       private readonly _Orca: Orca;
       private readonly _streamAddress: number;
-      private readonly _synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void;
-      private readonly _synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void;
 
       private constructor(
         orca: Orca,
         streamAddress: number,
-        synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
-        synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void,
       ) {
         this._Orca = orca;
         this._streamAddress = streamAddress;
-        this._synthesizeCallback = synthesizeCallback;
-        this._synthesizeErrorCallback = synthesizeErrorCallback;
       }
 
       /**
@@ -196,123 +190,101 @@ export class Orca {
        *
        * @param text A string of text with properties described above.
        */
-      public async synthesize(text: string): Promise<void> {
+      public async synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
         if (typeof text !== 'string') {
-          const error = new OrcaErrors.OrcaInvalidArgumentError('The argument \'text\' must be provided as a string');
-          if (this._synthesizeErrorCallback) {
-            this._synthesizeErrorCallback(error);
-          } else {
-            // eslint-disable-next-line no-console
-            console.error(error);
-          }
-          return;
+          throw new OrcaErrors.OrcaInvalidArgumentError(
+            'The argument \'text\' must be provided as a string',
+          );
         }
 
         if (text.trim().length > Orca._maxCharacterLimit) {
-          const error = new OrcaErrors.OrcaInvalidArgumentError(`'text' length must be smaller than ${Orca._maxCharacterLimit}`);
-          if (this._synthesizeErrorCallback) {
-            this._synthesizeErrorCallback(error);
-          } else {
-            // eslint-disable-next-line no-console
-            console.error(error);
-          }
-          return;
+          throw new OrcaErrors.OrcaInvalidArgumentError(
+            `'text' length must be smaller than ${Orca._maxCharacterLimit}`,
+          );
         }
 
-        this._Orca._functionMutex
-          .runExclusive(async () => {
-            if (this._Orca._wasmMemory === undefined) {
-              const error = new OrcaErrors.OrcaInvalidStateError('Attempted to call Orca stream synthesize after release.');
-              if (this._synthesizeErrorCallback) {
-                this._synthesizeErrorCallback(error);
-              } else {
-                // eslint-disable-next-line no-console
-                console.error(error);
+        return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
+          this._Orca._functionMutex
+            .runExclusive(async () => {
+              if (this._Orca._wasmMemory === undefined) {
+                throw new OrcaErrors.OrcaInvalidStateError(
+                  'Attempted to call Orca stream synthesize after release.',
+                );
               }
-              return;
-            }
 
-            const memoryBufferText = new Uint8Array(this._Orca._wasmMemory.buffer);
-            const encodedText = new TextEncoder().encode(text);
-            const textAddress = await this._Orca._alignedAlloc(
-              Uint8Array.BYTES_PER_ELEMENT,
-              (encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-            );
-            if (textAddress === 0) {
-              throw new OrcaErrors.OrcaOutOfMemoryError(
-                'malloc failed: Cannot allocate memory',
+              const memoryBufferText = new Uint8Array(this._Orca._wasmMemory.buffer);
+              const encodedText = new TextEncoder().encode(text);
+              const textAddress = await this._Orca._alignedAlloc(
+                Uint8Array.BYTES_PER_ELEMENT,
+                (encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
               );
-            }
-            memoryBufferText.set(encodedText, textAddress);
-            memoryBufferText[textAddress + encodedText.length] = 0;
-
-            const numSamplesAddress = await this._Orca._alignedAlloc(
-              Int32Array.BYTES_PER_ELEMENT,
-              Int32Array.BYTES_PER_ELEMENT,
-            );
-            if (numSamplesAddress === 0) {
-              throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-            }
-
-            const streamSynthesizeStatus = await this._Orca._pvOrcaStreamSynthesize(
-              this._streamAddress,
-              textAddress,
-              numSamplesAddress,
-              this._Orca._streamPcmAddressAddress,
-            );
-            await this._Orca._pvFree(textAddress);
-
-            const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
-            const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
-
-            if (streamSynthesizeStatus !== PvStatus.SUCCESS) {
-              const messageStack = await Orca.getMessageStack(
-                this._Orca._pvGetErrorStack,
-                this._Orca._pvFreeErrorStack,
-                this._Orca._messageStackAddressAddressAddress,
-                this._Orca._messageStackDepthAddress,
-                memoryBufferView,
-                memoryBufferUint8,
-              );
-
-              const error = pvStatusToException(streamSynthesizeStatus, 'Stream synthesize failed', messageStack);
-              if (this._synthesizeErrorCallback) {
-                this._synthesizeErrorCallback(error);
-              } else {
-                // eslint-disable-next-line no-console
-                console.error(error);
+              if (textAddress === 0) {
+                throw new OrcaErrors.OrcaOutOfMemoryError(
+                  'malloc failed: Cannot allocate memory',
+                );
               }
-              return;
-            }
+              memoryBufferText.set(encodedText, textAddress);
+              memoryBufferText[textAddress + encodedText.length] = 0;
 
-            const pcmAddress = memoryBufferView.getInt32(
-              this._Orca._streamPcmAddressAddress,
-              true,
-            );
+              const numSamplesAddress = await this._Orca._alignedAlloc(
+                Int32Array.BYTES_PER_ELEMENT,
+                Int32Array.BYTES_PER_ELEMENT,
+              );
+              if (numSamplesAddress === 0) {
+                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+              }
 
-            const numSamples = memoryBufferView.getInt32(
-              numSamplesAddress,
-              true,
-            );
-            await this._Orca._pvFree(numSamplesAddress);
+              const streamSynthesizeStatus = await this._Orca._pvOrcaStreamSynthesize(
+                this._streamAddress,
+                textAddress,
+                numSamplesAddress,
+                this._Orca._streamPcmAddressAddress,
+              );
+              await this._Orca._pvFree(textAddress);
 
-            const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
-            const pcm = outputMemoryBuffer.slice(
-              pcmAddress / Int16Array.BYTES_PER_ELEMENT,
-              (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
-            );
-            await this._Orca._pvOrcaPcmDelete(pcmAddress);
+              const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
+              const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
 
-            this._synthesizeCallback({ pcm, isFlushed: false });
-          })
-          .catch(async (error: any) => {
-            if (this._synthesizeErrorCallback) {
-              this._synthesizeErrorCallback(error);
-            } else {
-              // eslint-disable-next-line no-console
-              console.error(error);
-            }
-          });
+              if (streamSynthesizeStatus !== PvStatus.SUCCESS) {
+                const messageStack = await Orca.getMessageStack(
+                  this._Orca._pvGetErrorStack,
+                  this._Orca._pvFreeErrorStack,
+                  this._Orca._messageStackAddressAddressAddress,
+                  this._Orca._messageStackDepthAddress,
+                  memoryBufferView,
+                  memoryBufferUint8,
+                );
+
+                throw pvStatusToException(streamSynthesizeStatus, 'Stream synthesize failed', messageStack);
+              }
+
+              const pcmAddress = memoryBufferView.getInt32(
+                this._Orca._streamPcmAddressAddress,
+                true,
+              );
+
+              const numSamples = memoryBufferView.getInt32(
+                numSamplesAddress,
+                true,
+              );
+              await this._Orca._pvFree(numSamplesAddress);
+
+              const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
+              const pcm = outputMemoryBuffer.slice(
+                pcmAddress / Int16Array.BYTES_PER_ELEMENT,
+                (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
+              );
+              await this._Orca._pvOrcaPcmDelete(pcmAddress);
+
+              return pcm.length > 0 ? pcm : null;
+            })
+            .then((result: OrcaStreamSynthesizeResult) => {
+              resolve(result);
+            })
+            .catch(async (error: any) => {
+              reject(error);
+            });
+        });
       }
 
       /**
@@ -321,90 +293,81 @@ export class Orca {
        *
        * @return Any remaining synthesized speech. If none is available, null is returned.
        */
-      public async flush(): Promise<void> {
+      public async flush(): Promise<OrcaStreamSynthesizeResult> {
         // eslint-disable-next-line consistent-return
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
           this._Orca._functionMutex
-            .runExclusive(async () => await this.streamFlush())
-            .then((pcm: Int16Array) => {
-              this._synthesizeCallback({ pcm, isFlushed: true });
-              resolve();
+            .runExclusive(async () => {
+              if (this._Orca._wasmMemory === undefined) {
+                throw new OrcaErrors.OrcaInvalidStateError('Attempted to call OrcaStream flush after release.');
+              }
+
+              const numSamplesAddress = await this._Orca._alignedAlloc(
+                Int32Array.BYTES_PER_ELEMENT,
+                Int32Array.BYTES_PER_ELEMENT,
+              );
+              if (numSamplesAddress === 0) {
+                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+              }
+
+              const pcmAddressAddress = await this._Orca._alignedAlloc(
+                Int32Array.BYTES_PER_ELEMENT,
+                Int32Array.BYTES_PER_ELEMENT,
+              );
+              if (pcmAddressAddress === 0) {
+                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+              }
+
+              const streamFlushStatus = await this._Orca._pvOrcaStreamFlush(
+                this._streamAddress,
+                numSamplesAddress,
+                pcmAddressAddress,
+              );
+
+              const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
+              const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
+
+              if (streamFlushStatus !== PvStatus.SUCCESS) {
+                const messageStack = await Orca.getMessageStack(
+                  this._Orca._pvGetErrorStack,
+                  this._Orca._pvFreeErrorStack,
+                  this._Orca._messageStackAddressAddressAddress,
+                  this._Orca._messageStackDepthAddress,
+                  memoryBufferView,
+                  memoryBufferUint8,
+                );
+
+                throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
+              }
+
+              const pcmAddress = memoryBufferView.getInt32(
+                pcmAddressAddress,
+                true,
+              );
+              await this._Orca._pvFree(pcmAddressAddress);
+
+              const numSamples = memoryBufferView.getInt32(
+                numSamplesAddress,
+                true,
+              );
+              await this._Orca._pvFree(numSamplesAddress);
+
+              const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
+              const pcm = outputMemoryBuffer.slice(
+                pcmAddress / Int16Array.BYTES_PER_ELEMENT,
+                (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
+              );
+              await this._Orca._pvOrcaPcmDelete(pcmAddress);
+
+              return pcm.length > 0 ? pcm : null;
+            })
+            .then((result: OrcaStreamSynthesizeResult) => {
+              resolve(result);
             })
             .catch(async (error: any) => {
-              if (this._synthesizeErrorCallback) {
-                this._synthesizeErrorCallback(error);
-              } else {
-                // eslint-disable-next-line no-console
-                console.error(error);
-              }
               reject(error);
             });
         });
-      }
-
-      private async streamFlush(): Promise<Int16Array> {
-        if (this._Orca._wasmMemory === undefined) {
-          throw new OrcaErrors.OrcaInvalidStateError('Attempted to call OrcaStream flush after release.');
-        }
-
-        const numSamplesAddress = await this._Orca._alignedAlloc(
-          Int32Array.BYTES_PER_ELEMENT,
-          Int32Array.BYTES_PER_ELEMENT,
-        );
-        if (numSamplesAddress === 0) {
-          throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-        }
-
-        const pcmAddressAddress = await this._Orca._alignedAlloc(
-          Int32Array.BYTES_PER_ELEMENT,
-          Int32Array.BYTES_PER_ELEMENT,
-        );
-        if (pcmAddressAddress === 0) {
-          throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-        }
-
-        const streamFlushStatus = await this._Orca._pvOrcaStreamFlush(
-          this._streamAddress,
-          numSamplesAddress,
-          pcmAddressAddress,
-        );
-
-        const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
-        const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
-
-        if (streamFlushStatus !== PvStatus.SUCCESS) {
-          const messageStack = await Orca.getMessageStack(
-            this._Orca._pvGetErrorStack,
-            this._Orca._pvFreeErrorStack,
-            this._Orca._messageStackAddressAddressAddress,
-            this._Orca._messageStackDepthAddress,
-            memoryBufferView,
-            memoryBufferUint8,
-          );
-
-          throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
-        }
-
-        const pcmAddress = memoryBufferView.getInt32(
-          pcmAddressAddress,
-          true,
-        );
-        await this._Orca._pvFree(pcmAddressAddress);
-
-        const numSamples = memoryBufferView.getInt32(
-          numSamplesAddress,
-          true,
-        );
-        await this._Orca._pvFree(numSamplesAddress);
-
-        const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
-        const pcm = outputMemoryBuffer.slice(
-          pcmAddress / Int16Array.BYTES_PER_ELEMENT,
-          (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
-        );
-        await this._Orca._pvOrcaPcmDelete(pcmAddress);
-
-        return pcm;
       }
 
       public async close(): Promise<void> {
@@ -768,21 +731,16 @@ export class Orca {
   /**
    * Opens a new OrcaStream object.
    *
-   * @param synthesizeCallback User-defined callback to run after receiving pcm result.
-   * @param options Optional configuration arguments.
-   * @param options.synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
-   * @param options.synthesizeParams.randomState Configure the random seed for the synthesized speech.
-   * @param options.synthesizeErrorCallback User-defined error callback to run if error.
+   * @param synthesizeParams Optional configuration arguments.
+   * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    *
    * @returns An instance of OrcaStream.
    */
   public async streamOpen(
-    synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
-    options: OrcaStreamOpenOptions = {
-      synthesizeParams: {
-        speechRate: 1.0,
-        randomState: null,
-      },
+    synthesizeParams: OrcaSynthesizeParams = {
+      speechRate: 1.0,
+      randomState: null,
     },
   ): Promise<any> {
     return new Promise<any>((resolve, reject) => {
@@ -820,8 +778,8 @@ export class Orca {
           const synthesizeParamsAddress = memoryBufferView.getInt32(synthesizeParamsAddressAddress, true);
           await this._pvFree(synthesizeParamsAddressAddress);
 
-          if (options.synthesizeParams?.speechRate !== null && options.synthesizeParams?.speechRate !== undefined) {
-            const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, options.synthesizeParams.speechRate);
+          if (synthesizeParams.speechRate !== null && synthesizeParams.speechRate !== undefined) {
+            const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, synthesizeParams.speechRate);
             if (setSpeechRateStatus !== PvStatus.SUCCESS) {
               const messageStack = await Orca.getMessageStack(
                 this._pvGetErrorStack,
@@ -836,8 +794,8 @@ export class Orca {
             }
           }
 
-          if (options.synthesizeParams?.randomState !== null && options.synthesizeParams?.randomState !== undefined) {
-            const setRandomStateStatus = await this._pvOrcaSynthesizeParamsSetRandomState(synthesizeParamsAddress, BigInt(options.synthesizeParams?.randomState));
+          if (synthesizeParams.randomState !== null && synthesizeParams.randomState !== undefined) {
+            const setRandomStateStatus = await this._pvOrcaSynthesizeParamsSetRandomState(synthesizeParamsAddress, BigInt(synthesizeParams.randomState));
             if (setRandomStateStatus !== PvStatus.SUCCESS) {
               const messageStack = await Orca.getMessageStack(
                 this._pvGetErrorStack,
@@ -882,15 +840,10 @@ export class Orca {
           const streamAddress = memoryBufferView.getInt32(streamAddressAddress, true);
           await this._pvFree(streamAddressAddress);
 
-          return new this._OrcaStream(
-            this,
-            streamAddress,
-            synthesizeCallback,
-            options.synthesizeErrorCallback,
-          );
+          return new this._OrcaStream(this, streamAddress);
         })
-        .then(orcaStream => {
-          resolve(orcaStream);
+        .then(result => {
+          resolve(result);
         })
         .catch(async (error: any) => {
           reject(error);

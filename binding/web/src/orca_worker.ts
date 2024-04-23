@@ -15,7 +15,6 @@ import {
   OrcaModel,
   OrcaSynthesizeParams,
   OrcaSynthesizeResult,
-  OrcaStreamOpenOptions,
   OrcaStreamSynthesizeResult,
   OrcaWorkerInitResponse,
   OrcaWorkerSynthesizeResponse,
@@ -23,13 +22,12 @@ import {
   OrcaWorkerStreamOpenResponse,
   OrcaWorkerStreamSynthesizeResponse,
   OrcaWorkerStreamFlushResponse,
+  OrcaWorkerStreamCloseResponse,
   PvStatus,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
 import { pvStatusToException } from './orca_errors';
-
-import * as OrcaErrors from './orca_errors';
 
 export class OrcaWorker {
   private readonly _worker: Worker;
@@ -59,17 +57,9 @@ export class OrcaWorker {
 
     this._OrcaStream = class OrcaStream {
       private readonly _worker: Worker;
-      private readonly _synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void;
-      private readonly _synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void;
 
-      private constructor(
-        orcaWorker: Worker,
-        synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
-        synthesizeErrorCallback?: (error: OrcaErrors.OrcaError) => void,
-      ) {
+      private constructor(orcaWorker: Worker) {
         this._worker = orcaWorker;
-        this._synthesizeCallback = synthesizeCallback;
-        this._synthesizeErrorCallback = synthesizeErrorCallback;
       }
 
       /**
@@ -80,47 +70,31 @@ export class OrcaWorker {
        *
        * @param text A string of text.
        */
-      public async synthesize(text: string): Promise<void> {
-        const returnPromise: Promise<void> = new Promise(
+      public synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
+        const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
           (resolve, reject) => {
             this._worker.onmessage = (
               event: MessageEvent<OrcaWorkerStreamSynthesizeResponse>,
             ): void => {
               switch (event.data.command) {
                 case 'ok':
-                  this._synthesizeCallback(event.data.result);
-                  resolve();
+                  resolve(event.data.result);
                   break;
                 case 'failed':
                 case 'error':
                   // eslint-disable-next-line no-case-declarations
-                  const error = pvStatusToException(
+                  reject(pvStatusToException(
                     event.data.status,
                     event.data.shortMessage,
                     event.data.messageStack,
-                  );
-                  if (this._synthesizeErrorCallback) {
-                    this._synthesizeErrorCallback(error);
-                  } else {
-                    // eslint-disable-next-line no-console
-                    console.error(error);
-                  }
-                  reject(error);
+                  ));
                   break;
                 default:
-                  // eslint-disable-next-line no-case-declarations
-                  const defaultError = pvStatusToException(
+                  reject(pvStatusToException(
                     PvStatus.RUNTIME_ERROR,
                     // @ts-ignore
                     `Unrecognized command: ${event.data.command}`,
-                  );
-                  if (this._synthesizeErrorCallback) {
-                    this._synthesizeErrorCallback(defaultError);
-                  } else {
-                    // eslint-disable-next-line no-console
-                    console.error(defaultError);
-                  }
-                  reject(defaultError);
+                  ));
               }
             };
           },
@@ -136,47 +110,30 @@ export class OrcaWorker {
         return returnPromise;
       }
 
-      public async flush(): Promise<void> {
-        const returnPromise: Promise<void> = new Promise(
+      public flush(): Promise<OrcaStreamSynthesizeResult> {
+        const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
           (resolve, reject) => {
             this._worker.onmessage = (
               event: MessageEvent<OrcaWorkerStreamFlushResponse>,
             ): void => {
               switch (event.data.command) {
                 case 'ok':
-                  this._synthesizeCallback(event.data.result);
-                  resolve();
+                  resolve(event.data.result);
                   break;
                 case 'failed':
                 case 'error':
-                  // eslint-disable-next-line no-case-declarations
-                  const error = pvStatusToException(
+                  reject(pvStatusToException(
                     event.data.status,
                     event.data.shortMessage,
                     event.data.messageStack,
-                  );
-                  if (this._synthesizeErrorCallback) {
-                    this._synthesizeErrorCallback(error);
-                  } else {
-                    // eslint-disable-next-line no-console
-                    console.error(error);
-                  }
-                  reject(error);
+                  ));
                   break;
                 default:
-                  // eslint-disable-next-line no-case-declarations
-                  const defaultError = pvStatusToException(
+                  reject(pvStatusToException(
                     PvStatus.RUNTIME_ERROR,
                     // @ts-ignore
                     `Unrecognized command: ${event.data.command}`,
-                  );
-                  if (this._synthesizeErrorCallback) {
-                    this._synthesizeErrorCallback(defaultError);
-                  } else {
-                    // eslint-disable-next-line no-console
-                    console.error(defaultError);
-                  }
-                  reject(defaultError);
+                  ));
               }
             };
           },
@@ -189,10 +146,42 @@ export class OrcaWorker {
         return returnPromise;
       }
 
-      public close(): void {
+      public close(): Promise<void> {
+        const returnPromise: Promise<void> = new Promise((resolve, reject) => {
+          this._worker.onmessage = (
+            event: MessageEvent<OrcaWorkerStreamCloseResponse>,
+          ): void => {
+            switch (event.data.command) {
+              case 'ok':
+                resolve();
+                break;
+              case 'failed':
+              case 'error':
+                reject(
+                  pvStatusToException(
+                    event.data.status,
+                    event.data.shortMessage,
+                    event.data.messageStack,
+                  ),
+                );
+                break;
+              default:
+                reject(
+                  pvStatusToException(
+                    PvStatus.RUNTIME_ERROR,
+                    // @ts-ignore
+                    `Unrecognized command: ${event.data.command}`,
+                  ),
+                );
+            }
+          };
+        });
+
         this._worker.postMessage({
           command: 'streamClose',
         });
+
+        return returnPromise;
       }
     };
   }
@@ -347,7 +336,7 @@ export class OrcaWorker {
    *
    * @return A synthesize result containing the raw pcm and alignments data.
    */
-  public async synthesize(
+  public synthesize(
     text: string,
     synthesizeParams: OrcaSynthesizeParams = {},
   ): Promise<OrcaSynthesizeResult> {
@@ -437,16 +426,11 @@ export class OrcaWorker {
   /**
    * Opens a new OrcaStream object in a worker.
    *
-   * @param synthesizeCallback User-defined callback to run after receiving pcm result.
-   * @param options Optional configuration arguments.
-   * @param options.synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
-   * @param options.synthesizeParams.randomState Configure the random seed for the synthesized speech.
-   * @param options.synthesizeErrorCallback User-defined error callback to run if error.
+   * @param synthesizeParams Optional configuration arguments.
+   * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
+   * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    */
-  public async streamOpen(
-    synthesizeCallback: (synthesizeResult: OrcaStreamSynthesizeResult) => void,
-    options: OrcaStreamOpenOptions,
-  ): Promise<any> {
+  public streamOpen(synthesizeParams: OrcaSynthesizeParams = {}): Promise<any> {
     const returnPromise: Promise<any> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
@@ -454,11 +438,7 @@ export class OrcaWorker {
         ): void => {
           switch (event.data.command) {
             case 'ok':
-              resolve(new this._OrcaStream(
-                this._worker,
-                synthesizeCallback,
-                options.synthesizeErrorCallback,
-              ));
+              resolve(new this._OrcaStream(this._worker));
               break;
             case 'failed':
             case 'error':
@@ -486,7 +466,7 @@ export class OrcaWorker {
     this._worker.postMessage(
       {
         command: 'streamOpen',
-        synthesizeParams: options.synthesizeParams,
+        synthesizeParams: synthesizeParams,
       },
     );
 

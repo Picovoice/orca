@@ -70,13 +70,13 @@
       const streamFlushBtnEl = document.getElementById('stream-flush');
       const downloadBtnStreamEl = document.getElementById('download-stream-btn');
 
-      function synthesizeCallback(synthesizeResult) {
-        if (synthesizeResult.pcm.length > 0) {
+      function handleStreamingSynthesisResult(pcm) {
+        if (pcm !== null && pcm.length > 0) {
           originalAudioSource = audioContext.createBufferSource();
-          originalAudioSource.buffer = createBuffer(synthesizeResult.pcm);
+          originalAudioSource.buffer = createBuffer(pcm);
           originalAudioSource.connect(originalAudioGain);
           originalAudioSource.start();
-          streamPcm.push(...synthesizeResult.pcm);
+          streamPcm.push(...pcm);
         }
       }
 
@@ -89,10 +89,7 @@
           streamOpenBtnEl.disabled = true;
           const speechRate = speechRateSliderStreamEl.value;
 
-          orcaStream = await orca.streamOpen(
-            synthesizeCallback,
-            { synthesizeParams: { speechRate } },
-          );
+          orcaStream = await orca.streamOpen({ speechRate });
 
           textToSynthesizeStreamEl.disabled = false;
 
@@ -102,7 +99,8 @@
             const addedText = currentValue.substring(previousValue.length);
             const isValidInput = validateInput(addedText, orca.validCharacters);
             if (isValidInput) {
-              await orcaStream.synthesize(addedText);
+              const pcm = await orcaStream.synthesize(addedText);
+              handleStreamingSynthesisResult(pcm);
               previousValue = currentValue;
               streamFlushBtnEl.disabled = false;
               downloadBtnStreamEl.disabled = false;
@@ -116,7 +114,8 @@
       }
 
       async function streamFlush() {
-        await orcaStream.flush();
+        const pcm = await orcaStream.flush();
+        handleStreamingSynthesisResult(pcm);
       }
 
       speechRateSliderStreamEl.addEventListener('change', () =>

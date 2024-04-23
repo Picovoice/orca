@@ -143,32 +143,27 @@ describe('Orca Binding', function() {
                 { publicPath, forceWrite: true },
               );
 
-              const streamPcm = [];
-              const streamSynthesizeCallback = (res: any) => {
-                streamPcm.push(...res.pcm);
-                if (res.isFlushed) {
-                  compareArrays(new Int16Array(streamPcm), rawPcm, 500);
+              try {
+                const OrcaStream = await orca.streamOpen({ randomState: testData.random_state });
+
+                const streamPcm = [];
+                for (const c of testData.test_sentences.text.split('')) {
+                  const pcm = await OrcaStream.synthesize(c);
+                  if (pcm !== null) {
+                    streamPcm.push(...pcm);
+                  }
                 }
-              };
 
-              const synthesizeErrorCallback = (err: any) => {
-                expect(err).to.be.undefined;
-              };
+                const endPcm = await OrcaStream.flush();
+                if (endPcm !== null) {
+                  streamPcm.push(...endPcm);
+                }
 
-              const orcaStream = await orca.streamOpen(
-                streamSynthesizeCallback,
-                {
-                  synthesizeParams: { randomState: testData.random_state },
-                  synthesizeErrorCallback,
-                },
-              );
-
-              for (const c of testData.test_sentences.text.split('')) {
-                await orcaStream.synthesize(c);
+                compareArrays(new Int16Array(streamPcm), rawPcm, 500);
+                await OrcaStream.close();
+              } catch (e) {
+                expect(e).to.be.undefined;
               }
-
-              await orcaStream.flush();
-              await orcaStream.close();
 
               if (orca instanceof OrcaWorker) {
                 orca.terminate();

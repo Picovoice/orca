@@ -13,27 +13,11 @@
 /// <reference lib="webworker" />
 
 import { Orca } from './orca';
-import { OrcaStreamSynthesizeResult, OrcaWorkerRequest, PvStatus } from './types';
+import { OrcaWorkerRequest, PvStatus } from './types';
 import { OrcaError } from './orca_errors';
 
 let orca: Orca | null = null;
 let orcaStream: any = null;
-
-const synthesizeCallback = (synthesizeResult: OrcaStreamSynthesizeResult): void => {
-  self.postMessage({
-    command: 'ok',
-    result: synthesizeResult,
-  });
-};
-
-const synthesizeErrorCallback = (error: OrcaError): void => {
-  self.postMessage({
-    command: 'error',
-    status: error.status,
-    shortMessage: error.shortMessage,
-    messageStack: error.messageStack,
-  });
-};
 
 /**
  * Orca worker handler.
@@ -133,13 +117,7 @@ self.onmessage = async function(
         return;
       }
       try {
-        orcaStream = await orca.streamOpen(
-          synthesizeCallback,
-          {
-            synthesizeParams: event.data.synthesizeParams,
-            synthesizeErrorCallback,
-          },
-        );
+        orcaStream = await orca.streamOpen(event.data.synthesizeParams);
         self.postMessage({
           command: 'ok',
         });
@@ -178,7 +156,10 @@ self.onmessage = async function(
         return;
       }
       try {
-        await orcaStream.synthesize(event.data.text);
+        self.postMessage({
+          command: 'ok',
+          result: await orcaStream.synthesize(event.data.text),
+        });
       } catch (e: any) {
         if (e instanceof OrcaError) {
           self.postMessage({
@@ -213,24 +194,10 @@ self.onmessage = async function(
         });
         return;
       }
-      try {
-        await orcaStream.flush();
-      } catch (e: any) {
-        if (e instanceof OrcaError) {
-          self.postMessage({
-            command: 'error',
-            status: e.status,
-            shortMessage: e.shortMessage,
-            messageStack: e.messageStack,
-          });
-        } else {
-          self.postMessage({
-            command: 'error',
-            status: PvStatus.RUNTIME_ERROR,
-            shortMessage: 'Orca flush error',
-          });
-        }
-      }
+      self.postMessage({
+        command: 'ok',
+        result: await orcaStream.flush(),
+      });
       break;
     case 'streamClose':
       if (orca === null) {
@@ -250,6 +217,10 @@ self.onmessage = async function(
         return;
       }
       await orcaStream.close();
+      orcaStream = null;
+      self.postMessage({
+        command: 'ok',
+      });
       break;
     default:
       self.postMessage({

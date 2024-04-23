@@ -155,38 +155,39 @@ const speechPcm = await orca.synthesize("${TEXT}");
 
 #### Streaming Synthesis
 
-To use streaming synthesis, call `streamOpen` to create an instance of `OrcaStream`. Make sure to initialize with
-a `synthesizeCallback` function to handle the live generated speech. You may also initialize with
-a `synthesizeErrorCallback` to handle any errors that occur during streaming synthesis.
+To use streaming synthesis, call `streamOpen` to create an `OrcaStream` object.
 
 ```typescript
-import { OrcaStreamSynthesizeResult } from './types';
-import { OrcaError } from './orca_errors';
-
-const completeSpeech = []
-const synthesizeCallback = (result: OrcaStreamSynthesizeResult) => {
-  const { pcm, isFlushed } = result;
-  completeSpeech.push(...pcm);
-}
-
-const synthesizeErrorCallback = (error: OrcaError) => {
-  console.log(error);
-}
-
-const OrcaStream = await orca.streamOpen(synthesizeCallback, { synthesizeErrorCallback })
+const OrcaStream = await orca.streamOpen();
 ```
 
-Synthesize a live stream of text:
+Then, call `synthesize` on the `OrcaStream` object to generate speech for a live stream of text:
 
 ```typescript
-const textStream = "${TEXT}"
+const textStream = "${TEXT}";
+
+const completePcm = [];
 
 for (const word of textStream.split(" ")) {
-  await OrcaStream.synthesize(word);
+  const pcm = await OrcaStream.synthesize(word);
+  if (pcm !== null) {
+    completePcm.push(...pcm);
+  }
+}
+```
+
+`OrcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
+audio, `null` is returned.
+
+When done, call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object.
+
+```typescript
+const flushedPcm = OrcaStream.flush();
+if (flushedPcm !== null) {
+  completePcm.push(...flushedPcm);
 }
 
-OrcaStream.flush(); // runs `synthesizeCallback` on remaining text.
-OrcaStream.close(); // deletes the OrcaStream object.
+OrcaStream.close();
 ```
 
 ### Speech Control
@@ -207,10 +208,7 @@ const synthesizeParams = {
 const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
 
 // Streaming synthesis
-const OrcaStream = await orca.streamOpen(
-  synthesizeCallback,
-  { synthesizeParams }
-)
+const OrcaStream = await orca.streamOpen(synthesizeParams);
 ```
 
 ### Clean Up
