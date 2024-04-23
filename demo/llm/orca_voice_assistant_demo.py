@@ -105,11 +105,11 @@ def main(args: argparse.Namespace) -> None:
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
     max_length = len(f"{llm}") if len(f"{llm}") > len(f"{synthesizer}") else len(f"{synthesizer}")
-    llm_info_string = f"{llm} ".ljust(max_length)
-    synthesizer_info_string = f"{synthesizer} ".ljust(max_length)
+    llm_info_string = f"{llm}".ljust(max_length)
+    synthesizer_info_string = f"{synthesizer}".ljust(max_length)
     progress_printer = ProgressPrinter(
-        timer_message_llm=f"Time to wait for {llm_info_string}: ",
-        timer_message_tts=f"Time to wait for {synthesizer_info_string}: ",
+        timer_message_llm=f"Time to wait for {llm_info_string} : ",
+        timer_message_tts=f"Time to wait for {synthesizer_info_string} : ",
     )
 
     try:
