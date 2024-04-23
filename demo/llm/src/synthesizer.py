@@ -222,7 +222,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         return f"Picovoice Orca v{self._orca.version}"
 
     def __str__(self) -> str:
-        return f"Orca v{self._orca.version}"
+        return "Picovoice Orca"
 
 
 __all__ = [

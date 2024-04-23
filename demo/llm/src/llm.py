@@ -54,6 +54,9 @@ class LLM:
 
         return classes[llm_type](**kwargs)
 
+    def __str__(self) -> str:
+        raise NotImplementedError()
+
 
 class OpenAILLM(LLM):
     MODEL_NAME = "gpt-3.5-turbo"
@@ -85,9 +88,6 @@ class OpenAILLM(LLM):
         for chunk in stream:
             pass
 
-    def _remove_last_user_message(self) -> None:
-        self._message_history = self._message_history[:-1]
-
     def _append_user_message(self, message: str) -> None:
         self._message_history.append({"role": "user", "content": message})
 
@@ -112,7 +112,10 @@ class OpenAILLM(LLM):
         self._append_assistant_message(assistant_message)
 
     def reset_history(self) -> None:
-        self._message_history = [{"role": "system", "content": self.SYSTEM_MESSAGE}]
+        self._message_history = [{"role": "system", "content": self._system_message}]
+
+    def __str__(self) -> str:
+        return f"ChatGPT ({self._model_name})"
 
 
 class DummyLLM(LLM):
@@ -141,6 +144,9 @@ class DummyLLM(LLM):
         for i in self._tokenize(text=sentence):
             time.sleep(self._tokens_delay)
             yield i
+
+    def __str__(self) -> str:
+        return "Dummy LLM"
 
 
 __all__ = [

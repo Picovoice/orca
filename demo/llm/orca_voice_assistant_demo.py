@@ -55,7 +55,8 @@ def get_llm_init_kwargs(args: argparse.Namespace) -> Dict[str, str]:
             raise ValueError(f"Tokens per second is not supported for `{llm_type}`")
 
         kwargs["access_key"] = args.openai_access_key
-        kwargs["system_message"] = args.system_message
+        if args.system_message:
+            kwargs["system_message"] = args.system_message
 
     elif llm_type is LLMs.DUMMY:
         if args.tokens_per_second is not None:
@@ -103,7 +104,13 @@ def main(args: argparse.Namespace) -> None:
     llm_init_kwargs = get_llm_init_kwargs(args)
     llm = LLM.create(llm_type, **llm_init_kwargs)
 
-    progress_printer = ProgressPrinter()
+    max_length = len(f"{llm}") if len(f"{llm}") > len(f"{synthesizer}") else len(f"{synthesizer}")
+    llm_info_string = f"{llm} ".ljust(max_length)
+    synthesizer_info_string = f"{synthesizer} ".ljust(max_length)
+    progress_printer = ProgressPrinter(
+        timer_message_llm=f"Time to wait for {llm_info_string}: ",
+        timer_message_tts=f"Time to wait for {synthesizer_info_string}: ",
+    )
 
     try:
         num_interactions = 0
