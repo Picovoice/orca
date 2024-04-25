@@ -29,7 +29,6 @@ import {
   OrcaAlignment,
   OrcaModel,
   OrcaPhoneme,
-  OrcaStreamOpenOptions,
   OrcaStreamSynthesizeResult,
   OrcaSynthesizeParams,
   OrcaSynthesizeResult,
