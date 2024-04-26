@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import ai.picovoice.orca.Orca;
+import ai.picovoice.orca.OrcaAudio;
 import ai.picovoice.orca.OrcaException;
 import ai.picovoice.orca.OrcaSynthesizeParams;
 
@@ -102,8 +103,8 @@ public class MainActivity extends AppCompatActivity {
         result = new TestResult();
         result.testName = "Test Synthesize";
         try {
-            short[] pcm = orca.synthesize("Hello", new OrcaSynthesizeParams.Builder().build());
-            if (pcm.length > 0) {
+            OrcaAudio orcaAudio = orca.synthesize("Hello", new OrcaSynthesizeParams.Builder().build());
+            if (orcaAudio.getPcm().length > 0 && orcaAudio.getWordArray() != null) {
                 result.success = true;
             } else {
                 result.success = false;
@@ -134,6 +135,30 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             result.success = false;
             result.errorMessage = String.format("Failed to synthesize to file with '%s'", e);
+        } finally {
+            results.add(result);
+        }
+
+        result = new TestResult();
+        result.testName = "Test Streaming";
+        try {
+            orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+            short[] pcm = orca.streamSynthesize("Hello");
+            short[] flushedPcm = orca.streamFlush();
+            orca.streamClose();
+
+            short[] streamPcm = new short[pcm.length + flushedPcm.length];
+            System.arraycopy(pcm, 0, streamPcm, 0, pcm.length);
+            System.arraycopy(flushedPcm, 0, streamPcm, pcm.length, flushedPcm.length);
+            if (streamPcm.length > 0) {
+                result.success = true;
+            } else {
+                result.success = false;
+                result.errorMessage = "Stream returned invalid result.";
+            }
+        } catch (Exception e) {
+            result.success = false;
+            result.errorMessage = String.format("Failed to stream with '%s'", e);
         } finally {
             results.add(result);
         }

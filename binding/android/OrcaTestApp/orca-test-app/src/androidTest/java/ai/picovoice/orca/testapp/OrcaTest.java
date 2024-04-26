@@ -12,12 +12,14 @@
 
 package ai.picovoice.orca.testapp;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import org.junit.After;
@@ -28,19 +30,20 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
-import ai.picovoice.leopard.Leopard;
-
-import ai.picovoice.leopard.LeopardTranscript;
 import ai.picovoice.orca.Orca;
+import ai.picovoice.orca.OrcaAudio;
 import ai.picovoice.orca.OrcaException;
 import ai.picovoice.orca.OrcaInvalidArgumentException;
 import ai.picovoice.orca.OrcaSynthesizeParams;
-
+import ai.picovoice.orca.OrcaWord;
+import ai.picovoice.orca.OrcaPhoneme;
 
 @RunWith(Enclosed.class)
 public class OrcaTest {
@@ -101,9 +104,14 @@ public class OrcaTest {
         String text;
         String textNoPunctuation;
         String textCustomPronunciation;
+        String textAlignment;
+        static JsonArray textInvalid;
 
-        float werThreshold;
-        String leopardModelPath;
+        long randomState;
+        static JsonArray alignments;
+
+        String modelFileUsed;
+        String EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = "female";
 
         Orca orca;
 
@@ -115,10 +123,13 @@ public class OrcaTest {
             text = testSentences.get("text").getAsString();
             textNoPunctuation = testSentences.get("text_no_punctuation").getAsString();
             textCustomPronunciation = testSentences.get("text_custom_pronunciation").getAsString();
-            werThreshold = testJson.get("wer_threshold").getAsFloat();
-            leopardModelPath = new File(
-                    testResourcesPath,
-                    "model_files/leopard_params.pv").getAbsolutePath();
+            textAlignment = testSentences.get("text_alignment").getAsString();
+            textInvalid = testSentences.get("text_invalid").getAsJsonArray();
+
+            randomState = testJson.get("random_state").getAsLong();
+            alignments = testJson.getAsJsonArray("alignments");
+
+            modelFileUsed = modelFile.contains("female") ? "female" : "male";
 
             orca = new Orca.Builder()
                     .setAccessKey(accessKey)
@@ -134,11 +145,6 @@ public class OrcaTest {
         }
 
         @Test
-        public void testMaxCharacterLimit() {
-            assertTrue(orca.getMaxCharacterLimit() > 0);
-        }
-
-        @Test
         public void testVersion() {
             final String version = orca.getVersion();
             assertNotNull(version);
@@ -151,6 +157,11 @@ public class OrcaTest {
         }
 
         @Test
+        public void testMaxCharacterLimit() throws OrcaException {
+            assertTrue(orca.getMaxCharacterLimit() > 0);
+        }
+
+        @Test
         public void testValidCharacters() throws OrcaException {
             String[] characters = orca.getValidCharacters();
             assertTrue(characters.length > 0);
@@ -158,85 +169,182 @@ public class OrcaTest {
         }
 
         @Test
+        public void testStreaming() throws Exception {
+            orca.streamOpen(
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
+
+            short[] pcm = new short[0];
+            for (char c : text.toCharArray()) {
+                pcm = concatArrays(pcm, orca.streamSynthesize(String.valueOf(c)));
+            }
+            pcm = concatArrays(pcm, orca.streamFlush());
+
+            orca.streamClose();
+            short[] testFilePcm = readAudioFile(String.format(
+                    "%s/wav/orca_params_%s_stream.wav", testResourcesPath, modelFileUsed));
+
+            assertArrayEquals(pcm, testFilePcm);
+        }
+
+        @Test
         public void testSynthesize() throws Exception {
-            Leopard leopard = new Leopard.Builder()
-                    .setAccessKey(accessKey)
-                    .setModelPath(leopardModelPath)
-                    .build(appContext);
-
-            final short[] pcm = orca.synthesize(
+            final OrcaAudio pcm = orca.synthesize(
                     text,
-                    new OrcaSynthesizeParams.Builder().build());
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
 
-            LeopardTranscript leopardTranscript = leopard.process(pcm);
-            leopard.delete();
-            final float wer = getWordErrorRate(
-                    leopardTranscript.getTranscriptString(),
-                    textNoPunctuation,
-                    false);
-            assertTrue(wer < werThreshold);
+            short[] testFilePcm = readAudioFile(String.format(
+                    "%s/wav/orca_params_%s_single.wav", testResourcesPath, modelFileUsed));
+
+            assertArrayEquals(pcm.getPcm(), testFilePcm);
         }
 
         @Test
         public void testSynthesizeToFile() throws Exception {
-            Leopard leopard = new Leopard.Builder()
-                    .setAccessKey(accessKey)
-                    .setModelPath(leopardModelPath)
-                    .build(appContext);
-
             final File outputFile = new File(
                     appContext.getFilesDir(),
                     "text.wav");
             orca.synthesizeToFile(
                     text,
                     outputFile.getAbsolutePath(),
-                    new OrcaSynthesizeParams.Builder().build());
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
 
-            LeopardTranscript leopardTranscript = leopard.processFile(outputFile.getAbsolutePath());
+            short[] outputFilePcm = readAudioFile(outputFile.getAbsolutePath());
+            short[] testFilePcm = readAudioFile(String.format(
+                    "%s/wav/orca_params_%s_single.wav", testResourcesPath, modelFileUsed));
+
+            assertArrayEquals(outputFilePcm, testFilePcm);
             outputFile.delete();
-            leopard.delete();
-            final float wer = getWordErrorRate(
-                    leopardTranscript.getTranscriptString(),
+        }
+
+        @Test
+        public void testSynthesizeNoPronunciation() throws OrcaException {
+            final OrcaAudio result = orca.synthesize(
                     textNoPunctuation,
-                    false);
-            assertTrue(wer < werThreshold);
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
+            assertTrue(result.getPcm().length > 0);
         }
 
         @Test
         public void testSynthesizeCustomPronunciation() throws OrcaException {
-            final short[] pcm = orca.synthesize(
+            final OrcaAudio result = orca.synthesize(
                     textCustomPronunciation,
-                    new OrcaSynthesizeParams.Builder().build());
-            assertTrue(pcm.length > 0);
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
+            assertTrue(result.getPcm().length > 0);
+        }
+
+        @Test
+        public void testSynthesizeAlignment() throws OrcaException {
+            final OrcaAudio result = orca.synthesize(
+                    textAlignment,
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(42)
+                            .build());
+            final OrcaWord[] synthesizeTestData = new OrcaWord[alignments.size()];
+            for (int i = 0; i < alignments.size(); i++) {
+                final JsonObject testData = alignments.get(i).getAsJsonObject();
+                final String word = testData.get("word").getAsString();
+                final float startSec = testData.get("start_sec").getAsFloat();
+                final float endSec = testData.get("end_sec").getAsFloat();
+                final JsonArray phonemesJson = testData.getAsJsonArray("phonemes");
+                final OrcaPhoneme[] phonemes = new OrcaPhoneme[phonemesJson.size()];
+                for (int j = 0; j < phonemesJson.size(); j++) {
+                    final JsonObject phonemeJson = phonemesJson.get(j).getAsJsonObject();
+                    phonemes[j] = new OrcaPhoneme(
+                            phonemeJson.get("phoneme").getAsString(),
+                            phonemeJson.get("start_sec").getAsFloat(),
+                            phonemeJson.get("end_sec").getAsFloat());
+                }
+                synthesizeTestData[i] = new OrcaWord(
+                        word,
+                        startSec,
+                        endSec,
+                        phonemes);
+            }
+            validateMetadata(
+                    result.getWordArray(),
+                    synthesizeTestData,
+                    Objects.equals(modelFileUsed, EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER));
         }
 
         @Test
         public void testSynthesizeSpeechRate() throws OrcaException {
-            final short[] pcmSlow = orca.synthesize(
+            final OrcaAudio slow = orca.synthesize(
                     textCustomPronunciation,
                     new OrcaSynthesizeParams.Builder()
                             .setSpeechRate(0.7f)
+                            .setRandomState(randomState)
                             .build());
-            assertTrue(pcmSlow.length > 0);
+            assertTrue(slow.getPcm().length > 0);
 
-            final short[] pcmFast = orca.synthesize(
+            final OrcaAudio fast = orca.synthesize(
                     textCustomPronunciation,
                     new OrcaSynthesizeParams.Builder()
                             .setSpeechRate(1.3f)
+                            .setRandomState(42)
                             .build());
-            assertTrue(pcmFast.length > 0);
-            assertTrue(pcmFast.length < pcmSlow.length);
+            assertTrue(slow.getPcm().length > 0);
+            assertTrue(fast.getPcm().length < slow.getPcm().length);
 
             try {
                 orca.synthesize(
                         textCustomPronunciation,
                         new OrcaSynthesizeParams.Builder()
                                 .setSpeechRate(9999f)
+                                .setRandomState(randomState)
                                 .build());
                 fail();
             } catch (OrcaInvalidArgumentException e) {
                 assertNotNull(e);
             }
+        }
+
+        @Test
+        public void testSynthesizeRandomState() throws OrcaException {
+            final OrcaAudio randomState1 = orca.synthesize(
+                    text,
+                    new OrcaSynthesizeParams.Builder()
+                            .setSpeechRate(0.7f)
+                            .setRandomState(1)
+                            .build());
+            assertTrue(randomState1.getPcm().length > 0);
+            assertTrue(randomState1.getWordArray().length > 0);
+
+            final OrcaAudio randomState2 = orca.synthesize(
+                    text,
+                    new OrcaSynthesizeParams.Builder()
+                            .setSpeechRate(1.3f)
+                            .setRandomState(2)
+                            .build());
+            assertTrue(randomState2.getPcm().length > 0);
+            assertTrue(randomState2.getWordArray().length > 0);
+
+            assertNotEquals(randomState1, randomState2);
+            assertNotEquals(randomState1.getWordArray(), randomState2.getWordArray());
+
+            final OrcaAudio randomStateNull = orca.synthesize(
+                    text,
+                    new OrcaSynthesizeParams.Builder()
+                            .build());
+            assertTrue(randomStateNull.getPcm().length > 0);
+            assertTrue(randomStateNull.getWordArray().length > 0);
+
+            final OrcaAudio randomStateMaxValue = orca.synthesize(
+                    text,
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(Long.MAX_VALUE)
+                            .build());
+            assertTrue(randomStateMaxValue.getPcm().length > 0);
+            assertTrue(randomStateMaxValue.getWordArray().length > 0);
         }
     }
 }
