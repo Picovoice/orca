@@ -65,13 +65,13 @@
       const alignmentsTableEl = document.getElementById('alignments-table');
 
       const streamTextToSynthesizeEl = document.getElementById('stream-text-to-synthesize');
-      const streamTextToSynthesizeDisplayEl = document.getElementById('stream-text-to-synthesize-display');
-      const streamTextToSynthesizeNumCharsEl = document.getElementById('stream-text-to-synthesize-num-chars');
+      const streamTextDisplayEl = document.getElementById('stream-text-display');
+      const streamSecondsDisplayEl = document.getElementById('stream-seconds-display');
       const streamTextToSynthesizeErrorEl = document.getElementById('stream-text-to-synthesize-error');
       const streamSpeechRateSliderEl = document.getElementById('stream-speech-rate');
       const streamSpeechRateDisplayEl = document.getElementById('stream-speech-rate-display');
       const streamOpenBtnEl = document.getElementById('stream-open-btn');
-      const streamFlushBtnEl = document.getElementById('stream-flush-btn');
+      const streamPlayBtnEl = document.getElementById('stream-play-btn');
       const streamCloseBtnEl = document.getElementById('stream-close-btn');
 
       function validateInput(input, validChars) {
@@ -85,7 +85,7 @@
 
         if (nonAllowedCharacters.length > 0) {
           textToSynthesizeErrorEl.innerText = `Error: Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed.`;
-          streamTextToSynthesizeErrorEl.innerText = `Characters ${JSON.stringify(nonAllowedCharacters)} are not allowed and will be ignored.`;
+          streamTextToSynthesizeErrorEl.innerText = `Characters ${JSON.stringify(nonAllowedCharacters)} will be ignored.`;
           synthesizeBtnEl.disabled = true;
         } else {
           const text = '&nbsp;';
@@ -228,10 +228,6 @@
       });
 
       // Streaming Synthesis
-      streamTextToSynthesizeEl.addEventListener('input', (e) => {
-        streamTextToSynthesizeNumCharsEl.innerText = e.target.value.trim().length.toString();
-      });
-
       let isPlayingStream = false;
       const audioBuffer = [];
       let streamSource;
@@ -240,11 +236,11 @@
         if (isPlayingStream) return;
 
         if (audioBuffer.length === 0) {
-          streamFlushBtnEl.disabled = false;
+          streamPlayBtnEl.disabled = false;
           streamCloseBtnEl.disabled = false;
           return;
         } else {
-          streamFlushBtnEl.disabled = true;
+          streamPlayBtnEl.disabled = true;
           streamCloseBtnEl.disabled = true;
         }
 
@@ -262,14 +258,6 @@
         isPlayingStream = true;
       }
 
-      function splitStringIntoChunks(str, chunkSize) {
-        const chunks = [];
-        for (let i = 0; i < str.length; i += chunkSize) {
-          chunks.push(str.substring(i, i + chunkSize));
-        }
-        return chunks;
-      }
-
       async function streamOpen() {
         writeMessage('Opening stream. Please wait...');
         try {
@@ -277,33 +265,13 @@
           streamSpeechRateSliderEl.disabled = true;
           streamOpenBtnEl.disabled = true;
 
-          // PI5vbMlGH3K4+HgfM8hk9eIDF6i7CfZMQsn/9MmPrczi7sCfVioy6w==
           orcaStream = await orca.streamOpen({
             speechRate: streamSpeechRateSliderEl.value,
           });
 
           streamTextToSynthesizeEl.disabled = false;
           streamCloseBtnEl.disabled = false;
-
-          let previousValue = '';
-          streamTextToSynthesizeEl.addEventListener('input', async e => {
-            const currentValue = e.target.value.trim();
-            if (currentValue !== previousValue) {
-              const isTextTyped = currentValue.includes(previousValue);
-              const newlyAddedText = isTextTyped ? currentValue.slice(previousValue.length) : currentValue;
-              const strChunks = splitStringIntoChunks(newlyAddedText, 10);
-              streamTextToSynthesizeDisplayEl.innerText += newlyAddedText;
-              previousValue = currentValue;
-              for (const chunk of strChunks) {
-                const chunkPcm = await orcaStream.synthesize(chunk);
-                if (chunkPcm !== null) {
-                  audioBuffer.push(createBuffer(chunkPcm));
-                  await playStream();
-                }
-              }
-
-            }
-          });
+          streamPlayBtnEl.disabled = false;
 
           writeMessage('Stream opened. Type in the input field!');
         } catch (err) {
@@ -311,20 +279,34 @@
         }
       }
 
-      async function streamFlush() {
-        writeMessage('Flushing stream. Please wait...');
+      async function streamPlay() {
+        writeMessage('Synthesizing and playing speech! Please listen for audio.');
         try {
-          streamTextToSynthesizeEl.disabled = true;
+          streamTextDisplayEl.innerText = '';
+          streamSecondsDisplayEl.innerText = '0';
+
+          const text = streamTextToSynthesizeEl.value;
+          const words = text.split(' ').map(str => `${str} `);
+
+          for (const word of words) {
+            streamTextDisplayEl.innerText += word;
+            const wordPcm = await orcaStream.synthesize(word);
+            if (wordPcm !== null) {
+              const curSecs = parseFloat(streamSecondsDisplayEl.innerText);
+              const newSecs = wordPcm.length / orca.sampleRate;
+              const time = curSecs + newSecs;
+              streamSecondsDisplayEl.innerText = time.toFixed(3);
+              audioBuffer.push(createBuffer(wordPcm));
+              await playStream();
+            }
+            await new Promise(r => setTimeout(r, 100));
+          }
 
           const flushPcm = await orcaStream.flush();
           if (flushPcm !== null) {
             audioBuffer.push(createBuffer(flushPcm));
+            await playStream();
           }
-
-          isPlayingStream = false;
-          await playStream(true);
-          streamTextToSynthesizeEl.disabled = false;
-          writeMessage('Stream flushed!');
         } catch (err) {
           writeMessage(err);
         }
@@ -343,17 +325,17 @@
 
           streamSpeechRateSliderEl.disabled = false;
           streamOpenBtnEl.disabled = false;
-          streamFlushBtnEl.disabled = true;
+          streamPlayBtnEl.disabled = true;
           streamCloseBtnEl.disabled = true;
           streamTextToSynthesizeEl.value = '';
-          writeMessage('Stream closed!');
+          writeMessage('Stream closed! Click "Open Stream" to begin.');
         } catch (err) {
           writeMessage(err);
         }
       }
 
       streamOpenBtnEl.addEventListener('click', async () => await streamOpen());
-      streamFlushBtnEl.addEventListener('click', async () => await streamFlush());
+      streamPlayBtnEl.addEventListener('click', async () => await streamPlay());
       streamCloseBtnEl.addEventListener('click', async () => await streamClose());
 
       streamTextToSynthesizeEl.addEventListener('input', (e) => {
@@ -490,18 +472,21 @@ After entering the AccessKey, click the "Start Orca" button.
   <button id="stream-open-btn">Open Stream</button>
   <br />
   <br />
-  <label for="stream-text-to-synthesize" style="font-weight: bold">Text to synthesize</label>
+  <label for="stream-text-to-synthesize" style="font-weight: bold">Text to stream to Orca</label>
   <br />
-  <input id="stream-text-to-synthesize" disabled />
+  <textarea id="stream-text-to-synthesize" disabled rows="15" cols="80"></textarea>
   <br />
-  <br />
-  <div style="font-weight: bold">Text passed to Orca Stream:</div>
-  <div id="stream-text-to-synthesize-display"></div>
   <div id="stream-text-to-synthesize-error">&nbsp;</div>
   <br />
-  <button id="stream-flush-btn" disabled>Flush</button>
-  <button id="stream-close-btn" disabled>Close</button>
+  <button id="stream-play-btn" disabled>Run Streaming Synthesis</button>
+  <button id="stream-close-btn" disabled>Reset</button>
   <br />
+  <br />
+  <div style="font-weight: bold">Simulated text stream</div>
+  <div id="stream-text-display" style="white-space: pre-wrap"></div>
+  <br />
+  <br />
+  <div style="font-weight: bold">Seconds of audio synthesized: <span id="stream-seconds-display">0</span>s</div>
   <hr />
 </div>
 <br />

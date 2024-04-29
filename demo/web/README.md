@@ -48,19 +48,19 @@ Click on either "Streaming Synthesis" or "Single Synthesis" to continue.
 
 ### Streaming Synthesis
 
-1. Change the speech rate (optional)
+1. Choose desired speech rate (or keep the default)
 2. Click "Open Stream"
-3. Type in any text (in English only). Once enough text has been inputted, listen for the generated speech.
-4. When you're done, click "Flush" to synthesize any remaining text.
+3. Type in any text (in English only).
+4. When you're done, click "Run Streaming Synthesis" to run streaming synthesis on a simulated text stream.
 
 ### Single Synthesis
 
 1. Type in any text (in English only)
-2. Change the speech rate (optional)
+2. Change the speech rate (or keep the default)
 3. Click "Synthesize"
 4. Click "Play" and listen for the generated speech.
 
-**Optional**: If you wish, you may replace the model file in the `index.html` with a male model file for a male
+**Optional**: If you wish, you may replace the model file in the `index.html` with the male model file for a male
 voice:
 
 ```html
