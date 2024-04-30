@@ -64,9 +64,9 @@ export class OrcaWorker {
 
       /**
        * Generates audio from text in a worker.
-       * The speech result will be supplied with the callback provided when initializing the worker either
-       * by 'fromBase64' or 'fromPublicDirectory'.
-       * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
+       * Allowed characters are lower-case and upper-case letters and punctuation marks that can be retrieved with `.validCharacters`.
+       * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+       * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
        *
        * @param text A string of text.
        */
@@ -110,6 +110,12 @@ export class OrcaWorker {
         return returnPromise;
       }
 
+      /**
+       * Marks the end of the text stream, flushes internal state of the object,
+       * and returns any remaining synthesized speech.
+       *
+       * @return Any remaining synthesized speech. If none is available, null is returned.
+       */
       public flush(): Promise<OrcaStreamSynthesizeResult> {
         const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
           (resolve, reject) => {
@@ -146,6 +152,9 @@ export class OrcaWorker {
         return returnPromise;
       }
 
+      /**
+       * Releases the resources acquired by the OrcaStream object.
+       */
       public close(): Promise<void> {
         const returnPromise: Promise<void> = new Promise((resolve, reject) => {
           this._worker.onmessage = (
@@ -324,10 +333,7 @@ export class OrcaWorker {
   }
 
   /**
-   * Generates audio from text in a worker.
-   * The speech result will be supplied with the callback provided when initializing the worker either
-   * by 'fromBase64' or 'fromPublicDirectory'.
-   * Can also send a message directly using 'this.worker.postMessage({command: "synthesize", text: "..."})'.
+   * Generates speech from text in a worker.
    *
    * @param text A string of text with properties described above.
    * @param synthesizeParams Optional configuration arguments.
