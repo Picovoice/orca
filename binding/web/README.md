@@ -166,12 +166,10 @@ Then, call `synthesize` on the `OrcaStream` object to generate speech for a live
 ```typescript
 const textStream = "${TEXT}";
 
-const completePcm = [];
-
 for (const word of textStream.split(" ")) {
-  const pcm = await OrcaStream.synthesize(word);
+  const pcm = await OrcaStream.synthesize(word + " ");
   if (pcm !== null) {
-    completePcm.push(...pcm);
+    // handle pcm
   }
 }
 ```
@@ -184,7 +182,7 @@ When done, call `flush` to synthesize any remaining text, and `close` to delete 
 ```typescript
 const flushedPcm = OrcaStream.flush();
 if (flushedPcm !== null) {
-  completePcm.push(...flushedPcm);
+  // handle pcm
 }
 
 OrcaStream.close();
