@@ -92,7 +92,6 @@ type OrcaWasmOutput = {
   pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete_type;
 
   streamPcmAddressAddress: number;
-  streamNumSamplesAddress: number;
   pvOrcaStreamOpen: pv_orca_stream_open_type;
   pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type;
   pvOrcaStreamFlush: pv_orca_stream_flush_type;
@@ -124,7 +123,6 @@ export class Orca {
   private readonly _pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete_type;
 
   private readonly _streamPcmAddressAddress: number;
-  private readonly _streamNumSamplesAddress: number;
   private readonly _pvOrcaStreamOpen: pv_orca_stream_open_type;
   private readonly _pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type;
   private readonly _pvOrcaStreamFlush: pv_orca_stream_flush_type;
@@ -163,7 +161,6 @@ export class Orca {
     this._pvOrcaWordAlignmentsDelete = handleWasm.pvOrcaWordAlignmentsDelete;
 
     this._streamPcmAddressAddress = handleWasm.streamPcmAddressAddress;
-    this._streamNumSamplesAddress = handleWasm.streamNumSamplesAddress;
     this._pvOrcaStreamOpen = handleWasm.pvOrcaStreamOpen;
     this._pvOrcaStreamSynthesize = handleWasm.pvOrcaStreamSynthesize;
     this._pvOrcaStreamFlush = handleWasm.pvOrcaStreamFlush;
@@ -227,10 +224,18 @@ export class Orca {
               memoryBufferText.set(encodedText, textAddress);
               memoryBufferText[textAddress + encodedText.length] = 0;
 
+              const numSamplesAddress = await this._Orca._alignedAlloc(
+                Int32Array.BYTES_PER_ELEMENT,
+                Int32Array.BYTES_PER_ELEMENT,
+              );
+              if (numSamplesAddress === 0) {
+                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+              }
+
               const streamSynthesizeStatus = await this._Orca._pvOrcaStreamSynthesize(
                 this._streamAddress,
                 textAddress,
-                this._Orca._streamNumSamplesAddress,
+                numSamplesAddress,
                 this._Orca._streamPcmAddressAddress,
               );
               await this._Orca._pvFree(textAddress);
@@ -257,9 +262,10 @@ export class Orca {
               );
 
               const numSamples = memoryBufferView.getInt32(
-                this._Orca._streamNumSamplesAddress,
+                numSamplesAddress,
                 true,
               );
+              await this._Orca._pvFree(numSamplesAddress);
 
               const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
               const pcm = outputMemoryBuffer.slice(
@@ -853,7 +859,6 @@ export class Orca {
     await this._pvFree(this._messageStackAddressAddressAddress);
     await this._pvFree(this._messageStackDepthAddress);
     await this._pvFree(this._streamPcmAddressAddress);
-    await this._pvFree(this._streamNumSamplesAddress);
     delete this._wasmMemory;
     this._wasmMemory = undefined;
   }
@@ -1087,14 +1092,6 @@ export class Orca {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const streamNumSamplesAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
-    if (streamNumSamplesAddress === 0) {
-      throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-    }
-
     return {
       memory: memory,
       pvFree: pv_free,
@@ -1106,7 +1103,6 @@ export class Orca {
       maxCharacterLimit: maxCharacterLimit,
       validCharacters: validCharacters,
       streamPcmAddressAddress: streamPcmAddressAddress,
-      streamNumSamplesAddress: streamNumSamplesAddress,
       messageStackAddressAddressAddress: messageStackAddressAddressAddress,
       messageStackDepthAddress: messageStackDepthAddress,
 
