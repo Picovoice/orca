@@ -10,27 +10,25 @@
 #
 
 import argparse
-import re
-
 import json
 import os
-
+import re
 import struct
 import time
 import wave
 from dataclasses import dataclass
-from typing import (
-    Generator,
-    Optional,
-    Sequence,
-)
+from typing import Optional, Sequence
 
+import tiktoken
 from pvorca import create, OrcaActivationLimitError
 
 CUSTOM_PRON_OPENING_MARKER = "{"
 CUSTOM_PRON_CLOSING_MARKER = "}"
 CUSTOM_PRON_SEPARATOR = "|"
-CUSTOM_PRON_PATTERN = r"\s\{(.*?\|.*?)\}\s"
+CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
+CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
+
+SIMULATED_TOKENS_PER_SECOND = 10
 
 
 @dataclass
@@ -77,23 +75,35 @@ def save_token_metadata(output_folder: str, token_metadata: Sequence[TokenMetada
         json.dump(json_data, json_file)
 
     print(f"Metadata saved to `{output_path}`.")
-        
 
-def token_generator(text: str) -> Generator[str, None, None]:
-    text = re.sub(CUSTOM_PRON_PATTERN, lambda x: " {" + x.group(1).replace(' ', '_') + "} ", text)
 
-    def is_valid_custom_pron(token: str) -> bool:
-        return (token.startswith(CUSTOM_PRON_OPENING_MARKER) and
-                token.endswith(CUSTOM_PRON_CLOSING_MARKER) and
-                CUSTOM_PRON_SEPARATOR in token)
+def tokenize_text(text: str) -> Sequence[str]:
+    text = re.sub(CUSTOM_PRON_PATTERN_NO_WHITESPACE, r'{\1} ', text)
 
-    for itok, tok in enumerate(text.split()):
-        if is_valid_custom_pron(tok):
-            tok = tok.replace('_', ' ')
-        if itok == len(text.split()) - 1:
-            yield tok
-        else:
-            yield f"{tok} "
+    custom_prons = re.findall(CUSTOM_PRON_PATTERN, text)
+    custom_prons = set(["{" + pron + "}" for pron in custom_prons])
+
+    encoder = tiktoken.encoding_for_model("gpt-4")
+    tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
+
+    custom_pron = ""
+    tokens_with_custom_prons = []
+    for i, token in enumerate(tokens_raw):
+        in_custom_pron = False
+        for pron in custom_prons:
+            in_custom_pron_global = len(custom_pron) > 0
+            current_match = token.strip() if not in_custom_pron_global else custom_pron + token
+            if pron.startswith(current_match):
+                custom_pron += token.strip() if not in_custom_pron_global else token
+                in_custom_pron = True
+
+        if not in_custom_pron:
+            if custom_pron != "":
+                tokens_with_custom_prons.append(f" {custom_pron}" if i != 0 else custom_pron)
+                custom_pron = ""
+            tokens_with_custom_prons.append(token)
+
+    return tokens_with_custom_prons
 
 
 def main(args: argparse.Namespace) -> None:
@@ -122,14 +132,24 @@ def main(args: argparse.Namespace) -> None:
 
         pcm_chunks_metadata = []
         token_metadata = []
-        initial_tic = time.time()
 
-        tic = initial_tic
-        for token in token_generator(text=text):
+        first_audio_seconds = None
+
+        print(f"Simulated text stream ({SIMULATED_TOKENS_PER_SECOND} tokens / second):")
+        tokens = tokenize_text(text=text)
+
+        initial_tic = time.time()
+        for token in tokens:
+            print(f"{token}", end="", flush=True)
+
+            tic = time.time()
             pcm_chunk = orca_stream.synthesize(text=token)
 
             if pcm_chunk is not None:
                 toc = time.time()
+
+                if first_audio_seconds is None:
+                    first_audio_seconds = time.time() - initial_tic
 
                 if audio_device is not None:
                     audio_device.play(pcm_chunk)
@@ -140,11 +160,17 @@ def main(args: argparse.Namespace) -> None:
                     proc_seconds=toc - tic)
                 pcm_chunks_metadata.append(pcm_chunk_metadata)
 
-                tic = time.time()
-
             token_metadata.append(TokenMetadata(string=token, pcm=pcm_chunk))
 
+            time.sleep(1 / SIMULATED_TOKENS_PER_SECOND)
+
+        print("\n")
+
+        tic = time.time()
         pcm_chunk = orca_stream.flush()
+        if first_audio_seconds is None:
+            first_audio_seconds = time.time() - initial_tic
+
         if pcm_chunk is not None:
             toc = time.time()
 
@@ -159,16 +185,14 @@ def main(args: argparse.Namespace) -> None:
 
             token_metadata.append(TokenMetadata(string="", pcm=pcm_chunk))
 
-        final_toc = time.time()
-        processing_time = final_toc - initial_tic
-
         pcm = [sample for chunk_metadata in pcm_chunks_metadata for sample in chunk_metadata.pcm]
 
         save_wav(output_path=output_path, pcm=pcm, sample_rate=orca.sample_rate)
-
+        print(f"Audio started playing after {first_audio_seconds:.2f} seconds.\n")
+        print("Summary of audio generation:")
         print(
-            f"Generated {len(pcm_chunks_metadata)} audio chunk{'' if len(pcm_chunks_metadata) == 1 else 's'} "
-            f"in {processing_time:.2f} seconds.")
+            f"Generated {len(pcm_chunks_metadata)} audio chunk{'' if len(pcm_chunks_metadata) == 1 else 's'} in total.")
+
         for i, chunk_metadata in enumerate(pcm_chunks_metadata):
             print(
                 f"Audio chunk #{i}: length = {chunk_metadata.audio_seconds:.2f}s, "
@@ -223,7 +247,6 @@ if __name__ == "__main__":
     parser.add_argument(
         '--save-metadata-folder',
         default=None,
-        help='Path to save metadata for creating animations',
-    )
+        help='Path to save metadata for creating animations')
 
     main(parser.parse_args())
