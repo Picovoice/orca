@@ -18,7 +18,8 @@ from typing import Sequence
 import tiktoken
 from pvorca import OrcaActivationLimitError
 
-from demo_util import OrcaThread, StreamingAudioDevice
+from ._orca_thread import OrcaThread
+from ._audio_device import StreamingAudioDevice
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
 CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
@@ -59,6 +60,7 @@ def main(args: argparse.Namespace) -> None:
     library_path = args.library_path
     text = args.text_to_stream
     tokens_per_second = args.tokens_per_second
+    audio_wait_chunks = args.audio_wait_chunks
 
     try:
         audio_device = StreamingAudioDevice.from_default_device()
@@ -73,9 +75,12 @@ def main(args: argparse.Namespace) -> None:
         num_tokens_per_second=tokens_per_second,
         access_key=access_key,
         model_path=model_path,
-        library_path=library_path)
+        library_path=library_path,
+        audio_wait_chunks=audio_wait_chunks,
+    )
 
     audio_device.start(sample_rate=orca.sample_rate)
+    orca.start()
 
     try:
         print(f"Orca version: {orca.version}\n")
@@ -91,14 +96,15 @@ def main(args: argparse.Namespace) -> None:
 
             time.sleep(1 / tokens_per_second)
 
+        text_stream_duration_seconds = time.time() - time_start_text_stream
+
         print("\n")
 
         orca.flush()
 
-        text_stream_duration_seconds = time.time() - time_start_text_stream
         first_audio_available_seconds = orca.get_time_first_audio_available() - time_start_text_stream
-        print(f"Text stream duration: {text_stream_duration_seconds:.2f} seconds")
-        print(f"First audio received: {first_audio_available_seconds:.2f} seconds after text stream started\n")
+        print(f"Time to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
+        print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
         print("Finishing playing audio ...")
         audio_device.flush_and_terminate()
@@ -112,27 +118,32 @@ def main(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--access_key',
-        '-a',
+        "--access_key",
+        "-a",
         required=True,
-        help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
+        help="AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)")
     parser.add_argument(
-        '--library_path',
-        '-l',
-        help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
+        "--library_path",
+        "-l",
+        help="Absolute path to dynamic library. Default: using the library provided by `pvorca`")
     parser.add_argument(
-        '--model_path',
-        '-m',
-        help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
+        "--model_path",
+        "-m",
+        help="Absolute path to Orca model. Default: using the model provided by `pvorca`")
     parser.add_argument(
-        '--text-to-stream',
-        '-t',
+        "--text-to-stream",
+        "-t",
         required=True,
-        help='Text to be streamed to Orca')
+        help="Text to be streamed to Orca")
     parser.add_argument(
-        '--tokens-per-second',
+        "--tokens-per-second",
         type=int,
-        default=10,
-        help='Number of tokens to be streamed per second to Orca, simulating an LLM response.')
+        default=15,
+        help="Number of tokens to be streamed per second to Orca, simulating an LLM response.")
+    parser.add_argument(
+        "--audio-wait-chunks",
+        type=int,
+        default=None,
+        help="Number of PCM chunks to wait before starting to play audio. Default: system-dependent.")
 
     main(parser.parse_args())
