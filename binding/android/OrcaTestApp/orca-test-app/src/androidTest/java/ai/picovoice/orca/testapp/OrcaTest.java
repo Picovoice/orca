@@ -170,22 +170,29 @@ public class OrcaTest {
 
         @Test
         public void testStreaming() throws Exception {
-            orca.streamOpen(
+            Orca.OrcaStream orcaStream = orca.streamOpen(
                     new OrcaSynthesizeParams.Builder()
                             .setRandomState(randomState)
                             .build());
 
-            short[] pcm = new short[0];
+            short[] fullPcm = new short[0];
             for (char c : text.toCharArray()) {
-                pcm = concatArrays(pcm, orca.streamSynthesize(String.valueOf(c)));
+                short[] pcm = orcaStream.synthesize(String.valueOf(c));
+                if (pcm != null && pcm.length > 0) {
+                    fullPcm = concatArrays(fullPcm, pcm);
+                }
             }
-            pcm = concatArrays(pcm, orca.streamFlush());
 
-            orca.streamClose();
+            short[] flushedPcm = orcaStream.flush();
+            if (flushedPcm != null && flushedPcm.length > 0) {
+                fullPcm = concatArrays(fullPcm, flushedPcm);
+            }
+
+            orcaStream.close();
             short[] testFilePcm = readAudioFile(String.format(
                     "%s/wav/orca_params_%s_stream.wav", testResourcesPath, modelFileUsed));
 
-            assertArrayEquals(pcm, testFilePcm);
+            assertArrayEquals(fullPcm, testFilePcm);
         }
 
         @Test

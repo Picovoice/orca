@@ -142,14 +142,14 @@ public class MainActivity extends AppCompatActivity {
         result = new TestResult();
         result.testName = "Test Streaming";
         try {
-            orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
-            short[] pcm = orca.streamSynthesize("Hello");
-            short[] flushedPcm = orca.streamFlush();
-            orca.streamClose();
+            Orca.OrcaStream orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+            short[] pcm = orcaStream.synthesize("Hello");
+            short[] flushedPcm = orcaStream.flush();
+            orcaStream.close();
 
-            short[] streamPcm = new short[pcm.length + flushedPcm.length];
-            System.arraycopy(pcm, 0, streamPcm, 0, pcm.length);
-            System.arraycopy(flushedPcm, 0, streamPcm, pcm.length, flushedPcm.length);
+            short[] pcm1 = pcm == null ? new short[0] : pcm;
+            short[] pcm2 = flushedPcm == null ? new short[0] : flushedPcm;
+            short[] streamPcm = new short[pcm1.length + pcm2.length];
             if (streamPcm.length > 0) {
                 result.success = true;
             } else {

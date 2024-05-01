@@ -19,7 +19,8 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 
 ## Installation
 
-Orca can be found on Maven Central. To include the package in your Android project, ensure you have included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
+Orca can be found on Maven Central. To include the package in your Android project, ensure you have
+included `mavenCentral()` in your top-level `build.gradle` file and then add the following to your app's `build.gradle`:
 
 ```groovy
 dependencies {
@@ -37,13 +38,16 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 ## Permissions
 
 To enable AccessKey validation, you must add the following line to your `AndroidManifest.xml` file:
+
 ```xml
-<uses-permission android:name="android.permission.INTERNET" />
+
+<uses-permission android:name="android.permission.INTERNET"/>
 ```
 
 ## Usage
 
-Create an instance of the engine with the Orca Builder class by passing in the accessKey, modelPath and Android app context:
+Create an instance of the engine with the Orca Builder class by passing in the accessKey, modelPath and Android app
+context:
 
 ```java
 import ai.picovoice.orca.*;
@@ -58,7 +62,19 @@ try {
 } catch (OrcaException ex) { }
 ```
 
-You can synthesize speech by calling one of the available `synthesize` methods:
+### Single vs. Streaming Synthesis
+
+Orca supports two modes of operation: streaming and single synthesis.
+
+In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
+the single synthesis mode, the text is synthesized in a single call to the Orca engine.
+
+#### Single Synthesis
+
+To use single synthesis, simply call one of the available `synthesize` methods directly on the `Orca` instance.
+The `synthesize` method will send
+the text to the engine and return the speech audio as a `short[]`. The `synthesizeToFile` method will write the `pcm`
+data directly to a specified wav file.
 
 ```java
 OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder().build();
@@ -70,12 +86,53 @@ short[] pcm = orca.synthesize("${TEXT}", params);
 orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
 ```
 
-Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When using `synthesize`, the generated pcm has a sample rate equal to the one returned by `getSampleRate()`. When using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit PCM WAV file. When done make sure to explicitly release the resources with `orca.delete()`.
+Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When
+using `synthesize`, the generated pcm has a sample rate equal to the one returned by `.getSampleRate()`. When
+using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit
+PCM WAV file. When done make sure to explicitly release the resources with `.delete()`.
+
+#### Streaming Synthesis
+
+To use streaming synthesis, call `streamOpen` to create an `OrcaStream` object.
+
+```java
+Orca.OrcaStream orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+```
+
+Then, call `synthesize` on `orcaStream` to generate speech for a live stream of text:
+
+```java
+String textStream = "${TEXT}";
+String[] words = textStream.split(" ");
+
+for (String word : words) {
+  short[] pcm = orcaStream.synthesize(word + " ");
+  if (pcm != null) {
+    // handle pcm
+  }
+}
+```
+
+`OrcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
+audio, `null` is returned.
+
+When done, call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object.
+
+```java
+short[] flushedPcm = orcaStream.flush();
+if (flushedPcm != null) {
+  // handle pcm
+}
+
+orcaStream.close();
+```
 
 ### Text Input
 
 Orca accepts any character found in the list returned by the `getValidCharacters()` method.
-Pronunciations of characters or words not supported by this list can be achieved by embedding custom pronunciations in the text via the syntax: `{word|pronunciation}`. The pronunciation is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for example:
+Pronunciations of characters or words not supported by this list can be achieved by embedding custom pronunciations in
+the text via the syntax: `{word|pronunciation}`. The pronunciation is expressed
+in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for example:
 
 - "This is a {custom|K AH S T AH M} pronunciation"
 - "{read|R IY D} this as {read|R EH D}, please."
@@ -89,11 +146,13 @@ in [lib/common](../../lib/common).
 To add the Orca model file to your Android application:
 
 - Download the desired voice model from the [Orca GitHub repository](../../lib/common).
-- Add the model file as a bundled resource by placing it under the assets directory of your Android project (`src/main/assets/`).
+- Add the model file as a bundled resource by placing it under the assets directory of your Android
+  project (`src/main/assets/`).
 
 ### Additional Synthesis Controls
 
-Orca allows you to control the synthesized speech via the `OrcaSynthesizeParams` class. You can pass in additional settings by using the nested Builder class:
+Orca allows you to control the synthesized speech via the `OrcaSynthesizeParams` class. You can pass in additional
+settings by using the nested Builder class:
 
 ```java
 import ai.picovoice.orca.*;

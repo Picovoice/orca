@@ -34,7 +34,52 @@ public class Orca {
     }
 
     private long handle;
-    private long stream;
+
+    public class OrcaStream {
+        private final long stream;
+
+        public OrcaStream(long stream) {
+            this.stream = stream;
+        }
+
+        /**
+         * Generates audio from a live stream of text. The returned audio contains the speech representation of the text.
+         *
+         * @param text   Text to be converted to audio. The maximum length can be attained by calling
+         *               `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
+         *               `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
+         *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
+         *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+         * @throws OrcaException if there is an error while synthesizing audio.
+         */
+        public short[] synthesize(String text) throws OrcaException {
+            short[] pcm = OrcaNative.streamSynthesize(stream, text);
+
+            return pcm.length == 0 ? null : pcm;
+        }
+
+        /**
+         * Flushes remaining text. The returned audio contains the speech representation of the text.
+         *
+         * @throws OrcaException if there is an error while synthesizing audio.
+         */
+        public short[] flush() throws OrcaException {
+            short[] pcm = OrcaNative.streamFlush(stream);
+
+            return pcm.length == 0 ? null : pcm;
+        }
+
+        /**
+         * Deletes OrcaStream.
+         *
+         * @throws OrcaException if there is an error while synthesizing audio.
+         */
+        public void close() throws OrcaException {
+            if (stream != 0) {
+                OrcaNative.streamClose(stream);
+            }
+        }
+    }
 
     /**
      * Constructor.
@@ -149,81 +194,22 @@ public class Orca {
      * TODO:
      *
      * @param params Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
-     * @return Orca stream.
+     * @return OrcaStream object.
      * @throws OrcaException if there is an error while synthesizing audio.
      */
-    public long streamOpen(OrcaSynthesizeParams params) throws OrcaException {
+    public OrcaStream streamOpen(OrcaSynthesizeParams params) throws OrcaException {
         if (handle == 0) {
             throw new OrcaInvalidStateException(
                     "Attempted to call Orca streamOpen after delete."
             );
         }
 
-        return OrcaNative.streamOpen(
-               handle,
-               params.getSpeechRate(),
-               params.getRandomState());
-    }
+        long stream = OrcaNative.streamOpen(
+                        handle,
+                        params.getSpeechRate(),
+                        params.getRandomState());
 
-    /**
-     * Generates audio from a live stream of text. The returned audio contains the speech representation of the text.
-     *
-     * @param text   Text to be converted to audio. The maximum length can be attained by calling
-     *               `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
-     *               `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
-     *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
-     *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
-     * @throws OrcaException if there is an error while synthesizing audio.
-     */
-    public short[] streamSynthesize(String text) throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca streamSynthesize after delete."
-            );
-        }
-        if (stream == 0) {
-            throw new OrcaInvalidStateException(
-                    "Stream not initialized."
-            );
-        }
-
-        return OrcaNative.streamSynthesize(stream, text);
-    }
-
-    /**
-     * Flushes remaining text. The returned audio contains the speech representation of the text.
-     *
-     * @throws OrcaException if there is an error while synthesizing audio.
-     */
-    public short[] streamFlush() throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca streamFlush after delete."
-            );
-        }
-        if (stream == 0) {
-            throw new OrcaInvalidStateException(
-                    "Stream not initialized."
-            );
-        }
-
-        return OrcaNative.streamFlush(stream);
-    }
-
-    /**
-     * Deletes Orca stream.
-     *
-     * @throws OrcaException if there is an error while synthesizing audio.
-     */
-    public void streamClose() throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca streamClose after delete."
-            );
-        }
-        if (stream != 0) {
-            OrcaNative.streamClose(stream);
-        }
+        return new OrcaStream(stream);
     }
 
     /**

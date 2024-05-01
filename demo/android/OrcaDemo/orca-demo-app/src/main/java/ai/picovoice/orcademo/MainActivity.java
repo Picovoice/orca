@@ -20,19 +20,27 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor1 = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor2 = Executors.newSingleThreadExecutor();
 
     private String synthesizedFilePath;
     private MediaPlayer synthesizedPlayer;
@@ -62,11 +72,17 @@ public class MainActivity extends AppCompatActivity {
     private Pattern validationRegex;
 
     private Orca orca;
+    private int maxCharacterLimit;
+
+    private Orca.OrcaStream orcaStream = null;
 
     TextView errorText;
     TextView infoTextView;
+    TextView streamTextView;
+    TextView streamSecsTextView;
     TextView numCharsTextView;
     EditText synthesizeEditText;
+    SwitchCompat streamSwitch;
     ToggleButton synthesizeButton;
     ProgressBar synthesizeProgress;
 
@@ -77,20 +93,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.orca_demo);
         errorText = findViewById(R.id.errorTextView);
         infoTextView = findViewById(R.id.infoTextView);
+        streamTextView = findViewById(R.id.streamTextView);
+        streamSecsTextView = findViewById(R.id.streamSecsTextView);
         numCharsTextView = findViewById(R.id.numCharsTextView);
         synthesizeEditText = findViewById(R.id.synthesizeEditText);
+        streamSwitch = findViewById(R.id.streamSwitch);
         synthesizeButton = findViewById(R.id.synthesizeButton);
         synthesizeProgress = findViewById(R.id.synthesizeProgress);
+        streamTextView.setMovementMethod(new ScrollingMovementMethod());
 
         try {
             orca = new Orca.Builder()
                     .setAccessKey(ACCESS_KEY)
                     .setModelPath(MODEL_FILE)
                     .build(getApplicationContext());
+            maxCharacterLimit = orca.getMaxCharacterLimit();
             validationRegex = Pattern.compile(String.format(
                     "[^%s ]",
                     String.join("", orca.getValidCharacters())));
-            numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
+            numCharsTextView.setText(String.format("0/%d", maxCharacterLimit));
         } catch (OrcaException e) {
             onOrcaException(e);
         }
@@ -113,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 runOnUiThread(() ->
                         numCharsTextView.setText(String.format(
-                                "%d/%d",
-                                s.toString().length(),
-                                orca.getMaxCharacterLimit()))
+                            "%d/%d",
+                            s.toString().length(),
+                            maxCharacterLimit))
                 );
                 validateText(s.toString());
             }
@@ -200,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateText(String text) {
         if (text.length() > 0) {
-            if (text.length() >= orca.getMaxCharacterLimit()) {
+            if (text.length() >= maxCharacterLimit) {
                 runOnUiThread(() -> {
                     setUIState(UIState.ERROR);
                     infoTextView.setText("Too many characters");
@@ -244,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             setUIState(UIState.BUSY);
             infoTextView.setText("Synthesizing...");
+            streamSwitch.setEnabled(false);
         });
         executor.submit(() -> {
             try {
@@ -264,7 +286,10 @@ public class MainActivity extends AppCompatActivity {
             );
             synthesizedPlayer.setLooping(false);
             synthesizedPlayer.setOnCompletionListener(mediaPlayer -> {
-                mainHandler.post(() -> synthesizeButton.setChecked(false));
+                mainHandler.post(() -> {
+                    streamSwitch.setEnabled(true);
+                    synthesizeButton.setChecked(false);
+                });
                 stopPlayback();
             });
             try {
@@ -322,6 +347,25 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> setUIState(UIState.EDIT));
     }
 
+    public void onStreamSwitchClick(View view) {
+        if (orca == null) {
+            displayError("Orca is not initialized");
+            streamSwitch.setChecked(false);
+            return;
+        }
+
+        try {
+            if (orcaStream == null) {
+                orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+            } else {
+                orcaStream.close();
+                orcaStream = null;
+            }
+        } catch (OrcaException e) {
+            onOrcaException(e);
+        }
+    }
+
     public void onSynthesizeClick(View view) {
         if (orca == null) {
             displayError("Orca is not initialized");
@@ -329,16 +373,143 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (synthesizeButton.isChecked()) {
-            String text = synthesizeEditText.getText().toString();
-            if (!previousText.equals(text)) {
-                runSynthesis(text);
+        String text = synthesizeEditText.getText().toString();
+        if (orcaStream == null) {
+            if (synthesizeButton.isChecked()) {
+                if (!previousText.equals(text)) {
+                    runSynthesis(text);
+                } else {
+                    startPlayback();
+                }
             } else {
-                startPlayback();
+                stopPlayback();
             }
         } else {
-            stopPlayback();
+            runStreamSynthesis(text);
         }
+    }
+
+    private void stopStreamPlay() {
+        try {
+            runOnUiThread(() -> {
+                setUIState(UIState.EDIT);
+                infoTextView.setText("");
+                streamTextView.setVisibility(View.INVISIBLE);
+                streamSecsTextView.setVisibility(View.INVISIBLE);
+                synthesizeEditText.setVisibility(View.VISIBLE);
+            });
+        } catch (Exception e) {
+            displayError(e.toString());
+        }
+    }
+
+    private void runStreamSynthesis(final String text) {
+        runOnUiThread(() -> {
+            setUIState(UIState.PLAYBACK);
+            streamSwitch.setEnabled(false);
+            infoTextView.setText("Streaming...");
+            streamTextView.setVisibility(View.VISIBLE);
+            streamSecsTextView.setVisibility(View.VISIBLE);
+            synthesizeEditText.setVisibility(View.INVISIBLE);
+        });
+
+        AtomicBoolean isStreamingText = new AtomicBoolean(false);
+        ArrayList<String> textStream = new ArrayList<>();
+
+        executor.submit(() -> {
+            isStreamingText.set(true);
+
+            String[] words = text.split(" ");
+            for (String word : words) {
+                word += " ";
+                try {
+                    textStream.add(word);
+                    Thread.sleep(100);
+                    streamTextView.append(word);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            isStreamingText.set(false);
+        });
+
+        AtomicBoolean isQueueingStreamingPcm = new AtomicBoolean(false);
+        ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
+
+        executor1.submit(() -> {
+            try {
+                mainHandler.post(() -> {
+                    streamTextView.setText("");
+                    streamSecsTextView.setText("");
+                    synthesizeButton.setEnabled(false);
+                });
+
+                float secs = 0;
+                isQueueingStreamingPcm.set(true);
+
+                while (isStreamingText.get() || !textStream.isEmpty()) {
+                    if (!textStream.isEmpty()) {
+                        String word = textStream.remove(0);
+                        short[] pcm = orcaStream.synthesize(word);
+                        if (pcm != null && pcm.length > 0) {
+                            pcmQueue.add(pcm);
+                            secs += (float) pcm.length / orca.getSampleRate();
+                            streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                        }
+                    }
+                }
+
+                short[] flushedPcm = orcaStream.flush();
+                if (flushedPcm != null && flushedPcm.length > 0) {
+                    pcmQueue.add(flushedPcm);
+                    secs += (float) flushedPcm.length / orca.getSampleRate();
+                    streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                }
+
+                isQueueingStreamingPcm.set(false);
+            } catch (Exception e) {
+                mainHandler.post(() -> displayError(e.toString()));
+            }
+        });
+
+        executor2.submit(() -> {
+            try {
+                AudioTrack audioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC,
+                        orca.getSampleRate(),
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        AudioTrack.getMinBufferSize(
+                                orca.getSampleRate(),
+                                AudioFormat.CHANNEL_OUT_MONO,
+                                AudioFormat.ENCODING_PCM_16BIT),
+                        AudioTrack.MODE_STREAM);
+
+                audioTrack.play();
+
+                while(isQueueingStreamingPcm.get() || !pcmQueue.isEmpty()) {
+                    if (!pcmQueue.isEmpty()) {
+                        short[] pcm = pcmQueue.poll();
+                        if (pcm != null && pcm.length > 0) {
+                            audioTrack.write(pcm, 0, pcm.length);
+                        }
+                    }
+                }
+
+                mainHandler.post(() -> {
+                    stopStreamPlay();
+                    streamSwitch.setEnabled(true);
+                    synthesizeButton.setEnabled(true);
+                    synthesizeButton.setChecked(false);
+                });
+
+                audioTrack.stop();
+                audioTrack.release();
+            } catch (Exception e) {
+                mainHandler.post(() -> displayError(e.toString()));
+            }
+        });
     }
 
     private enum UIState {
