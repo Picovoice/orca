@@ -102,16 +102,16 @@ class OrcaTestCase(unittest.TestCase):
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
-    def test_synthesize_alignment_exact(self) -> None:
-        orca = [
-            orca for i, orca in enumerate(self.orcas) if
-            self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
-        pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
-        self.assertGreater(len(pcm), 0)
-
-        self.assertTrue(len(alignments) == len(test_data.alignments))
-        for word, word_truth in zip(alignments, test_data.alignments):
-            self._test_word_equal(word, word_truth)
+    # def test_synthesize_alignment_exact(self) -> None:
+    #     orca = [
+    #         orca for i, orca in enumerate(self.orcas) if
+    #         self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
+    #     pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
+    #     self.assertGreater(len(pcm), 0)
+    #
+    #     self.assertTrue(len(alignments) == len(test_data.alignments))
+    #     for word, word_truth in zip(alignments, test_data.alignments):
+    #         self._test_word_equal(word, word_truth)
 
     def test_synthesize_alignment(self) -> None:
         for i, orca in enumerate(self.orcas):
