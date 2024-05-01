@@ -18,8 +18,8 @@ from typing import Sequence
 import tiktoken
 from pvorca import OrcaActivationLimitError
 
-from ._orca_thread import OrcaThread
-from ._audio_device import StreamingAudioDevice
+from _orca_thread import OrcaThread
+from _audio_device import StreamingAudioDevice
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
 CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
@@ -106,7 +106,7 @@ def main(args: argparse.Namespace) -> None:
         print(f"Time to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
-        print("Finishing playing audio ...")
+        print("Waiting for audio to finish ...")
         audio_device.flush_and_terminate()
 
     except OrcaActivationLimitError:
