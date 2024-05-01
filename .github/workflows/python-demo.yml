@@ -86,8 +86,6 @@ jobs:
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text "Hello, I am Orca!"
-          --output_path ./tmp.wav
-          --no-audio
 
       - name: Test single
         run: >
