@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -160,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
                 case EDIT:
                     infoTextView.setVisibility(View.INVISIBLE);
                     synthesizeButton.setVisibility(View.VISIBLE);
+                    streamSwitch.setEnabled(true);
                     synthesizeButton.setEnabled(true);
                     synthesizeEditText.setEnabled(true);
                     synthesizeProgress.setVisibility(View.INVISIBLE);
@@ -167,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 case PLAYBACK:
                     infoTextView.setVisibility(View.VISIBLE);
                     synthesizeButton.setVisibility(View.VISIBLE);
+                    streamSwitch.setEnabled(false);
                     synthesizeButton.setEnabled(true);
                     synthesizeEditText.setEnabled(false);
                     synthesizeProgress.setVisibility(View.INVISIBLE);
@@ -174,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
                 case BUSY:
                     infoTextView.setVisibility(View.VISIBLE);
                     synthesizeButton.setVisibility(View.INVISIBLE);
+                    streamSwitch.setEnabled(false);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(false);
                     synthesizeProgress.setVisibility(View.VISIBLE);
@@ -181,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 case ERROR:
                     infoTextView.setVisibility(View.VISIBLE);
                     errorText.setVisibility(View.INVISIBLE);
+                    streamSwitch.setEnabled(false);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(true);
                     synthesizeProgress.setVisibility(View.INVISIBLE);
@@ -188,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
                 case FATAL_ERROR:
                     infoTextView.setVisibility(View.INVISIBLE);
                     errorText.setVisibility(View.VISIBLE);
+                    streamSwitch.setEnabled(false);
                     synthesizeButton.setEnabled(false);
                     synthesizeEditText.setEnabled(false);
                     synthesizeProgress.setVisibility(View.INVISIBLE);
@@ -265,7 +271,6 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             setUIState(UIState.BUSY);
             infoTextView.setText("Synthesizing...");
-            streamSwitch.setEnabled(false);
         });
         executor.submit(() -> {
             try {
@@ -286,10 +291,7 @@ public class MainActivity extends AppCompatActivity {
             );
             synthesizedPlayer.setLooping(false);
             synthesizedPlayer.setOnCompletionListener(mediaPlayer -> {
-                mainHandler.post(() -> {
-                    streamSwitch.setEnabled(true);
-                    synthesizeButton.setChecked(false);
-                });
+                mainHandler.post(() -> synthesizeButton.setChecked(false));
                 stopPlayback();
             });
             try {
@@ -406,7 +408,6 @@ public class MainActivity extends AppCompatActivity {
     private void runStreamSynthesis(final String text) {
         runOnUiThread(() -> {
             setUIState(UIState.PLAYBACK);
-            streamSwitch.setEnabled(false);
             infoTextView.setText("Streaming...");
             streamTextView.setVisibility(View.VISIBLE);
             streamSecsTextView.setVisibility(View.VISIBLE);
@@ -436,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
 
         AtomicBoolean isQueueingStreamingPcm = new AtomicBoolean(false);
         ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
+        CountDownLatch latch = new CountDownLatch(1);
 
         executor1.submit(() -> {
             try {
@@ -445,6 +447,8 @@ public class MainActivity extends AppCompatActivity {
                     synthesizeButton.setEnabled(false);
                 });
 
+                int numIterations = 0;
+                boolean isPcmPlayStarted = false;
                 float secs = 0;
                 isQueueingStreamingPcm.set(true);
 
@@ -457,6 +461,11 @@ public class MainActivity extends AppCompatActivity {
                                 pcmQueue.add(pcm);
                                 secs += (float) pcm.length / orca.getSampleRate();
                                 streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                                if (numIterations == 1) {
+                                    latch.countDown();
+                                    isPcmPlayStarted = true;
+                                }
+                                numIterations++;
                             }
                         } catch (OrcaException e) {
                             mainHandler.post(() -> onOrcaException(e));
@@ -470,6 +479,10 @@ public class MainActivity extends AppCompatActivity {
                         pcmQueue.add(flushedPcm);
                         secs += (float) flushedPcm.length / orca.getSampleRate();
                         streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                    }
+
+                    if (!isPcmPlayStarted) {
+                        latch.countDown();
                     }
                 } catch (OrcaException e) {
                     mainHandler.post(() -> onOrcaException(e));
@@ -496,6 +509,7 @@ public class MainActivity extends AppCompatActivity {
 
                 audioTrack.play();
 
+                latch.await();
                 while(isQueueingStreamingPcm.get() || !pcmQueue.isEmpty()) {
                     if (!pcmQueue.isEmpty()) {
                         short[] pcm = pcmQueue.poll();
@@ -507,7 +521,6 @@ public class MainActivity extends AppCompatActivity {
 
                 mainHandler.post(() -> {
                     stopStreamPlay();
-                    streamSwitch.setEnabled(true);
                     synthesizeButton.setEnabled(true);
                     synthesizeButton.setChecked(false);
                 });
