@@ -98,12 +98,10 @@ def main(args: argparse.Namespace) -> None:
 
         text_stream_duration_seconds = time.time() - time_start_text_stream
 
-        print("\n")
-
         orca.flush()
 
         first_audio_available_seconds = orca.get_time_first_audio_available() - time_start_text_stream
-        print(f"Time to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
+        print(f"\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
         print("Waiting for audio to finish ...")
