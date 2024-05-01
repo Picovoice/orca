@@ -28,17 +28,17 @@ CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
 def tokenize_text(text: str) -> Sequence[str]:
     text = re.sub(CUSTOM_PRON_PATTERN_NO_WHITESPACE, r'{\1} ', text)
 
-    custom_prons = re.findall(CUSTOM_PRON_PATTERN, text)
-    custom_prons = set(["{" + pron + "}" for pron in custom_prons])
+    custom_pronunciations = re.findall(CUSTOM_PRON_PATTERN, text)
+    custom_pronunciations = set(["{" + pron + "}" for pron in custom_pronunciations])
 
     encoder = tiktoken.encoding_for_model("gpt-4")
     tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
 
     custom_pron = ""
-    tokens_with_custom_prons = []
+    tokens_with_custom_pronunciations = []
     for i, token in enumerate(tokens_raw):
         in_custom_pron = False
-        for pron in custom_prons:
+        for pron in custom_pronunciations:
             in_custom_pron_global = len(custom_pron) > 0
             current_match = token.strip() if not in_custom_pron_global else custom_pron + token
             if pron.startswith(current_match):
@@ -47,11 +47,11 @@ def tokenize_text(text: str) -> Sequence[str]:
 
         if not in_custom_pron:
             if custom_pron != "":
-                tokens_with_custom_prons.append(f" {custom_pron}" if i != 0 else custom_pron)
+                tokens_with_custom_pronunciations.append(f" {custom_pron}" if i != 0 else custom_pron)
                 custom_pron = ""
-            tokens_with_custom_prons.append(token)
+            tokens_with_custom_pronunciations.append(token)
 
-    return tokens_with_custom_prons
+    return tokens_with_custom_pronunciations
 
 
 def main(args: argparse.Namespace) -> None:
