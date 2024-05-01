@@ -451,20 +451,28 @@ public class MainActivity extends AppCompatActivity {
                 while (isStreamingText.get() || !textStream.isEmpty()) {
                     if (!textStream.isEmpty()) {
                         String word = textStream.remove(0);
-                        short[] pcm = orcaStream.synthesize(word);
-                        if (pcm != null && pcm.length > 0) {
-                            pcmQueue.add(pcm);
-                            secs += (float) pcm.length / orca.getSampleRate();
-                            streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                        try {
+                            short[] pcm = orcaStream.synthesize(word);
+                            if (pcm != null && pcm.length > 0) {
+                                pcmQueue.add(pcm);
+                                secs += (float) pcm.length / orca.getSampleRate();
+                                streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                            }
+                        } catch (OrcaException e) {
+                            mainHandler.post(() -> onOrcaException(e));
                         }
                     }
                 }
 
-                short[] flushedPcm = orcaStream.flush();
-                if (flushedPcm != null && flushedPcm.length > 0) {
-                    pcmQueue.add(flushedPcm);
-                    secs += (float) flushedPcm.length / orca.getSampleRate();
-                    streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                try {
+                    short[] flushedPcm = orcaStream.flush();
+                    if (flushedPcm != null && flushedPcm.length > 0) {
+                        pcmQueue.add(flushedPcm);
+                        secs += (float) flushedPcm.length / orca.getSampleRate();
+                        streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                    }
+                } catch (OrcaException e) {
+                    mainHandler.post(() -> onOrcaException(e));
                 }
 
                 isQueueingStreamingPcm.set(false);

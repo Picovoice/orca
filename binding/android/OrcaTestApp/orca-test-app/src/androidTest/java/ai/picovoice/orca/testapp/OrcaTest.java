@@ -254,7 +254,7 @@ public class OrcaTest {
             final OrcaAudio result = orca.synthesize(
                     textAlignment,
                     new OrcaSynthesizeParams.Builder()
-                            .setRandomState(42)
+                            .setRandomState(randomState)
                             .build());
             final OrcaWord[] synthesizeTestData = new OrcaWord[alignments.size()];
             for (int i = 0; i < alignments.size(); i++) {
@@ -283,6 +283,46 @@ public class OrcaTest {
                     Objects.equals(modelFileUsed, EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER));
         }
 
+            @Test
+            public void testSynthesizeToFileAlignment() throws OrcaException {
+                final File outputFile = new File(
+                        appContext.getFilesDir(),
+                        "text.wav");
+                OrcaWord[] result = orca.synthesizeToFile(
+                        textAlignment,
+                        outputFile.getAbsolutePath(),
+                        new OrcaSynthesizeParams.Builder()
+                                .setRandomState(randomState)
+                                .build());
+                outputFile.delete();
+
+                final OrcaWord[] synthesizeTestData = new OrcaWord[alignments.size()];
+                for (int i = 0; i < alignments.size(); i++) {
+                    final JsonObject testData = alignments.get(i).getAsJsonObject();
+                    final String word = testData.get("word").getAsString();
+                    final float startSec = testData.get("start_sec").getAsFloat();
+                    final float endSec = testData.get("end_sec").getAsFloat();
+                    final JsonArray phonemesJson = testData.getAsJsonArray("phonemes");
+                    final OrcaPhoneme[] phonemes = new OrcaPhoneme[phonemesJson.size()];
+                    for (int j = 0; j < phonemesJson.size(); j++) {
+                        final JsonObject phonemeJson = phonemesJson.get(j).getAsJsonObject();
+                        phonemes[j] = new OrcaPhoneme(
+                                phonemeJson.get("phoneme").getAsString(),
+                                phonemeJson.get("start_sec").getAsFloat(),
+                                phonemeJson.get("end_sec").getAsFloat());
+                    }
+                    synthesizeTestData[i] = new OrcaWord(
+                            word,
+                            startSec,
+                            endSec,
+                            phonemes);
+                }
+                validateMetadata(
+                        result,
+                        synthesizeTestData,
+                        Objects.equals(modelFileUsed, EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER));
+            }
+
         @Test
         public void testSynthesizeSpeechRate() throws OrcaException {
             final OrcaAudio slow = orca.synthesize(
@@ -297,7 +337,7 @@ public class OrcaTest {
                     textCustomPronunciation,
                     new OrcaSynthesizeParams.Builder()
                             .setSpeechRate(1.3f)
-                            .setRandomState(42)
+                            .setRandomState(randomState)
                             .build());
             assertTrue(slow.getPcm().length > 0);
             assertTrue(fast.getPcm().length < slow.getPcm().length);

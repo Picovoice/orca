@@ -36,7 +36,7 @@ public class Orca {
     private long handle;
 
     public class OrcaStream {
-        private final long stream;
+        private long stream;
 
         public OrcaStream(long stream) {
             this.stream = stream;
@@ -53,6 +53,17 @@ public class Orca {
          * @throws OrcaException if there is an error while synthesizing audio.
          */
         public short[] synthesize(String text) throws OrcaException {
+            if (handle == 0) {
+                throw new OrcaInvalidStateException(
+                        "Attempted to call OrcaStream synthesize after delete."
+                );
+            }
+            if (stream == 0) {
+                throw new OrcaInvalidStateException(
+                        "Attempted to call OrcaStream synthesize after close."
+                );
+            }
+
             short[] pcm = OrcaNative.streamSynthesize(stream, text);
 
             return pcm.length == 0 ? null : pcm;
@@ -64,6 +75,17 @@ public class Orca {
          * @throws OrcaException if there is an error while synthesizing audio.
          */
         public short[] flush() throws OrcaException {
+            if (handle == 0) {
+                throw new OrcaInvalidStateException(
+                        "Attempted to call OrcaStream flush after delete."
+                );
+            }
+            if (stream == 0) {
+                throw new OrcaInvalidStateException(
+                        "Attempted to call OrcaStream flush after close."
+                );
+            }
+
             short[] pcm = OrcaNative.streamFlush(stream);
 
             return pcm.length == 0 ? null : pcm;
@@ -71,12 +93,11 @@ public class Orca {
 
         /**
          * Deletes OrcaStream.
-         *
-         * @throws OrcaException if there is an error while synthesizing audio.
          */
-        public void close() throws OrcaException {
-            if (stream != 0) {
+        public void close() {
+            if (handle != 0 && stream != 0) {
                 OrcaNative.streamClose(stream);
+                stream = 0;
             }
         }
     }
