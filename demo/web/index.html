@@ -287,6 +287,7 @@
 
           const text = streamTextToSynthesizeEl.value;
           const words = text.split(' ').map(str => `${str} `);
+          let numIterations = 0;
 
           for (const word of words) {
             streamTextDisplayEl.innerText += word;
@@ -297,13 +298,20 @@
               const time = curSecs + newSecs;
               streamSecondsDisplayEl.innerText = time.toFixed(3);
               audioBuffer.push(createBuffer(wordPcm));
-              await playStream();
+              if (numIterations === 1) {
+                await playStream();
+              }
+              numIterations++;
             }
             await new Promise(r => setTimeout(r, 100));
           }
 
           const flushPcm = await orcaStream.flush();
           if (flushPcm !== null) {
+            const curSecs = parseFloat(streamSecondsDisplayEl.innerText);
+            const newSecs = flushPcm.length / orca.sampleRate;
+            const time = curSecs + newSecs;
+            streamSecondsDisplayEl.innerText = time.toFixed(3);
             audioBuffer.push(createBuffer(flushPcm));
             await playStream();
           }
