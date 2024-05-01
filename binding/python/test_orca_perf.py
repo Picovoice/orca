@@ -25,7 +25,7 @@ test_data = get_test_data()
 class OrcaPerformanceTestCase(unittest.TestCase):
     access_key: str
     num_test_iterations: int
-    proc_performance_threshold_sec: float
+    proc_performance_threshold_rtf: float
 
     def test_performance_proc(self) -> None:
         for model_path in get_model_paths():
@@ -34,29 +34,31 @@ class OrcaPerformanceTestCase(unittest.TestCase):
                 library_path=default_library_path('../..'),
                 model_path=model_path)
 
-            perf_results = list()
+            num_audio_seconds = 0
+            num_proc_seconds = 0
             for i in range(self.num_test_iterations):
                 start = perf_counter()
-                _ = orca.synthesize(test_data.text)
+                pcm, _ = orca.synthesize(test_data.text)
                 if i > 0:
-                    perf_results.append(perf_counter() - start)
+                    num_audio_seconds += len(pcm) / orca.sample_rate
+                    num_proc_seconds += perf_counter() - start
 
             orca.delete()
 
-            avg_perf = sum(perf_results) / self.num_test_iterations
-            print("Average proc performance [model=%s]: %s seconds" % (os.path.basename(model_path), avg_perf))
-            self.assertLess(avg_perf, self.proc_performance_threshold_sec)
+            real_time_factor = num_audio_seconds / num_proc_seconds
+            print("Average proc performance[model=%s]: RTF = %s " % (os.path.basename(model_path), real_time_factor))
+            self.assertGreater(real_time_factor, self.proc_performance_threshold_rtf)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--access-key', required=True)
     parser.add_argument('--num-test-iterations', type=int, required=True)
-    parser.add_argument('--proc-performance-threshold-sec', type=float, required=True)
+    parser.add_argument('--proc-performance-threshold-rtf', type=float, required=True)
     args = parser.parse_args()
 
     OrcaPerformanceTestCase.access_key = args.access_key
     OrcaPerformanceTestCase.num_test_iterations = args.num_test_iterations
-    OrcaPerformanceTestCase.proc_performance_threshold_sec = args.proc_performance_threshold_sec
+    OrcaPerformanceTestCase.proc_performance_threshold_rtf = args.proc_performance_threshold_rtf
 
     unittest.main(argv=sys.argv[:1])
