@@ -358,7 +358,7 @@ if (num_samples_chunk > 0) {
 }
 ```
 
-Once the pcms are handled, make sure to release the acquired resources for each chunk with:
+Once the PCM chunks are handled, make sure to release the acquired resources for each chunk with:
 
 ```c
 pv_orca_pcm_delete(pcm_chunk);
