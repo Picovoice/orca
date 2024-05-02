@@ -187,6 +187,8 @@ export class Orca {
        * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
        *
        * @param text A string of text with properties described above.
+       *
+       * @return Synthesized speech as raw pcm data. If none is available, null is returned.
        */
       public async synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
         if (typeof text !== 'string') {
@@ -289,7 +291,7 @@ export class Orca {
        * Marks the end of the text stream, flushes internal state of the object,
        * and returns any remaining synthesized speech.
        *
-       * @return Any remaining synthesized speech. If none is available, null is returned.
+       * @return Any remaining synthesized speech as raw pcm data. If none is available, null is returned.
        */
       public async flush(): Promise<OrcaStreamSynthesizeResult> {
         return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
@@ -490,7 +492,8 @@ export class Orca {
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
-   * @return A result object containing the raw pcm and alignments data.
+   *
+   * @return A result object containing the synthesized speech as raw pcm and alignments data.
    */
   public async synthesize(
     text: string,
