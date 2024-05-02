@@ -72,6 +72,8 @@ public class OrcaWord {
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
 
+    private var stream: OpaquePointer?
+    
     private var handle: OpaquePointer?
     /// Orca valid symbols
     private var _validCharacters: Set<String>?
@@ -85,6 +87,9 @@ public class Orca {
     private static var sdk = "ios"
 
     public class OrcaStream {
+
+        private var orca: Orca
+        
         private var stream: OpaquePointer?
 
         /// Generates audio from a text stream. The returned audio contains the speech representation of the text.
@@ -109,14 +114,14 @@ public class Orca {
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try getMessageStack()
-                throw pvStatusToOrcaError(status, "Unable to synthesize streaming speech", messageStack)
+                let messageStack = try orca.getMessageStack()
+                throw orca.pvStatusToOrcaError(status, "Unable to synthesize streaming speech", messageStack)
             }
 
             let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
             let pcm = Array(buffer)
 
-            pv_orca_delete_pcm(cPcm)
+            pv_orca_pcm_delete(cPcm)
 
             return pcm.isEmpty ? nil : pcm
         }
@@ -138,14 +143,14 @@ public class Orca {
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try getMessageStack()
-                throw pvStatusToOrcaError(status, "Unable to flush streaming speech", messageStack)
+                let messageStack = try orca.getMessageStack()
+                throw orca.pvStatusToOrcaError(status, "Unable to flush streaming speech", messageStack)
             }
 
             let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
             let pcm = Array(buffer)
 
-            pv_orca_delete_pcm(cPcm)
+            pv_orca_pcm_delete(cPcm)
 
             return pcm.isEmpty ? nil : pcm
         }
@@ -158,7 +163,8 @@ public class Orca {
             }
         }
 
-        public init(stream: OpaquePointer) {
+        public init(orca: Orca, stream: OpaquePointer) {
+            self.orca = orca
             self.stream = stream
         }
     }
@@ -172,7 +178,7 @@ public class Orca {
         get throws {
             if _validCharacters == nil {
                 var cNumCharacters: Int32 = 0
-                var cCharacters: UnsafePointer<UnsafePointer<Int8>?>?
+                var cCharacters: UnsafeMutablePointer<UnsafePointer<Int8>?>?
                 let status = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
                 if status != PV_STATUS_SUCCESS {
                     let messageStack = try getMessageStack()
@@ -298,9 +304,10 @@ public class Orca {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
 
-        if text.count > Orca.maxCharacterLimit {
+        let orcaMaxChararacterLimit = try maxCharacterLimit
+        if text.count > orcaMaxChararacterLimit {
             throw OrcaInvalidArgumentError(
-                "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
+                "Text length (\(text.count)) must be smaller than \(orcaMaxChararacterLimit)")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
@@ -309,7 +316,7 @@ public class Orca {
         var cPcm: UnsafeMutablePointer<Int16>?
 
         var cNumAlignments: Int32 = 0
-        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer>?
+        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
 
         let status = pv_orca_synthesize(
             handle,
@@ -328,29 +335,35 @@ public class Orca {
         let pcm = Array(buffer)
 
         var wordArray = [OrcaWord]()
-        if cNumAlignments > 0 {
-            for cAlignment in UnsafeBufferPointer(start: cAlignments, count: Int(cNumAlignments)) {
-                var phonemeArray = [OrcaPhoneme]()
-                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes)) {
-                    let phoneme = OrcaPhoneme(
-                        phoneme: String(cString: cPhoneme.phoneme),
-                        startSec: Float(cPhoneme.start_sec),
-                        endSec: Float(cPhoneme.end_sec)
-                    )
-                    phonemeArray.append(phoneme)
-                }
+        if let cAlignments = cAlignments {
+            for alignmentIndex in 0..<Int(cNumAlignments) {
+                if let cAlignment = cAlignments[alignmentIndex]?.pointee {
+                    var phonemeArray = [OrcaPhoneme]()
+                    if let phonemesPointer = cAlignment.phonemes {
+                        for phonemeIndex in 0..<Int(cAlignment.num_phonemes) {
+                            if let cPhoneme = phonemesPointer.advanced(by: phonemeIndex).pointee {
+                                let phoneme = OrcaPhoneme(
+                                    phoneme: String(cString: cPhoneme.pointee.phoneme),
+                                    startSec: Float(cPhoneme.pointee.start_sec),
+                                    endSec: Float(cPhoneme.pointee.end_sec)
+                                )
+                                phonemeArray.append(phoneme)
+                            }
+                        }
+                    }
 
-                let word = OrcaWord(
-                    word: String(cString: cAlignment.word),
-                    startSec: Float(cWord.start_sec),
-                    endSec: Float(cWord.end_sec),
-                    phonemeArray: phonemeArray
-                )
-                wordArray.append(word)
+                    let word = OrcaWord(
+                        word: String(cString: cAlignment.word),
+                        startSec: Float(cAlignment.start_sec),
+                        endSec: Float(cAlignment.end_sec),
+                        phonemeArray: phonemeArray
+                    )
+                    wordArray.append(word)
+                }
             }
         }
 
-        pv_orca_delete_pcm(cPcm)
+        pv_orca_pcm_delete(cPcm)
         pv_orca_synthesize_params_delete(cSynthesizeParams)
         pv_orca_word_alignments_delete(cNumAlignments, cAlignments)
 
@@ -373,16 +386,17 @@ public class Orca {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
-
-        if text.count > Orca.maxCharacterLimit {
+        
+        let orcaMaxChararacterLimit = try maxCharacterLimit
+        if text.count > orcaMaxChararacterLimit {
             throw OrcaInvalidArgumentError(
-                "Text length (\(text.count)) must be smaller than \(Orca.maxCharacterLimit)")
+                "Text length (\(text.count)) must be smaller than \(orcaMaxChararacterLimit)")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
 
         var cNumAlignments: Int32 = 0
-        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer>?
+        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
 
         let status = pv_orca_synthesize_to_file(
             handle,
@@ -397,25 +411,31 @@ public class Orca {
         }
 
         var wordArray = [OrcaWord]()
-        if cNumAlignments > 0 {
-            for cAlignment in UnsafeBufferPointer(start: cAlignments, count: Int(cNumAlignments)) {
-                var phonemeArray = [OrcaPhoneme]()
-                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes)) {
-                    let phoneme = OrcaPhoneme(
-                        phoneme: String(cString: cPhoneme.phoneme),
-                        startSec: Float(cPhoneme.start_sec),
-                        endSec: Float(cPhoneme.end_sec)
-                    )
-                    phonemeArray.append(phoneme)
-                }
+        if let cAlignments = cAlignments {
+            for alignmentIndex in 0..<Int(cNumAlignments) {
+                if let cAlignment = cAlignments[alignmentIndex]?.pointee {
+                    var phonemeArray = [OrcaPhoneme]()
+                    if let phonemesPointer = cAlignment.phonemes {
+                        for phonemeIndex in 0..<Int(cAlignment.num_phonemes) {
+                            if let cPhoneme = phonemesPointer.advanced(by: phonemeIndex).pointee {
+                                let phoneme = OrcaPhoneme(
+                                    phoneme: String(cString: cPhoneme.pointee.phoneme),
+                                    startSec: Float(cPhoneme.pointee.start_sec),
+                                    endSec: Float(cPhoneme.pointee.end_sec)
+                                )
+                                phonemeArray.append(phoneme)
+                            }
+                        }
+                    }
 
-                let word = OrcaWord(
-                    word: String(cString: cAlignment.word),
-                    startSec: Float(cWord.start_sec),
-                    endSec: Float(cWord.end_sec),
-                    phonemeArray: phonemeArray
-                )
-                wordArray.append(word)
+                    let word = OrcaWord(
+                        word: String(cString: cAlignment.word),
+                        startSec: Float(cAlignment.start_sec),
+                        endSec: Float(cAlignment.end_sec),
+                        phonemeArray: phonemeArray
+                    )
+                    wordArray.append(word)
+                }
             }
         }
 
@@ -483,8 +503,6 @@ public class Orca {
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
 
-        let stream: OpaquePointer?
-
         let status = pv_orca_stream_open(
             handle,
             cSynthesizeParams,
@@ -494,7 +512,7 @@ public class Orca {
             throw pvStatusToOrcaError(status, "Unable to open stream", messageStack)
         }
 
-        return OrcaStream(&stream)
+        return OrcaStream(orca: self, stream: stream!)
     }
 
     /// Given a path, return the full path to the resource.
