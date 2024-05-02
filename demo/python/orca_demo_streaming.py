@@ -63,11 +63,14 @@ def main(args: argparse.Namespace) -> None:
     tokens_per_second = args.tokens_per_second
     audio_wait_chunks = args.audio_wait_chunks
 
-    audio_device = None
     try:
         audio_device = StreamingAudioDevice.from_default_device()
+        # Some systems may have issues with PortAudio only when starting the audio device. Test it here.
+        audio_device.start(sample_rate=16000)
+        audio_device.terminate()
         play_audio_callback = audio_device.play
     except PortAudioError as e:
+        audio_device = None
         print(traceback.format_exc())
         print(
             "WARNING: Failed to initialize audio device, see details above. Falling back to running "
@@ -85,9 +88,9 @@ def main(args: argparse.Namespace) -> None:
         audio_wait_chunks=audio_wait_chunks,
     )
 
+    orca.start()
     if audio_device is not None:
         audio_device.start(sample_rate=orca.sample_rate)
-    orca.start()
 
     try:
         print(f"Orca version: {orca.version}\n")

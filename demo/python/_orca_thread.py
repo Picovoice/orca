@@ -99,16 +99,13 @@ class OrcaThread:
 
                 self._num_pcm_chunks_processed += 1
 
-    def _start_thread(self) -> None:
-        self._thread = threading.Thread(target=self._run)
-        self._thread.start()
-
     def _close_thread_blocking(self):
         self._queue.put_nowait(None)
         self._thread.join()
 
     def start(self) -> None:
-        self._start_thread()
+        self._thread = threading.Thread(target=self._run)
+        self._thread.start()
 
     def synthesize(self, text: str) -> None:
         self._queue.put_nowait(self.OrcaInput(text=text, flush=False))
@@ -116,7 +113,7 @@ class OrcaThread:
     def flush(self) -> None:
         self._queue.put_nowait(self.OrcaInput(text="", flush=True))
         self._close_thread_blocking()
-        self._start_thread()
+        self.start()
 
     def delete(self) -> None:
         self._close_thread_blocking()
