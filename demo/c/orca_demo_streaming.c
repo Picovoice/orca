@@ -417,7 +417,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stdout, "\nSynthesizing text `%s` ...\n", text);
+    fprintf(stdout, "\nSynthesizing text `%s` \n", text);
 
     int32_t num_samples_chunks[MAX_NUM_CHUNKS] = {0};
     double start_chunks[MAX_NUM_CHUNKS] = {0};
@@ -564,13 +564,13 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         double process_time = end_chunks[i] - start_chunks[i];
         fprintf(
                 stdout,
-                "Audio chunk #%d: length: %.3f s, processing time %.3f s\n",
+                "Audio chunk #%d: length: %.2f s, processing time %.2f s\n",
                 i,
                 num_seconds,
                 process_time);
     }
 
-    fprintf(stdout, "\nSaved audio to `%s`\n", output_path);
+    fprintf(stdout, "\nSaved final audio to `%s`\n", output_path);
 
     close_dl(orca_library);
 

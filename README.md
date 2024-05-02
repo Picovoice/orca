@@ -28,27 +28,30 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 ## Table of Contents
 
 - [Orca](#orca)
-    - [Table of Contents](#table-of-contents)
-    - [Overview](#overview)
-        - [Custom pronunciations](#custom-pronunciations)
-        - [Voices](#voices)
-        - [Speech control](#speech-control)
-        - [Audio output](#audio-output)
-    - [Demos](#demos)
-        - [Python](#python-demos)
-        - [iOS](#ios-demo)
-        - [C](#c-demos)
-        - [Web](#web-demos)
-        - [Android](#android-demo)
-    - [SDKs](#sdks)
-        - [Python](#python)
-        - [iOS](#ios)
-        - [C](#c)
-        - [Web](#web)
-        - [Android](#android)
-    - [AccessKey](#accesskey)
-    - [Releases](#releases)
-    - [FAQ](#faq)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+    - [Orca streaming text synthesis](#orca-streaming-text-synthesis)
+    - [Text input](#text-input)
+    - [Custom pronunciations](#custom-pronunciations)
+    - [Voices](#voices)
+    - [Speech control](#speech-control)
+    - [Audio output](#audio-output)
+  - [AccessKey](#accesskey)
+  - [Demos](#demos)
+    - [Python Demos](#python-demos)
+    - [iOS Demo](#ios-demo)
+    - [C Demos](#c-demos)
+    - [Web Demos](#web-demos)
+    - [Android Demo](#android-demo)
+  - [SDKs](#sdks)
+    - [Python](#python)
+    - [iOS](#ios)
+    - [C](#c)
+    - [Web](#web)
+    - [Android](#android)
+  - [Releases](#releases)
+    - [v0.1.0 - January 24th, 2024](#v010---january-24th-2024)
+  - [FAQ](#faq)
 
 ## Overview
 
@@ -125,6 +128,10 @@ pip3 install pvorcademo
 ```
 
 ```console
+orca_demo_streaming --access_key ${ACCESS_KEY} --text-to-stream ${TEXT}
+```
+
+```console
 orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
@@ -148,16 +155,16 @@ For more information about iOS demos go to [demo/ios](demo/ios).
 
 ### C Demos
 
-Build the demo:
+Build the streaming demo:
 
 ```console
-cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_demo
+cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_demo_streaming
 ```
 
 Run the demo:
 
 ```console
-./demo/c/build/orca_demo -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
+./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
 ### Web Demos
@@ -197,17 +204,44 @@ Install the Python SDK:
 pip3 install pvorca
 ```
 
-Create an instance of the engine and generate speech:
+Create and instance of the engine:
 
 ```python
 import pvorca
 
 orca = pvorca.create(access_key='${ACCESS_KEY}')
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/).
+To synthesize a text stream, create an Orca Stream object and add text to it one-by-one:
+
+```python
+stream = orca.open_stream()
+
+for text_chunk in text_generator():
+    pcm = stream.synthesize(text_chunk)
+    if pcm is not None:
+        # handle pcm
+
+pcm = stream.flush()
+if pcm is not None:
+    # handle pcm
+```
+
+The `text_generator()` function can be any stream generating text, for example an LLM response.
+When done with streaming text synthesis, the stream object needs to be closed:
+
+```python
+stream.close()
+```
+
+Use single synthesis mode if the complete text is known in advance:
+
+```python
 pcm, alignments = orca.synthesize('${TEXT}')
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/) and `${TEXT}` with
-the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+Replace `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
 
 Finally, when done make sure to explicitly release the resources:
 
