@@ -27,6 +27,11 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: [ '3.8', '3.9', '3.10' ]
+        include:
+          - os: ubuntu-latest
+            install_dep: sudo apt install libportaudio2
+          - os: windows-latest
+          - os: macos-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -46,7 +51,9 @@ jobs:
           pip install wheel && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-0.1.4-py3-none-any.whl
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          ${{matrix.install_dep}}
+          pip install -r requirements.txt
 
       - name: Test streaming
         run: >
