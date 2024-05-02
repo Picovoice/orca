@@ -1,15 +1,15 @@
 # Orca
 
-[![GitHub](https://img.shields.io/github/license/Picovoice/picovoice)](https://github.com/Picovoice/picovoice/)
+[![GitHub](https://img.shields.io/github/license/Picovoice/orca)](https://github.com/Picovoice/orca/)
 
+[![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/orca-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/orca-android/)
+[![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)
+[![CocoaPods](https://img.shields.io/cocoapods/v/Orca-iOS)](https://cocoapods.org/pods/Orca-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
-[![npm](https://img.shields.io/npm/v/@picovoice/orca-web)](https://www.npmjs.com/package/@picovoice/orca-web)
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-<!-- markdown-link-check-disable -->
-[![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)
-<!-- markdown-link-check-enable -->
+[![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)<!-- markdown-link-check-disable-line -->
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCAdi9sTCXLosG1XeqDwLx7w?label=YouTube&style=social)](https://www.youtube.com/channel/UCAdi9sTCXLosG1XeqDwLx7w)
 
 Orca is an on-device text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice assistants.
@@ -52,6 +52,12 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
   - [Releases](#releases)
     - [v0.1.0 - January 24th, 2024](#v010---january-24th-2024)
   - [FAQ](#faq)
+
+## Language Support
+
+- Orca Text-to-Speech currently supports English only.
+- Support for [additional languages is available for commercial customers](https://picovoice.ai/consulting/) on a
+  case-by-case basis.
 
 ## Overview
 
