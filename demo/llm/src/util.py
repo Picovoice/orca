@@ -82,7 +82,7 @@ class Timer:
 
 class ProgressPrinter:
     TIMER_BAR_MAX_RED_SECONDS = 2.0
-    TIMER_BAR_SYMBOLS_PER_SECONDS = 50
+    TIMER_BAR_SYMBOLS_PER_SECONDS = 40
     TIMER_BAR_SYMBOL = ">"
 
     TIMER_MESSAGE_LLM = "Time to wait for LLM: "

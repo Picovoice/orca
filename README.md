@@ -12,7 +12,8 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 <!-- markdown-link-check-enable -->
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCAdi9sTCXLosG1XeqDwLx7w?label=YouTube&style=social)](https://www.youtube.com/channel/UCAdi9sTCXLosG1XeqDwLx7w)
 
-Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+Orca is an on-device text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice assistants.
+Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
@@ -51,11 +52,16 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Overview
 
-### Single synthesis & streaming input synthesis
+### Orca streaming text synthesis
+
+Orca is a text-to-speech engine designed specifically for LLMs. It can process
+incoming text streams in real-time, generating audio continuously, i.e., as the LLM produces tokens,
+Orca generates speech in parallel.
+This enables seamless conversations with voice assistants, eliminating any audio delays.
 
 ### Text input
 
-Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers, 
+Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
 basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
 `valid_characters()` method provided in the Orca SDK you are using.
 Pronunciations of characters or words not supported by this list can be achieved with
