@@ -17,9 +17,10 @@ from typing import Sequence
 
 import tiktoken
 from pvorca import OrcaActivationLimitError
+from sounddevice import PortAudioError
 
-from _orca_thread import OrcaThread
 from _audio_device import StreamingAudioDevice
+from _orca_thread import OrcaThread
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
 CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
@@ -62,16 +63,21 @@ def main(args: argparse.Namespace) -> None:
     tokens_per_second = args.tokens_per_second
     audio_wait_chunks = args.audio_wait_chunks
 
+    audio_device = None
     try:
         audio_device = StreamingAudioDevice.from_default_device()
-    except Exception as e:
+        play_audio_callback = audio_device.play
+    except PortAudioError as e:
         print(traceback.format_exc())
-        raise RuntimeError(
-            "Failed to initialize audio device. See error details above and make sure "
-            "you have an audio output device connected.")
+        print(
+            "WARNING: Failed to initialize audio device, see details above. Falling back to running "
+            "the demo without audio\n")
+
+        def play_audio_callback(pcm: Sequence[int]):
+            pass
 
     orca = OrcaThread(
-        play_audio_callback=audio_device.play,
+        play_audio_callback=play_audio_callback,
         num_tokens_per_second=tokens_per_second,
         access_key=access_key,
         model_path=model_path,
@@ -79,7 +85,8 @@ def main(args: argparse.Namespace) -> None:
         audio_wait_chunks=audio_wait_chunks,
     )
 
-    audio_device.start(sample_rate=orca.sample_rate)
+    if audio_device is not None:
+        audio_device.start(sample_rate=orca.sample_rate)
     orca.start()
 
     try:
@@ -101,11 +108,12 @@ def main(args: argparse.Namespace) -> None:
         orca.flush()
 
         first_audio_available_seconds = orca.get_time_first_audio_available() - time_start_text_stream
-        print(f"\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
+        print(f"\n\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
-        print("Waiting for audio to finish ...")
-        audio_device.flush_and_terminate()
+        if audio_device is not None:
+            print("Waiting for audio to finish ...")
+            audio_device.flush_and_terminate()
 
     except OrcaActivationLimitError:
         print("AccessKey has reached its processing limit")
