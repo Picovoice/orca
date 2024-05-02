@@ -78,7 +78,7 @@ public class Orca {
     /// Orca sample rate
     private var _sampleRate: Int32?
     /// Maximum number of characters allowed in a single synthesis request.
-    private var _maxCharacterLimit = Int32?
+    private var _maxCharacterLimit: Int32?
     /// Orca version string
     public static let version = String(cString: pv_orca_version())
 
@@ -95,11 +95,7 @@ public class Orca {
         ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
         /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
         /// - Throws: OrcaError
-        public func synthesize(text: String) throws -> [Int16] {
-            if handle == nil {
-                throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
-            }
-
+        public func synthesize(text: String) throws -> [Int16]? {
             if stream == nil {
                 throw OrcaInvalidStateError("Unable to synthesize - stream has not been opened, or has been closed")
             }
@@ -129,11 +125,7 @@ public class Orca {
         ///
         /// - Returns: The flushed audio, stored as a sequence of 16-bit linearly-encoded integers.
         /// - Throws: OrcaError
-        public func flush() throws -> [Int16] {
-            if handle == nil {
-                throw OrcaInvalidStateError("Unable to flush - resources have been released")
-            }
-
+        public func flush() throws -> [Int16]? {
             if stream == nil {
                 throw OrcaInvalidStateError("Unable to flush - stream has not been opened, or has been closed")
             }
@@ -189,7 +181,10 @@ public class Orca {
 
                 var characters: Set<String> = []
                 for i in 0..<cNumCharacters {
-                    characters.insert(String(cString: cCharacters!.advanced(by: Int(i)).pointee!))
+                    if let cString = cCharacters?.advanced(by: Int(i)).pointee {
+                        let swiftString = String(cString: cString)
+                        characters.insert(swiftString)
+                    }
                 }
 
                 pv_orca_valid_characters_delete(cCharacters)
@@ -298,7 +293,7 @@ public class Orca {
     ///   - randomState: Random state for the generated audio.
     /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers, with their associated metadata.
     /// - Throws: OrcaError
-    public func synthesize(text: String, speechRate: Double? = nil, randomState: NSDecimalNumber? = nil) throws -> (pcm: [Int16], wordArray: [OrcaWord]) {
+    public func synthesize(text: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> (pcm: [Int16], wordArray: [OrcaWord]) {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
@@ -314,7 +309,7 @@ public class Orca {
         var cPcm: UnsafeMutablePointer<Int16>?
 
         var cNumAlignments: Int32 = 0
-        var cAlignments: OpaquePointer<OpaquePointer>?
+        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer>?
 
         let status = pv_orca_synthesize(
             handle,
@@ -336,11 +331,11 @@ public class Orca {
         if cNumAlignments > 0 {
             for cAlignment in UnsafeBufferPointer(start: cAlignments, count: Int(cNumAlignments)) {
                 var phonemeArray = [OrcaPhoneme]()
-                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes))
+                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes)) {
                     let phoneme = OrcaPhoneme(
                         phoneme: String(cString: cPhoneme.phoneme),
                         startSec: Float(cPhoneme.start_sec),
-                        endSec: Float(cPhoneme.end_sec))
+                        endSec: Float(cPhoneme.end_sec)
                     )
                     phonemeArray.append(phoneme)
                 }
@@ -349,7 +344,7 @@ public class Orca {
                     word: String(cString: cAlignment.word),
                     startSec: Float(cWord.start_sec),
                     endSec: Float(cWord.end_sec),
-                    phonemeArray: phonemeArray)
+                    phonemeArray: phonemeArray
                 )
                 wordArray.append(word)
             }
@@ -374,7 +369,7 @@ public class Orca {
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
     ///   - randomState: Random state for the generated audio.
     /// - Throws: OrcaError
-    public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil, randomState: NSDecimalNumber? = nil) throws -> [OrcaWord] {
+    public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
@@ -387,7 +382,7 @@ public class Orca {
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
 
         var cNumAlignments: Int32 = 0
-        var cAlignments: OpaquePointer<OpaquePointer>?
+        var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer>?
 
         let status = pv_orca_synthesize_to_file(
             handle,
@@ -405,11 +400,11 @@ public class Orca {
         if cNumAlignments > 0 {
             for cAlignment in UnsafeBufferPointer(start: cAlignments, count: Int(cNumAlignments)) {
                 var phonemeArray = [OrcaPhoneme]()
-                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes))
+                for cPhoneme in UnsafeBufferPointer(start: cAlignment.phonemes, count: Int(cAlignment.num_phonemes)) {
                     let phoneme = OrcaPhoneme(
                         phoneme: String(cString: cPhoneme.phoneme),
                         startSec: Float(cPhoneme.start_sec),
-                        endSec: Float(cPhoneme.end_sec))
+                        endSec: Float(cPhoneme.end_sec)
                     )
                     phonemeArray.append(phoneme)
                 }
@@ -418,7 +413,7 @@ public class Orca {
                     word: String(cString: cAlignment.word),
                     startSec: Float(cWord.start_sec),
                     endSec: Float(cWord.end_sec),
-                    phonemeArray: phonemeArray)
+                    phonemeArray: phonemeArray
                 )
                 wordArray.append(word)
             }
@@ -442,11 +437,11 @@ public class Orca {
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
     ///   - randomState: Random state for the generated audio.
     /// - Throws: OrcaError
-    public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil, randomState: NSDecimalNumber? = nil) throws -> [OrcaWord] {
+    public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
         try synthesizeToFile(text: text, outputPath: outputURL.path, speechRate: speechRate, randomState: randomState)
     }
 
-    private func getCSynthesizeParams(speechRate: Double? = nil, randomState: NSDecimalNumber? = nil) throws -> OpaquePointer? {
+    private func getCSynthesizeParams(speechRate: Double? = nil, randomState: Int64? = nil) throws -> OpaquePointer? {
         var cParams: OpaquePointer?
 
         var status = pv_orca_synthesize_params_init(&cParams)
@@ -481,7 +476,7 @@ public class Orca {
     ///   - randomState: Random state for the generated audio.
     /// - Returns: An OrcaStream Object.
     /// - Throws: OrcaError
-    public func streamOpen(speechRate: Double? = nil, randomState: NSDecimalNumber? = nil) throws -> OrcaStream {
+    public func streamOpen(speechRate: Double? = nil, randomState: Int64? = nil) throws -> OrcaStream {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
