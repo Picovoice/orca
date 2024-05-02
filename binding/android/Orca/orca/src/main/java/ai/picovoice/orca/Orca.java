@@ -50,6 +50,7 @@ public class Orca {
          *               `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
          *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
          *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+         * @return The output audio. If none is available, null is returned.
          * @throws OrcaException if there is an error while synthesizing audio.
          */
         public short[] synthesize(String text) throws OrcaException {
@@ -60,7 +61,7 @@ public class Orca {
             }
             if (stream == 0) {
                 throw new OrcaInvalidStateException(
-                        "Attempted to call OrcaStream synthesize after close."
+                        "Attempted to call OrcaStream synthesize without an open stream."
                 );
             }
 
@@ -72,6 +73,7 @@ public class Orca {
         /**
          * Flushes remaining text. The returned audio contains the speech representation of the text.
          *
+         * @return Any remaining output audio. If none is available, null is returned.
          * @throws OrcaException if there is an error while synthesizing audio.
          */
         public short[] flush() throws OrcaException {
@@ -82,7 +84,7 @@ public class Orca {
             }
             if (stream == 0) {
                 throw new OrcaInvalidStateException(
-                        "Attempted to call OrcaStream flush after close."
+                        "Attempted to call OrcaStream flush without an open stream."
                 );
             }
 
@@ -160,7 +162,7 @@ public class Orca {
      *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
      *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
      * @param params Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
-     * @return The output audio.
+     * @return The output audio and alignments data.
      * @throws OrcaException if there is an error while synthesizing audio.
      */
     public OrcaAudio synthesize(String text, OrcaSynthesizeParams params) throws OrcaException {
@@ -189,6 +191,7 @@ public class Orca {
      * @param outputPath Absolute path to the output audio file. The output file is saved as
      *                   `WAV (.wav)` and consists of a single mono channel.
      * @param params     Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
+     * @return The alignments data.
      * @throws OrcaException if there is an error while synthesizing audio to file.
      */
     public OrcaWord[] synthesizeToFile(
