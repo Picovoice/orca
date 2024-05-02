@@ -65,14 +65,14 @@ PV_API pv_status_t pv_get_error_stack(
         char ***message_stack,
         int32_t *message_stack_depth);
 
-PV_API void pv_set_sdk(const char *sdk);
-
 /**
  * This function frees the memory used by error messages allocated by `pv_get_error_stack`.
  *
  * @param message_stack Array of messages relating to the failure, allocated from `pv_get_error_stack`.
  */
 PV_API void pv_free_error_stack(char **message_stack);
+
+PV_API void pv_set_sdk(const char *sdk);
 
 #ifdef __cplusplus
 }

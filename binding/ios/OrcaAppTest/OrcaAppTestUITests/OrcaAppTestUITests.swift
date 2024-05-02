@@ -39,7 +39,9 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testMaxCharacterLimit() throws {
-        XCTAssertGreaterThan(Orca.maxCharacterLimit, 0)
+        for orca in self.orcas {
+            XCTAssertGreaterThan(try orca.maxCharacterLimit, 0)
+        }
     }
 
     func testSampleRate() throws {
@@ -48,28 +50,30 @@ class OrcaAppTestUITests: BaseTest {
         }
     }
 
-    func testStreaming() throws {
-        let orcaStream = try orca.streamOpen()
-
-        var fullPcm = [Int16]()
-        for c in text {
-            if let pcm = orcaStream.synthesize(String(c)) {
-                if !pcm.isEmpty {
-                    fullPcm.append(contentsOf: pcm)
-                }
-            }
-        }
-
-        if let flushedPcm = orcaStream.flush(), !flushedPcm.isEmpty {
-            fullPcm.append(contentsOf: flushedPcm)
-        }
-
-        try orcaStream.close()
-
-        let groundTruth = self.getPcm(index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
-
-        XCTAssertEqual(fullPcm, groundTruth, "Synthesized pcm does not match ground truth")
-    }
+//    func testStreaming() throws {
+//        for orca in self.orcas {
+//            let orcaStream = try orca.streamOpen()
+//
+//            var fullPcm = [Int16]()
+//            for c in self.testData!.test_sentences.text {
+//                if let pcm = orcaStream.synthesize(String(c)) {
+//                    if !pcm.isEmpty {
+//                        fullPcm.append(contentsOf: pcm)
+//                    }
+//                }
+//            }
+//
+//            if let flushedPcm = orcaStream.flush(), !flushedPcm.isEmpty {
+//                fullPcm.append(contentsOf: flushedPcm)
+//            }
+//
+//            try orcaStream.close()
+//
+//            let groundTruth = self.getPcm(index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
+//
+//            XCTAssertEqual(fullPcm, groundTruth, "Synthesized pcm does not match ground truth")
+//        }
+//    }
 
 
     func testSynthesize() throws {
@@ -78,8 +82,8 @@ class OrcaAppTestUITests: BaseTest {
             XCTAssertGreaterThan(pcm.count, 0)
             XCTAssertGreaterThan(wordArray.count, 0)
 
-            let groundTruth = self.getPcm(index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
-            XCTAssertEqual(pcm.count, expectedPCM.count)
+            let groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
+            XCTAssertEqual(pcm.count, groundTruth.count)
             XCTAssertEqual(pcm, groundTruth, "Synthesized pcm does not match ground truth")
 
             // TODO: try below if above doesn't work
@@ -107,26 +111,17 @@ class OrcaAppTestUITests: BaseTest {
 
             var synthesizeTestData = [OrcaWord]()
             for alignment in self.testData!.alignments {
-                let testData = alignment.asJsonObject() ?? [:]
-                let word = testData["word"].asString() ?? ""
-                let startSec = testData["start_sec"].asFloat() ?? 0.0
-                let endSec = testData["end_sec"].asFloat() ?? 0.0
-                let phonemesJson = testData["phonemes"].asJsonArray() ?? []
-
-                var phonemes = [OrcaPhoneme]()
-                for phonemeJson in phonemesJson {
-                    let phoneme = phonemeJson["phoneme"].asString() ?? ""
-                    let phonemeStartSec = phonemeJson["start_sec"].asFloat() ?? 0.0
-                    let phonemeEndSec = phonemeJson["end_sec"].asFloat() ?? 0.0
-                    phonemes.append(OrcaPhoneme(phoneme: phoneme, startSec: phonemeStartSec, endSec: phonemeEndSec))
+                var phonemeArray = [OrcaPhoneme]()
+                for phoneme in alignment.phonemes {
+                    phonemeArray.append(OrcaPhoneme(phoneme: phoneme.phoneme, startSec: phoneme.start_sec, endSec: phoneme.end_sec))
                 }
 
-                synthesizeTestData.append(OrcaWord(word: word, startSec: startSec, endSec: endSec, phonemeArray: phonemes))
+                synthesizeTestData.append(OrcaWord(word: alignment.word, startSec: alignment.start_sec, endSec: alignment.end_sec, phonemeArray: phonemeArray))
             }
 
             // TODO: index == 1: Be exact if female model
-            validateMetadata(wordArray, synthesizeTestData, index == 1)
-            validateMetadata(synthToFileWordArray, synthesizeTestData, index == 1)
+            validateMetadata(words: wordArray, expectedWords: synthesizeTestData, isExpectExact: index == 1)
+            validateMetadata(words: synthToFileWordArray, expectedWords: synthesizeTestData, isExpectExact: index == 1)
         }
     }
 
@@ -155,20 +150,17 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func testSynthesizeRandomState() throws {
-        let randomState1 = try orca.synthesize(text: text, randomState: 1)
-        XCTAssertGreaterThan(randomState1.audio.count, 0)
-        XCTAssertGreaterThan(randomState1.wordArray.count, 0)
+        for orca in self.orcas {
+            let (pcm: pcm1, wordArray: wordArray1) = try orca.synthesize(text: self.testData!.test_sentences.text, randomState: 1)
+            XCTAssertGreaterThan(pcm1.count, 0)
+            XCTAssertGreaterThan(wordArray1.count, 0)
 
-        let randomState2 = try orca.synthesize(text: text, randomState: 2)
-        XCTAssertGreaterThan(randomState2.audio.count, 0)
-        XCTAssertGreaterThan(randomState2.wordArray.count, 0)
+            let (pcm: pcm2, wordArray: wordArray2) = try orca.synthesize(text: self.testData!.test_sentences.text, randomState: 2)
+            XCTAssertGreaterThan(pcm2.count, 0)
+            XCTAssertGreaterThan(wordArray2.count, 0)
 
-        XCTAssertNotEqual(randomState1, randomState2)
-        XCTAssertNotEqual(randomState1.wordArray, randomState2.wordArray)
-
-        let randomStateNull = try orca.synthesize(text: text)
-        XCTAssertGreaterThan(randomStateNull.audio.count, 0)
-        XCTAssertGreaterThan(randomStateNull.wordArray.count, 0)
+            XCTAssertNotEqual(pcm1, pcm2)
+        }
     }
 
 

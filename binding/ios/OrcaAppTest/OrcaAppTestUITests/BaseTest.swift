@@ -14,14 +14,29 @@ import Orca
 
 struct TestData: Decodable {
     var test_sentences: TestSentences
-    var wer_threshold: Float32
+    var random_state: Int64
+    var alignments: [TestAlignments]
 }
 
 struct TestSentences: Decodable {
     var text: String
     var text_no_punctuation: String
     var text_custom_pronunciation: String
+    var text_alignment: String
     var text_invalid: [String]
+}
+
+struct TestAlignments: Decodable {
+    var word: String
+    var start_sec: Float
+    var end_sec: Float
+    var phonemes: [TestPhonemes]
+}
+
+struct TestPhonemes: Decodable {
+    var phoneme: String
+    var start_sec: Float
+    var end_sec: Float
 }
 
 extension String {
@@ -40,10 +55,10 @@ class BaseTest: XCTestCase {
     var orcas: [Orca] = []
     var testData: TestData?
 
-    let testAudioMaleSingle = Bundle(for: BaseTest.self).url(forResource: "orca_params_male_single", withExtension: "wav")!
-    let testAudioMaleStream = Bundle(for: BaseTest.self).url(forResource: "orca_params_male_stream", withExtension: "wav")!
-    let testAudioFemaleSingle = Bundle(for: BaseTest.self).url(forResource: "orca_params_female_single", withExtension: "wav")!
-    let testAudioFemaleStream = Bundle(for: BaseTest.self).url(forResource: "orca_params_female_stream", withExtension: "wav")!
+    let testAudioMaleSingle = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_male_single", withExtension: "wav")!
+    let testAudioMaleStream = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_male_stream", withExtension: "wav")!
+    let testAudioFemaleSingle = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_female_single", withExtension: "wav")!
+    let testAudioFemaleStream = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_female_stream", withExtension: "wav")!
 
     override func setUp() async throws {
         try await super.setUp()
