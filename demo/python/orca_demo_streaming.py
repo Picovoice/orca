@@ -145,7 +145,7 @@ if __name__ == "__main__":
         "--tokens-per-second",
         type=int,
         default=15,
-        help="Number of tokens to be streamed per second to Orca, simulating an LLM response.")
+        help="Number of tokens per second to be streamed to Orca, simulating an LLM response.")
     parser.add_argument(
         "--audio-wait-chunks",
         type=int,
