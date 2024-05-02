@@ -30,47 +30,6 @@ extension String {
     }
 }
 
-extension String {
-    public func levenshtein(_ other: String) -> Int {
-        let sCount = self.count
-        let oCount = other.count
-
-        guard sCount != 0 else {
-            return oCount
-        }
-
-        guard oCount != 0 else {
-            return sCount
-        }
-
-        let line: [Int]  = Array(repeating: 0, count: oCount + 1)
-        var mat: [[Int]] = Array(repeating: line, count: sCount + 1)
-
-        for i in 0...sCount {
-            mat[i][0] = i
-        }
-
-        for j in 0...oCount {
-            mat[0][j] = j
-        }
-
-        for j in 1...oCount {
-            for i in 1...sCount {
-                if self[i - 1] == other[j - 1] {
-                    mat[i][j] = mat[i - 1][j - 1]       // no operation
-                } else {
-                    let del = mat[i - 1][j] + 1         // deletion
-                    let ins = mat[i][j - 1] + 1         // insertion
-                    let sub = mat[i - 1][j - 1] + 1     // substitution
-                    mat[i][j] = min(min(del, ins), sub)
-                }
-            }
-        }
-
-        return mat[sCount][oCount]
-    }
-}
-
 class BaseTest: XCTestCase {
     let params: [String] = [
         "male",
@@ -80,6 +39,11 @@ class BaseTest: XCTestCase {
     let accessKey = "{TESTING_ACCESS_KEY_HERE}"
     var orcas: [Orca] = []
     var testData: TestData?
+
+    let testAudioMaleSingle = Bundle(for: BaseTest.self).url(forResource: "orca_params_male_single", withExtension: "wav")!
+    let testAudioMaleStream = Bundle(for: BaseTest.self).url(forResource: "orca_params_male_stream", withExtension: "wav")!
+    let testAudioFemaleSingle = Bundle(for: BaseTest.self).url(forResource: "orca_params_female_single", withExtension: "wav")!
+    let testAudioFemaleStream = Bundle(for: BaseTest.self).url(forResource: "orca_params_female_stream", withExtension: "wav")!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -118,7 +82,39 @@ class BaseTest: XCTestCase {
         return testData
     }
 
-    func characterErrorRate(transcript: String, expectedTranscript: String) -> Float {
-        return Float(transcript.levenshtein(expectedTranscript)) / Float(expectedTranscript.count)
+    func getPcm(fileUrl: URL) throws -> [Int16] {
+        let data = try Data(contentsOf: fileUrl)
+        var pcm = [Int16](repeating: 0, count: data.count / 2)
+
+        _ = pcm.withUnsafeMutableBytes {
+            data.copyBytes(to: $0, from: 44..<data.count)
+        }
+        return pcm
+    }
+
+    func validateMetadata(words: [OrcaWord], expectedWords: [OrcaWord], isExpectExact: Bool) {
+        XCTAssertEqual(words.count, expectedWords.count)
+
+        for i in 0..<words.count {
+            XCTAssertEqual(words[i].word, expectedWords[i].word)
+
+            if isExpectExact {
+                XCTAssertEqual(words[i].startSec, expectedWords[i].startSec, accuracy: 0.1)
+                XCTAssertEqual(words[i].endSec, expectedWords[i].endSec, accuracy: 0.1)
+            }
+
+            let phonemes = words[i].phonemeArray
+            let expectedPhonemes = expectedWords[i].phonemeArray
+            XCTAssertEqual(phonemes.count, expectedPhonemes.count)
+
+            for j in 0..<phonemes.count {
+                XCTAssertEqual(phonemes[j].phoneme, expectedPhonemes[j].phoneme)
+
+                if isExpectExact {
+                    XCTAssertEqual(phonemes[j].startSec, expectedPhonemes[j].startSec, accuracy: 0.1)
+                    XCTAssertEqual(phonemes[j].endSec, expectedPhonemes[j].endSec, accuracy: 0.1)
+                }
+            }
+        }
     }
 }

@@ -2,16 +2,13 @@ source 'https://cdn.cocoapods.org/'
 platform :ios, '13.0'
 
 target 'OrcaAppTest' do
-  pod 'Orca-iOS', '~> 0.1.0'
-  pod 'Leopard-iOS', '~> 2.0.1'
+  pod 'Orca-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec'
 end
 
 target 'OrcaAppTestUITests' do
-  pod 'Orca-iOS', '~> 0.1.0'
-  pod 'Leopard-iOS', '~> 2.0.1'
+  pod 'Orca-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec'
 end
 
 target 'PerformanceTest' do
-  pod 'Orca-iOS', '~> 0.1.0'
-  pod 'Leopard-iOS', '~> 2.0.1'
+  pod 'Orca-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec'
 end
