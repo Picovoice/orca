@@ -62,19 +62,20 @@ def main(args: argparse.Namespace) -> None:
     text = args.text_to_stream
     tokens_per_second = args.tokens_per_second
     audio_wait_chunks = args.audio_wait_chunks
+    audio_device_index = args.audio_device_index
 
     try:
-        audio_device = StreamingAudioDevice.from_default_device()
+        audio_device = StreamingAudioDevice(device_index=audio_device_index)
         # Some systems may have issues with PortAudio only when starting the audio device. Test it here.
         audio_device.start(sample_rate=16000)
         audio_device.terminate()
         play_audio_callback = audio_device.play
     except PortAudioError as e:
-        audio_device = None
         print(traceback.format_exc())
         print(
             "WARNING: Failed to initialize audio device, see details above. Falling back to running "
             "the demo without audio playback.\n")
+        audio_device = None
 
         def play_audio_callback(pcm: Sequence[int]):
             pass
@@ -154,5 +155,16 @@ if __name__ == "__main__":
         type=int,
         default=None,
         help="Number of PCM chunks to wait before starting to play audio. Default: system-dependent.")
+    parser.add_argument(
+        "--show-audio-devices",
+        action="store_true",
+        help="Only list available audio output devices and exit")
+    parser.add_argument('--audio-device-index', type=int, default=None, help='Index of input audio device')
 
-    main(parser.parse_args())
+    arg = parser.parse_args()
+
+    if arg.show_audio_devices:
+        print(StreamingAudioDevice.list_output_devices())
+        exit(0)
+
+    main(arg)

@@ -13,6 +13,8 @@ import time
 from queue import Queue
 from typing import (
     Any,
+    Dict,
+    Optional,
     Sequence,
 )
 
@@ -22,7 +24,11 @@ from sounddevice import OutputStream, query_devices
 
 
 class StreamingAudioDevice:
-    def __init__(self, device_index: int) -> None:
+    def __init__(self, device_index: Optional[int] = None) -> None:
+        if device_index is None:
+            device_info = query_devices(kind="output")
+            device_index = int(device_info["index"])
+
         self._device_index = device_index
         self._queue: Queue[Sequence[int]] = Queue()
 
@@ -93,11 +99,9 @@ class StreamingAudioDevice:
         self._stream.stop()
         self._stream.close()
 
-    @classmethod
-    def from_default_device(cls) -> 'StreamingAudioDevice':
-        device_info = query_devices(kind="output")
-        device_index = int(device_info["index"])
-        return cls(device_index=device_index)
+    @staticmethod
+    def list_output_devices() -> Dict[str, Any]:
+        return query_devices(kind="output")
 
 
 __all__ = [

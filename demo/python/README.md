@@ -15,7 +15,7 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 
 ## Compatibility
 
-- Python 3.7+
+- Python 3.8+
 - Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (5, 4, 3), and NVIDIA Jetson Nano.
 
 ## Installation
