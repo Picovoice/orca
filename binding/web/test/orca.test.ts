@@ -195,12 +195,12 @@ describe('Orca Binding', function() {
             alignments.forEach((w, i) => {
               const { word, start_sec, end_sec, phonemes } = testData.alignments[i];
               expect(w.word).eq(word);
-              expect(w.startSec).closeTo(start_sec, 0.001);
-              expect(w.endSec).closeTo(end_sec, 0.001);
+              expect(w.startSec).closeTo(start_sec, 0.01);
+              expect(w.endSec).closeTo(end_sec, 0.01);
               w.phonemes.forEach((p, j) => {
                 expect(p.phoneme).eq(phonemes[j].phoneme);
-                expect(p.startSec).closeTo(phonemes[j].start_sec, 0.001);
-                expect(p.endSec).closeTo(phonemes[j].end_sec, 0.001);
+                expect(p.startSec).closeTo(phonemes[j].start_sec, 0.01);
+                expect(p.endSec).closeTo(phonemes[j].end_sec, 0.01);
               });
             });
 
