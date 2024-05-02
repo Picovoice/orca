@@ -141,7 +141,7 @@ class Orca:
 
     class Stream:
         """
-        Orca Stream object that allows to convert a stream of text to a stream of audio.
+        Orca Stream object that converts a stream of text to a stream of audio.
         """
 
         def __init__(self, handle: POINTER('Orca.COrcaStream'), orca: 'Orca') -> None:
@@ -150,7 +150,7 @@ class Orca:
 
         def synthesize(self, text: str) -> Optional[Sequence[int]]:
             """
-            Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
+            Adds a chunk of text to the Stream object and generates audio if enough text has been added.
             This function is expected to be called multiple times with consecutive chunks of text from a text stream.
             The incoming text is buffered as it arrives until the length is long enough to convert a chunk of the
             buffered text into audio. The caller needs to use `pv_orca_stream_flush()` to generate the audio chunk

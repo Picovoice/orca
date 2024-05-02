@@ -1,3 +1,14 @@
+#
+#    Copyright 2024 Picovoice Inc.
+#
+#    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
+#    file accompanying this source.
+#
+#    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+#    an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+#    specific language governing permissions and limitations under the License.
+#
+
 import threading
 import time
 from dataclasses import dataclass
@@ -17,7 +28,7 @@ import numpy as np
 import pvorca
 from numpy.typing import NDArray
 from openai import OpenAI
-from pvorca import OrcaInvalidArgumentError
+from pvorca import OrcaActivationLimitError
 
 from .util import Timer
 
@@ -33,10 +44,10 @@ class Synthesizer:
             sample_rate: int,
             play_audio_callback: Callable[[Union[Sequence[int], NDArray]], None],
             timer: Timer,
-            input_streamable: bool = False,
+            text_streamable: bool = False,
     ) -> None:
         self.sample_rate = sample_rate
-        self.input_streamable = input_streamable
+        self.text_streamable = text_streamable
 
         self._play_audio_callback = play_audio_callback
         self._timer = timer
@@ -45,6 +56,7 @@ class Synthesizer:
         raise NotImplementedError(
             f"Method `synthesize` must be implemented in a subclass of {self.__class__.__name__}")
 
+    @property
     def info(self) -> str:
         raise NotImplementedError(
             f"Method `info` must be implemented in a subclass of {self.__class__.__name__}")
@@ -56,20 +68,19 @@ class Synthesizer:
         pass
 
     @classmethod
-    def create(cls, engine: Union[str, Synthesizers], **kwargs: Any) -> 'Synthesizer':
-        classes = {
+    def create(cls, engine: Synthesizers, **kwargs: Any) -> 'Synthesizer':
+        subclasses = {
             Synthesizers.PICOVOICE_ORCA: PicovoiceOrcaSynthesizer,
             Synthesizers.OPENAI: OpenAISynthesizer,
         }
 
-        if engine not in classes:
+        if engine not in subclasses:
             raise NotImplementedError(f"Cannot create {cls.__name__} of type `{engine.value}`")
 
-        return classes[engine](**kwargs)
+        return subclasses[engine](**kwargs)
 
     def __str__(self) -> str:
-        raise NotImplementedError(
-            f"Method `__str__` must be implemented in a subclass of {self.__class__.__name__}")
+        raise NotImplementedError()
 
 
 class OpenAISynthesizer(Synthesizer):
@@ -121,7 +132,7 @@ class OpenAISynthesizer(Synthesizer):
 
 
 class PicovoiceOrcaSynthesizer(Synthesizer):
-    NUM_TOKENS_PER_PCM_CHUNK = 8
+    NUM_TOKENS_PER_PCM_CHUNK = 4
 
     @dataclass
     class OrcaTextInput:
@@ -141,7 +152,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
             sample_rate=self._orca.sample_rate,
             play_audio_callback=play_audio_callback,
             timer=timer,
-            input_streamable=True)
+            text_streamable=True)
 
         self._orca_stream = self._orca.open_stream()
 
@@ -166,11 +177,10 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
     def _compute_first_audio_delay(self, pcm: Sequence[int], processing_time: float) -> float:
         seconds_audio = len(pcm) / self.sample_rate
         tokens_per_sec = self._num_tokens / (time.time() - self._timer.time_first_synthesis_request)
-        time_delay = \
-            max(((self.NUM_TOKENS_PER_PCM_CHUNK / (
-                    tokens_per_sec + 1e-4)) - seconds_audio) + processing_time,
-                0)
-        return time_delay
+        llm_delay_seconds = (self.NUM_TOKENS_PER_PCM_CHUNK / (tokens_per_sec + 1e-4))
+        orca_delay_seconds = 3 * processing_time
+        delay_seconds = max(llm_delay_seconds + orca_delay_seconds - seconds_audio, 0)
+        return delay_seconds
 
     def _run(self) -> None:
         while True:
@@ -188,9 +198,8 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
                     pcm = self._orca_stream.synthesize(orca_input.text)
                 else:
                     pcm = self._orca_stream.flush()
-            except OrcaInvalidArgumentError as e:
-                print(f"Orca could not synthesize text input `{orca_input.text}`: `{e}`")
-                continue
+            except OrcaActivationLimitError:
+                raise ValueError("Orca activation limit reached.")
             processing_time = time.time() - start
 
             if pcm is not None:
@@ -218,6 +227,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
         self._orca_stream.close()
         self._orca.delete()
 
+    @property
     def info(self) -> str:
         return f"Picovoice Orca v{self._orca.version}"
 

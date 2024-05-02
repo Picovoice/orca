@@ -34,7 +34,7 @@ def main(args: argparse.Namespace) -> None:
 
         start = time.time()
 
-        pcm, alignment = orca.synthesize(text)
+        pcm, alignments = orca.synthesize(text)
 
         processing_time = time.time() - start
         length_sec = len(pcm) / orca.sample_rate

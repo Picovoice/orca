@@ -213,6 +213,9 @@ orca = pvorca.create(access_key='${ACCESS_KEY}')
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+#### Streaming synthesis
+
 To synthesize a text stream, create an Orca Stream object and add text to it one-by-one:
 
 ```python
@@ -234,6 +237,8 @@ When done with streaming text synthesis, the stream object needs to be closed:
 ```python
 stream.close()
 ```
+
+#### Single synthesis
 
 Use single synthesis mode if the complete text is known in advance:
 
@@ -284,9 +289,9 @@ The header file [include/pv_orca.h](./include/pv_orca.h) contains relevant infor
 Build an instance of the object:
 
 ```c
-pv_orca_t *handle = NULL;
+pv_orca_t *orca = NULL;
 const char *model_path = "${MODEL_PATH}";
-pv_status_t status = pv_orca_init("${ACCESS_KEY}", model_path, &handle);
+pv_status_t status = pv_orca_init("${ACCESS_KEY}", model_path, &orca);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
 }
@@ -303,7 +308,65 @@ status = pv_orca_synthesize_params_init(&synthesize_params);
 // change the default parameters of synthesize_params as desired
 ```
 
-Now, the `handle` and `synthesize_params` object can be used to synthesize speech:
+#### Streaming synthesis
+
+To synthesize a text stream, create an `orca_stream` object using the `synthesize_params`:
+
+```c
+pv_orca_stream_t *orca_stream = NULL;
+status = pv_orca_stream_open(orca, synthesize_params, &orca_stream);
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
+}
+```
+
+Add text to `orca_stream` one-by-one and handle the synthesized audio:
+
+```c
+extern char *get_next_text_chunk(void);
+
+int32_t num_samples_chunk = 0;
+int16_t *pcm_chunk = NULL;
+status = pv_orca_stream_synthesize(
+    orca_stream, 
+    get_next_text_chunk(), 
+    &num_samples_chunk, 
+    &pcm_chunk);
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
+}
+if (num_samples_chunk > 0) {
+    // handle pcm_chunk
+}
+```
+
+Once the text stream is complete, call the flush method to synthesize the remaining text: 
+
+```c
+status = pv_orca_stream_flush(orca_stream, &num_samples_chunk, &pcm_chunk);
+if (status != PV_STATUS_SUCCESS) {
+    // error handling logic
+}
+if (num_samples_chunk > 0) {
+    // handle pcm_chunk
+}
+```
+
+Once the pcms are handled, make sure to release the acquired resources for each chunk with:
+
+```c
+pv_orca_pcm_delete(pcm_chunk);
+```
+
+Finally, when done make sure to close the stream:
+    
+```c
+pv_orca_stream_close(orca_stream);
+```
+
+#### Single synthesis
+
+If the text is known in advance, single synthesis mode can be used:
 
 ```c
 int32_t num_samples = 0;
@@ -311,7 +374,7 @@ int16_t *synthesized_pcm = NULL;
 int32_t num_alignments = 0;
 pv_orca_word_alignment_t **alignments = NULL;
 status = pv_orca_synthesize(
-    handle,
+    orca,
     "${TEXT}",
     synthesize_params,
     &num_samples,
@@ -322,13 +385,35 @@ status = pv_orca_synthesize(
 
 Replace `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
 
+Print the metadata of the synthesized audio:
+
+```c
+for (int32_t i = 0; i < num_alignments; i++) {
+    fprintf(
+            stdout,
+            "[%s]\t.start_sec = %.2f .end_sec = %.2f\n",
+            alignments[i].word,
+            alignments[i].start_sec,
+            alignments[i].end_sec);
+    for (int32_t j = 0; j < alignments[i].num_phonemes; j++) {
+        fprintf(
+                stdout,
+                "\t[%s]\t.start_sec = %.2f .end_sec = %.2f\n",
+                alignments[i].phonemes[j].phoneme,
+                alignments[i].phonemes[j].start_sec,
+                alignments[i].phonemes[j].end_sec);
+    
+    }
+}
+```
+
 Finally, when done make sure to release the acquired resources:
 
 ```c
 pv_orca_word_alignments_delete(num_alignments, alignments);
-pv_orca_delete_pcm(pcm);
+pv_orca_pcm_delete(pcm);
 pv_orca_synthesize_params_delete(synthesize_params);
-pv_orca_delete(handle);
+pv_orca_delete(orca);
 ```
 
 ### Web

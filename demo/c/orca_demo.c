@@ -284,7 +284,7 @@ int picovoice_main(int argc, char **argv) {
     double proc_sec = 0.;
     gettimeofday(&before, NULL);
 
-    fprintf(stdout, "Synthesizing text `%s` ...\n", text);
+    fprintf(stdout, "\nSynthesizing text `%s`\n", text);
 
     int32_t num_alignments = 0;
     pv_orca_word_alignment_t **alignments = NULL;
@@ -323,7 +323,33 @@ int picovoice_main(int argc, char **argv) {
             ((double) (after.tv_sec - before.tv_sec) +
              ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
 
-    fprintf(stdout, "Synthesized text in %.1f sec\n", proc_sec);
+    if (num_alignments > 0) {
+        fprintf(stdout, "\nWord alignments");
+        if (num_alignments > 3) {
+            fprintf(stdout, " (only showing first 3):\n");
+        } else {
+            fprintf(stdout, ":\n");
+        }
+        int32_t num_alignments_shown = num_alignments > 3 ? 3 : num_alignments;
+        for (int32_t i = 0; i < num_alignments_shown; i++) {
+            fprintf(
+                    stdout,
+                    "word=\"%s\", start_sec=%.2f, end_sec=%.2f\n",
+                    alignments[i]->word,
+                    alignments[i]->start_sec,
+                    alignments[i]->end_sec);
+            for (int32_t j = 0; j < alignments[i]->num_phonemes; j++) {
+                fprintf(
+                        stdout,
+                        "\tphoneme=\"%s\", start_sec=%.2f, end_sec=%.2f\n",
+                        alignments[i]->phonemes[j]->phoneme,
+                        alignments[i]->phonemes[j]->start_sec,
+                        alignments[i]->phonemes[j]->end_sec);
+            }
+        }
+    }
+
+    fprintf(stdout, "\nSynthesized text in %.2f sec\n", proc_sec);
     fprintf(stdout, "Saved audio to `%s`\n", output_path);
 
     pv_status_t delete_status = pv_orca_word_alignments_delete_func(num_alignments, alignments);

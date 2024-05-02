@@ -1,10 +1,20 @@
+#
+#    Copyright 2024 Picovoice Inc.
+#
+#    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
+#    file accompanying this source.
+#
+#    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+#    an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+#    specific language governing permissions and limitations under the License.
+#
+
 from enum import Enum
 from typing import (
     Any,
     Optional,
     Sequence,
     Tuple,
-    Union,
 )
 
 from pvcheetah import CheetahActivationLimitError, create
@@ -26,16 +36,15 @@ class Transcriber:
         raise NotImplementedError()
 
     @classmethod
-    def create(cls, x: Union[str, Transcribers], **kwargs: Any) -> 'Transcriber':
-        try:
-            x = Transcribers(x)
-            subclass = {
-                Transcribers.PICOVOICE_CHEETAH: PicovoiceCheetahTranscriber,
-            }[x]
-        except KeyError:
-            raise ValueError(f"Invalid transcriber type `{x}`")
+    def create(cls, x: Transcribers, **kwargs: Any) -> 'Transcriber':
+        subclasses = {
+            Transcribers.PICOVOICE_CHEETAH: PicovoiceCheetahTranscriber,
+        }
 
-        return subclass(**kwargs)
+        if x not in subclasses:
+            raise NotImplementedError(f"Cannot create {cls.__name__} of type `{x.value}`")
+
+        return subclasses[x](**kwargs)
 
 
 class PicovoiceCheetahTranscriber(Transcriber):

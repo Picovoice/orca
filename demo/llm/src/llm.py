@@ -1,3 +1,14 @@
+#
+#    Copyright 2024 Picovoice Inc.
+#
+#    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
+#    file accompanying this source.
+#
+#    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+#    an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+#    specific language governing permissions and limitations under the License.
+#
+
 import json
 import os
 import random
@@ -22,10 +33,7 @@ class LLM:
     You are a friendly voice assistant in customer service of an e-commerce platform.
     Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
     Only use english letters and punctuation, no special characters.
-    Be verbose.
     Keep the conversation flowing naturally.
-    Don't use lists.
-    If the customer was successful, say "Great!" and ask if they need help with anything else.
     """
 
     def __init__(self, system_message: str = SYSTEM_MESSAGE) -> None:
@@ -38,9 +46,6 @@ class LLM:
     def chat(self, user_input: str) -> Generator[str, None, None]:
         for token in self._chat(user_input=user_input):
             yield token
-
-    def reset_history(self) -> None:
-        pass
 
     @classmethod
     def create(cls, llm_type: LLMs, **kwargs) -> 'LLM':
@@ -74,31 +79,19 @@ class OpenAILLM(LLM):
         self._model_name = model_name
         self._client = OpenAI(api_key=access_key)
 
-        self._message_history = [{"role": "system", "content": self._system_message}]
-
-        # Dummy request to avoid long wait times.
-        # The first request takes significantly longer than subsequent ones.
-        stream = self._client.chat.completions.create(
-            model=self._model_name,
-            messages=[{"role": "system", "content": "dummy"}, {"role": "user", "content": "dummy"}],
-            seed=self.RANDOM_SEED,
-            temperature=0,
-            top_p=0.05,
-            stream=True)
-        for chunk in stream:
-            pass
+        self._history = [{"role": "system", "content": self._system_message}]
 
     def _append_user_message(self, message: str) -> None:
-        self._message_history.append({"role": "user", "content": message})
+        self._history.append({"role": "user", "content": message})
 
     def _append_assistant_message(self, message: str) -> None:
-        self._message_history.append({"role": "assistant", "content": message})
+        self._history.append({"role": "assistant", "content": message})
 
     def _chat(self, user_input: str) -> Generator[str, None, None]:
         self._append_user_message(user_input)
         stream = self._client.chat.completions.create(
             model=self._model_name,
-            messages=self._message_history,
+            messages=self._history,
             seed=self.RANDOM_SEED,
             temperature=0,
             top_p=0.05,
@@ -111,15 +104,11 @@ class OpenAILLM(LLM):
                 assistant_message += token
         self._append_assistant_message(assistant_message)
 
-    def reset_history(self) -> None:
-        self._message_history = [{"role": "system", "content": self._system_message}]
-
     def __str__(self) -> str:
         return f"ChatGPT ({self._model_name})"
 
 
 class DummyLLM(LLM):
-    USER_PROMPT = "Press ENTER to generate a demo LLM response "
     TOKENS_PER_SECOND = 25
 
     def __init__(self, tokens_per_second: int = TOKENS_PER_SECOND) -> None:

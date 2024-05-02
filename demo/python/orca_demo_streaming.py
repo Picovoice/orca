@@ -71,7 +71,7 @@ def main(args: argparse.Namespace) -> None:
         print(traceback.format_exc())
         print(
             "WARNING: Failed to initialize audio device, see details above. Falling back to running "
-            "the demo without audio\n")
+            "the demo without audio playback.\n")
 
         def play_audio_callback(pcm: Sequence[int]):
             pass

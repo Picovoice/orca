@@ -22,8 +22,8 @@ from sounddevice import OutputStream, query_devices
 
 
 class StreamingAudioDevice:
-    def __init__(self, device_info: dict) -> None:
-        self._device_info = device_info
+    def __init__(self, device_index: int) -> None:
+        self._device_index = device_index
         self._queue: Queue[Sequence[int]] = Queue()
 
         self._buffer = None
@@ -38,7 +38,7 @@ class StreamingAudioDevice:
             channels=1,
             samplerate=self._sample_rate,
             dtype=np.int16,
-            device=int(self._device_info["index"]),
+            device=self._device_index,
             callback=self._callback,
             blocksize=self._blocksize)
         self._stream.start()
@@ -95,7 +95,9 @@ class StreamingAudioDevice:
 
     @classmethod
     def from_default_device(cls) -> 'StreamingAudioDevice':
-        return cls(device_info=query_devices(kind="output"))
+        device_info = query_devices(kind="output")
+        device_index = int(device_info["index"])
+        return cls(device_index=device_index)
 
 
 __all__ = [

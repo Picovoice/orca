@@ -1,4 +1,14 @@
-import time
+#
+#    Copyright 2024 Picovoice Inc.
+#
+#    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
+#    file accompanying this source.
+#
+#    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+#    an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+#    specific language governing permissions and limitations under the License.
+#
+
 from enum import Enum
 from typing import (
     Any,
@@ -18,20 +28,20 @@ class UserInputs(Enum):
 
 
 class UserInput:
-    def get_user_prompt(self) -> str:
+    def get_user_input(self) -> str:
         raise NotImplementedError()
 
     @classmethod
     def create(cls, x: UserInputs, **kwargs: Any) -> 'UserInput':
-        try:
-            subclass = {
-                UserInputs.VOICE: VoiceUserInput,
-                UserInputs.TEXT: TextUserInput,
-            }[x]
-        except KeyError:
-            raise ValueError(f"Invalid input type `{x}`")
+        subclasses = {
+            UserInputs.VOICE: VoiceUserInput,
+            UserInputs.TEXT: TextUserInput,
+        }
 
-        return subclass(**kwargs)
+        if x not in subclasses:
+            raise NotImplementedError(f"Cannot create {cls.__name__} of type `{x.value}`")
+
+        return subclasses[x](**kwargs)
 
 
 class VoiceUserInput(UserInput):
@@ -44,23 +54,20 @@ class VoiceUserInput(UserInput):
         self._transcriber = Transcriber.create(transcriber, **transcriber_params)
         self._recorder = PvRecorder(frame_length=self._transcriber.frame_length, device_index=audio_device_index)
 
-    def get_user_prompt(self) -> str:
+    def get_user_input(self) -> str:
         print("Listening ...")
         if not self._recorder.is_recording:
             self._recorder.start()
 
         transcript = ""
-        #start = time.time()
         try:
             while True:
                 partial_transcript, is_endpoint = self._transcriber.process(self._recorder.read())
                 transcript += partial_transcript
-                if is_endpoint:  # or time.time() - start > 2:
+                if is_endpoint:
                     final_transcript = self._transcriber.flush()
                     transcript += final_transcript
                     self._recorder.stop()
-                    if transcript == "":
-                        transcript = "Hi, I'm trying to place an order on your webpage but I'm having trouble with the checkout process. Can you help me?"
                     return transcript
         except Exception as e:
             self._recorder.stop()
@@ -77,7 +84,7 @@ class TextUserInput(UserInput):
         else:
             self._prompt = self.USER_PROMPT_DUMMY_LLM if llm_type is LLMs.DUMMY else self.USER_PROMPT
 
-    def get_user_prompt(self) -> str:
+    def get_user_input(self) -> str:
         return input(self._prompt)
 
 
