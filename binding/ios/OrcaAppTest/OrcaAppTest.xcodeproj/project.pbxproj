@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		07EC0478FAE9C353DE8432B5 /* libPods-OrcaAppTestUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 87BBA3B90102E2B2BFCFEFEB /* libPods-OrcaAppTestUITests.a */; };
-		0E331A5BE8435AE0E35D77EE /* libPods-OrcaAppTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BD902893076C6B94CA3305CF /* libPods-OrcaAppTest.a */; };
 		1E00644C27CEDF9B006FF6E9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E00644B27CEDF9B006FF6E9 /* AppDelegate.swift */; };
 		1E00645027CEDF9B006FF6E9 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E00644F27CEDF9B006FF6E9 /* ViewController.swift */; };
 		1E00645327CEDF9B006FF6E9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1E00645127CEDF9B006FF6E9 /* Main.storyboard */; };
@@ -20,7 +18,6 @@
 		1EAEDDE12B745E6A003B8C18 /* BaseTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAEDDDF2B745E6A003B8C18 /* BaseTest.swift */; };
 		1EAEDDE32B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
 		1EAEDDE42B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
-		21D50C39173F7DCDADCAFA23 /* libPods-PerformanceTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E5535BEBD6FC820880B9D32 /* libPods-PerformanceTest.a */; };
 		6A9164E4B0B1626D27DBA0A1 /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
 /* End PBXBuildFile section */
 
@@ -57,15 +54,6 @@
 		1E5B7AEF2800B2E300F8BDDB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1EAEDDDF2B745E6A003B8C18 /* BaseTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseTest.swift; sourceTree = "<group>"; };
 		1EAEDDE22B76A9DB003B8C18 /* test_resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = test_resources; sourceTree = "<group>"; };
-		521B12E4BED89BCFFDD3D6E9 /* Pods-OrcaAppTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaAppTest.debug.xcconfig"; path = "Target Support Files/Pods-OrcaAppTest/Pods-OrcaAppTest.debug.xcconfig"; sourceTree = "<group>"; };
-		5A1D52BF4E64E00118772839 /* Pods-PerformanceTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PerformanceTest.debug.xcconfig"; path = "Target Support Files/Pods-PerformanceTest/Pods-PerformanceTest.debug.xcconfig"; sourceTree = "<group>"; };
-		5E5535BEBD6FC820880B9D32 /* libPods-PerformanceTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PerformanceTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		87BBA3B90102E2B2BFCFEFEB /* libPods-OrcaAppTestUITests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaAppTestUITests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		BD902893076C6B94CA3305CF /* libPods-OrcaAppTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaAppTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		C217E8DAA97C8D22C5B06F7D /* Pods-OrcaAppTestUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaAppTestUITests.debug.xcconfig"; path = "Target Support Files/Pods-OrcaAppTestUITests/Pods-OrcaAppTestUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		CD67A32AE50D530BE53FCB2A /* Pods-OrcaAppTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaAppTest.release.xcconfig"; path = "Target Support Files/Pods-OrcaAppTest/Pods-OrcaAppTest.release.xcconfig"; sourceTree = "<group>"; };
-		D1216DECFBE06D71A68F810B /* Pods-PerformanceTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PerformanceTest.release.xcconfig"; path = "Target Support Files/Pods-PerformanceTest/Pods-PerformanceTest.release.xcconfig"; sourceTree = "<group>"; };
-		D37DEDB5A2D87E9610C3D937 /* Pods-OrcaAppTestUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaAppTestUITests.release.xcconfig"; path = "Target Support Files/Pods-OrcaAppTestUITests/Pods-OrcaAppTestUITests.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,7 +61,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0E331A5BE8435AE0E35D77EE /* libPods-OrcaAppTest.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,7 +69,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6A9164E4B0B1626D27DBA0A1 /* BuildFile in Frameworks */,
-				07EC0478FAE9C353DE8432B5 /* libPods-OrcaAppTestUITests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,7 +76,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				21D50C39173F7DCDADCAFA23 /* libPods-PerformanceTest.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,7 +91,6 @@
 				1E00646B27CEDF9C006FF6E9 /* OrcaAppTestUITests */,
 				1E00644927CEDF9B006FF6E9 /* Products */,
 				FA7D97C92E04F06D3273CCF3 /* Pods */,
-				5FB989590172477826501D59 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -152,25 +136,9 @@
 			path = PerformanceTest;
 			sourceTree = "<group>";
 		};
-		5FB989590172477826501D59 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				BD902893076C6B94CA3305CF /* libPods-OrcaAppTest.a */,
-				87BBA3B90102E2B2BFCFEFEB /* libPods-OrcaAppTestUITests.a */,
-				5E5535BEBD6FC820880B9D32 /* libPods-PerformanceTest.a */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		FA7D97C92E04F06D3273CCF3 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				521B12E4BED89BCFFDD3D6E9 /* Pods-OrcaAppTest.debug.xcconfig */,
-				CD67A32AE50D530BE53FCB2A /* Pods-OrcaAppTest.release.xcconfig */,
-				C217E8DAA97C8D22C5B06F7D /* Pods-OrcaAppTestUITests.debug.xcconfig */,
-				D37DEDB5A2D87E9610C3D937 /* Pods-OrcaAppTestUITests.release.xcconfig */,
-				5A1D52BF4E64E00118772839 /* Pods-PerformanceTest.debug.xcconfig */,
-				D1216DECFBE06D71A68F810B /* Pods-PerformanceTest.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -182,11 +150,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1E00647227CEDF9C006FF6E9 /* Build configuration list for PBXNativeTarget "OrcaAppTest" */;
 			buildPhases = (
-				808B6D8C304E6D72EB45468E /* [CP] Check Pods Manifest.lock */,
 				1E00644427CEDF9B006FF6E9 /* Sources */,
 				1E00644527CEDF9B006FF6E9 /* Frameworks */,
 				1E00644627CEDF9B006FF6E9 /* Resources */,
-				1982A15264CBCED2027DB5BE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -201,11 +167,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1E00647827CEDF9C006FF6E9 /* Build configuration list for PBXNativeTarget "OrcaAppTestUITests" */;
 			buildPhases = (
-				F4D32891712C043A6A7475CA /* [CP] Check Pods Manifest.lock */,
 				1E00646427CEDF9C006FF6E9 /* Sources */,
 				1E00646527CEDF9C006FF6E9 /* Frameworks */,
 				1E00646627CEDF9C006FF6E9 /* Resources */,
-				999CFCD0A174DDFFE3EC8F62 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -221,11 +185,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1E5B7AE92800B29F00F8BDDB /* Build configuration list for PBXNativeTarget "PerformanceTest" */;
 			buildPhases = (
-				2601D4AEDDC0B1D145509ED7 /* [CP] Check Pods Manifest.lock */,
 				1E5B7AE22800B29F00F8BDDB /* Sources */,
 				1E5B7AE42800B29F00F8BDDB /* Frameworks */,
 				1E5B7AE62800B29F00F8BDDB /* Resources */,
-				6BFBDCAEA380F57E8175912C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -308,126 +270,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		1982A15264CBCED2027DB5BE /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTest/Pods-OrcaAppTest-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTest/Pods-OrcaAppTest-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTest/Pods-OrcaAppTest-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		2601D4AEDDC0B1D145509ED7 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-PerformanceTest-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		6BFBDCAEA380F57E8175912C /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PerformanceTest/Pods-PerformanceTest-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PerformanceTest/Pods-PerformanceTest-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PerformanceTest/Pods-PerformanceTest-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		808B6D8C304E6D72EB45468E /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-OrcaAppTest-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		999CFCD0A174DDFFE3EC8F62 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTestUITests/Pods-OrcaAppTestUITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTestUITests/Pods-OrcaAppTestUITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaAppTestUITests/Pods-OrcaAppTestUITests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		F4D32891712C043A6A7475CA /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-OrcaAppTestUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1E00644427CEDF9B006FF6E9 /* Sources */ = {
@@ -608,7 +450,6 @@
 		};
 		1E00647327CEDF9C006FF6E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 521B12E4BED89BCFFDD3D6E9 /* Pods-OrcaAppTest.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -639,7 +480,6 @@
 		};
 		1E00647427CEDF9C006FF6E9 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CD67A32AE50D530BE53FCB2A /* Pods-OrcaAppTest.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -670,7 +510,6 @@
 		};
 		1E00647927CEDF9C006FF6E9 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C217E8DAA97C8D22C5B06F7D /* Pods-OrcaAppTestUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -693,7 +532,6 @@
 		};
 		1E00647A27CEDF9C006FF6E9 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D37DEDB5A2D87E9610C3D937 /* Pods-OrcaAppTestUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -716,7 +554,6 @@
 		};
 		1E5B7AEA2800B29F00F8BDDB /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5A1D52BF4E64E00118772839 /* Pods-PerformanceTest.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -741,7 +578,6 @@
 		};
 		1E5B7AEB2800B29F00F8BDDB /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D1216DECFBE06D71A68F810B /* Pods-PerformanceTest.release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
