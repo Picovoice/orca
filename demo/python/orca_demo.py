@@ -17,7 +17,33 @@ import wave
 from pvorca import create, OrcaActivationLimitError
 
 
-def main(args: argparse.Namespace) -> None:
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--access_key',
+        '-a',
+        required=True,
+        help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
+    parser.add_argument(
+        '--text',
+        '-t',
+        required=True,
+        help='Text to be synthesized')
+    parser.add_argument(
+        '--output_path',
+        '-o',
+        required=True,
+        help='Absolute path to .wav file where the generated audio will be stored')
+    parser.add_argument(
+        '--library_path',
+        '-l',
+        help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
+    parser.add_argument(
+        '--model_path',
+        '-m',
+        help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
+    args = parser.parse_args()
+
     access_key = args.access_key
     model_path = args.model_path
     library_path = args.library_path
@@ -56,29 +82,4 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--access_key',
-        '-a',
-        required=True,
-        help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
-    parser.add_argument(
-        '--text',
-        '-t',
-        required=True,
-        help='Text to be synthesized')
-    parser.add_argument(
-        '--output_path',
-        '-o',
-        required=True,
-        help='Absolute path to .wav file where the generated audio will be stored')
-    parser.add_argument(
-        '--library_path',
-        '-l',
-        help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
-    parser.add_argument(
-        '--model_path',
-        '-m',
-        help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
-
-    main(parser.parse_args())
+    main()

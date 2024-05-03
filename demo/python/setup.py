@@ -6,11 +6,7 @@ import setuptools
 INCLUDE_FILES = [
     "../../LICENSE",
     "orca_demo.py",
-    "orca_demo_streaming.py",
-    "_audio_device.py",
-    "_orca_thread.py",
-    "_util.py",
-    "__init__.py"]
+    "orca_demo_streaming.py"]
 
 os.system("git clean -dfx")
 

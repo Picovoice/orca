@@ -32,7 +32,7 @@ jobs:
             install_dep: sudo apt install libportaudio2
           - os: windows-latest
           - os: macos-latest
-            install_dep: brew install portaudio --HEAD
+            install_dep: brew uninstall portaudio && brew install portaudio --HEAD
 
     steps:
       - uses: actions/checkout@v3

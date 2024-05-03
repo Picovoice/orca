@@ -49,7 +49,7 @@ jobs:
             make_file: "MinGW Makefiles"
           - os: macos-latest
             platform: mac
-            arch: x86_64
+            arch: undetermined
             make_file: "Unix Makefiles"
 
     steps:
