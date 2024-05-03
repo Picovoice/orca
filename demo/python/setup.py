@@ -3,8 +3,14 @@ import shutil
 
 import setuptools
 
-
-INCLUDE_FILES = ("../../LICENSE', 'orca_demo.py")
+INCLUDE_FILES = [
+    "../../LICENSE",
+    "orca_demo.py",
+    "orca_demo_streaming.py",
+    "_audio_device.py",
+    "_orca_thread.py",
+    "_util.py",
+    "__init__.py"]
 
 os.system("git clean -dfx")
 
@@ -32,7 +38,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Picovoice/orca",
     packages=["pvorcademo"],
-    install_requires=["numpy==1.22.0", "pvorca==0.1.4", "sounddevice==0.4.6"],
+    install_requires=["numpy>=1.24.0", "sounddevice==0.4.6", "tiktoken==0.6.0"],
     include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
