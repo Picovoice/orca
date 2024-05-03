@@ -59,6 +59,11 @@ class OrcaCTestCase(unittest.TestCase):
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
+        print("Command:", args)  # Print the command being run
+        print("stdout:", stdout.decode())  # Print the stdout output
+        print("stderr:", stderr.decode())  # Print the stderr output
+        print("Exit code:", process.poll())  # Print the exit code
+
         self.assertEqual(process.poll(), 0)
         self.assertEqual(stderr.decode('utf-8'), '')
         self.assertTrue("Saved audio" in stdout.decode('utf-8'))
