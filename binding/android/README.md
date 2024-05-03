@@ -62,34 +62,11 @@ try {
 } catch (OrcaException ex) { }
 ```
 
-### Single vs. Streaming Synthesis
+### Streaming vs. Single Synthesis
 
 Orca supports two modes of operation: streaming and single synthesis.
-
-In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
-the single synthesis mode, the text is synthesized in a single call to the Orca engine.
-
-#### Single Synthesis
-
-To use single synthesis, simply call one of the available `synthesize` methods directly on the `Orca` instance.
-The `synthesize` method will send
-the text to the engine and return the speech audio as a `short[]`. The `synthesizeToFile` method will write the `pcm`
-data directly to a specified wav file.
-
-```java
-OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder().build();
-
-// Return raw PCM
-short[] pcm = orca.synthesize("${TEXT}", params);
-
-// Save the generated audio to a WAV file directly
-orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
-```
-
-Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When
-using `synthesize`, the generated pcm has a sample rate equal to the one returned by `.getSampleRate()`. When
-using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit
-PCM WAV file. When done make sure to explicitly release the resources with `.delete()`.
+In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
+In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to the Orca engine.
 
 #### Streaming Synthesis
 
@@ -126,6 +103,28 @@ if (flushedPcm != null) {
 
 orcaStream.close();
 ```
+
+#### Single Synthesis
+
+To use single synthesis, simply call one of the available `synthesize` methods directly on the `Orca` instance.
+The `synthesize` method will send
+the text to the engine and return the speech audio as a `short[]`. The `synthesizeToFile` method will write the `pcm`
+data directly to a specified wav file.
+
+```java
+OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder().build();
+
+// Return raw PCM
+short[] pcm = orca.synthesize("${TEXT}", params);
+
+// Save the generated audio to a WAV file directly
+orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
+```
+
+Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When
+using `synthesize`, the generated pcm has a sample rate equal to the one returned by `.getSampleRate()`. When
+using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit
+PCM WAV file. When done make sure to explicitly release the resources with `.delete()`.
 
 ### Text Input
 
@@ -164,6 +163,22 @@ OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder()
 
 - `setSpeechRate()`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value
   produces speech that is faster. The default is `1.0`.
+
+### Alignment Metadata
+
+Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
+The `Orca.WordAlignment` object has the following properties:
+
+- **Word:** String representation of the word.
+- **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
+- **Phonemes:** A list of `Orca.PhonemeAlignment` objects.
+
+The `Orca.PhonemeAlignment` object has the following properties:
+
+- **Phoneme:** String representation of the phoneme.
+- **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the phoneme ended in the synthesized audio. Value is in seconds.
 
 ## Demos
 
