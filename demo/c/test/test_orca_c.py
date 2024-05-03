@@ -10,6 +10,7 @@
 #
 
 import os.path
+import platform as pltf
 import subprocess
 import sys
 import unittest
@@ -23,8 +24,15 @@ class OrcaCTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._access_key = sys.argv[1]
-        cls._platform = sys.argv[2]
-        cls._arch = "" if len(sys.argv) != 4 else sys.argv[3]
+        platform = sys.argv[2]
+        if platform == "mac":
+            if pltf.machine() == "x86_64":
+                cls._arch = "x86_64"
+            elif pltf.machine() == "arm64":
+                cls._arch = "arm64"
+        else:
+            cls._arch = "" if len(sys.argv) != 4 else sys.argv[3]
+        cls._platform = platform
         cls._root_dir = os.path.join(os.path.dirname(__file__), "../../..")
 
     @staticmethod
@@ -59,7 +67,13 @@ class OrcaCTestCase(unittest.TestCase):
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
-        self.assertEqual(process.poll(), 0)
+        poll_result = process.poll()
+        if poll_result != 0:
+            print(stdout.decode('utf-8'))
+            print(stderr.decode('utf-8'))
+            raise RuntimeError("Error running demo. See details above")
+
+        self.assertEqual(poll_result, 0)
         self.assertEqual(stderr.decode('utf-8'), '')
         self.assertTrue("Saved audio" in stdout.decode('utf-8'))
         os.remove(output_path)
@@ -80,7 +94,7 @@ class OrcaCTestCase(unittest.TestCase):
 
         self.assertEqual(process.poll(), 0)
         self.assertEqual(stderr.decode('utf-8'), '')
-        self.assertTrue("Saved audio" in stdout.decode('utf-8'))
+        self.assertTrue("Saved final audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
     def test_orca(self) -> None:

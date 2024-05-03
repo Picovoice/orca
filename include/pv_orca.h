@@ -101,7 +101,7 @@ PV_API pv_status_t pv_orca_max_character_limit(const pv_orca_t *object, int32_t 
  * Forward declaration for pv_orca_synthesize_params object. This object can be parsed to Orca synthesize functions to
  * control the synthesized audio. An instance can be created with `pv_orca_synthesize_params_init()` and deleted with
  * `pv_orca_synthesize_params_delete()`. The object's properties can be set with `pv_orca_synthesize_params_set_*()`
- * and returned with `pv_orca_synthesize_params_get_()*`.
+ * and returned with `pv_orca_synthesize_params_get_*()`.
  */
 typedef struct pv_orca_synthesize_params pv_orca_synthesize_params_t;
 

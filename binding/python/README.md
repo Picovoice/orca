@@ -16,7 +16,7 @@ Orca is:
 
 ## Compatibility
 
-- Python 3.7+
+- Python 3.8+
 - Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64), Raspberry Pi (5, 4, 3), and NVIDIA Jetson Nano.
 
 ## Installation
@@ -35,7 +35,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 Orca supports two modes of operation: streaming and single synthesis.
 In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
-In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to the Orca engine.
+In the single synthesis mode, a complete text is synthesized in a single call to the Orca engine.
 
 Create an instance of the Orca engine:
 
@@ -63,8 +63,10 @@ if pcm is not None:
 ```
 
 The `text_generator()` function can be any stream generating text, for example an LLM response.
-Orca produces audio chunks in parallel to the LLM, and returns the raw PCM whenever enough context has been added via `stream.synthesize()`.
-The `stream.synthesize()` function returns an audio chunk that only includes the audio for a portion of the text that has been added.
+Orca produces audio chunks in parallel to the incoming text stream, and returns the raw PCM whenever enough context has
+been added via `stream.synthesize()`.
+To ensure smooth transitions between chunks, the `stream.synthesize()` function returns an audio chunk that only
+includes the audio for a portion of the text that has been added.
 To generate the audio for the remaining text, `stream.flush()` needs to be invoked.
 When done with streaming text synthesis, the `Orca.Stream` object needs to be closed:
 
@@ -72,7 +74,8 @@ When done with streaming text synthesis, the `Orca.Stream` object needs to be cl
 stream.close()
 ```
 
-If the complete text is known before synthesis, single synthesis mode can be used to generate speech in a single call to Orca:
+If the complete text is known before synthesis, single synthesis mode can be used to generate speech in a single call to
+Orca:
 
 ```python
 # Return raw PCM
@@ -84,17 +87,18 @@ alignments = orca.synthesize_to_file(text='${TEXT}', path='${OUTPUT_PATH}')
 
 Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the path to save the generated audio as a
 single-channel 16-bit PCM WAV file.
-In single synthesis mode, Orca returns metadata of the synthesized audio in the form of a list of `Orca.WordAlignment` objects. 
-To print the metadata run:
+In single synthesis mode, Orca returns metadata of the synthesized audio in the form of a list of `Orca.WordAlignment`
+objects.
+You can print the metadata with:
 
 ```python
-for word in alignments:
-    print(f"word=\"{word.word}\", start_sec={word.start_sec:.2f}, end_sec={word.end_sec:.2f}")
-    for phoneme in word.phonemes:
+for token in alignments:
+    print(f"word=\"{token.word}\", start_sec={token.start_sec:.2f}, end_sec={token.end_sec:.2f}")
+    for phoneme in token.phonemes:
         print(f"\tphoneme=\"{phoneme.phoneme}\", start_sec={phoneme.start_sec:.2f}, end_sec={phoneme.end_sec:.2f}")
 ```
 
-When done make sure to explicitly release the resources with:
+When done make sure to explicitly release the resources using:
 
 ```python
 orca.delete()
@@ -131,7 +135,8 @@ and replace `${MODEL_PATH}` with the path to the model file with the desired voi
 
 ### Speech control
 
-Orca allows for keyword arguments to be provided to the `open_stream` method or the single `synthesize` methods to control the synthesized speech:
+Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `open_stream` 
+method or the single synthesis methods `synthesize` and `synthesize_to_file`:
 
 - `speech_rate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value
   produces speech that is faster (slower). The default is `1.0`.
