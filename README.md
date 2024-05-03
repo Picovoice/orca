@@ -28,29 +28,29 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 ## Table of Contents
 
 - [Orca](#orca)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-    - [Orca streaming text synthesis](#orca-streaming-text-synthesis)
-    - [Text input](#text-input)
-    - [Custom pronunciations](#custom-pronunciations)
-    - [Voices](#voices)
-    - [Speech control](#speech-control)
-    - [Audio output](#audio-output)
-  - [AccessKey](#accesskey)
-  - [Demos](#demos)
-    - [Python Demos](#python-demos)
-    - [iOS Demo](#ios-demo)
-    - [C Demos](#c-demos)
-    - [Web Demos](#web-demos)
-    - [Android Demo](#android-demo)
-  - [SDKs](#sdks)
-    - [Python](#python)
-    - [iOS](#ios)
-    - [C](#c)
-    - [Web](#web)
-    - [Android](#android)
-  - [Releases](#releases)
-  - [FAQ](#faq)
+    - [Table of Contents](#table-of-contents)
+    - [Overview](#overview)
+        - [Orca streaming text synthesis](#orca-streaming-text-synthesis)
+        - [Text input](#text-input)
+        - [Custom pronunciations](#custom-pronunciations)
+        - [Voices](#voices)
+        - [Speech control](#speech-control)
+        - [Audio output](#audio-output)
+    - [AccessKey](#accesskey)
+    - [Demos](#demos)
+        - [Python Demos](#python-demos)
+        - [iOS Demo](#ios-demo)
+        - [C Demos](#c-demos)
+        - [Web Demos](#web-demos)
+        - [Android Demo](#android-demo)
+    - [SDKs](#sdks)
+        - [Python](#python)
+        - [iOS](#ios)
+        - [C](#c)
+        - [Web](#web)
+        - [Android](#android)
+    - [Releases](#releases)
+    - [FAQ](#faq)
 
 ## Language Support
 
@@ -60,12 +60,19 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Overview
 
-### Orca streaming text synthesis
+### Orca input and output streaming synthesis
 
 Orca is a text-to-speech engine designed specifically for LLMs. It can process
 incoming text streams in real-time, generating audio continuously, i.e., as the LLM produces tokens,
 Orca generates speech in parallel.
 This enables seamless conversations with voice assistants, eliminating any audio delays.
+
+![](https://github.com/Picovoice/orca/blob/orca-prepare-v0.2/resources/assets/orca_streaming_animation.gif)
+
+As demonstrated above, Orca starts converting text to audio right away, while other TTS systems need to wait for
+the entire LLM output to be available, introducing a delay in the voice assistant's response.
+
+Orca also supports single synthesis mode, where a complete text is synthesized in a single call to the Orca engine.
 
 ### Text input
 
@@ -315,7 +322,7 @@ status = pv_orca_synthesize_params_init(&synthesize_params);
 
 #### Streaming synthesis
 
-To synthesize a text stream, create an `orca_stream` object using the `synthesize_params`:
+To synthesize a text stream, create an `orca_stream` object using `synthesize_params`:
 
 ```c
 pv_orca_stream_t *orca_stream = NULL;
@@ -345,7 +352,7 @@ if (num_samples_chunk > 0) {
 }
 ```
 
-Once the text stream is complete, call the flush method to synthesize the remaining text: 
+Once the text stream is complete, call the flush method to synthesize the remaining text:
 
 ```c
 status = pv_orca_stream_flush(orca_stream, &num_samples_chunk, &pcm_chunk);
@@ -364,7 +371,7 @@ pv_orca_pcm_delete(pcm_chunk);
 ```
 
 Finally, when done make sure to close the stream:
-    
+
 ```c
 pv_orca_stream_close(orca_stream);
 ```

@@ -162,7 +162,7 @@ class Orca:
             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
             They need to be added in a single call to this function.
             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
-            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `NULL` if no
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `None` if no
             audio chunk has been produced.
             """
 
@@ -194,7 +194,7 @@ class Orca:
             via `pv_orca_stream_synthesize()`.
             The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
 
-            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `NULL` if no
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `None` if no
             audio chunk has been produced.
             """
 
@@ -291,6 +291,14 @@ class Orca:
         self._max_character_limit_func = library.pv_orca_max_character_limit
         self._max_character_limit_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
         self._max_character_limit_func.restype = PicovoiceStatuses
+
+        c_max_character_limit = c_int32()
+        status = self._max_character_limit_func(self._handle, byref(c_max_character_limit))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca maximum character limit",
+                message_stack=self._get_error_stack())
+        self._max_character_limit = c_max_character_limit.value
 
         self._synthesize_params_init_func = library.pv_orca_synthesize_params_init
         self._synthesize_params_init_func.argtypes = [POINTER(POINTER(self.COrcaSynthesizeParams))]
@@ -420,15 +428,7 @@ class Orca:
     def max_character_limit(self) -> int:
         """Maximum number of characters allowed in a single synthesis request."""
 
-        c_max_character_limit = c_int32()
-
-        status = self._max_character_limit_func(self._handle, byref(c_max_character_limit))
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca maximum character limit",
-                message_stack=self._get_error_stack())
-
-        return c_max_character_limit.value
+        return self._max_character_limit
 
     def synthesize(
             self,

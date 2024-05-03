@@ -5,17 +5,6 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 This demo showcases how [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/) can be seamlessly integrated into LLM-applications to drastically reduce the audio latency
 of voice assistants.
 
-## Towards Zero-Latency Voice Assistants
-
-Orca can handle streaming text input, i.e., it can start
-synthesizing audio while an LLM is still producing the response.
-
-![](https://github.com/Picovoice/orca/blob/main/resources/assets/orca_streaming_animation.gif)
-
-As demonstrated above, Orca starts converting text to audio right away, while
-[OpenAI TTS](https://platform.openai.com/docs/guides/text-to-speech) needs to wait for the entire
-LLM output to be available, introducing a delay in the voice assistant's response.
-
 ## Technologies
 
 In this demo, the user can interact with a voice assistant in real-time by leveraging GenAI technologies.
@@ -26,10 +15,10 @@ The following technologies are used:
 
 - Speech to Text: Picovoice's [Cheetah Streaming Speech-to-Text](https://picovoice.ai/platform/cheetah/)
 - LLM: \"ChatGPT\" using `gpt-3.5-turbo`
-  with [OpenAI Chat Completion API](https://platform.openai.com/docs/guides/text-generation)
+  with OpenAI Chat Completion API.
 - TTS:
     - Picovoice's [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/)
-    - [OpenAI TTS](https://platform.openai.com/docs/guides/text-to-speech)
+    - OpenAI TTS
   
 ## Compatibility
 
@@ -41,7 +30,7 @@ To run all features of this demo, access keys are required for:
 
 - Picovoice Console: Get your `AccessKey` for free by signing up or logging in
   to [Picovoice Console](https://console.picovoice.ai/).
-- OpenAI API: Get your `AccessKey` by signing up or logging in to [OpenAI](https://platform.openai.com/).
+- OpenAI API: Get your `AccessKey` from OpenAI.
 
 ## Usage
 

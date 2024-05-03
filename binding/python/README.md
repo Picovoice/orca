@@ -92,9 +92,9 @@ objects.
 You can print the metadata with:
 
 ```python
-for word in alignments:
-    print(f"word=\"{word.word}\", start_sec={word.start_sec:.2f}, end_sec={word.end_sec:.2f}")
-    for phoneme in word.phonemes:
+for token in alignments:
+    print(f"word=\"{token.word}\", start_sec={token.start_sec:.2f}, end_sec={token.end_sec:.2f}")
+    for phoneme in token.phonemes:
         print(f"\tphoneme=\"{phoneme.phoneme}\", start_sec={phoneme.start_sec:.2f}, end_sec={phoneme.end_sec:.2f}")
 ```
 
@@ -135,8 +135,8 @@ and replace `${MODEL_PATH}` with the path to the model file with the desired voi
 
 ### Speech control
 
-Orca allows for keyword arguments to be provided to the `open_stream` method or the single `synthesize` methods to
-control the synthesized speech:
+Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `open_stream` 
+method or the single synthesis methods `synthesize` and `synthesize_to_file`:
 
 - `speech_rate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value
   produces speech that is faster (slower). The default is `1.0`.
