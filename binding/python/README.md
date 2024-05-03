@@ -55,11 +55,11 @@ stream = orca.open_stream()
 for text_chunk in text_generator():
     pcm = stream.synthesize(text_chunk)
     if pcm is not None:
-# handle pcm
+        # handle pcm
 
 pcm = stream.flush()
 if pcm is not None:
-# handle pcm
+    # handle pcm
 ```
 
 The `text_generator()` function can be any stream generating text, for example an LLM response.

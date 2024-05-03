@@ -50,7 +50,6 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
     - [Web](#web)
     - [Android](#android)
   - [Releases](#releases)
-    - [v0.1.0 - January 24th, 2024](#v010---january-24th-2024)
   - [FAQ](#faq)
 
 ## Language Support
@@ -210,7 +209,7 @@ Install the Python SDK:
 pip3 install pvorca
 ```
 
-Create and instance of the engine:
+Create an instance of the engine:
 
 ```python
 import pvorca
