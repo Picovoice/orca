@@ -4,7 +4,8 @@
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+Orca is an on-device text-to-speech engine designed for use with LLMs, enabling zero-latency voice assistants.
+Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
@@ -123,6 +124,13 @@ const orca = await OrcaWorker.create(
 );
 ```
 
+### Streaming vs. Single Synthesis
+
+Orca supports two modes of operation: streaming and single synthesis.
+In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
+In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to
+the Orca engine.
+
 ### Custom Pronunciations
 
 Orca allows the embedding of custom pronunciations in the text via the syntax: `{word|pronunciation}`. The pronunciation
@@ -137,21 +145,7 @@ is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for e
 To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
 characters allowed, call `.maxCharacterLimit`. The sample rate of the generated `Int16Array` is `.sampleRate`.
 
-### Single vs. Streaming Synthesis
-
-Orca supports two modes of operation: streaming and single synthesis.
-
-In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
-the single synthesis mode, the text is synthesized in a single call to the Orca engine.
-
-#### Single Synthesis
-
-To use single synthesis, simply call `synthesize` directly on the `Orca` instance. The `synthesize` function will send
-the text to the engine and return the speech audio as an `Int16Array`.
-
-```typescript
-const speechPcm = await orca.synthesize("${TEXT}");
-```
+### Usage
 
 #### Streaming Synthesis
 
@@ -188,26 +182,51 @@ if (flushedPcm !== null) {
 OrcaStream.close();
 ```
 
+#### Single Synthesis
+
+To use single synthesis, simply call `synthesize` directly on the `Orca` instance. The `synthesize` function will send
+the text to the engine and return the speech audio as an `Int16Array`.
+
+```typescript
+const speechPcm = await orca.synthesize("${TEXT}");
+```
+
 ### Speech Control
 
-Orca allows for additional arguments to be provided to the `synthesize` method to control the synthesized speech:
+Orca allows for additional arguments to control the synthesized speech.
+These can be provided to the `open_stream` or one of the single mode `synthesize` methods:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value produces
   speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
-- `randomState`: Random seed for the synthesis process. The default value is `null`.
 
 ```typescript
 const synthesizeParams = {
   speechRate: 1.3,
-  randomState: 42
 };
+
+// Streaming synthesis
+const OrcaStream = await orca.streamOpen(synthesizeParams);
 
 // Single synthesis
 const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
 
-// Streaming synthesis
-const OrcaStream = await orca.streamOpen(synthesizeParams);
 ```
+
+### Alignment Metadata
+
+Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
+The `OrcaWordAlignment` object has the following properties:
+
+- **Word:** String representation of the word.
+- **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
+- **Phonemes:** A list of `Orca.PhonemeAlignment` objects.
+
+The `OrcaPhonemeAlignment` object has the following properties:
+
+- **Phoneme:** String representation of the phoneme.
+- **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the phoneme ended in the synthesized audio. Value is in seconds.
 
 ### Clean Up
 

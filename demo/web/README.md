@@ -38,11 +38,11 @@ Copy in your AccessKey from Picovoice Console, and click "Start Orca".
 
 ## Usage
 
-Orca supports two modes of operation: streaming and single synthesis.
 
-In the streaming synthesis mode, the text is synthesized in chunks, which allows for instantaneous audio playback. In
-the single synthesis mode, the text is synthesized in a single call to the
-Orca engine.
+Orca supports two modes of operation: streaming and single synthesis.
+In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
+In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to
+the Orca engine.
 
 Click on either "Streaming Synthesis" or "Single Synthesis" to continue.
 
