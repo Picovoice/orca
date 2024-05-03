@@ -30,7 +30,7 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 - [Orca](#orca)
     - [Table of Contents](#table-of-contents)
     - [Overview](#overview)
-        - [Orca streaming text synthesis](#orca-streaming-text-synthesis)
+        - [Orca streaming text synthesis](#orca-input-and-output-streaming-synthesis)
         - [Text input](#text-input)
         - [Custom pronunciations](#custom-pronunciations)
         - [Voices](#voices)
