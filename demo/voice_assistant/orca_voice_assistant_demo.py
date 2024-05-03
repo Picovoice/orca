@@ -213,7 +213,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--llm",
-        default=LLMs.DUMMY.value,
+        default=LLMs.OPENAI.value,
         choices=[llm.value for llm in LLMs],
         help="Choose LLM to use")
     parser.add_argument(

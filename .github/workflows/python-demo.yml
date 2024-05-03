@@ -32,6 +32,7 @@ jobs:
             install_dep: sudo apt install libportaudio2
           - os: windows-latest
           - os: macos-latest
+            install_dep: brew install portaudio --HEAD
 
     steps:
       - uses: actions/checkout@v3
@@ -42,12 +43,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Pre-build dependencies
-        run: python -m pip install --upgrade pip
+        run: python3 -m pip install --upgrade pip
 
       # TODO: remove after release
       - name: Build dependencies
         run: |
-          python -m pip install -U pip setuptools
+          python3 -m pip install -U pip setuptools
           pip install wheel
           cd ../../binding/python
           python3 setup.py sdist bdist_wheel
@@ -66,7 +67,7 @@ jobs:
 
       - name: Test single
         run: >
-          python orca_demo.py
+          python3 orca_demo.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text "Hello, I am Orca!"
           --output_path ./tmp.wav
