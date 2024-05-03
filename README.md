@@ -12,8 +12,8 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 [![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)<!-- markdown-link-check-disable-line -->
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCAdi9sTCXLosG1XeqDwLx7w?label=YouTube&style=social)](https://www.youtube.com/channel/UCAdi9sTCXLosG1XeqDwLx7w)
 
-Orca is an on-device text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice assistants.
-Orca is:
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency 
+voice assistants. Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:

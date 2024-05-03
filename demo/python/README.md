@@ -1,11 +1,11 @@
-# Orca Text-to-Speech Engine Python Demo
+# Orca Streaming Text-to-Speech Engine Python Demo
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
 ## Orca
 
-Orca is an on-device text-to-speech engine designed for use with LLMs, enabling zero-latency voice assistants.
-Orca is:
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency
+voice assistants. Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
