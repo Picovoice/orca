@@ -54,3 +54,4 @@ pvrecorder
 pvcheetah
 itok
 numpy
+pltf
