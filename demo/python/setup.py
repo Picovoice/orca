@@ -26,15 +26,15 @@ with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as f:
 
 setuptools.setup(
     name="pvorcademo",
-    version="0.1.3",
+    version="0.2.0",
     author="Picovoice",
     author_email="hello@picovoice.ai",
-    description="Orca Text-to-Speech Engine demos",
+    description="Orca Streaming Text-to-Speech Engine demos",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Picovoice/orca",
     packages=["pvorcademo"],
-    install_requires=["numpy>=1.24.0", "sounddevice==0.4.6", "tiktoken==0.6.0"],
+    install_requires=["numpy>=1.24.0", "pvorca==0.2.0", "sounddevice==0.4.6", "tiktoken==0.6.0"],
     include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -51,5 +51,5 @@ setuptools.setup(
         ],
     ),
     python_requires=">=3.8",
-    keywords="Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
+    keywords="Streaming Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
 )

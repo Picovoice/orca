@@ -1,4 +1,4 @@
 numpy>=1.24.0
-pvorca==0.1.4
+pvorca==0.2.0
 sounddevice==0.4.6
 tiktoken==0.6.0

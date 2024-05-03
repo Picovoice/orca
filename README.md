@@ -504,6 +504,14 @@ For more details, see the [Android SDK](./binding/android/README.md).
 
 ## Releases
 
+### v0.2.0 - May 3rd, 2024
+
+- Support for streaming synthesis
+- Reduced model size
+- Improved performance
+- Support for word alignments
+- Improved naturalness and pronunciations
+
 ### v0.1.0 - January 24th, 2024
 
 - Beta release

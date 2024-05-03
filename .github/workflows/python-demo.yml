@@ -32,7 +32,6 @@ jobs:
             install_dep: sudo apt install libportaudio2
           - os: windows-latest
           - os: macos-latest
-            install_dep: brew uninstall portaudio && brew install portaudio --HEAD
 
     steps:
       - uses: actions/checkout@v3
@@ -44,15 +43,6 @@ jobs:
 
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
-
-      # TODO: remove after release
-      - name: Build dependencies
-        run: |
-          python3 -m pip install -U pip setuptools
-          pip install wheel
-          cd ../../binding/python
-          python3 setup.py sdist bdist_wheel
-          python3 -m pip install dist/pvorca-0.1.4-py3-none-any.whl
 
       - name: Install dependencies
         run: |
@@ -81,14 +71,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      # TODO: remove after release
-      - name: Build dependencies
-        run: |
-          pip install wheel 
-          cd ../../binding/python
-          python3 setup.py sdist bdist_wheel
-          python3 -m pip install --force-reinstall dist/pvorca-0.1.4-py3-none-any.whl
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
