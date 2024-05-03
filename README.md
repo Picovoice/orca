@@ -69,8 +69,8 @@ This enables seamless conversations with voice assistants, eliminating any audio
 
 ![](https://github.com/Picovoice/orca/blob/orca-prepare-v0.2/resources/assets/orca_streaming_animation.gif)
 
-As demonstrated above, Orca starts converting text to audio right away, while other TTS systems need to wait for
-the entire LLM output to be available, introducing a delay in the voice assistant's response.
+As demonstrated above, Orca starts converting text to audio right away, while other TTS systems, such as OpenAI TTS,
+need to wait for the entire LLM output to be available, introducing a delay in the voice assistant's response.
 
 Orca also supports single synthesis mode, where a complete text is synthesized in a single call to the Orca engine.
 
