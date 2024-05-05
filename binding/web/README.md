@@ -185,16 +185,17 @@ OrcaStream.close();
 #### Single Synthesis
 
 To use single synthesis, simply call `synthesize` directly on the `Orca` instance. The `synthesize` function will send
-the text to the engine and return the speech audio as an `Int16Array`.
+the text to the engine and return the speech audio data as an `Int16Array` as well as
+the [alignments metadata](#alignments-metadata).
 
 ```typescript
-const speechPcm = await orca.synthesize("${TEXT}");
+const { pcm, alignments } = await orca.synthesize("${TEXT}");
 ```
 
 ### Speech Control
 
 Orca allows for additional arguments to control the synthesized speech.
-These can be provided to the `open_stream` or one of the single mode `synthesize` methods:
+These can be provided to `streamOpen` or one of the single mode `synthesize` methods:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value produces
   speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
@@ -208,21 +209,21 @@ const synthesizeParams = {
 const OrcaStream = await orca.streamOpen(synthesizeParams);
 
 // Single synthesis
-const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
+const result = await orca.synthesize("${TEXT}", synthesizeParams);
 
 ```
 
-### Alignment Metadata
+### Alignments Metadata
 
 Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
-The `OrcaWordAlignment` object has the following properties:
+The `OrcaAlignment` object has the following properties:
 
 - **Word:** String representation of the word.
 - **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
 - **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
-- **Phonemes:** A list of `Orca.PhonemeAlignment` objects.
+- **Phonemes:** An array of `OrcaPhoneme` objects.
 
-The `OrcaPhonemeAlignment` object has the following properties:
+The `OrcaPhoneme` object has the following properties:
 
 - **Phoneme:** String representation of the phoneme.
 - **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.

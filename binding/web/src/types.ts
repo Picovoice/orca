@@ -55,10 +55,6 @@ export type OrcaSynthesizeResult = {
   alignments: OrcaAlignment[];
 }
 
-export type OrcaStreamOpenOptions = {
-  synthesizeParams?: OrcaSynthesizeParams;
-}
-
 export type OrcaStreamSynthesizeResult = Int16Array | null
 
 export type OrcaWorkerInitRequest = {
