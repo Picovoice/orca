@@ -66,7 +66,8 @@ try {
 
 Orca supports two modes of operation: streaming and single synthesis.
 In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
-In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to the Orca engine.
+In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to the
+Orca engine.
 
 #### Streaming Synthesis
 
@@ -167,14 +168,14 @@ OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder()
 ### Alignment Metadata
 
 Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
-The `Orca.WordAlignment` object has the following properties:
+The `OrcaWord` object has the following properties:
 
 - **Word:** String representation of the word.
 - **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
 - **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
-- **Phonemes:** A list of `Orca.PhonemeAlignment` objects.
+- **Phonemes:** An array of `OrcaPhoneme` objects.
 
-The `Orca.PhonemeAlignment` object has the following properties:
+The `OrcaPhoneme` object has the following properties:
 
 - **Phoneme:** String representation of the phoneme.
 - **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.

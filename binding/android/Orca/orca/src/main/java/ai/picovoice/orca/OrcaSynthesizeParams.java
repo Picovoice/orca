@@ -52,7 +52,7 @@ public class OrcaSynthesizeParams {
     public static class Builder {
 
         private float speechRate = 1.0f;
-        private long randomState = 1; // TODO: After Ben updates the JNI, update this to -1
+        private long randomState = -1;
 
         /**
          * Sets the speech rate.

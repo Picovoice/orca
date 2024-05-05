@@ -59,11 +59,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
     private static final String MODEL_FILE = "orca_params_female.pv";
+    private static final int STREAMING_NUM_AUDIO_WAIT_CHUNKS = 1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final ExecutorService executor1 = Executors.newSingleThreadExecutor();
-    private final ExecutorService executor2 = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorStreamingSynthesis = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorStreamingAudio = Executors.newSingleThreadExecutor();
 
     private String synthesizedFilePath;
     private MediaPlayer synthesizedPlayer;
@@ -439,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
         ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
         CountDownLatch latch = new CountDownLatch(1);
 
-        executor1.submit(() -> {
+        executorStreamingSynthesis.submit(() -> {
             try {
                 mainHandler.post(() -> {
                     streamTextView.setText("");
@@ -461,7 +462,7 @@ public class MainActivity extends AppCompatActivity {
                                 pcmQueue.add(pcm);
                                 secs += (float) pcm.length / orca.getSampleRate();
                                 streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
-                                if (numIterations == 1) {
+                                if (numIterations == STREAMING_NUM_AUDIO_WAIT_CHUNKS) {
                                     latch.countDown();
                                     isPcmPlayStarted = true;
                                 }
@@ -494,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        executor2.submit(() -> {
+        executorStreamingAudio.submit(() -> {
             try {
                 AudioTrack audioTrack = new AudioTrack(
                         AudioManager.STREAM_MUSIC,
