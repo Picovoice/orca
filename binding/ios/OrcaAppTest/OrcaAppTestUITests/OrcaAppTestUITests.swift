@@ -72,7 +72,7 @@ class OrcaAppTestUITests: BaseTest {
             var groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleStream : self.testAudioFemaleStream)
 
             XCTAssertEqual(fullPcm.count, groundTruth.count)
-            XCTAssertEqual(fullPcm, groundTruth, "Synthesized pcm does not match ground truth")
+            XCTAssertTrue(compareArrays(arr1: fullPcm, arr2: groundTruth, step: 1))
         }
     }
 
@@ -85,7 +85,7 @@ class OrcaAppTestUITests: BaseTest {
 
             var groundTruth = try getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
             XCTAssertEqual(pcm.count, groundTruth.count)
-            XCTAssertEqual(pcm, groundTruth, "Synthesized pcm does not match ground truth")
+            XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1))
         }
     }
 

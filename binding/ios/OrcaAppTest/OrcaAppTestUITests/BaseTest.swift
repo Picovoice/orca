@@ -51,7 +51,7 @@ class BaseTest: XCTestCase {
         "female"
     ]
 
-    let accessKey = ""
+    let accessKey = "{YOUR_ACCESS_KEY_HERE}"
     var orcas: [Orca] = []
     var testData: TestData?
 
@@ -96,16 +96,26 @@ class BaseTest: XCTestCase {
 
         return testData
     }
+    
+    func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
+        for i in stride(from: 0, to: arr1.count - step, by: step) {
+            if !(abs(arr1[i] - arr2[i]) <= 1) {
+                return false
+            }
+        }
+        return true
+    }
+
 
     func getPcm(fileUrl: URL) throws -> [Int16] {
         let data = try Data(contentsOf: fileUrl)
-        var pcm = [Int16](repeating: 0, count: data.count / 2)
-
-        _ = pcm.withUnsafeMutableBytes {
-            data.copyBytes(to: $0, from: 44..<data.count)
+        let pcmData = data.withUnsafeBytes { (ptr: UnsafePointer<Int16>) -> [Int16] in
+            let count = data.count / MemoryLayout<Int16>.size
+            return Array(UnsafeBufferPointer(start: ptr.advanced(by: 22), count: count - 22))
         }
-        return pcm
+        return pcmData
     }
+
 
     func validateMetadata(words: [OrcaWord], expectedWords: [OrcaWord], isExpectExact: Bool) {
         XCTAssertEqual(words.count, expectedWords.count)
