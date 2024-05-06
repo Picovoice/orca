@@ -50,30 +50,31 @@ class OrcaAppTestUITests: BaseTest {
         }
     }
 
-//    func testStreaming() throws {
-//        for orca in self.orcas {
-//            let orcaStream = try orca.streamOpen()
-//
-//            var fullPcm = [Int16]()
-//            for c in self.testData!.test_sentences.text {
-//                if let pcm = orcaStream.synthesize(String(c)) {
-//                    if !pcm.isEmpty {
-//                        fullPcm.append(contentsOf: pcm)
-//                    }
-//                }
-//            }
-//
-//            if let flushedPcm = orcaStream.flush(), !flushedPcm.isEmpty {
-//                fullPcm.append(contentsOf: flushedPcm)
-//            }
-//
-//            try orcaStream.close()
-//
-//            let groundTruth = self.getPcm(index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
-//
-//            XCTAssertEqual(fullPcm, groundTruth, "Synthesized pcm does not match ground truth")
-//        }
-//    }
+    func testStreaming() throws {
+        for (index, orca) in self.orcas.enumerated() {
+            let orcaStream = try orca.streamOpen(randomState: self.testData!.random_state)
+
+            var fullPcm = [Int16]()
+            for c in self.testData!.test_sentences.text {
+                if let pcm = try orcaStream.synthesize(text: String(c)) {
+                    if !pcm.isEmpty {
+                        fullPcm.append(contentsOf: pcm)
+                    }
+                }
+            }
+
+            if let flushedPcm = try orcaStream.flush(), !flushedPcm.isEmpty {
+                fullPcm.append(contentsOf: flushedPcm)
+            }
+
+            orcaStream.close()
+
+            var groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleStream : self.testAudioFemaleStream)
+
+            XCTAssertEqual(fullPcm.count, groundTruth.count)
+            XCTAssertEqual(fullPcm, groundTruth, "Synthesized pcm does not match ground truth")
+        }
+    }
 
 
     func testSynthesize() throws {
@@ -82,15 +83,9 @@ class OrcaAppTestUITests: BaseTest {
             XCTAssertGreaterThan(pcm.count, 0)
             XCTAssertGreaterThan(wordArray.count, 0)
 
-            let groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
+            var groundTruth = try getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
             XCTAssertEqual(pcm.count, groundTruth.count)
             XCTAssertEqual(pcm, groundTruth, "Synthesized pcm does not match ground truth")
-
-            // TODO: try below if above doesn't work
-            // for (index, pcmValue) in pcm.enumerated() {
-            //    let expectedValue = groundTruth[index]
-            //    XCTAssert(abs(pcmValue - expectedValue) <= delta)
-            // }
         }
     }
 
@@ -106,7 +101,7 @@ class OrcaAppTestUITests: BaseTest {
                                         appropriateFor: nil,
                                         create: false)
             let audioFile = audioDir.appendingPathComponent("test.wav")
-            let synthToFileWordArray = try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputURL: audioFile)
+            let synthToFileWordArray = try orca.synthesizeToFile(text: self.testData!.test_sentences.text_alignment, outputURL: audioFile)
             try FileManager().removeItem(at: audioFile)
 
             var synthesizeTestData = [OrcaWord]()

@@ -36,7 +36,7 @@ public struct OrcaPhoneme {
     }
 }
 
-public class OrcaWord {
+public struct OrcaWord {
 
     /// Synthesized word.
     public let word: String
