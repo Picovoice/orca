@@ -21,9 +21,18 @@ struct ContentView: View {
     var body: some View {
         let interactionDisabled =
             !viewModel.errorMessage.isEmpty || viewModel.state == UIState.PROCESSING
-            || viewModel.state == UIState.INIT || text.isEmpty || !viewModel.invalidTextMessage.isEmpty
+            || viewModel.state == UIState.INIT || !viewModel.invalidTextMessage.isEmpty
         GeometryReader { _ in
             VStack(spacing: 10) {
+                Toggle(
+                    isOn: Binding(
+                        get: { viewModel.state == .STREAM_OPEN },
+                        set: { _ in viewModel.toggleStreaming() }
+                    ),
+                    label: { Text("Streaming Synthesis") }
+                )
+                .disabled(interactionDisabled)
+                
                 GeometryReader { geometry in
                     VStack {
                         ScrollView {
@@ -38,7 +47,7 @@ struct ContentView: View {
                                     .font(.title3)
                                     .background(lightGray)
                                     .onChange(of: text) { _ in
-                                        text = String(text.prefix(Int(viewModel.maxCharacterLimit)))
+                                        text = String(text.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
                                         viewModel.isValid(text: text)
                                     }
 
@@ -105,7 +114,7 @@ struct ContentView: View {
                         .font(.largeTitle)
                     }
                 )
-                .disabled(interactionDisabled)
+                .disabled(interactionDisabled || text.isEmpty)
             }
             .onReceive(
                 NotificationCenter.default.publisher(

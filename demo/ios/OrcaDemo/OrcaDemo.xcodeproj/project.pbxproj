@@ -13,7 +13,9 @@
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
 		1E001B6A2B7D451200D8E72D /* orca_params_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_female.pv */; };
-		5F191A3AB926CE3C1BFA762A /* libPods-OrcaDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 76550B1C5E7D86233894421E /* libPods-OrcaDemo.a */; };
+		C033227729791EA2A698EE35 /* libPods-OrcaDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B250DF2E0EA566A84D810178 /* libPods-OrcaDemo.a */; };
+		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
+		E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,9 +27,11 @@
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		1E001B692B7D451200D8E72D /* orca_params_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_female.pv; path = ../../../../lib/common/orca_params_female.pv; sourceTree = "<group>"; };
-		76550B1C5E7D86233894421E /* libPods-OrcaDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CE344564C226E4CE0FF3E34B /* Pods-OrcaDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.release.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.release.xcconfig"; sourceTree = "<group>"; };
-		EF0EBD14ECA04F4A64531396 /* Pods-OrcaDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.debug.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		AE8BCED43D69F13756D3FE06 /* Pods-OrcaDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.debug.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		B250DF2E0EA566A84D810178 /* libPods-OrcaDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E125E1882BE99DCA008B6D56 /* AtomicBool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicBool.swift; sourceTree = "<group>"; };
+		E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerStream.swift; sourceTree = "<group>"; };
+		E519704754370ED519DACF35 /* Pods-OrcaDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.release.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5F191A3AB926CE3C1BFA762A /* libPods-OrcaDemo.a in Frameworks */,
+				C033227729791EA2A698EE35 /* libPods-OrcaDemo.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,7 +52,7 @@
 				02A11947268D39A700A2AC99 /* OrcaDemo */,
 				02A11946268D39A700A2AC99 /* Products */,
 				8DB92FF3DC81AB04D3FF7242 /* Pods */,
-				4102C12E0893BA057C2FC1E0 /* Frameworks */,
+				7C4440DACEBCBBA7B62D2A9A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -70,14 +74,16 @@
 				02A11951268D39AB00A2AC99 /* Info.plist */,
 				02A1195E268D3FD600A2AC99 /* ViewModel.swift */,
 				1E001B672B76FFE700D8E72D /* AudioPlayer.swift */,
+				E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */,
+				E125E1882BE99DCA008B6D56 /* AtomicBool.swift */,
 			);
 			path = OrcaDemo;
 			sourceTree = "<group>";
 		};
-		4102C12E0893BA057C2FC1E0 /* Frameworks */ = {
+		7C4440DACEBCBBA7B62D2A9A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				76550B1C5E7D86233894421E /* libPods-OrcaDemo.a */,
+				B250DF2E0EA566A84D810178 /* libPods-OrcaDemo.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -85,8 +91,8 @@
 		8DB92FF3DC81AB04D3FF7242 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				EF0EBD14ECA04F4A64531396 /* Pods-OrcaDemo.debug.xcconfig */,
-				CE344564C226E4CE0FF3E34B /* Pods-OrcaDemo.release.xcconfig */,
+				AE8BCED43D69F13756D3FE06 /* Pods-OrcaDemo.debug.xcconfig */,
+				E519704754370ED519DACF35 /* Pods-OrcaDemo.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -98,11 +104,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 02A11954268D39AB00A2AC99 /* Build configuration list for PBXNativeTarget "OrcaDemo" */;
 			buildPhases = (
-				7BF3BE865DE1A884F38697BD /* [CP] Check Pods Manifest.lock */,
+				05ABBDE8ADF55E71E1AEBD6D /* [CP] Check Pods Manifest.lock */,
 				02A11941268D39A700A2AC99 /* Sources */,
 				02A11942268D39A700A2AC99 /* Frameworks */,
 				02A11943268D39A700A2AC99 /* Resources */,
-				C735F7616EACE7B767177F99 /* [CP] Embed Pods Frameworks */,
+				FC73E12634283CF766A18F82 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -158,7 +164,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7BF3BE865DE1A884F38697BD /* [CP] Check Pods Manifest.lock */ = {
+		05ABBDE8ADF55E71E1AEBD6D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -180,7 +186,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C735F7616EACE7B767177F99 /* [CP] Embed Pods Frameworks */ = {
+		FC73E12634283CF766A18F82 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -204,6 +210,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */,
+				E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */,
 				02A1194B268D39A700A2AC99 /* ContentView.swift in Sources */,
 				02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */,
 				02A11949268D39A700A2AC99 /* OrcaDemoApp.swift in Sources */,
@@ -332,7 +340,7 @@
 		};
 		02A11955268D39AB00A2AC99 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EF0EBD14ECA04F4A64531396 /* Pods-OrcaDemo.debug.xcconfig */;
+			baseConfigurationReference = AE8BCED43D69F13756D3FE06 /* Pods-OrcaDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -355,7 +363,7 @@
 		};
 		02A11956268D39AB00A2AC99 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CE344564C226E4CE0FF3E34B /* Pods-OrcaDemo.release.xcconfig */;
+			baseConfigurationReference = E519704754370ED519DACF35 /* Pods-OrcaDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
