@@ -154,7 +154,7 @@ class PicovoiceOrcaSynthesizer(Synthesizer):
             timer=timer,
             text_streamable=True)
 
-        self._orca_stream = self._orca.open_stream()
+        self._orca_stream = self._orca.stream_open()
 
         self._queue: Queue[Optional[PicovoiceOrcaSynthesizer.OrcaTextInput]] = Queue()
 

@@ -168,7 +168,7 @@ class OrcaThread:
     ) -> None:
 
         self._orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
-        self._orca_stream = self._orca.open_stream()
+        self._orca_stream = self._orca.stream_open()
         self._sample_rate = self._orca.sample_rate
 
         self._play_audio_callback = play_audio_callback

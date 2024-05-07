@@ -137,7 +137,7 @@ class OrcaTestCase(unittest.TestCase):
 
     def test_streaming_synthesis(self) -> None:
         for i, orca in enumerate(self.orcas):
-            stream = orca.open_stream(random_state=test_data.random_state)
+            stream = orca.stream_open(random_state=test_data.random_state)
             pcm = []
             for c in test_data.text:
                 pcm_chunk = stream.synthesize(c)

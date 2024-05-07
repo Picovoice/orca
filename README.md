@@ -231,7 +231,7 @@ Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://con
 To synthesize a text stream, create an Orca Stream object and add text to it one-by-one:
 
 ```python
-stream = orca.open_stream()
+stream = orca.stream_open()
 
 for text_chunk in text_generator():
     pcm = stream.synthesize(text_chunk)

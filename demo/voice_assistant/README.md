@@ -13,7 +13,7 @@ a Text-to-Speech engine.
 
 The following technologies are used:
 
-- Speech to Text: Picovoice's [Cheetah Streaming Speech-to-Text](https://picovoice.ai/platform/cheetah/)
+- Speech-to-Text: Picovoice's [Cheetah Streaming Speech-to-Text](https://picovoice.ai/platform/cheetah/)
 - LLM: \"ChatGPT\" using `gpt-3.5-turbo`
   with OpenAI Chat Completion API.
 - TTS:
