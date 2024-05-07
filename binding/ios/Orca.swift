@@ -44,10 +44,10 @@ public struct OrcaWord {
     /// Start of word in seconds.
     public let startSec: Float
 
-    /// Start of word in seconds.
+    /// End of word in seconds.
     public let endSec: Float
 
-    /// Phoneme array.
+    /// Array of phonemes.
     public let phonemeArray: [OrcaPhoneme]
 
     /// Constructor.
@@ -71,10 +71,10 @@ public struct OrcaWord {
 
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
-
-    private var stream: OpaquePointer?
     
     private var handle: OpaquePointer?
+
+    private var stream: OpaquePointer?
     /// Orca valid symbols
     private var _validCharacters: Set<String>?
     /// Orca sample rate
@@ -92,17 +92,28 @@ public class Orca {
         
         private var stream: OpaquePointer?
 
-        /// Generates audio from a text stream. The returned audio contains the speech representation of the text.
+        /// Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
+        /// This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+        /// The incoming text is buffered as it arrives until the length is long enough to convert a chunk of the
+        /// buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
+        /// for the remaining text that has not yet been synthesized.
         ///
         /// - Parameters:
-        ///   - text: Text to be converted to audio. Allowed characters can be retrieved by calling `self.validCharacters`.
-        ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
-        ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
-        /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
+        ///   - text: A chunk of text from a text input stream, comprised of valid characters.
+        ///     Valid characters can be retrieved by calling `.validCharacters`.
+        ///     Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+        ///     They need to be added in a single call to this function.
+        ///     The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
+        /// - Returns: The generated audio as a sequence of 16-bit linearly-encoded integers, `nil` if no
+        ///   audio chunk has been produced.
         /// - Throws: OrcaError
         public func synthesize(text: String) throws -> [Int16]? {
+            if orca == nil {
+                throw OrcaInvalidStateError("Unable to synthesize - orca has been released")
+            }
+
             if stream == nil {
-                throw OrcaInvalidStateError("Unable to synthesize - stream has not been opened, or has been closed")
+                throw OrcaInvalidStateError("Unable to synthesize - stream not open")
             }
 
             var cNumSamples: Int32 = 0
@@ -126,13 +137,19 @@ public class Orca {
             return pcm.isEmpty ? nil : pcm
         }
 
-        /// Flushes remaining text. The returned audio contains the speech representation of the text.
+        /// Generates audio for all the buffered text that was added to the OrcaStream object
+        /// via `OrcaStream.synthesize()`.
         ///
-        /// - Returns: The flushed audio, stored as a sequence of 16-bit linearly-encoded integers.
+        /// - Returns: The generated audio as a sequence of 16-bit linearly-encoded integers, `nil` if no
+        ///   audio chunk has been produced.
         /// - Throws: OrcaError
         public func flush() throws -> [Int16]? {
+            if orca == nil {
+                throw OrcaInvalidStateError("Unable to flush - orca has been released")
+            }
+
             if stream == nil {
-                throw OrcaInvalidStateError("Unable to flush - stream has not been opened, or has been closed")
+                throw OrcaInvalidStateError("Unable to flush - stream not open")
             }
 
             var cNumSamples: Int32 = 0
@@ -155,7 +172,7 @@ public class Orca {
             return pcm.isEmpty ? nil : pcm
         }
 
-        /// Deletes OrcaStream.
+        /// Releases the resources acquired by the OrcaStream object.
         public func close() {
             if stream != nil {
                 pv_orca_stream_close(stream)
@@ -296,8 +313,9 @@ public class Orca {
     ///    Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
     ///    The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
-    ///   - randomState: Random state for the generated audio.
-    /// - Returns: The generated audio, stored as a sequence of 16-bit linearly-encoded integers, with their associated metadata.
+    ///   - randomState: Random seed for the synthesis process.
+    /// - Returns: A tuple containing the generated audio as a sequence of 16-bit linearly-encoded integers
+    ///   and an array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
     public func synthesize(text: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> (pcm: [Int16], wordArray: [OrcaWord]) {
         if handle == nil {
@@ -380,7 +398,8 @@ public class Orca {
     ///   - outputPath: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
-    ///   - randomState: Random state for the generated audio.
+    ///   - randomState: Random seed for the synthesis process.
+    /// - Returns: An array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
         if handle == nil {
@@ -455,7 +474,8 @@ public class Orca {
     ///   - outputURL: URL to the output audio file. The output file is saved as `WAV (.wav)`
     ///     and consists of a single mono channel.
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
-    ///   - randomState: Random state for the generated audio.
+    ///   - randomState: Random seed for the synthesis process.
+    /// - Returns: An array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
     public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
         try synthesizeToFile(text: text, outputPath: outputURL.path, speechRate: speechRate, randomState: randomState)
@@ -489,12 +509,12 @@ public class Orca {
         return cParams
     }
 
-    /// Creates an OrcaStream object.
+    /// Opens a stream for streaming text synthesis.
     ///
     /// - Parameters:
     ///   - speechRate: Rate of speech of the generated audio. Valid values are within [0.7, 1.3].
-    ///   - randomState: Random state for the generated audio.
-    /// - Returns: An OrcaStream Object.
+    ///   - randomState: Random seed for the synthesis process.
+    /// - Returns: An instance of the OrcaStream class.
     /// - Throws: OrcaError
     public func streamOpen(speechRate: Double? = nil, randomState: Int64? = nil) throws -> OrcaStream {
         if handle == nil {
