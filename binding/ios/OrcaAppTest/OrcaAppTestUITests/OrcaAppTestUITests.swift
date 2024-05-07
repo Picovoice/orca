@@ -114,7 +114,6 @@ class OrcaAppTestUITests: BaseTest {
                 synthesizeTestData.append(OrcaWord(word: alignment.word, startSec: alignment.start_sec, endSec: alignment.end_sec, phonemeArray: phonemeArray))
             }
 
-            // TODO: index == 1: Be exact if female model
             validateMetadata(words: wordArray, expectedWords: synthesizeTestData, isExpectExact: index == 1)
             validateMetadata(words: synthToFileWordArray, expectedWords: synthesizeTestData, isExpectExact: index == 1)
         }

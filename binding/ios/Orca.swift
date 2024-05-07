@@ -71,7 +71,7 @@ public struct OrcaWord {
 
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
-    
+
     private var handle: OpaquePointer?
 
     private var stream: OpaquePointer?
@@ -86,10 +86,11 @@ public class Orca {
 
     private static var sdk = "ios"
 
+    /// OrcaStream object that converts a stream of text to a stream of audio.
     public class OrcaStream {
 
         private var orca: Orca
-        
+
         private var stream: OpaquePointer?
 
         /// Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
@@ -405,7 +406,7 @@ public class Orca {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
-        
+
         let orcaMaxChararacterLimit = try maxCharacterLimit
         if text.count > orcaMaxChararacterLimit {
             throw OrcaInvalidArgumentError(
