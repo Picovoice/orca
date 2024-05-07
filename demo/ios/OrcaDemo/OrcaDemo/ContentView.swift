@@ -19,56 +19,89 @@ struct ContentView: View {
     let lightGray = Color(red: 247 / 255, green: 247 / 255, blue: 247 / 255, opacity: 1)
 
     var body: some View {
+        let streamingMode = viewModel.state == .STREAM_OPEN || viewModel.state == .STREAM_PLAYING
         let interactionDisabled =
-            !viewModel.errorMessage.isEmpty || viewModel.state == UIState.PROCESSING
-            || viewModel.state == UIState.INIT || !viewModel.invalidTextMessage.isEmpty
+            !viewModel.errorMessage.isEmpty || viewModel.state == .PROCESSING
+            || viewModel.state == .INIT || (!streamingMode && !viewModel.invalidTextMessage.isEmpty)
+        let toggleDisabled = interactionDisabled || viewModel.state == .STREAM_PLAYING
+        let buttonDisabled = toggleDisabled || text.isEmpty
+        
         GeometryReader { _ in
             VStack(spacing: 10) {
                 Toggle(
                     isOn: Binding(
-                        get: { viewModel.state == .STREAM_OPEN },
+                        get: { streamingMode },
                         set: { _ in viewModel.toggleStreaming() }
                     ),
                     label: { Text("Streaming Synthesis") }
                 )
-                .disabled(interactionDisabled)
+                .disabled(toggleDisabled)
                 
-                GeometryReader { geometry in
-                    VStack {
+                if viewModel.state == .STREAM_PLAYING {
+                    GeometryReader { geometry in
                         ScrollView {
-                            ZStack(alignment: .topLeading) {
-                                TextEditor(text: $text)
-                                    .transparentScrolling()
-                                    .padding()
-                                    .frame(minWidth: 0,
-                                           maxWidth: .infinity,
-                                           minHeight: geometry.size.height,
-                                           maxHeight: .infinity)
-                                    .font(.title3)
-                                    .background(lightGray)
-                                    .onChange(of: text) { _ in
-                                        text = String(text.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
-                                        viewModel.isValid(text: text)
-                                    }
-
-                                if text.count == 0 {
-                                    Text("Enter any text to be synthesized")
-                                        .padding(25)
+                            Text(viewModel.textStream)
+                                .transparentScrolling()
+                                .padding()
+                                .frame(minWidth: 0,
+                                       maxWidth: .infinity,
+                                       minHeight: geometry.size.height,
+                                       maxHeight: .infinity,
+                                       alignment: .topLeading)
+                                .font(.title3)
+                                .background(lightGray)
+                        }
+                    }
+                } else {
+                    GeometryReader { geometry in
+                        VStack {
+                            ScrollView {
+                                ZStack(alignment: .topLeading) {
+                                    TextEditor(text: $text)
+                                        .transparentScrolling()
+                                        .padding()
+                                        .frame(minWidth: 0,
+                                               maxWidth: .infinity,
+                                               minHeight: geometry.size.height,
+                                               maxHeight: .infinity)
                                         .font(.title3)
-                                        .foregroundColor(Color.gray)
+                                        .background(lightGray)
+                                        .onChange(of: text) { _ in
+                                            text = String(text.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
+                                            viewModel.isValid(text: text)
+                                        }
+
+                                    if text.count == 0 {
+                                        Text("Enter any text to be synthesized")
+                                            .padding(25)
+                                            .font(.title3)
+                                            .foregroundColor(Color.gray)
+                                    }
                                 }
                             }
 
+                            Text("\(text.count) / \(viewModel.maxCharacterLimit)")
+                                .font(.footnote)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                .foregroundColor(Color.gray)
                         }
-
-                        Text("\(text.count) / \(viewModel.maxCharacterLimit)")
-                            .font(.footnote)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .foregroundColor(Color.gray)
                     }
                 }
-
-                if viewModel.state == .INIT || viewModel.state == .READY {
+                
+                if streamingMode {
+                    if viewModel.state == .STREAM_OPEN && !viewModel.streamInvalidTextMessage.isEmpty {
+                        Text(viewModel.streamInvalidTextMessage)
+                            .padding()
+                            .font(.body)
+                            .foregroundColor(Color.gray)
+                    } else {
+                        Text(viewModel.streamSecs)
+                            .padding()
+                            .font(.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundColor(Color.black)
+                    }
+                } else if viewModel.state == .INIT || viewModel.state == .READY {
                     if viewModel.invalidTextMessage.isEmpty {
                         Text("Enter text and press synthesize")
                             .padding()
@@ -109,12 +142,12 @@ struct ContentView: View {
                         Text(viewModel.state == .PLAYING ? "Stop" : "Synthesize")
                         .padding()
                         .frame(minWidth: 200)
-                        .background(interactionDisabled ? Color.gray : activeBlue)
+                        .background(buttonDisabled ? Color.gray : activeBlue)
                         .foregroundColor(Color.white)
                         .font(.largeTitle)
                     }
                 )
-                .disabled(interactionDisabled || text.isEmpty)
+                .disabled(buttonDisabled)
             }
             .onReceive(
                 NotificationCenter.default.publisher(
@@ -136,7 +169,6 @@ struct ContentView: View {
             .onTapGesture {
                 hideKeyboard()
             }
-
         }
     }
 }

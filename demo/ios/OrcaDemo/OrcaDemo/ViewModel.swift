@@ -14,15 +14,18 @@ import Orca
 enum UIState {
     case INIT
     case READY
-    case STREAM_OPEN
     case PROCESSING
     case SYNTHESIZED
     case PLAYING
+    case STREAM_OPEN
+    case STREAM_PLAYING
     case ERROR
 }
 
 class ViewModel: ObservableObject {
-    private let ACCESS_KEY = "" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    
+    private let NUM_AUDIO_WAIT_CHUNKS = 1
 
     private var orca: Orca!
     private var orcaStream: Orca.OrcaStream!
@@ -34,13 +37,14 @@ class ViewModel: ObservableObject {
     private let audioFilePath = "temp.wav"
     private var audioFile: URL!
     
-    private let NUM_AUDIO_WAIT_CHUNKS = 1
-    
-    @Published var errorMessage = ""
     @Published var state = UIState.INIT
-    @Published var maxCharacterLimit: Int32 = 0
     @Published var sampleRate: Int32 = 0
+    @Published var maxCharacterLimit: Int32 = 0
+    @Published var textStream = ""
+    @Published var streamSecs = ""
+    @Published var errorMessage = ""
     @Published var invalidTextMessage = ""
+    @Published var streamInvalidTextMessage = ""
     
     init() {
         initialize()
@@ -83,6 +87,9 @@ class ViewModel: ObservableObject {
 
     public func toggleStreaming() {
         if state == UIState.READY || state == UIState.STREAM_OPEN {
+            self.textStream = ""
+            self.streamSecs = ""
+            
             if orcaStream == nil {
                 do {
                     orcaStream = try orca.streamOpen()
@@ -95,132 +102,6 @@ class ViewModel: ObservableObject {
                 orcaStream.close()
                 orcaStream = nil
                 self.state = UIState.READY
-            }
-        }
-    }
-    
-    private func runStreamSynthesis(text: String) {
-        playerStream = AudioPlayerStream(sampleRate: Double(self.sampleRate))
-        
-        let textStreamQueue = DispatchQueue(label: "text-stream-queue")
-        let textStreamQueueConcurrent = DispatchQueue(label: "text-stream-queue-concurrent", attributes: .concurrent)
-        var textStreamArray = [String]()
-        let isTextStreamQueueActive = AtomicBool(false)
-        
-        func isTextStreamEmpty() -> Bool {
-            return textStreamQueueConcurrent.sync {
-                textStreamArray.isEmpty
-            }
-        }
-        
-        func getFromTextStream() -> String? {
-            var word: String?
-            textStreamQueueConcurrent.sync {
-                if !textStreamArray.isEmpty {
-                    word = textStreamArray.removeFirst()
-                }
-            }
-            return word
-        }
-        
-        func addToTextStream(word: String) {
-            textStreamQueueConcurrent.async(flags: .barrier) {
-                textStreamArray.append(word)
-            }
-        }
-        
-        let pcmStreamQueue = DispatchQueue(label: "pcm-stream-queue")
-        let pcmStreamQueueConcurrent = DispatchQueue(label: "pcm-stream-queue-concurrent", attributes: .concurrent)
-        var pcmStreamArray = [[Int16]]()
-        let isPcmStreamQueueActive = AtomicBool(false)
-        
-        func isPcmStreamEmpty() -> Bool {
-            return pcmStreamQueueConcurrent.sync {
-                pcmStreamArray.isEmpty
-            }
-        }
-        
-        func getFromPcmStream() -> [Int16]? {
-            var pcm: [Int16]?
-            pcmStreamQueueConcurrent.sync {
-                if !pcmStreamArray.isEmpty {
-                    pcm = pcmStreamArray.removeFirst()
-                }
-            }
-            return pcm
-        }
-        
-        func addToPcmStream(pcm: [Int16]) {
-            pcmStreamQueueConcurrent.async(flags: .barrier) {
-                pcmStreamArray.append(pcm)
-            }
-        }
-        
-        let playStreamQueue = DispatchQueue(label: "play-stream-queue")
-        let playStreamQueueLatch = DispatchSemaphore(value: 0)
-        
-        textStreamQueue.async {
-            isTextStreamQueueActive.set(true)
-            
-            let words = text.split(separator: " ")
-            for word in words {
-                let wordWithSpace = String(word) + " "
-                addToTextStream(word: wordWithSpace)
-                usleep(100 * 1000)
-            }
-            
-            isTextStreamQueueActive.set(false)
-        }
-        
-        pcmStreamQueue.async {
-            isPcmStreamQueueActive.set(true)
-            var numIterations = 0
-            var isFlipped = false
-            
-            while isTextStreamQueueActive.get() || !isTextStreamEmpty() {
-                if !isTextStreamEmpty() {
-                    do {
-                        let word = getFromTextStream()
-                        if word != nil {
-                            let pcm = try self.orcaStream.synthesize(text: word!)
-                            if pcm != nil {
-                                addToPcmStream(pcm: pcm!)
-                                if numIterations == self.NUM_AUDIO_WAIT_CHUNKS {
-                                    playStreamQueueLatch.signal()
-                                    isFlipped = true
-                                }
-                                numIterations += 1
-                            }
-                        }
-                    } catch {
-                        fatalError(error.localizedDescription)
-                    }
-                }
-            }
-            
-            do {
-                let pcm = try self.orcaStream.flush()
-                if pcm != nil {
-                    addToPcmStream(pcm: pcm!)
-                    if !isFlipped {
-                        playStreamQueueLatch.signal()
-                    }
-                }
-            } catch {
-                fatalError(error.localizedDescription)
-            }
-            
-            isPcmStreamQueueActive.set(false)
-        }
-        
-        playStreamQueue.async {
-            playStreamQueueLatch.wait()
-            
-            while isPcmStreamQueueActive.get() || !isPcmStreamEmpty() {
-                if !isPcmStreamEmpty() {
-                    let pcm = getFromPcmStream()
-                    self.playerStream.playPCM(pcm!)
-                }
             }
         }
     }
@@ -237,7 +118,177 @@ class ViewModel: ObservableObject {
             toggleSynthesizeOn(text: text)
         }
     }
+    
+    private func runStreamSynthesis(text: String) {
+        self.textStream = ""
+        self.streamSecs = ""
+        self.state = UIState.STREAM_PLAYING
+        
+        do {
+            playerStream = try AudioPlayerStream(sampleRate: Double(self.sampleRate))
+        } catch {
+            self.errorMessage = "\(error.localizedDescription)"
+            self.state = UIState.ERROR
+        }
 
+        let textStreamQueue = DispatchQueue(label: "text-stream-queue")
+        let textStreamQueueConcurrent = DispatchQueue(label: "text-stream-queue-concurrent", attributes: .concurrent)
+        var textStreamArray = [String]()
+        let isTextStreamQueueActive = AtomicBool(false)
+
+        func isTextStreamEmpty() -> Bool {
+            return textStreamQueueConcurrent.sync {
+                textStreamArray.isEmpty
+            }
+        }
+
+        func getFromTextStream() -> String? {
+            var word: String?
+            textStreamQueueConcurrent.sync {
+                if !textStreamArray.isEmpty {
+                    word = textStreamArray.removeFirst()
+                }
+            }
+            return word
+        }
+
+        func addToTextStream(word: String) {
+            textStreamQueueConcurrent.async(flags: .barrier) {
+                textStreamArray.append(word)
+            }
+        }
+
+        let pcmStreamQueue = DispatchQueue(label: "pcm-stream-queue")
+        let pcmStreamQueueConcurrent = DispatchQueue(label: "pcm-stream-queue-concurrent", attributes: .concurrent)
+        var pcmStreamArray = [[Int16]]()
+        let isPcmStreamQueueActive = AtomicBool(false)
+
+        func isPcmStreamEmpty() -> Bool {
+            return pcmStreamQueueConcurrent.sync {
+                pcmStreamArray.isEmpty
+            }
+        }
+
+        func getFromPcmStream() -> [Int16]? {
+            var pcm: [Int16]?
+            pcmStreamQueueConcurrent.sync {
+                if !pcmStreamArray.isEmpty {
+                    pcm = pcmStreamArray.removeFirst()
+                }
+            }
+            return pcm
+        }
+
+        func addToPcmStream(pcm: [Int16]) {
+            pcmStreamQueueConcurrent.async(flags: .barrier) {
+                pcmStreamArray.append(pcm)
+            }
+        }
+
+        let playStreamQueue = DispatchQueue(label: "play-stream-queue")
+        let playStreamQueueLatch = DispatchSemaphore(value: 0)
+
+        func getSecsString(secs: Float) -> String {
+            return "Seconds of audio synthesized: " + String(format: "%.3f", secs) + "s"
+        }
+
+        textStreamQueue.async {
+            isTextStreamQueueActive.set(true)
+
+            let words = text.split(separator: " ")
+            for word in words {
+                let wordWithSpace = String(word) + " "
+                addToTextStream(word: wordWithSpace)
+
+                usleep(100 * 1000)
+                DispatchQueue.main.async {
+                    self.textStream.append(wordWithSpace)
+                }
+            }
+
+            isTextStreamQueueActive.set(false)
+        }
+
+        pcmStreamQueue.async {
+            isPcmStreamQueueActive.set(true)
+
+            var audioSynthesizedSecs: Float = 0
+            var numIterations = 0
+            var isPlayStreamQueueStarted = false
+
+            DispatchQueue.main.async {
+                self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+            }
+
+            while isTextStreamQueueActive.get() || !isTextStreamEmpty() {
+                if !isTextStreamEmpty() {
+                    do {
+                        let word = getFromTextStream()
+                        if word != nil {
+                            let pcm = try self.orcaStream.synthesize(text: word!)
+                            if pcm != nil {
+                                addToPcmStream(pcm: pcm!)
+                                audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
+                                DispatchQueue.main.async {
+                                    self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+                                }
+                                if numIterations == self.NUM_AUDIO_WAIT_CHUNKS {
+                                    playStreamQueueLatch.signal()
+                                    isPlayStreamQueueStarted = true
+                                }
+                                numIterations += 1
+                            }
+                        }
+                    } catch {
+                        DispatchQueue.main.async {
+                            self.errorMessage = "\(error.localizedDescription)"
+                            self.state = UIState.ERROR
+                        }
+                    }
+                }
+            }
+
+            do {
+                let pcm = try self.orcaStream.flush()
+                if pcm != nil {
+                    addToPcmStream(pcm: pcm!)
+                    audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
+                    DispatchQueue.main.async {
+                        self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+                    }
+                    if !isPlayStreamQueueStarted {
+                        playStreamQueueLatch.signal()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "\(error.localizedDescription)"
+                    self.state = UIState.ERROR
+                }
+            }
+
+            isPcmStreamQueueActive.set(false)
+        }
+
+        playStreamQueue.async {
+            playStreamQueueLatch.wait()
+
+            while isPcmStreamQueueActive.get() || !isPcmStreamEmpty() {
+                if !isPcmStreamEmpty() {
+                    let pcm = getFromPcmStream()
+                    self.playerStream.playStreamPCM(pcm!) { isPlaying in
+                        if !isPlaying {
+                            DispatchQueue.main.async {
+                                self.playerStream.stopStreamPCM()
+                                self.state = UIState.STREAM_OPEN
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     public func toggleSynthesizeOff() {
         player.stop()
         state = UIState.READY
@@ -298,8 +349,10 @@ class ViewModel: ObservableObject {
             if nonAllowedCharacters.count > 0 {
                 let characterString = nonAllowedCharacters.map { "\($0)" }.joined(separator: ", ")
                 self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
+                self.streamInvalidTextMessage = "The following characters will be ignored: `\(characterString)`"
             } else {
                 self.invalidTextMessage = ""
+                self.streamInvalidTextMessage = ""
             }
         } catch {
             print(error.localizedDescription)
