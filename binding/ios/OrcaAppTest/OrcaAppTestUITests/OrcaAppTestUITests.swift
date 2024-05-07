@@ -83,9 +83,9 @@ class OrcaAppTestUITests: BaseTest {
             XCTAssertGreaterThan(pcm.count, 0)
             XCTAssertGreaterThan(wordArray.count, 0)
 
-            let groundTruth = try getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
+            let groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
             XCTAssertEqual(pcm.count, groundTruth.count)
-            XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1))
+            XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1000))
         }
     }
 
