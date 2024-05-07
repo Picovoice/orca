@@ -9,6 +9,138 @@
     android:foregroundTint="#002A1F65"
     tools:context=".MainActivity">
 
+  <androidx.constraintlayout.widget.Barrier
+      android:id="@+id/textViewBarrier"
+      app:barrierDirection="left"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:constraint_referenced_ids="infoTextView,errorTextView"/>
+
+  <androidx.appcompat.widget.SwitchCompat
+      android:id="@+id/streamSwitch"
+      android:layout_width="wrap_content"
+      android:layout_height="60dp"
+      android:layout_marginTop="12dp"
+      android:layout_marginBottom="12dp"
+      android:onClick="onStreamSwitchClick"
+      android:text="Streaming Synthesis"
+      android:textSize="16sp"
+      app:layout_constraintBottom_toTopOf="@+id/streamTextView"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_bias="1.0"
+      tools:ignore="UseSwitchCompatOrMaterialXml"/>
+
+  <TextView
+      android:id="@+id/streamTextView"
+      android:layout_width="0dp"
+      android:layout_height="0dp"
+      android:layout_margin="20dp"
+      android:background="#eeeeee"
+      android:gravity="top|start"
+      android:importantForAutofill="no"
+      android:padding="10dp"
+      android:scrollbars="vertical"
+      android:textSize="20sp"
+      android:visibility="invisible"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintBottom_toBottomOf="@+id/textViewBarrier" />
+
+  <TextView
+      android:id="@+id/streamSecsTextView"
+      android:layout_width="0dp"
+      android:layout_height="48dp"
+      android:layout_marginTop="20dp"
+      android:layout_marginStart="20dp"
+      android:layout_marginEnd="20dp"
+      android:textSize="16sp"
+      android:visibility="invisible"
+      app:layout_constraintTop_toBottomOf="@+id/streamTextView"
+      app:layout_constraintBottom_toTopOf="@+id/infoTextView"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent" />
+
+  <EditText
+      android:id="@+id/synthesizeEditText"
+      android:layout_width="0dp"
+      android:layout_height="0dp"
+      android:layout_marginStart="20dp"
+      android:layout_marginEnd="20dp"
+      android:layout_marginTop="0dp"
+      android:layout_marginBottom="20dp"
+      android:background="#eeeeee"
+      android:gravity="top|start"
+      android:hint="Enter some text you want to synthesize..."
+      android:importantForAutofill="no"
+      android:inputType="textMultiLine"
+      android:padding="10dp"
+      android:scrollbars="vertical"
+      app:layout_constraintBottom_toBottomOf="@+id/textViewBarrier"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="0.8"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="@+id/streamTextView"
+      app:layout_constraintVertical_bias="0.0" />
+
+  <ProgressBar
+      android:id="@+id/synthesizeProgress"
+      android:visibility="invisible"
+      android:layout_width="160dp"
+      android:layout_height="80dp"
+      android:layout_marginStart="1dp"
+      android:layout_marginEnd="1dp"
+      android:layout_marginBottom="40dp"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"/>
+
+  <TextView
+      android:id="@+id/numCharsTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:enabled="false"
+      android:text=""
+      android:textSize="12sp"
+      app:layout_constraintEnd_toEndOf="@+id/streamTextView"
+      app:layout_constraintTop_toBottomOf="@+id/streamTextView"/>
+
+  <TextView
+      android:id="@+id/infoTextView"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:layout_marginEnd="8dp"
+      android:layout_marginTop="16dp"
+      android:layout_marginBottom="16dp"
+      android:padding="8dp"
+      android:text=""
+      android:textAlignment="center"
+      app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/streamSecsTextView" />
+
+  <TextView
+      android:id="@+id/errorTextView"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:layout_marginEnd="8dp"
+      android:layout_marginTop="16dp"
+      android:layout_marginBottom="16dp"
+      android:background="#FF0000"
+      android:padding="8dp"
+      android:text="TextView"
+      android:textColor="#FFFFFF"
+      android:visibility="invisible"
+      app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/streamSecsTextView" />
+
   <ToggleButton
       android:id="@+id/synthesizeButton"
       android:theme="@style/ButtonStyle"
@@ -26,130 +158,5 @@
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"/>
-
-  <ProgressBar
-      android:id="@+id/synthesizeProgress"
-      android:visibility="invisible"
-      android:layout_width="160dp"
-      android:layout_height="80dp"
-      android:layout_marginStart="1dp"
-      android:layout_marginEnd="1dp"
-      android:layout_marginBottom="40dp"
-      app:layout_constraintBottom_toBottomOf="parent"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"/>
-
-  <EditText
-      android:id="@+id/synthesizeEditText"
-      android:layout_width="0dp"
-      android:layout_height="0dp"
-      android:importantForAutofill="no"
-      android:inputType="textMultiLine"
-      android:layout_margin="20dp"
-      android:padding="10dp"
-      app:layout_constraintBottom_toTopOf="@+id/textViewBarrier"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toTopOf="parent"
-      android:background="#eeeeee"
-      android:scrollbars="vertical"
-      android:gravity="top|start"
-      android:hint="Enter some text you want to synthesize..."/>
-
-  <TextView
-      android:id="@+id/numCharsTextView"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:enabled="false"
-      android:text=""
-      android:textSize="12sp"
-      app:layout_constraintEnd_toEndOf="@+id/synthesizeEditText"
-      app:layout_constraintTop_toBottomOf="@+id/synthesizeEditText"/>
-
-  <androidx.constraintlayout.widget.Barrier
-      android:id="@+id/textViewBarrier"
-      app:barrierDirection="left"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      app:constraint_referenced_ids="infoTextView,errorTextView"/>
-
-  <TextView
-      android:id="@+id/infoTextView"
-      android:layout_width="0dp"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="8dp"
-      android:layout_marginEnd="8dp"
-      android:layout_marginTop="16dp"
-      android:layout_marginBottom="16dp"
-      android:text=""
-      android:textAlignment="center"
-      app:layout_constraintTop_toBottomOf="@+id/numCharsTextView"
-      app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"/>
-
-  <TextView
-      android:id="@+id/errorTextView"
-      android:layout_width="0dp"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="8dp"
-      android:layout_marginEnd="8dp"
-      android:layout_marginTop="16dp"
-      android:layout_marginBottom="16dp"
-      android:background="#FF0000"
-      android:padding="8dp"
-      android:text="TextView"
-      android:textColor="#FFFFFF"
-      android:visibility="invisible"
-      app:layout_constraintTop_toBottomOf="@+id/numCharsTextView"
-      app:layout_constraintBottom_toTopOf="@+id/synthesizeButton"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"/>
-
-  <androidx.appcompat.widget.SwitchCompat
-      android:id="@+id/streamSwitch"
-      android:layout_width="wrap_content"
-      android:layout_height="60dp"
-      android:layout_marginTop="12dp"
-      android:layout_marginBottom="12dp"
-      android:onClick="onStreamSwitchClick"
-      android:text="Streaming Synthesis"
-      android:textSize="16sp"
-      app:layout_constraintBottom_toTopOf="@+id/synthesizeEditText"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toTopOf="parent"
-      app:layout_constraintVertical_bias="1.0"
-      tools:ignore="UseSwitchCompatOrMaterialXml"/>
-
-  <TextView
-      android:id="@+id/streamSecsTextView"
-      android:layout_width="0dp"
-      android:layout_height="64dp"
-      android:layout_marginStart="20dp"
-      android:layout_marginEnd="20dp"
-      android:textSize="16sp"
-      android:visibility="invisible"
-      app:layout_constraintBottom_toBottomOf="@+id/synthesizeEditText"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"/>
-
-  <TextView
-      android:id="@+id/streamTextView"
-      android:layout_width="0dp"
-      android:layout_height="0dp"
-      android:layout_margin="20dp"
-      android:background="#eeeeee"
-      android:gravity="top|start"
-      android:importantForAutofill="no"
-      android:padding="10dp"
-      android:scrollbars="vertical"
-      android:textSize="20sp"
-      android:visibility="invisible"
-      app:layout_constraintBottom_toTopOf="@+id/streamSecsTextView"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/streamSwitch"
-      app:layout_constraintVertical_bias="0.0"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

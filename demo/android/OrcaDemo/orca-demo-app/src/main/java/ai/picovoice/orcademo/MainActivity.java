@@ -360,9 +360,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (orcaStream == null) {
                 orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+                runOnUiThread(() -> {
+                    streamSecsTextView.setText("");
+                    streamSecsTextView.setVisibility(View.VISIBLE);
+                });
             } else {
                 orcaStream.close();
                 orcaStream = null;
+                runOnUiThread(() -> streamSecsTextView.setVisibility(View.INVISIBLE));
             }
         } catch (OrcaException e) {
             onOrcaException(e);
@@ -398,7 +403,6 @@ public class MainActivity extends AppCompatActivity {
                 setUIState(UIState.EDIT);
                 infoTextView.setText("");
                 streamTextView.setVisibility(View.INVISIBLE);
-                streamSecsTextView.setVisibility(View.INVISIBLE);
                 synthesizeEditText.setVisibility(View.VISIBLE);
             });
         } catch (Exception e) {
@@ -418,6 +422,10 @@ public class MainActivity extends AppCompatActivity {
         AtomicBoolean isStreamingText = new AtomicBoolean(false);
         ArrayList<String> textStream = new ArrayList<>();
 
+        AtomicBoolean isQueueingStreamingPcm = new AtomicBoolean(false);
+        ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
+        CountDownLatch latch = new CountDownLatch(1);
+
         executor.submit(() -> {
             isStreamingText.set(true);
 
@@ -425,9 +433,12 @@ public class MainActivity extends AppCompatActivity {
             for (String word : words) {
                 word += " ";
                 try {
-                    textStream.add(word);
+                    String finalWord = word;
+                    mainHandler.post(() -> {
+                        textStream.add(finalWord);
+                        streamTextView.append(finalWord);
+                    });
                     Thread.sleep(100);
-                    streamTextView.append(word);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -436,15 +447,11 @@ public class MainActivity extends AppCompatActivity {
             isStreamingText.set(false);
         });
 
-        AtomicBoolean isQueueingStreamingPcm = new AtomicBoolean(false);
-        ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
-        CountDownLatch latch = new CountDownLatch(1);
-
         executorStreamingSynthesis.submit(() -> {
             try {
                 mainHandler.post(() -> {
                     streamTextView.setText("");
-                    streamSecsTextView.setText("");
+                    streamSecsTextView.setText("Seconds of audio synthesized: 0.000s");
                     synthesizeButton.setEnabled(false);
                 });
 
@@ -461,7 +468,8 @@ public class MainActivity extends AppCompatActivity {
                             if (pcm != null && pcm.length > 0) {
                                 pcmQueue.add(pcm);
                                 secs += (float) pcm.length / orca.getSampleRate();
-                                streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                                float finalSecs = secs;
+                                mainHandler.post(() -> streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", finalSecs) + "s"));
                                 if (numIterations == STREAMING_NUM_AUDIO_WAIT_CHUNKS) {
                                     latch.countDown();
                                     isPcmPlayStarted = true;
@@ -479,7 +487,8 @@ public class MainActivity extends AppCompatActivity {
                     if (flushedPcm != null && flushedPcm.length > 0) {
                         pcmQueue.add(flushedPcm);
                         secs += (float) flushedPcm.length / orca.getSampleRate();
-                        streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", secs) + "s");
+                        float finalSecs = secs;
+                        mainHandler.post(() -> streamSecsTextView.setText("Seconds of audio synthesized: " + String.format("%.3f", finalSecs) + "s"));
                     }
 
                     if (!isPcmPlayStarted) {
