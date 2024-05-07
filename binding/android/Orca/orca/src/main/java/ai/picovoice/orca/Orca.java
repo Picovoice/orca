@@ -35,6 +35,9 @@ public class Orca {
 
     private long handle;
 
+    /**
+     * OrcaStream object that converts a stream of text to a stream of audio.
+     */
     public class OrcaStream {
         private long stream;
 
@@ -43,14 +46,19 @@ public class Orca {
         }
 
         /**
-         * Generates audio from a live stream of text. The returned audio contains the speech representation of the text.
+         * Adds a chunk of text to the Stream object and generates audio if enough text has been added.
+         * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+         * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
+         * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
+         * for the remaining text that has not yet been synthesized.
          *
-         * @param text   Text to be converted to audio. The maximum length can be attained by calling
-         *               `getMaxCharacterLimit()`. Allowed characters can be retrieved by calling
-         *               `getValidCharacters()`. Custom pronunciations can be embedded in the text via the
-         *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
-         *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
-         * @return The output audio. If none is available, null is returned.
+         * @param text   A chunk of text from a text input stream, comprised of valid characters.
+         *               Valid characters can be retrieved by calling `.getValidCharacters()`.
+         *               Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+         *               They need to be added in a single call to this function.
+         *               The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+         * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+         *         audio chunk has been produced.
          * @throws OrcaException if there is an error while synthesizing audio.
          */
         public short[] synthesize(String text) throws OrcaException {
@@ -59,6 +67,7 @@ public class Orca {
                         "Attempted to call OrcaStream synthesize after delete."
                 );
             }
+
             if (stream == 0) {
                 throw new OrcaInvalidStateException(
                         "Attempted to call OrcaStream synthesize without an open stream."
@@ -71,10 +80,12 @@ public class Orca {
         }
 
         /**
-         * Flushes remaining text. The returned audio contains the speech representation of the text.
+         * Generates audio for all the buffered text that was added to the OrcaStream object
+         * via `OrcaStream.synthesize()`.
          *
-         * @return Any remaining output audio. If none is available, null is returned.
-         * @throws OrcaException if there is an error while synthesizing audio.
+         * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+         *         audio chunk has been produced.
+         * @throws OrcaException if there is an error while flushing audio.
          */
         public short[] flush() throws OrcaException {
             if (handle == 0) {
@@ -82,6 +93,7 @@ public class Orca {
                         "Attempted to call OrcaStream flush after delete."
                 );
             }
+
             if (stream == 0) {
                 throw new OrcaInvalidStateException(
                         "Attempted to call OrcaStream flush without an open stream."
@@ -94,7 +106,7 @@ public class Orca {
         }
 
         /**
-         * Deletes OrcaStream.
+         * Releases the resources acquired by the OrcaStream object.
          */
         public void close() {
             if (handle != 0 && stream != 0) {
@@ -162,7 +174,8 @@ public class Orca {
      *               syntax `{word|pronunciation}`. The pronunciation is expressed in ARPAbet format,
      *               e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
      * @param params Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
-     * @return The output audio and alignments data.
+     * @return An object containing the generated audio as a sequence of 16-bit linearly-encoded integers
+     *         and an array of OrcaWord objects representing the word alignments.
      * @throws OrcaException if there is an error while synthesizing audio.
      */
     public OrcaAudio synthesize(String text, OrcaSynthesizeParams params) throws OrcaException {
@@ -191,7 +204,7 @@ public class Orca {
      * @param outputPath Absolute path to the output audio file. The output file is saved as
      *                   `WAV (.wav)` and consists of a single mono channel.
      * @param params     Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
-     * @return The alignments data.
+     * @return An array of OrcaWord objects representing the word alignments.
      * @throws OrcaException if there is an error while synthesizing audio to file.
      */
     public OrcaWord[] synthesizeToFile(
@@ -215,11 +228,9 @@ public class Orca {
     }
 
     /**
-     * TODO:
-     *
      * @param params Global parameters for synthesized text. See 'OrcaSynthesizeParams' for details.
      * @return OrcaStream object.
-     * @throws OrcaException if there is an error while synthesizing audio.
+     * @throws OrcaException if there is an error while opening OrcaStream.
      */
     public OrcaStream streamOpen(OrcaSynthesizeParams params) throws OrcaException {
         if (handle == 0) {

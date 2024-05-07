@@ -46,6 +46,10 @@ To enable AccessKey validation, you must add the following line to your `Android
 
 ## Usage
 
+Orca supports two modes of operation: streaming and single synthesis. In the streaming synthesis mode, Orca processes an
+incoming text stream in real-time and generates audio in parallel. In the single synthesis mode, a complete text is
+synthesized in a single call to the Orca engine.
+
 Create an instance of the engine with the Orca Builder class by passing in the accessKey, modelPath and Android app
 context:
 
@@ -62,77 +66,72 @@ try {
 } catch (OrcaException ex) { }
 ```
 
-### Streaming vs. Single Synthesis
-
-Orca supports two modes of operation: streaming and single synthesis.
-In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
-In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to the
-Orca engine.
-
-#### Streaming Synthesis
-
-To use streaming synthesis, call `streamOpen` to create an `OrcaStream` object.
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one:
 
 ```java
 Orca.OrcaStream orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
-```
 
-Then, call `synthesize` on `orcaStream` to generate speech for a live stream of text:
-
-```java
-String textStream = "${TEXT}";
-String[] words = textStream.split(" ");
-
-for (String word : words) {
-  short[] pcm = orcaStream.synthesize(word + " ");
+for (String textChunk : textGenerator()) {
+  short[] pcm = orcaStream.synthesize(textChunk);
   if (pcm != null) {
     // handle pcm
   }
 }
-```
 
-`OrcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
-audio, `null` is returned.
-
-When done, call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object.
-
-```java
 short[] flushedPcm = orcaStream.flush();
 if (flushedPcm != null) {
   // handle pcm
 }
+```
 
+The `textGenerator()` function can be any stream generating text, for example an LLM response.
+Orca produces audio chunks in parallel to the incoming text stream, and returns the raw PCM whenever enough context has
+been added via `orcaStream.synthesize()`.
+To ensure smooth transitions between chunks, the `orcaStream.synthesize()` function returns an audio chunk that only
+includes the audio for a portion of the text that has been added.
+To generate the audio for the remaining text, `orcaStream.flush()` needs to be invoked.
+When done with streaming text synthesis, the `OrcaStream` object needs to be closed:
+
+```java
 orcaStream.close();
 ```
 
-#### Single Synthesis
-
-To use single synthesis, simply call one of the available `synthesize` methods directly on the `Orca` instance.
-The `synthesize` method will send
-the text to the engine and return the speech audio as a `short[]`. The `synthesizeToFile` method will write the `pcm`
-data directly to a specified wav file.
+If the complete text is known before synthesis, single synthesis mode can be used to generate speech in a single call to
+Orca:
 
 ```java
 OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder().build();
 
-// Return raw PCM
-short[] pcm = orca.synthesize("${TEXT}", params);
+// Return raw PCM and alignments
+OrcaAudio audio = orca.synthesize("${TEXT}", params);
 
 // Save the generated audio to a WAV file directly
-orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
+OrcaWord[] orcaWords = orca.synthesizeToFile("${TEXT}", "${OUTPUT_PATH}", params);
 ```
 
-Replace `${TEXT}` with the text to be synthesized (must be fewer characters than `.getMaxCharacterLimit()`). When
-using `synthesize`, the generated pcm has a sample rate equal to the one returned by `.getSampleRate()`. When
-using `synthesizeToFile`, replace `${OUTPUT_PATH}` with the path to save the generated audio as a single-channel 16-bit
-PCM WAV file. When done make sure to explicitly release the resources with `.delete()`.
+Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the path to save the generated audio as a
+single-channel 16-bit PCM WAV file.
+In single synthesis mode, Orca returns metadata of the synthesized audio in the form of an array of `OrcaWord`
+objects.
 
-### Text Input
+When done make sure to explicitly release the resources using:
 
-Orca accepts any character found in the list returned by the `getValidCharacters()` method.
-Pronunciations of characters or words not supported by this list can be achieved by embedding custom pronunciations in
-the text via the syntax: `{word|pronunciation}`. The pronunciation is expressed
-in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for example:
+```java
+orca.delete()
+```
+
+### Text input
+
+Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
+basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
+`getValidCharacters()` method provided in the Orca SDK you are using.
+Pronunciations of characters or words not supported by this list can be achieved with
+[custom pronunciations](#custom-pronunciations).
+
+### Custom pronunciations
+
+Orca allows to embed custom pronunciations in the text via the syntax: `{word|pronunciation}`.\
+The pronunciation is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for example:
 
 - "This is a {custom|K AH S T AH M} pronunciation"
 - "{read|R IY D} this as {read|R EH D}, please."
@@ -159,11 +158,14 @@ import ai.picovoice.orca.*;
 
 OrcaSynthesizeParams params = new OrcaSynthesizeParams.Builder()
         .setSpeechRate(1.2f)
+        .setRandomState(1)
         .build();
 ```
 
 - `setSpeechRate()`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value
   produces speech that is faster. The default is `1.0`.
+- `setRandomState()`: Sets the random state for sampling during synthesis. This can be used to ensure that the
+  synthesized speech is deterministic across different runs.
 
 ### Alignment Metadata
 
