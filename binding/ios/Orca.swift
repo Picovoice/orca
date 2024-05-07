@@ -17,7 +17,7 @@ public struct OrcaPhoneme {
     /// Start of phoneme in seconds.
     public let startSec: Float
 
-    /// Start of phoneme in seconds.
+    /// End of phoneme in seconds.
     public let endSec: Float
 
     /// Constructor.
