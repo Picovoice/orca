@@ -10,7 +10,7 @@ EXTERNAL SOURCES:
 
 CHECKOUT OPTIONS:
   Orca-iOS:
-    :commit: 922b7ceb8a21a101c9df3b2a4cf5c2cbb048a435
+    :commit: 4189801fc019bd1bdaa266fdcc1093089d29b860
     :git: https://github.com/Picovoice/orca.git
 
 SPEC CHECKSUMS:
