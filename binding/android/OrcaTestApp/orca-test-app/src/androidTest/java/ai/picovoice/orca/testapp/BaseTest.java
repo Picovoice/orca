@@ -98,7 +98,7 @@ public class BaseTest {
         };
     }
 
-    private static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {
+    protected static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {
         short[] result = new short[existingArray.length + arrayToAdd.length];
 
         System.arraycopy(existingArray, 0, result, 0, existingArray.length);
@@ -107,7 +107,7 @@ public class BaseTest {
         return result;
     }
 
-    private static short[] readAudioFile(String audioFile) throws Exception {
+    protected static short[] readAudioFile(String audioFile) throws Exception {
         FileInputStream audioInputStream = new FileInputStream(audioFile);
         ByteArrayOutputStream audioByteBuffer = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
@@ -124,7 +124,7 @@ public class BaseTest {
         return pcm;
     }
 
-    private void validateMetadata(
+    protected void validateMetadata(
             OrcaWord[] words,
             OrcaWord[] expectedWords,
             boolean isExpectExact
