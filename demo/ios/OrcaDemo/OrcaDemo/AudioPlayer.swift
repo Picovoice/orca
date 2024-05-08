@@ -32,7 +32,7 @@ public class AudioPlayerError: LocalizedError {
 public class AudioPlayer: NSObject, AVAudioPlayerDelegate {
     var player: AVAudioPlayer?
     var onComplete: ((Bool) -> Void)?
-    
+
     func play(audioFile: URL, onComplete: ((Bool) -> Void)? = nil) throws {
         self.onComplete = onComplete
         try playAudioFile(audioFile: audioFile)

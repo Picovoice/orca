@@ -193,66 +193,17 @@ public class Orca {
 
     /// Set of characters supported by Orca.
     public var validCharacters: Set<String> {
-        get throws {
-            if _validCharacters == nil {
-                var cNumCharacters: Int32 = 0
-                var cCharacters: UnsafeMutablePointer<UnsafePointer<Int8>?>?
-                let status = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
-                if status != PV_STATUS_SUCCESS {
-                    let messageStack = try getMessageStack()
-                    throw pvStatusToOrcaError(status, "Unable to get Orca valid characters", messageStack)
-                }
-
-                var characters: Set<String> = []
-                for i in 0..<cNumCharacters {
-                    if let cString = cCharacters?.advanced(by: Int(i)).pointee {
-                        let swiftString = String(cString: cString)
-                        characters.insert(swiftString)
-                    }
-                }
-
-                pv_orca_valid_characters_delete(cCharacters)
-
-                _validCharacters = characters
-            }
-            return _validCharacters!
-        }
+        return self._validCharacters
     }
 
     /// Audio sample rate of generated audio.
     public var sampleRate: Int32 {
-        get throws {
-            if _sampleRate == nil {
-                var cSampleRate: Int32 = 0
-                let status = pv_orca_sample_rate(handle, &cSampleRate)
-                if status != PV_STATUS_SUCCESS {
-                    let messageStack = try getMessageStack()
-                    throw pvStatusToOrcaError(status, "Orca failed to get sample rate", messageStack)
-                }
-
-                _sampleRate = cSampleRate
-            }
-
-            return _sampleRate!
-        }
+        return self._sampleRate
     }
 
     /// Maximum number of characters allowed per call to `synthesize()`.
     public var maxCharacterLimit: Int32 {
-        get throws {
-            if _maxCharacterLimit == nil {
-                var cMaxCharacterLimit: Int32 = 0
-                let status = pv_orca_max_character_limit(handle, &cMaxCharacterLimit)
-                if status != PV_STATUS_SUCCESS {
-                    let messageStack = try getMessageStack()
-                    throw pvStatusToOrcaError(status, "Orca failed to get max character limit", messageStack)
-                }
-
-                _maxCharacterLimit = cMaxCharacterLimit
-            }
-
-            return _maxCharacterLimit!
-        }
+        return self._maxCharacterLimit
     }
 
     /// Constructor.
@@ -272,11 +223,44 @@ public class Orca {
 
         pv_set_sdk(Orca.sdk)
 
-        let status = pv_orca_init(accessKey, modelPathArg, &handle)
-        if status != PV_STATUS_SUCCESS {
+        let initStatus = pv_orca_init(accessKey, modelPathArg, &handle)
+        if initStatus != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Orca init failed", messageStack)
+            throw pvStatusToOrcaError(initStatus, "Orca init failed", messageStack)
         }
+
+        var cNumCharacters: Int32 = 0
+        var cCharacters: UnsafeMutablePointer<UnsafePointer<Int8>?>?
+        let validCharactersStatus = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
+        if validCharactersStatus != PV_STATUS_SUCCESS {
+            let messageStack = try getMessageStack()
+            throw pvStatusToOrcaError(validCharactersStatus, "Unable to get Orca valid characters", messageStack)
+        }
+        var validCharacters: Set<String> = []
+        for i in 0..<cNumCharacters {
+            if let cString = cCharacters?.advanced(by: Int(i)).pointee {
+                let swiftString = String(cString: cString)
+                validCharacters.insert(swiftString)
+            }
+        }
+        pv_orca_valid_characters_delete(cCharacters)
+        self._validCharacters = validCharacters
+
+        var cSampleRate: Int32 = 0
+        let sampleRateStatus = pv_orca_sample_rate(handle, &cSampleRate)
+        if sampleRateStatus != PV_STATUS_SUCCESS {
+            let messageStack = try getMessageStack()
+            throw pvStatusToOrcaError(sampleRateStatus, "Orca failed to get sample rate", messageStack)
+        }
+        self._sampleRate = cSampleRate
+
+        var cMaxCharacterLimit: Int32 = 0
+        let maxCharacterLimitStatus = pv_orca_max_character_limit(handle, &cMaxCharacterLimit)
+        if maxCharacterLimitStatus != PV_STATUS_SUCCESS {
+            let messageStack = try getMessageStack()
+            throw pvStatusToOrcaError(maxCharacterLimitStatus, "Orca failed to get max character limit", messageStack)
+        }
+        self._maxCharacterLimit = cMaxCharacterLimit
     }
 
     /// Constructor.
@@ -318,7 +302,11 @@ public class Orca {
     /// - Returns: A tuple containing the generated audio as a sequence of 16-bit linearly-encoded integers
     ///   and an array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
-    public func synthesize(text: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> (pcm: [Int16], wordArray: [OrcaWord]) {
+    public func synthesize(
+        text: String,
+        speechRate: Double? = nil,
+        randomState: Int64? = nil
+    ) throws -> (pcm: [Int16], wordArray: [OrcaWord]) {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
@@ -402,7 +390,12 @@ public class Orca {
     ///   - randomState: Random seed for the synthesis process.
     /// - Returns: An array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
-    public func synthesizeToFile(text: String, outputPath: String, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
+    public func synthesizeToFile(
+        text: String,
+        outputPath: String,
+        speechRate: Double? = nil,
+        randomState: Int64? = nil
+    ) throws -> [OrcaWord] {
         if handle == nil {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }

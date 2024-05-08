@@ -11,7 +11,7 @@ class AudioPlayerStream {
     
     init(sampleRate: Double) throws {
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+        try audioSession.setCategory(.playback, mode: .default, options: .defaultToSpeaker)
         try audioSession.setActive(true)
         
         let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: AVAudioChannelCount(1), interleaved: false)
@@ -47,7 +47,7 @@ class AudioPlayerStream {
         audioBuffer.frameLength = audioBuffer.frameCapacity
         let buf = audioBuffer.floatChannelData![0]
         for (index, sample) in pcmData.enumerated() {
-            buf[index] = Float32(sample) / 32767.0
+            buf[index] = Float32(sample) / Float32(Int16.max)
         }
 
         playerNode.scheduleBuffer(audioBuffer) { [weak self] in
