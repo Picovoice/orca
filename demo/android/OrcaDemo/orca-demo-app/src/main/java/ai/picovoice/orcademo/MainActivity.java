@@ -274,13 +274,23 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sb.append(c);
                     }
-                    runOnUiThread(() -> {
-                        setUIState(UIState.ERROR);
-                        infoTextView.setText(String.format(
-                                "Invalid characters in text: [%s]",
-                                sb
-                        ));
-                    });
+                    if (orcaStream == null) {
+                        runOnUiThread(() -> {
+                            setUIState(UIState.ERROR);
+                            infoTextView.setText(String.format(
+                                    "Invalid characters in text: [%s]",
+                                    sb
+                            ));
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            infoTextView.setVisibility(View.VISIBLE);
+                            infoTextView.setText(String.format(
+                                    "Invalid characters in text will be ignored: [%s]",
+                                    sb
+                            ));
+                        });
+                    }
                 }
             }
         } else {
@@ -382,13 +392,17 @@ public class MainActivity extends AppCompatActivity {
             if (orcaStream == null) {
                 orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
                 runOnUiThread(() -> {
+                    synthesizeEditText.setText("");
                     streamSecsTextView.setText("");
                     streamSecsTextView.setVisibility(View.VISIBLE);
                 });
             } else {
                 orcaStream.close();
                 orcaStream = null;
-                runOnUiThread(() -> streamSecsTextView.setVisibility(View.INVISIBLE));
+                runOnUiThread(() -> {
+                    synthesizeEditText.setText("");
+                    streamSecsTextView.setVisibility(View.INVISIBLE);
+                });
             }
         } catch (OrcaException e) {
             onOrcaException(e);
