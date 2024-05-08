@@ -192,17 +192,17 @@ public class Orca {
     }
 
     /// Set of characters supported by Orca.
-    public var validCharacters: Set<String> {
+    public var validCharacters: Set<String>? {
         return self._validCharacters
     }
 
     /// Audio sample rate of generated audio.
-    public var sampleRate: Int32 {
+    public var sampleRate: Int32? {
         return self._sampleRate
     }
 
     /// Maximum number of characters allowed per call to `synthesize()`.
-    public var maxCharacterLimit: Int32 {
+    public var maxCharacterLimit: Int32? {
         return self._maxCharacterLimit
     }
 
@@ -311,10 +311,9 @@ public class Orca {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
 
-        let orcaMaxChararacterLimit = try maxCharacterLimit
-        if text.count > orcaMaxChararacterLimit {
+        if text.count > self._maxCharacterLimit! {
             throw OrcaInvalidArgumentError(
-                "Text length (\(text.count)) must be smaller than \(orcaMaxChararacterLimit)")
+                "Text length (\(text.count)) must be smaller than \(self._maxCharacterLimit!)")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
@@ -400,10 +399,9 @@ public class Orca {
             throw OrcaInvalidStateError("Unable to synthesize - resources have been released")
         }
 
-        let orcaMaxChararacterLimit = try maxCharacterLimit
-        if text.count > orcaMaxChararacterLimit {
+        if text.count > self._maxCharacterLimit! {
             throw OrcaInvalidArgumentError(
-                "Text length (\(text.count)) must be smaller than \(orcaMaxChararacterLimit)")
+                "Text length (\(text.count)) must be smaller than \(self._maxCharacterLimit!)")
         }
 
         let cSynthesizeParams = try getCSynthesizeParams(speechRate: speechRate, randomState: randomState)
