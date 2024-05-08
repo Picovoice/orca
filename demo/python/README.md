@@ -48,7 +48,7 @@ We stream that text to Orca and play the synthesized audio as soon as it gets ge
 To run it, execute the following:
 
 ```console
-orca_demo_streaming --access_key ${ACCESS_KEY} --text-to-stream ${TEXT}
+orca_demo_streaming --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
 ```
 
 Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console and `${TEXT}` with your text to be

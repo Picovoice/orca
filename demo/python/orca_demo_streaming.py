@@ -300,22 +300,22 @@ def main() -> None:
         "-m",
         help="Absolute path to Orca model. Default: using the model provided by `pvorca`")
     parser.add_argument(
-        "--text-to-stream",
+        "--text_to_stream",
         "-t",
         required=True,
         help="Text to be streamed to Orca")
     parser.add_argument(
-        "--tokens-per-second",
+        "--tokens_per_second",
         type=int,
         default=15,
         help="Number of tokens per second to be streamed to Orca, simulating an LLM response.")
     parser.add_argument(
-        "--audio-wait-chunks",
+        "--audio_wait_chunks",
         type=int,
         default=None,
         help="Number of PCM chunks to wait before starting to play audio. Default: system-dependent.")
     parser.add_argument(
-        "--show-audio-devices",
+        "--show_audio_devices",
         action="store_true",
         help="Only list available audio output devices and exit")
     parser.add_argument('--audio-device-index', type=int, default=None, help='Index of input audio device')

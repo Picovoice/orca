@@ -62,7 +62,7 @@ jobs:
         run: >
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
-          --text "Hello, I am Orca!"
+          --text_to_stream "Hello, I am Orca!"
 
       - name: Test single
         run: >
@@ -97,7 +97,7 @@ jobs:
         run: >
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
-          --text "Hello, I am Orca!"
+          --text_to_stream "Hello, I am Orca!"
 
       - name: Test single
         run: >

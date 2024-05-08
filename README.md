@@ -69,9 +69,6 @@ This enables seamless conversations with voice assistants, eliminating any audio
 
 ![](https://github.com/Picovoice/orca/blob/orca-prepare-v0.2/resources/assets/orca_streaming_animation.gif)
 
-As demonstrated above, Orca starts converting text to audio right away, while other TTS systems, such as OpenAI TTS,
-need to wait for the entire LLM output to be available, introducing a delay in the voice assistant's response.
-
 Orca also supports single synthesis mode, where a complete text is synthesized in a single call to the Orca engine.
 
 ### Text input
@@ -133,15 +130,19 @@ AccessKey also verifies that your usage is within the limits of your account. Ev
 
 ### Python Demos
 
-To run the Python demo, run the following in the console:
+Install the demo package:
 
 ```console
 pip3 install pvorcademo
 ```
 
+Run the streaming demo:
+
 ```console
-orca_demo_streaming --access_key ${ACCESS_KEY} --text-to-stream ${TEXT}
+orca_demo_streaming --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
 ```
+
+Run the single synthesis demo:
 
 ```console
 orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
@@ -149,6 +150,8 @@ orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_P
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
+
+For more information about Python demos go to [demo/python](demo/python).
 
 ### iOS Demo
 
