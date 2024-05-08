@@ -11,7 +11,7 @@ class AudioPlayerStream {
     
     init(sampleRate: Double) throws {
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playback, mode: .default, options: .defaultToSpeaker)
+        try audioSession.setCategory(.playback, mode: .default)
         try audioSession.setActive(true)
         
         let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: AVAudioChannelCount(1), interleaved: false)

@@ -54,8 +54,8 @@ class ViewModel: ObservableObject {
         state = UIState.INIT
         do {
             try orca = Orca(accessKey: ACCESS_KEY, modelPath: "orca_params_female.pv")
-            maxCharacterLimit = try orca.maxCharacterLimit
-            sampleRate = try orca.sampleRate
+            maxCharacterLimit = orca.maxCharacterLimit!
+            sampleRate = orca.sampleRate!
             state = UIState.READY
 
             let audioDir = try FileManager.default.url(
@@ -186,8 +186,9 @@ class ViewModel: ObservableObject {
         }
 
         let playStreamQueue = DispatchQueue(label: "play-stream-queue")
+        let pcmStreamQueueLatch = DispatchSemaphore(value: 0)
         let playStreamQueueLatch = DispatchSemaphore(value: 0)
-
+        
         func getSecsString(secs: Float) -> String {
             return "Seconds of audio synthesized: " + String(format: "%.3f", secs) + "s"
         }
@@ -195,11 +196,15 @@ class ViewModel: ObservableObject {
         textStreamQueue.async {
             isTextStreamQueueActive.set(true)
 
+            var isPcmStreamQueueStarted = false
             let words = text.split(separator: " ")
             for word in words {
                 let wordWithSpace = String(word) + " "
                 addToTextStream(word: wordWithSpace)
-
+                if isPcmStreamQueueStarted == false {
+                    pcmStreamQueueLatch.signal()
+                    isPcmStreamQueueStarted = true
+                }
                 usleep(100 * 1000)
                 DispatchQueue.main.async {
                     self.textStream.append(wordWithSpace)
@@ -216,6 +221,7 @@ class ViewModel: ObservableObject {
             var numIterations = 0
             var isPlayStreamQueueStarted = false
 
+            pcmStreamQueueLatch.wait()
             DispatchQueue.main.async {
                 self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
             }
@@ -335,29 +341,21 @@ class ViewModel: ObservableObject {
     }
 
     public func isValid(text: String) {
-        do {
-            let characters = try orca.validCharacters
-            
-            var nonAllowedCharacters = [Character]()
-            for i in 0..<text.count {
-                let char = text[text.index(text.startIndex, offsetBy: i)]
-                if !characters.contains(String(char)) && !nonAllowedCharacters.contains(char) {
-                    nonAllowedCharacters.append(char)
-                }
+        var nonAllowedCharacters = [Character]()
+        for i in 0..<text.count {
+            let char = text[text.index(text.startIndex, offsetBy: i)]
+            if !orca.validCharacters!.contains(String(char)) && !nonAllowedCharacters.contains(char) {
+                nonAllowedCharacters.append(char)
             }
+        }
 
-            if nonAllowedCharacters.count > 0 {
-                let characterString = nonAllowedCharacters.map { "\($0)" }.joined(separator: ", ")
-                self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
-                self.streamInvalidTextMessage = "The following characters will be ignored: `\(characterString)`"
-            } else {
-                self.invalidTextMessage = ""
-                self.streamInvalidTextMessage = ""
-            }
-        } catch {
-            print(error.localizedDescription)
-            self.errorMessage = "\(error.localizedDescription)"
-            self.state = UIState.ERROR
+        if nonAllowedCharacters.count > 0 {
+            let characterString = nonAllowedCharacters.map { "\($0)" }.joined(separator: ", ")
+            self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
+            self.streamInvalidTextMessage = "The following characters will be ignored: `\(characterString)`"
+        } else {
+            self.invalidTextMessage = ""
+            self.streamInvalidTextMessage = ""
         }
     }
 }

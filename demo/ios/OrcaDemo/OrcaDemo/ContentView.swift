@@ -36,7 +36,8 @@ struct ContentView: View {
                     label: { Text("Streaming Synthesis") }
                 )
                 .disabled(toggleDisabled)
-                
+                .onChange(of: streamingMode) { _ in text = "" }
+                          
                 if viewModel.state == .STREAM_PLAYING {
                     GeometryReader { geometry in
                         ScrollView {
