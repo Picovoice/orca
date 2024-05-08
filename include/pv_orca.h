@@ -190,7 +190,8 @@ typedef struct {
 /**
  * Generates audio from text. The returned audio contains the speech representation of the text.
  * This function returns `PV_STATUS_INVALID_STATE` if an OrcaStream object is open.
- * The memory of the returned audio is allocated by Orca and can be deleted with `pv_orca_pcm_delete()`
+ * The memory of the returned audio and the alignment metadata is allocated by Orca and can be deleted with
+ * `pv_orca_pcm_delete()` and `pv_orca_word_alignments_delete()`, respectively.
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling
@@ -219,6 +220,8 @@ PV_API pv_status_t pv_orca_synthesize(
 /**
  * Generates audio from text and saves it to a file. The file contains the speech representation of the text.
  * This function returns `PV_STATUS_INVALID_STATE` if an OrcaStream object is open.
+ * The memory of the returned alignment metadata is allocated by Orca and can be deleted with
+ * `pv_orca_word_alignments_delete()`.
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling

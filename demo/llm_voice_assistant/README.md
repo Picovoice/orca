@@ -2,8 +2,8 @@
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-This demo showcases how [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/) can be seamlessly integrated into LLM-applications to drastically reduce the audio latency
-of voice assistants.
+This demo showcases how [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/) can be seamlessly
+integrated into LLM-applications to drastically reduce the audio latency of voice assistants.
 
 ## Technologies
 
@@ -14,12 +14,12 @@ a Text-to-Speech engine.
 The following technologies are used:
 
 - Speech-to-Text: Picovoice's [Cheetah Streaming Speech-to-Text](https://picovoice.ai/platform/cheetah/)
-- LLM: \"ChatGPT\" using `gpt-3.5-turbo`
+- LLM: "ChatGPT" using `gpt-3.5-turbo`
   with OpenAI Chat Completion API.
 - TTS:
     - Picovoice's [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/)
     - OpenAI TTS
-  
+
 ## Compatibility
 
 This demo has been tested on Linux (x86_64) and macOS (x86_64) using Python 3.10.
@@ -35,7 +35,7 @@ To run all features of this demo, access keys are required for:
 ## Usage
 
 ```bash
-python orca_voice_assistant_demo.py --picovoice-access-key ${PV_ACCESS_KEY} --openai-access-key ${OPEN_AI_KEY}
+python llm_voice_assistant_demo.py --picovoice-access-key ${PV_ACCESS_KEY} --openai-access-key ${OPEN_AI_KEY}
 ```
 
 Replace `${PV_ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console,

@@ -51,7 +51,7 @@ jobs:
           pip install wheel
           cd ../../binding/python
           python3 setup.py sdist bdist_wheel
-          python3 -m pip install dist/pvorca-0.2.0-py3-none-any.whl
+          python3 -m pip install dist/pvorca-0.2.0-py3-none-any.whl --force-reinstall
 
       - name: Install dependencies
         run: |
@@ -88,7 +88,7 @@ jobs:
           pip install wheel
           cd ../../binding/python
           python3 setup.py sdist bdist_wheel
-          python3 -m pip install dist/pvorca-0.2.0-py3-none-any.whl
+          python3 -m pip install dist/pvorca-0.2.0-py3-none-any.whl --force-reinstall
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt

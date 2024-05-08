@@ -444,7 +444,8 @@ class Orca:
         The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
         :param speech_rate: Rate of speech of the synthesized audio. Higher numbers correspond to faster speech.
         Valid values are within [0.7, 1.3].
-        :param random_state: Random seed for the synthesis process.
+        :param random_state: Random seed for the synthesis process. Valid values are all non-negative integer. If not
+        provided, a random seed will be chosen.
         :return: A tuple containing the generated audio as a sequence of 16-bit linearly-encoded integers
         and a sequence of OrcaWordAlignment objects representing the word alignments.
         """

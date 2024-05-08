@@ -53,9 +53,9 @@ To synthesize a text stream, create an `Orca.Stream` object and add text to it o
 stream = orca.stream_open()
 
 for text_chunk in text_generator():
-  pcm = stream.synthesize(text_chunk)
-  if pcm is not None:
-      # handle pcm
+    pcm = stream.synthesize(text_chunk)
+    if pcm is not None:
+        # handle pcm
 
 pcm = stream.flush()
 if pcm is not None:
@@ -135,11 +135,14 @@ and replace `${MODEL_PATH}` with the path to the model file with the desired voi
 
 ### Speech control
 
-Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `stream_open` 
+Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `stream_open`
 method or the single synthesis methods `synthesize` and `synthesize_to_file`:
 
 - `speech_rate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value
   produces speech that is faster (slower). The default is `1.0`.
+- `random_state`: Sets the random state for sampling during synthesis. This can be used to ensure that the synthesized
+  speech is deterministic across different runs. Valid values are all non-negative integers. If not provided, a random
+  seed will be chosen and the synthesis process will be non-deterministic.
 
 ### Orca properties
 
@@ -167,4 +170,3 @@ The `Orca.PhonemeAlignment` object has the following properties:
 
 [pvorcademo](https://pypi.org/project/pvorcademo/) provides command-line utilities for synthesizing audio using
 Orca.
-
