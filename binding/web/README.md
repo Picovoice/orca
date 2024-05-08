@@ -152,34 +152,37 @@ characters allowed, call `.maxCharacterLimit`. The sample rate of the generated 
 To use streaming synthesis, call `streamOpen` to create an `OrcaStream` object.
 
 ```typescript
-const OrcaStream = await orca.streamOpen();
+const orcaStream = await orca.streamOpen();
 ```
 
-Then, call `synthesize` on the `OrcaStream` object to generate speech for a live stream of text:
+Then, call `synthesize` on `orcaStream` to generate speech from a stream of text:
 
 ```typescript
-const textStream = "${TEXT}";
+function getNextTextChunk(): string {
+  ... // function to get the next text chunk
+}
 
-for (const word of textStream.split(" ")) {
-  const pcm = await OrcaStream.synthesize(word + " ");
+for (;;) {
+  const pcm = await orcaStream.synthesize(getNextTextChunk());
   if (pcm !== null) {
     // handle pcm
   }
+  // break at end of text stream
 }
 ```
 
-`OrcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
+`orcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
 audio, `null` is returned.
 
-When done, call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object.
+When done, call `flush` to synthesize any remaining text, and `close` to delete the `orcaStream` object.
 
 ```typescript
-const flushedPcm = OrcaStream.flush();
+const flushedPcm = orcaStream.flush();
 if (flushedPcm !== null) {
   // handle pcm
 }
 
-OrcaStream.close();
+orcaStream.close();
 ```
 
 #### Single Synthesis
