@@ -54,4 +54,5 @@ pvrecorder
 pvcheetah
 itok
 numpy
-pltf
+btns
+Btns

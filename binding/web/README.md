@@ -4,11 +4,13 @@
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+Orca is an on-device text-to-speech engine designed for use with LLMs, enabling zero-latency voice assistants.
+Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), and Windows (x86_64)
+    - Android and iOS
     - Chrome, Safari, Firefox, and Edge
     - Raspberry Pi (3, 4, 5) and NVIDIA Jetson Nano
 
@@ -122,6 +124,13 @@ const orca = await OrcaWorker.create(
 );
 ```
 
+### Streaming vs. Single Synthesis
+
+Orca supports two modes of operation: streaming and single synthesis.
+In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
+In the single synthesis mode, the complete text needs to be known in advance and is synthesized in a single call to
+the Orca engine.
+
 ### Custom Pronunciations
 
 Orca allows the embedding of custom pronunciations in the text via the syntax: `{word|pronunciation}`. The pronunciation
@@ -131,33 +140,94 @@ is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABET) phonemes, for e
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Synthesize Speech
+### Orca Properties
 
-The `synthesize` function will send the text to the engine and return the speech audio as an `Int16Array`.
+To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
+characters allowed, call `.maxCharacterLimit`. The sample rate of the generated `Int16Array` is `.sampleRate`.
+
+### Usage
+
+#### Streaming Synthesis
+
+To use streaming synthesis, call `streamOpen` to create an `OrcaStream` object.
 
 ```typescript
-const speechPcm = await orca.synthesize("${TEXT}");
+const OrcaStream = await orca.streamOpen();
+```
+
+Then, call `synthesize` on the `OrcaStream` object to generate speech for a live stream of text:
+
+```typescript
+const textStream = "${TEXT}";
+
+for (const word of textStream.split(" ")) {
+  const pcm = await OrcaStream.synthesize(word + " ");
+  if (pcm !== null) {
+    // handle pcm
+  }
+}
+```
+
+`OrcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
+audio, `null` is returned.
+
+When done, call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object.
+
+```typescript
+const flushedPcm = OrcaStream.flush();
+if (flushedPcm !== null) {
+  // handle pcm
+}
+
+OrcaStream.close();
+```
+
+#### Single Synthesis
+
+To use single synthesis, simply call `synthesize` directly on the `Orca` instance. The `synthesize` function will send
+the text to the engine and return the speech audio data as an `Int16Array` as well as
+the [alignments metadata](#alignments-metadata).
+
+```typescript
+const { pcm, alignments } = await orca.synthesize("${TEXT}");
 ```
 
 ### Speech Control
 
-Orca allows for an additional argument to be provided to the `synthesize` method to control the synthesized speech:
+Orca allows for additional arguments to control the synthesized speech.
+These can be provided to `streamOpen` or one of the single mode `synthesize` methods:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher value produces
   speech that is faster, and a lower value produces speech that is slower. The default value is `1.0`.
 
 ```typescript
 const synthesizeParams = {
-  speechRate: 1.3
+  speechRate: 1.3,
 };
 
-const speechPcm = await orca.synthesize("${TEXT}", synthesizeParams);
+// Streaming synthesis
+const OrcaStream = await orca.streamOpen(synthesizeParams);
+
+// Single synthesis
+const result = await orca.synthesize("${TEXT}", synthesizeParams);
+
 ```
 
-### Orca Properties
+### Alignments Metadata
 
-To obtain the complete set of valid characters, call `.validCharacters`. To retrieve the maximum number of
-characters allowed, call `.maxCharacterLimit`. The sample rate of Orca is `.sampleRate`.
+Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
+The `OrcaAlignment` object has the following properties:
+
+- **Word:** String representation of the word.
+- **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
+- **Phonemes:** An array of `OrcaPhoneme` objects.
+
+The `OrcaPhoneme` object has the following properties:
+
+- **Phoneme:** String representation of the phoneme.
+- **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the phoneme ended in the synthesized audio. Value is in seconds.
 
 ### Clean Up
 

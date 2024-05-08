@@ -9,7 +9,8 @@ on:
       - '!demo/web/README.md'
       - '.github/workflows/web-demos.yml'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    # TODO: delete "orca-prepare-v0.2" before release
+    branches: [ main, 'v[0-9]+.[0-9]+', 'orca-prepare-v0.2' ]
     paths:
       - 'demo/web/**'
       - '!demo/web/README.md'

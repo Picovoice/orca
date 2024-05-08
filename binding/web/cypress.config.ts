@@ -6,8 +6,8 @@ export default defineConfig({
     'PROC_PERFORMANCE_THRESHOLD_SEC': 10,
   },
   e2e: {
+    supportFile: 'cypress/support/index.ts',
     defaultCommandTimeout: 30000,
-    supportFile: false,
     specPattern: 'test/*.test.{js,jsx,ts,tsx}',
     video: false,
     screenshotOnRunFailure: false,

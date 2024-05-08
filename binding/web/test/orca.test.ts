@@ -1,54 +1,42 @@
-import { LeopardWorker } from '@picovoice/leopard-web';
 import { Orca, OrcaWorker } from '../';
 import { OrcaError } from '../dist/types/orca_errors';
+import { PvModel } from '@picovoice/web-utils';
 
 // @ts-ignore
 import orcaParamsMale from './orca_params_male';
+
 // @ts-ignore
 import orcaParamsFemale from './orca_params_female';
-import { PvModel } from '@picovoice/web-utils';
 
-import testData from '../cypress/fixtures/.test/test_data.json';
+/* eslint camelcase: 0 */
+
+import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 const EXPECTED_VALID_CHARACTERS = [
-  '.', ':', ',', '"', '?', '!', 'a', 'b',
-  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-  's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-  'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-  'Y', 'Z', '\'', '{', '}', '|', ' ', '-',
+  '.', ':', ',', '"', '?', '!', 'a',
+  'b', 'c', 'd', 'e', 'f', 'g', 'h',
+  'i', 'j', 'k', 'l', 'm', 'n', 'o',
+  'p', 'q', 'r', 's', 't', 'u', 'v',
+  'w', 'x', 'y', 'z', 'A', 'B', 'C',
+  'D', 'E', 'F', 'G', 'H', 'I', 'J',
+  'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+  'R', 'S', 'T', 'U', 'V', 'W', 'X',
+  'Y', 'Z', '\'', '{', '}', '|', ' ',
+  '-', '1', '2', '3', '4', '5', '6',
+  '7', '8', '9', '0', '@', '%', '&',
 ];
 
-const levenshteinDistance = (words1: string[], words2: string[]) => {
-  const res = Array.from(Array(words1.length + 1), () => new Array(words2.length + 1));
-  for (let i = 0; i <= words1.length; i++) {
-    res[i][0] = i;
-  }
-  for (let j = 0; j <= words2.length; j++) {
-    res[0][j] = j;
-  }
-  for (let i = 1; i <= words1.length; i++) {
-    for (let j = 1; j <= words2.length; j++) {
-      res[i][j] = Math.min(
-        res[i - 1][j] + 1,
-        res[i][j - 1] + 1,
-        res[i - 1][j - 1] + (words1[i - 1].toUpperCase() === words2[j - 1].toUpperCase() ? 0 : 1),
-      );
-    }
-  }
-  return res[words1.length][words2.length];
-};
+const EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = 'female';
 
-const wordErrorRate = (reference: string, hypothesis: string, useCER = false): number => {
-  const splitter = (useCER) ? '' : ' ';
-  const ed = levenshteinDistance(reference.split(splitter), hypothesis.split(splitter));
-  return ed / reference.length;
+const compareArrays = (arr1: Int16Array, arr2: Int16Array, step: number) => {
+  expect(arr1.length).eq(arr2.length);
+  for (let i = 0; i < arr1.length - step; i += step) {
+    expect(arr1[i]).closeTo(arr2[i], 1);
+  }
 };
 
 const runInitTest = async (
@@ -65,19 +53,18 @@ const runInitTest = async (
     expectFailure = false,
   } = params;
 
-  let orca = null;
+  let orca: Orca | OrcaWorker | null = null;
   let isFailed = false;
 
   try {
     orca = await instance.create(accessKey, model);
-
-    expect(typeof orca.version).to.eq('string');
-    expect(orca.version.length).to.be.greaterThan(0);
-    expect(orca.maxCharacterLimit).to.eq(EXPECTED_MAX_CHARACTER_LIMIT);
-    expect(orca.sampleRate).to.eq(EXPECTED_SAMPLE_RATE);
-    expect(orca.validCharacters.length).to.eq(EXPECTED_VALID_CHARACTERS.length);
+    expect(typeof orca.version).eq('string');
+    expect(orca.version.length).gt(0);
+    expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
+    expect(orca.sampleRate).eq(EXPECTED_SAMPLE_RATE);
+    expect(orca.validCharacters.length).eq(EXPECTED_VALID_CHARACTERS.length);
     orca.validCharacters.forEach((symbol: string, i: number) => {
-      expect(symbol).to.eq(EXPECTED_VALID_CHARACTERS[i]);
+      expect(symbol).eq(EXPECTED_VALID_CHARACTERS[i]);
     });
   } catch (e) {
     if (expectFailure) {
@@ -85,73 +72,12 @@ const runInitTest = async (
     } else {
       expect(e).to.be.undefined;
     }
-  } finally {
-    if (orca !== null) {
-      if (orca instanceof OrcaWorker) {
-        orca.terminate();
-      } else {
-        await orca.release();
-      }
-    }
   }
 
-  if (expectFailure) {
-    expect(isFailed).to.be.true;
-  } else {
-    expect(isFailed).to.be.false;
-  }
-};
-
-const runProcTest = async (
-  instance: typeof Orca | typeof OrcaWorker,
-  text: string,
-  speechRate: number,
-  params: {
-    accessKey?: string;
-    model?: PvModel;
-    isTestWER?: boolean;
-    expectFailure?: boolean;
-  } = {},
-) => {
-  const {
-    accessKey = ACCESS_KEY,
-    model = { publicPath: '/test/orca_params_male.pv', forceWrite: true },
-    isTestWER = true,
-    expectFailure = false,
-  } = params;
-
-  const checkWER = async (pcm: Int16Array) => {
-    const leopard = await LeopardWorker.create(
-      accessKey,
-      { publicPath: '/test/leopard_params.pv', forceWrite: true },
-    );
-
-    const { transcript } = await leopard.process(pcm);
-    const wer = wordErrorRate(transcript, testData.test_sentences.text_no_punctuation);
-    expect(wer).lt(testData.wer_threshold);
-    leopard.terminate();
-  };
-
-  let isFailed = false;
-  const orca = await instance.create(accessKey, model);
-
-  try {
-    const speech = await orca.synthesize(text, { speechRate });
-    if (isTestWER) {
-      await checkWER(speech);
-    } else if (!expectFailure) {
-      expect(speech.length).gt(0);
-    }
-  } catch (e) {
-    isFailed = true;
-  } finally {
-    if (orca !== null) {
-      if (orca instanceof OrcaWorker) {
-        orca.terminate();
-      } else if (orca instanceof Orca) {
-        await orca.release();
-      }
-    }
+  if (orca instanceof OrcaWorker) {
+    orca.terminate();
+  } else if (orca instanceof Orca) {
+    await orca.release();
   }
 
   if (expectFailure) {
@@ -163,32 +89,26 @@ const runProcTest = async (
 
 describe('Orca Binding', function() {
   for (const instance of [Orca, OrcaWorker]) {
-    const instanceString = instance === OrcaWorker ? 'worker' : 'main';
+    const instanceString = instance === Orca ? 'main' : 'worker';
 
-    it(`should be able to handle invalid public path (${instanceString})`, () => {
-      cy.wrap(null).then(async () => {
-        await runInitTest(instance, {
-          model: { publicPath: 'invalid', forceWrite: true },
-          expectFailure: true,
-        });
+    it(`should be able to handle invalid public path (${instanceString})`, async () => {
+      await runInitTest(instance, {
+        model: { publicPath: 'invalid', forceWrite: true },
+        expectFailure: true,
       });
     });
 
-    it(`should be able to handle invalid base64 (${instanceString})`, () => {
-      cy.wrap(null).then(async () => {
-        await runInitTest(instance, {
-          model: { base64: 'invalid', forceWrite: true },
-          expectFailure: true,
-        });
+    it(`should be able to handle invalid base64 (${instanceString})`, async () => {
+      await runInitTest(instance, {
+        model: { base64: 'invalid', forceWrite: true },
+        expectFailure: true,
       });
     });
 
-    it(`should be able to handle invalid access key (${instanceString})`, () => {
-      cy.wrap(null).then(async () => {
-        await runInitTest(instance, {
-          accessKey: 'invalid',
-          expectFailure: true,
-        });
+    it(`should be able to handle invalid access key (${instanceString})`, async () => {
+      await runInitTest(instance, {
+        accessKey: 'invalid',
+        expectFailure: true,
       });
     });
 
@@ -196,7 +116,273 @@ describe('Orca Binding', function() {
       const publicPath = modelFileSuffix === 'male' ? `/test/orca_params_male.pv` : `/test/orca_params_female.pv`;
       const base64Path = modelFileSuffix === 'male' ? orcaParamsMale : orcaParamsFemale;
 
-      it(`should return process and flush error message stack`, async () => {
+      it(`should be able to init with public path [${modelFileSuffix}] (${instanceString})`, async () => {
+        await runInitTest(instance, {
+          model: { publicPath, forceWrite: true },
+        });
+      });
+
+      it(`should be able to init with base64 [${modelFileSuffix}] (${instanceString})`, async () => {
+        await runInitTest(instance, {
+          model: { base64: base64Path, forceWrite: true },
+        });
+      });
+
+      it(`should be able to handle UTF-8 public path [${modelFileSuffix}] (${instanceString})`, async () => {
+        await runInitTest(instance, {
+          model: { publicPath, forceWrite: true, customWritePath: '테스트' },
+        });
+      });
+
+      it(`should be able to process text streaming [${modelFileSuffix}] (${instanceString})`, () => {
+        try {
+          cy.getFramesFromFile(`${testData.audio_data_folder}orca_params_${modelFileSuffix}_stream.wav`).then(
+            async (rawPcm: Int16Array) => {
+              const orca = await instance.create(
+                ACCESS_KEY,
+                { publicPath, forceWrite: true },
+              );
+
+              try {
+                const OrcaStream = await orca.streamOpen({ randomState: testData.random_state });
+
+                const streamPcm = [];
+                for (const c of testData.test_sentences.text.split('')) {
+                  const pcm = await OrcaStream.synthesize(c);
+                  if (pcm !== null) {
+                    streamPcm.push(...pcm);
+                  }
+                }
+
+                const endPcm = await OrcaStream.flush();
+                if (endPcm !== null) {
+                  streamPcm.push(...endPcm);
+                }
+
+                compareArrays(new Int16Array(streamPcm), rawPcm, 500);
+                await OrcaStream.close();
+              } catch (e) {
+                expect(e).to.be.undefined;
+              }
+
+              if (orca instanceof OrcaWorker) {
+                orca.terminate();
+              } else if (orca instanceof Orca) {
+                await orca.release();
+              }
+            },
+          );
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      if (modelFileSuffix === EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER) {
+        it(`should be able to process alignment exact [${modelFileSuffix}] (${instanceString})`, async () => {
+          try {
+            const orca = await instance.create(
+              ACCESS_KEY,
+              { publicPath, forceWrite: true },
+            );
+
+            const {
+              pcm,
+              alignments,
+            } = await orca.synthesize(testData.test_sentences.text_alignment, { randomState: testData.random_state });
+            expect(pcm.length).gt(0);
+            expect(alignments.length).eq(testData.alignments.length);
+
+            alignments.forEach((w, i) => {
+              const { word, start_sec, end_sec, phonemes } = testData.alignments[i];
+              expect(w.word).eq(word);
+              expect(w.startSec).closeTo(start_sec, 0.01);
+              expect(w.endSec).closeTo(end_sec, 0.01);
+              w.phonemes.forEach((p, j) => {
+                expect(p.phoneme).eq(phonemes[j].phoneme);
+                expect(p.startSec).closeTo(phonemes[j].start_sec, 0.01);
+                expect(p.endSec).closeTo(phonemes[j].end_sec, 0.01);
+              });
+            });
+
+            if (orca instanceof OrcaWorker) {
+              orca.terminate();
+            } else if (orca instanceof Orca) {
+              await orca.release();
+            }
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        });
+      } else {
+        it(`should be able to process alignment [${modelFileSuffix}] (${instanceString})`, async () => {
+          try {
+            const orca = await instance.create(
+              ACCESS_KEY,
+              { publicPath, forceWrite: true },
+            );
+
+            const {
+              pcm,
+              alignments,
+            } = await orca.synthesize(testData.test_sentences.text_alignment, { randomState: testData.random_state });
+            expect(pcm.length).gt(0);
+            expect(alignments.length).eq(testData.alignments.length);
+
+            let prevWordEndSec = 0;
+            let prevPhonemeEndSec = 0;
+            alignments.forEach(w => {
+              expect(w.startSec).closeTo(prevWordEndSec, 0.001);
+              expect(w.endSec).gt(w.startSec);
+              prevWordEndSec = w.endSec;
+              w.phonemes.forEach(p => {
+                expect(p.startSec).closeTo(prevPhonemeEndSec, 0.001);
+                expect(p.endSec).gt(p.startSec);
+                prevPhonemeEndSec = p.endSec;
+              });
+            });
+
+            if (orca instanceof OrcaWorker) {
+              orca.terminate();
+            } else if (orca instanceof Orca) {
+              await orca.release();
+            }
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        });
+      }
+
+      it(`should be able to process text [${modelFileSuffix}] (${instanceString})`, () => {
+        try {
+          cy.getFramesFromFile(`${testData.audio_data_folder}orca_params_${modelFileSuffix}_single.wav`).then(
+            async rawPcm => {
+              const orca = await instance.create(
+                ACCESS_KEY,
+                { publicPath, forceWrite: true },
+              );
+
+              const { pcm } = await orca.synthesize(
+                testData.test_sentences.text,
+                { speechRate: 1, randomState: testData.random_state },
+              );
+              compareArrays(pcm, rawPcm, 500);
+
+              if (orca instanceof OrcaWorker) {
+                orca.terminate();
+              } else if (orca instanceof Orca) {
+                await orca.release();
+              }
+            },
+          );
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      it(`should be able to process - no punctuation [${modelFileSuffix}] (${instanceString})`, async () => {
+        try {
+          const orca = await instance.create(
+            ACCESS_KEY,
+            { publicPath, forceWrite: true },
+          );
+
+          const { pcm } = await orca.synthesize(testData.test_sentences.text_no_punctuation);
+          expect(pcm.length).gt(0);
+
+          if (orca instanceof OrcaWorker) {
+            orca.terminate();
+          } else if (orca instanceof Orca) {
+            await orca.release();
+          }
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      it(`should be able to process custom punctuation [${modelFileSuffix}] (${instanceString})`, async () => {
+        try {
+          const orca = await instance.create(
+            ACCESS_KEY,
+            { publicPath, forceWrite: true },
+          );
+
+          const { pcm } = await orca.synthesize(testData.test_sentences.text_custom_pronunciation);
+          expect(pcm.length).gt(0);
+
+          if (orca instanceof OrcaWorker) {
+            orca.terminate();
+          } else if (orca instanceof Orca) {
+            await orca.release();
+          }
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      it(`should be able to handle different speech rates [${modelFileSuffix}] (${instanceString})`, async () => {
+        try {
+          const orca = await instance.create(
+            ACCESS_KEY,
+            { publicPath, forceWrite: true },
+          );
+
+          const { pcm: pcmSlow } = await orca.synthesize(testData.test_sentences.text, { speechRate: 0.7 });
+          const { pcm: pcmFast } = await orca.synthesize(testData.test_sentences.text, { speechRate: 1.3 });
+          expect(pcmSlow.length).gt(pcmFast.length);
+
+          if (orca instanceof OrcaWorker) {
+            orca.terminate();
+          } else if (orca instanceof Orca) {
+            await orca.release();
+          }
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      it(`should be able to handle max num characters [${modelFileSuffix}] (${instanceString})`, async () => {
+        try {
+          const orca = await instance.create(
+            ACCESS_KEY,
+            { publicPath, forceWrite: true },
+          );
+
+          const maxNumChars = orca.maxCharacterLimit;
+          const { pcm } = await orca.synthesize('a'.repeat(maxNumChars));
+          expect(pcm.length).gt(0);
+
+          if (orca instanceof OrcaWorker) {
+            orca.terminate();
+          } else if (orca instanceof Orca) {
+            await orca.release();
+          }
+        } catch (e) {
+          expect(e).to.be.undefined;
+        }
+      });
+
+      it(`should handle invalid input [${modelFileSuffix}] (${instanceString})`, async () => {
+        const orca = await instance.create(
+          ACCESS_KEY,
+          { publicPath, forceWrite: true },
+        );
+
+        for (const failureCase of testData.test_sentences.text_invalid) {
+          try {
+            await orca.synthesize(failureCase);
+          } catch (e) {
+            expect(e).not.to.be.undefined;
+          }
+        }
+
+        if (orca instanceof OrcaWorker) {
+          orca.terminate();
+        } else if (orca instanceof Orca) {
+          await orca.release();
+        }
+      });
+
+      it(`should return process and flush error message stack [${modelFileSuffix}] (${instanceString})`, async () => {
         const orca = await Orca.create(
           ACCESS_KEY,
           { publicPath: publicPath, forceWrite: true },
@@ -252,160 +438,6 @@ describe('Orca Binding', function() {
           expect(messageStack.length).to.be.eq(e.messageStack.length);
         }
       });
-
-      it(`should be able to init with public path [${modelFileSuffix}] (${instanceString})`, () => {
-        cy.wrap(null).then(async () => {
-          await runInitTest(instance, {
-            model: {
-              publicPath,
-              forceWrite: true,
-            },
-          });
-        });
-      });
-
-      it(`should be able to init with base64 [${modelFileSuffix}] (${instanceString})`, () => {
-        cy.wrap(null).then(async () => {
-          await runInitTest(instance, {
-            model: { base64: base64Path, forceWrite: true },
-          });
-        });
-      });
-
-      it(`should be able to handle UTF-8 public path [${modelFileSuffix}] (${instanceString})`, () => {
-        cy.wrap(null).then(async () => {
-          await runInitTest(instance, {
-            model: {
-              publicPath,
-              forceWrite: true,
-              customWritePath: '테스트',
-            },
-          });
-        });
-      });
-
-      it(`should be able to handle different speech rates [${modelFileSuffix}] (${instanceString})`, () => {
-        cy.wrap(null).then(async () => {
-          try {
-            const orca = await instance.create(
-              ACCESS_KEY,
-              { publicPath, forceWrite: true },
-            );
-
-            const speechSlow = await orca.synthesize(testData.test_sentences.text, { speechRate: 0.7 });
-            const speechFast = await orca.synthesize(testData.test_sentences.text, { speechRate: 1.3 });
-            expect(speechSlow.length).gt(speechFast.length);
-
-            if (orca instanceof OrcaWorker) {
-              orca.terminate();
-            } else if (orca instanceof Orca) {
-              await orca.release();
-            }
-          } catch (e) {
-            expect(e).to.be.undefined;
-          }
-        });
-      });
-
-      it(`should be able to handle max num characters [${modelFileSuffix}] (${instanceString})`, () => {
-        cy.wrap(null).then(async () => {
-          try {
-            const orca = await instance.create(
-              ACCESS_KEY,
-              { publicPath, forceWrite: true },
-            );
-
-            const maxNumChars = orca.maxCharacterLimit;
-            const speech = await orca.synthesize('a'.repeat(maxNumChars));
-            expect(speech.length).gt(0);
-
-            if (orca instanceof OrcaWorker) {
-              orca.terminate();
-            } else if (orca instanceof Orca) {
-              await orca.release();
-            }
-          } catch (e) {
-            expect(e).to.be.undefined;
-          }
-        });
-      });
-
-      it(`should be able to process - punctuation [${modelFileSuffix}] (${instanceString})`, async () => {
-        try {
-          await runProcTest(
-            instance,
-            testData.test_sentences.text,
-            1.0,
-            {
-              model: {
-                publicPath,
-                forceWrite: true,
-              },
-            },
-          );
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      });
-
-      it(`should be able to process - no punctuation [${modelFileSuffix}] (${instanceString})`, async () => {
-        try {
-          await runProcTest(
-            instance,
-            testData.test_sentences.text_no_punctuation,
-            1.0,
-            {
-              model: {
-                publicPath,
-                forceWrite: true,
-              },
-            },
-          );
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      });
-
-      it(`should be able to process - custom punctuation [${modelFileSuffix}] (${instanceString})`, async () => {
-        try {
-          await runProcTest(
-            instance,
-            testData.test_sentences.text_custom_pronunciation,
-            1.0,
-            {
-              model: {
-                publicPath,
-                forceWrite: true,
-              },
-              isTestWER: false,
-            },
-          );
-        } catch (e) {
-          expect(e).to.be.undefined;
-        }
-      });
-
-      for (const failureCase of testData.test_sentences.text_invalid) {
-        it(`should handle invalid text (${failureCase}) [${modelFileSuffix}] (${instanceString})`, async () => {
-          try {
-            await runProcTest(
-              instance,
-              failureCase,
-              1.0,
-              {
-                model: {
-                  publicPath,
-                  forceWrite: true,
-                },
-                isTestWER: false,
-                expectFailure: true,
-              },
-            );
-          } catch (e) {
-            expect(e).to.be.undefined;
-          }
-        });
-      }
     }
   }
 });
