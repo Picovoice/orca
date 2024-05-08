@@ -272,28 +272,49 @@ class Orca:
         self._delete_func.argtypes = [POINTER(self.COrca)]
         self._delete_func.restype = None
 
-        self._valid_characters_func = library.pv_orca_valid_characters
-        self._valid_characters_func.argtypes = [
+        valid_characters_func = library.pv_orca_valid_characters
+        valid_characters_func.argtypes = [
             POINTER(self.COrca),
             POINTER(c_int32),
             POINTER(POINTER(POINTER(c_char_p))),
         ]
-        self._valid_characters_func.restype = PicovoiceStatuses
+        valid_characters_func.restype = PicovoiceStatuses
 
-        self._valid_characters_delete_func = library.pv_orca_valid_characters_delete
-        self._valid_characters_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
-        self._valid_characters_delete_func.restype = None
+        valid_characters_delete_func = library.pv_orca_valid_characters_delete
+        valid_characters_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
+        valid_characters_delete_func.restype = None
 
-        self._sample_rate_func = library.pv_orca_sample_rate
-        self._sample_rate_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
-        self._sample_rate_func.restype = PicovoiceStatuses
+        c_num_characters = c_int32()
+        c_characters = POINTER(POINTER(c_char_p))()
+        status = valid_characters_func(self._handle, byref(c_num_characters), byref(c_characters))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca valid characters",
+                message_stack=self._get_error_stack())
 
-        self._max_character_limit_func = library.pv_orca_max_character_limit
-        self._max_character_limit_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
-        self._max_character_limit_func.restype = PicovoiceStatuses
+        num_characters = c_num_characters.value
+        characters_array_pointer = cast(c_characters, POINTER(c_char_p * num_characters))
+        self._valid_characters = set([symbol.decode('utf-8') for symbol in list(characters_array_pointer.contents)])
+        valid_characters_delete_func(c_characters)
+
+        sample_rate_func = library.pv_orca_sample_rate
+        sample_rate_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
+        sample_rate_func.restype = PicovoiceStatuses
+
+        c_sample_rate = c_int32()
+        status = sample_rate_func(self._handle, byref(c_sample_rate))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca sample rate",
+                message_stack=self._get_error_stack())
+        self._sample_rate = c_sample_rate.value
+
+        max_character_limit_func = library.pv_orca_max_character_limit
+        max_character_limit_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
+        max_character_limit_func.restype = PicovoiceStatuses
 
         c_max_character_limit = c_int32()
-        status = self._max_character_limit_func(self._handle, byref(c_max_character_limit))
+        status = max_character_limit_func(self._handle, byref(c_max_character_limit))
         if status is not PicovoiceStatuses.SUCCESS:
             raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Unable to get Orca maximum character limit",
@@ -393,36 +414,13 @@ class Orca:
     def valid_characters(self) -> Set[str]:
         """Set of characters supported by Orca."""
 
-        c_num_characters = c_int32()
-        c_characters = POINTER(POINTER(c_char_p))()
-
-        status = self._valid_characters_func(self._handle, byref(c_num_characters), byref(c_characters))
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca valid characters",
-                message_stack=self._get_error_stack())
-
-        num_characters = c_num_characters.value
-        characters_array_pointer = cast(c_characters, POINTER(c_char_p * num_characters))
-        characters = set([symbol.decode('utf-8') for symbol in list(characters_array_pointer.contents)])
-
-        self._valid_characters_delete_func(c_characters)
-
-        return characters
+        return self._valid_characters
 
     @property
     def sample_rate(self) -> int:
         """Audio sample rate of generated audio."""
 
-        c_sample_rate = c_int32()
-
-        status = self._sample_rate_func(self._handle, byref(c_sample_rate))
-        if status is not PicovoiceStatuses.SUCCESS:
-            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca sample rate",
-                message_stack=self._get_error_stack())
-
-        return c_sample_rate.value
+        return self._sample_rate
 
     @property
     def max_character_limit(self) -> int:
