@@ -11,7 +11,7 @@ on:
       - '.github/workflows/web.yml'
   pull_request:
     # TODO: delete "orca-prepare-v0.2" after merge
-    branches: [ main, '[\w\-]*v[0-9]+.[0-9]+' ]
+    branches: [ main, '[\w\-]*v[0-9]+.[0-9]+', 'orca-prepare-v0.2' ]
     paths:
       - 'binding/web/**'
       - '!binding/web/README.md'
