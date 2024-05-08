@@ -63,10 +63,6 @@ type pv_set_sdk_type = (sdk: number) => Promise<void>;
 type pv_get_error_stack_type = (messageStack: number, messageStackDepth: number) => Promise<number>;
 type pv_free_error_stack_type = (messageStack: number) => Promise<void>;
 
-/**
- * JavaScript/WebAssembly Binding for Orca
- */
-
 type OrcaWasmOutput = {
   version: string;
   sampleRate: number;
@@ -98,6 +94,9 @@ type OrcaWasmOutput = {
   pvOrcaStreamClose: pv_orca_stream_close_type;
 };
 
+/**
+ * JavaScript/WebAssembly Binding for Orca
+ */
 export class Orca {
   private static _version: string;
   private static _sampleRate: number;
@@ -168,6 +167,9 @@ export class Orca {
 
     this._functionMutex = new Mutex();
 
+    /**
+     * OrcaStream object that converts a stream of text to a stream of audio.
+     */
     this._OrcaStream = class OrcaStream {
       private readonly _Orca: Orca;
       private readonly _streamAddress: number;
@@ -181,14 +183,19 @@ export class Orca {
       }
 
       /**
-       * Generates audio from text.
-       * Allowed characters are lower-case and upper-case letters and punctuation marks that can be retrieved with `.validCharacters`.
-       * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
-       * The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
+       * Adds a chunk of text to the Stream object and generates audio if enough text has been added.
+       * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+       * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
+       * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
+       * for the remaining text that has not yet been synthesized.
        *
-       * @param text A string of text with properties described above.
-       *
-       * @return Synthesized speech as raw pcm data. If none is available, null is returned.
+       * @param text A chunk of text from a text input stream, comprised of valid characters.
+       *             Valid characters can be retrieved by calling `validCharacters`.
+       *             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+       *             They need to be added in a single call to this function.
+       *             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+       *             audio chunk has been produced.
        */
       public async synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
         if (typeof text !== 'string') {
@@ -288,10 +295,11 @@ export class Orca {
       }
 
       /**
-       * Marks the end of the text stream, flushes internal state of the object,
-       * and returns any remaining synthesized speech.
+       * Generates audio for all the buffered text that was added to the OrcaStream object
+       * via `OrcaStream.synthesize()`.
        *
-       * @return Any remaining synthesized speech as raw pcm data. If none is available, null is returned.
+       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+       *         audio chunk has been produced.
        */
       public async flush(): Promise<OrcaStreamSynthesizeResult> {
         return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
@@ -493,7 +501,8 @@ export class Orca {
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    *
-   * @return A result object containing the synthesized speech as raw pcm and alignments data.
+   * @return A result object containing the generated audio as a sequence of 16-bit linearly-encoded integers
+   *         and a sequence of OrcaAlignment objects representing the word alignments.
    */
   public async synthesize(
     text: string,
@@ -732,7 +741,7 @@ export class Orca {
   }
 
   /**
-   * Opens a new OrcaStream object.
+   * Opens a stream for streaming text synthesis.
    *
    * @param synthesizeParams Optional configuration arguments.
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
@@ -745,8 +754,8 @@ export class Orca {
       speechRate: 1.0,
       randomState: null,
     },
-  ): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
+  ): Promise<typeof this._OrcaStream> {
+    return new Promise<typeof this._OrcaStream>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
