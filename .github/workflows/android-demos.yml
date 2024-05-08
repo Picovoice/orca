@@ -9,7 +9,8 @@ on:
       - 'demo/android/**'
       - '!demo/android/OrcaDemo/README.md'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    # TODO: delete "orca-prepare-v0.2" after merge
+    branches: [ main, 'v[0-9]+.[0-9]+', orca-prepare-v0.2 ]
     paths:
       - '.github/workflows/android-demos.yml'
       - 'demo/android/**'
@@ -23,13 +24,13 @@ jobs:
         working-directory: demo/android/OrcaDemo
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
 
-    - name: Build
-      run: ./gradlew assembleDebug
+      - name: Build
+        run: ./gradlew assembleDebug

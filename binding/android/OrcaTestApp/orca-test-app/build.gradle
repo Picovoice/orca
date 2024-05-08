@@ -46,23 +46,23 @@ android {
     }
 
     signingConfigs {
-//         release {
-//             storePassword properties.getProperty("storePassword")
-//             storeFile file(properties.getProperty("storeFile", ".dummy.jks"))
-//             keyAlias properties.getProperty("keyAlias")
-//             keyPassword properties.getProperty("keyPassword")
-//         }
+        release {
+            storePassword properties.getProperty("storePassword")
+            storeFile file(properties.getProperty("storeFile", ".dummy.jks"))
+            keyAlias properties.getProperty("keyAlias")
+            keyPassword properties.getProperty("keyPassword")
+        }
     }
 
     buildTypes {
-//         debug {
-//             signingConfig signingConfigs.release
-//         }
-//         release {
-//             minifyEnabled false
-//             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-//             signingConfig signingConfigs.release
-//         }
+        debug {
+            signingConfig signingConfigs.release
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
     }
 
     if (System.getProperty("testBuildType", "debug") == "integ") {
@@ -106,7 +106,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation files('../../Orca/orca/build/outputs/aar/orca-release.aar')
+    implementation 'ai.picovoice:orca-android:0.2.0'
 
     // Espresso UI Testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
