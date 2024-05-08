@@ -9,7 +9,8 @@ on:
       - '**/web/*.ts'
       - '.github/workflows/web-codestyle.yml'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    # TODO: delete "orca-prepare-v0.2" after merge
+    branches: [ main, 'v[0-9]+.[0-9]+', orca-prepare-v0.2 ]
     paths:
       - '**/web/*.js'
       - '**/web/*.ts'
