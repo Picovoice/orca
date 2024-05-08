@@ -8,7 +8,7 @@ buildscript {
         mavenCentral()
         // TODO: remove before release
         maven {
-            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1324'
+            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1325'
         }
     }
     dependencies {
@@ -22,7 +22,7 @@ allprojects {
         mavenCentral()
         // TODO: remove before release
         maven {
-            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1324'
+            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1325'
         }
     }
 }

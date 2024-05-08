@@ -74,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
     private Pattern validationRegex;
 
     private Orca orca;
-    private int maxCharacterLimit;
 
     private Orca.OrcaStream orcaStream = null;
 
@@ -109,11 +108,10 @@ public class MainActivity extends AppCompatActivity {
                     .setAccessKey(ACCESS_KEY)
                     .setModelPath(MODEL_FILE)
                     .build(getApplicationContext());
-            maxCharacterLimit = orca.getMaxCharacterLimit();
             validationRegex = Pattern.compile(String.format(
                     "[^%s ]",
                     String.join("", orca.getValidCharacters())));
-            numCharsTextView.setText(String.format("0/%d", maxCharacterLimit));
+            numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
         } catch (OrcaException e) {
             onOrcaException(e);
         }
@@ -138,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                         numCharsTextView.setText(String.format(
                             "%d/%d",
                             s.toString().length(),
-                            maxCharacterLimit))
+                            orca.getMaxCharacterLimit()))
                 );
                 validateText(s.toString());
             }
@@ -251,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateText(String text) {
         if (text.length() > 0) {
-            if (text.length() >= maxCharacterLimit) {
+            if (text.length() >= orca.getMaxCharacterLimit()) {
                 runOnUiThread(() -> {
                     setUIState(UIState.ERROR);
                     infoTextView.setText("Too many characters");

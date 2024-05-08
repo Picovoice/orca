@@ -35,6 +35,10 @@ public class Orca {
 
     private long handle;
 
+    private int maxCharacterLimit;
+    private int sampleRate;
+    private String[] validCharacters;
+
     /**
      * OrcaStream object that converts a stream of text to a stream of audio.
      */
@@ -128,6 +132,9 @@ public class Orca {
         handle = OrcaNative.init(
                 accessKey,
                 modelPath);
+        maxCharacterLimit = OrcaNative.getMaxCharacterLimit(handle);
+        sampleRate = OrcaNative.getSampleRate(handle);
+        validCharacters = OrcaNative.getValidCharacters(handle);
     }
 
     public static void setSdk(String sdk) {
@@ -261,14 +268,8 @@ public class Orca {
      *
      * @return The maximum number of characters that can be synthesized at once.
      */
-    public int getMaxCharacterLimit() throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca getMaxCharacterLimit after delete."
-            );
-        }
-
-        return OrcaNative.getMaxCharacterLimit(handle);
+    public int getMaxCharacterLimit() {
+        return maxCharacterLimit;
     }
 
     /**
@@ -276,14 +277,8 @@ public class Orca {
      *
      * @return Audio sampling rate of the audio produced by Orca.
      */
-    public int getSampleRate() throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca getSampleRate after delete."
-            );
-        }
-
-        return OrcaNative.getSampleRate(handle);
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     /**
@@ -291,14 +286,8 @@ public class Orca {
      *
      * @return Array of characters that are accepted as input to Orca synthesize functions.
      */
-    public String[] getValidCharacters() throws OrcaException {
-        if (handle == 0) {
-            throw new OrcaInvalidStateException(
-                    "Attempted to call Orca getValidCharacters after delete."
-            );
-        }
-
-        return OrcaNative.getValidCharacters(handle);
+    public String[] getValidCharacters() {
+        return validCharacters;
     }
 
     /**

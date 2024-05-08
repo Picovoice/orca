@@ -152,17 +152,17 @@ public class OrcaTest {
         }
 
         @Test
-        public void testSampleRate() throws OrcaException {
+        public void testSampleRate() {
             assertTrue(orca.getSampleRate() > 0);
         }
 
         @Test
-        public void testMaxCharacterLimit() throws OrcaException {
+        public void testMaxCharacterLimit() {
             assertTrue(orca.getMaxCharacterLimit() > 0);
         }
 
         @Test
-        public void testValidCharacters() throws OrcaException {
+        public void testValidCharacters() {
             String[] characters = orca.getValidCharacters();
             assertTrue(characters.length > 0);
             assertTrue(Arrays.asList(characters).contains(","));
