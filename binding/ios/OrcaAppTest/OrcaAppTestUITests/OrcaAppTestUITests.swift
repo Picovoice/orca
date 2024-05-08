@@ -16,13 +16,6 @@ class OrcaAppTestUITests: BaseTest {
         continueAfterFailure = true
     }
 
-    func testValidCharacters() {
-        for orca in self.orcas {
-            XCTAssertGreaterThan(orca.validCharacters.count, 0)
-            XCTAssert(orca.validCharacters.contains(","))
-        }
-    }
-
     func testInvalidText() throws {
         for orca in self.orcas {
             for sentence in self.testData!.test_sentences.text_invalid {
@@ -37,15 +30,22 @@ class OrcaAppTestUITests: BaseTest {
         }
     }
 
+    func testValidCharacters() {
+        for orca in self.orcas {
+            XCTAssertGreaterThan(orca.validCharacters!.count, 0)
+            XCTAssert(orca.validCharacters!.contains(","))
+        }
+    }
+
     func testMaxCharacterLimit() {
         for orca in self.orcas {
-            XCTAssertGreaterThan(orca.maxCharacterLimit, 0)
+            XCTAssertGreaterThan(orca.maxCharacterLimit!, 0)
         }
     }
 
     func testSampleRate() {
         for orca in self.orcas {
-            XCTAssertGreaterThan(orca.sampleRate, 0)
+            XCTAssertGreaterThan(orca.sampleRate!, 0)
         }
     }
 
