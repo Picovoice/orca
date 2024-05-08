@@ -1,4 +1,4 @@
-# Orca Voice Assistant Demo - Talk to ChatGPT in Real-Time
+# LLM Voice Assistant Demo - Talk to ChatGPT in Real-Time
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
