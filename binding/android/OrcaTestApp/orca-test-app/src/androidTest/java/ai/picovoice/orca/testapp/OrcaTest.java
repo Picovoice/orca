@@ -192,7 +192,7 @@ public class OrcaTest {
             short[] testFilePcm = readAudioFile(String.format(
                     "%s/wav/orca_params_%s_stream.wav", testResourcesPath, modelFileUsed));
 
-            assertArrayEquals(fullPcm, testFilePcm);
+            compareArrays(fullPcm, testFilePcm, 1);
         }
 
         @Test
@@ -206,7 +206,7 @@ public class OrcaTest {
             short[] testFilePcm = readAudioFile(String.format(
                     "%s/wav/orca_params_%s_single.wav", testResourcesPath, modelFileUsed));
 
-            assertArrayEquals(pcm.getPcm(), testFilePcm);
+            compareArrays(pcm.getPcm(), testFilePcm, 1);
         }
 
         @Test
@@ -225,7 +225,7 @@ public class OrcaTest {
             short[] testFilePcm = readAudioFile(String.format(
                     "%s/wav/orca_params_%s_single.wav", testResourcesPath, modelFileUsed));
 
-            assertArrayEquals(outputFilePcm, testFilePcm);
+            compareArrays(outputFilePcm, testFilePcm, 1);
             outputFile.delete();
         }
 

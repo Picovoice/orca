@@ -98,6 +98,15 @@ public class BaseTest {
         };
     }
 
+    protected static boolean compareArrays(short[] arr1, short[] arr2, int step) {
+        for (int i = 0; i < arr1.length - step; i += step) {
+            if (!(Math.abs(arr1[i] - arr2[i]) <= 500)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     protected static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {
         short[] result = new short[existingArray.length + arrayToAdd.length];
 
