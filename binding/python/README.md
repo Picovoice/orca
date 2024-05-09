@@ -47,7 +47,7 @@ orca = pvorca.create(access_key='${ACCESS_KEY}')
 
 Replace the `${ACCESS_KEY}` with your AccessKey obtained from [Picovoice Console](https://console.picovoice.ai/).
 
-To synthesize a text stream, create an `Orca.Stream` object and add text to it one-by-one:
+To synthesize a text stream, create an `Orca.OrcaStream` object and add text to it one-by-one:
 
 ```python
 stream = orca.stream_open()
@@ -68,7 +68,7 @@ been added via `stream.synthesize()`.
 To ensure smooth transitions between chunks, the `stream.synthesize()` function returns an audio chunk that only
 includes the audio for a portion of the text that has been added.
 To generate the audio for the remaining text, `stream.flush()` needs to be invoked.
-When done with streaming text synthesis, the `Orca.Stream` object needs to be closed:
+When done with streaming text synthesis, the `Orca.OrcaStream` object needs to be closed:
 
 ```python
 stream.close()

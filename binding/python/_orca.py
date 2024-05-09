@@ -139,7 +139,7 @@ class Orca:
     class COrcaStream(Structure):
         pass
 
-    class Stream:
+    class OrcaStream:
         """
         Orca Stream object that converts a stream of text to a stream of audio.
         """
@@ -520,13 +520,13 @@ class Orca:
 
         return alignments
 
-    def stream_open(self, speech_rate: Optional[float] = None, random_state: Optional[int] = None) -> 'Orca.Stream':
+    def stream_open(self, speech_rate: Optional[float] = None, random_state: Optional[int] = None) -> 'Orca.OrcaStream':
         """
         Opens a stream for streaming text synthesis.
 
         :param speech_rate: Rate of speech of the generated audio.
         :param random_state: Random seed for the synthesis process.
-        :return: An instance of Orca.Stream.
+        :return: An instance of Orca.OrcaStream.
         """
 
         c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate, random_state=random_state)
@@ -543,7 +543,7 @@ class Orca:
 
         self._synthesize_params_delete_func(c_synthesize_params)
 
-        return self.Stream(stream_handle, self)
+        return self.OrcaStream(stream_handle, self)
 
     @property
     def version(self) -> str:
