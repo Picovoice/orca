@@ -1,10 +1,11 @@
 # Orca Binding for Android
 
-## Orca Text-to-Speech Engine
+## Orca Streaming Text-to-Speech Engine
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency
+voice assistants. Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
