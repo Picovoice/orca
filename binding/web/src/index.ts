@@ -1,5 +1,5 @@
-import { Orca } from './orca';
-import { OrcaWorker } from './orca_worker';
+import { Orca, OrcaStream } from './orca';
+import { OrcaWorker, OrcaStreamWorker } from './orca_worker';
 
 import {
   OrcaModel,
@@ -30,6 +30,7 @@ OrcaWorker.setWasmSimd(orcaWasmSimd);
 
 export {
   Orca,
+  OrcaStream,
   OrcaErrors,
   OrcaModel,
   OrcaSynthesizeParams,
@@ -37,6 +38,7 @@ export {
   OrcaAlignment,
   OrcaSynthesizeResult,
   OrcaWorker,
+  OrcaStreamWorker,
   OrcaWorkerInitRequest,
   OrcaWorkerSynthesizeRequest,
   OrcaWorkerReleaseRequest,

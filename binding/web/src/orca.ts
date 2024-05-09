@@ -95,6 +95,260 @@ type OrcaWasmOutput = {
 };
 
 /**
+ * OrcaStream object that converts a stream of text to a stream of audio.
+ */
+class Stream {
+  private _wasmMemory: WebAssembly.Memory;
+  private readonly _alignedAlloc: CallableFunction;
+  private readonly _pvFree: pv_free_type;
+  private readonly _pvGetErrorStack: pv_get_error_stack_type;
+  private readonly _pvFreeErrorStack: pv_free_error_stack_type;
+  private readonly _messageStackAddressAddressAddress: number;
+  private readonly _messageStackDepthAddress: number;
+
+  private readonly _functionMutex: Mutex;
+  private readonly _streamPcmAddressAddress: number;
+  private readonly _pvOrcaPcmDelete: pv_orca_pcm_delete_type;
+  private readonly _pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type;
+  private readonly _pvOrcaStreamFlush: pv_orca_stream_flush_type;
+  private readonly _pvOrcaStreamClose: pv_orca_stream_close_type;
+  private readonly _streamAddress: number;
+  private readonly _getMessageStack: any;
+
+  constructor(
+    wasmMemory: WebAssembly.Memory,
+    alignedAlloc: CallableFunction,
+    pvFree: pv_free_type,
+    pvGetErrorStack: pv_get_error_stack_type,
+    pvFreeErrorStack: pv_free_error_stack_type,
+    messageStackAddressAddressAddress: number,
+    messageStackDepthAddress: number,
+    functionMutex: Mutex,
+    streamPcmAddressAddress: number,
+    pvOrcaPcmDelete: pv_orca_pcm_delete_type,
+    pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type,
+    pvOrcaStreamFlush: pv_orca_stream_flush_type,
+    pvOrcaStreamClose: pv_orca_stream_close_type,
+    streamAddress: number,
+    getMessageStack: any,
+  ) {
+    this._wasmMemory = wasmMemory;
+    this._alignedAlloc = alignedAlloc;
+    this._pvFree = pvFree;
+    this._pvGetErrorStack = pvGetErrorStack;
+    this._pvFreeErrorStack = pvFreeErrorStack;
+    this._messageStackAddressAddressAddress = messageStackAddressAddressAddress;
+    this._messageStackDepthAddress = messageStackDepthAddress;
+    this._functionMutex = functionMutex;
+    this._streamPcmAddressAddress = streamPcmAddressAddress;
+    this._pvOrcaPcmDelete = pvOrcaPcmDelete;
+    this._pvOrcaStreamSynthesize = pvOrcaStreamSynthesize;
+    this._pvOrcaStreamFlush = pvOrcaStreamFlush;
+    this._pvOrcaStreamClose = pvOrcaStreamClose;
+    this._streamAddress = streamAddress;
+    this._getMessageStack = getMessageStack;
+  }
+
+  /**
+   * Adds a chunk of text to the Stream object and generates audio if enough text has been added.
+   * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+   * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
+   * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
+   * for the remaining text that has not yet been synthesized.
+   *
+   * @param text A chunk of text from a text input stream, comprised of valid characters.
+   *             Valid characters can be retrieved by calling `validCharacters`.
+   *             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+   *             They need to be added in a single call to this function.
+   *             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+   * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+   *             audio chunk has been produced.
+   */
+  public async synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
+    if (typeof text !== 'string') {
+      throw new OrcaErrors.OrcaInvalidArgumentError(
+        'The argument \'text\' must be provided as a string',
+      );
+    }
+
+    return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
+      this._functionMutex
+        .runExclusive(async () => {
+          if (this._wasmMemory === undefined) {
+            throw new OrcaErrors.OrcaInvalidStateError(
+              'Attempted to call Orca stream synthesize after release.',
+            );
+          }
+
+          const memoryBufferText = new Uint8Array(this._wasmMemory.buffer);
+          const encodedText = new TextEncoder().encode(text);
+          const textAddress = await this._alignedAlloc(
+            Uint8Array.BYTES_PER_ELEMENT,
+            (encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
+          );
+          if (textAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError(
+              'malloc failed: Cannot allocate memory',
+            );
+          }
+          memoryBufferText.set(encodedText, textAddress);
+          memoryBufferText[textAddress + encodedText.length] = 0;
+
+          const numSamplesAddress = await this._alignedAlloc(
+            Int32Array.BYTES_PER_ELEMENT,
+            Int32Array.BYTES_PER_ELEMENT,
+          );
+          if (numSamplesAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+          }
+
+          const streamSynthesizeStatus = await this._pvOrcaStreamSynthesize(
+            this._streamAddress,
+            textAddress,
+            numSamplesAddress,
+            this._streamPcmAddressAddress,
+          );
+          await this._pvFree(textAddress);
+
+          const memoryBufferView = new DataView(this._wasmMemory.buffer);
+          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
+
+          if (streamSynthesizeStatus !== PvStatus.SUCCESS) {
+            const messageStack = await this._getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8,
+            );
+
+            throw pvStatusToException(streamSynthesizeStatus, 'Stream synthesize failed', messageStack);
+          }
+
+          const pcmAddress = memoryBufferView.getInt32(
+            this._streamPcmAddressAddress,
+            true,
+          );
+
+          const numSamples = memoryBufferView.getInt32(
+            numSamplesAddress,
+            true,
+          );
+          await this._pvFree(numSamplesAddress);
+
+          const outputMemoryBuffer = new Int16Array(this._wasmMemory.buffer);
+          const pcm = outputMemoryBuffer.slice(
+            pcmAddress / Int16Array.BYTES_PER_ELEMENT,
+            (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
+          );
+          await this._pvOrcaPcmDelete(pcmAddress);
+
+          return pcm.length > 0 ? pcm : null;
+        })
+        .then((result: OrcaStreamSynthesizeResult) => {
+          resolve(result);
+        })
+        .catch(async (error: any) => {
+          reject(error);
+        });
+    });
+  }
+
+  /**
+   * Generates audio for all the buffered text that was added to the OrcaStream object
+   * via `OrcaStream.synthesize()`.
+   *
+   * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+   *         audio chunk has been produced.
+   */
+  public async flush(): Promise<OrcaStreamSynthesizeResult> {
+    return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
+      this._functionMutex
+        .runExclusive(async () => {
+          if (this._wasmMemory === undefined) {
+            throw new OrcaErrors.OrcaInvalidStateError('Attempted to call OrcaStream flush after release.');
+          }
+
+          const numSamplesAddress = await this._alignedAlloc(
+            Int32Array.BYTES_PER_ELEMENT,
+            Int32Array.BYTES_PER_ELEMENT,
+          );
+          if (numSamplesAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+          }
+
+          const pcmAddressAddress = await this._alignedAlloc(
+            Int32Array.BYTES_PER_ELEMENT,
+            Int32Array.BYTES_PER_ELEMENT,
+          );
+          if (pcmAddressAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
+          }
+
+          const streamFlushStatus = await this._pvOrcaStreamFlush(
+            this._streamAddress,
+            numSamplesAddress,
+            pcmAddressAddress,
+          );
+
+          const memoryBufferView = new DataView(this._wasmMemory.buffer);
+          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
+
+          if (streamFlushStatus !== PvStatus.SUCCESS) {
+            const messageStack = await this._getMessageStack(
+              this._pvGetErrorStack,
+              this._pvFreeErrorStack,
+              this._messageStackAddressAddressAddress,
+              this._messageStackDepthAddress,
+              memoryBufferView,
+              memoryBufferUint8,
+            );
+
+            throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
+          }
+
+          const pcmAddress = memoryBufferView.getInt32(
+            pcmAddressAddress,
+            true,
+          );
+          await this._pvFree(pcmAddressAddress);
+
+          const numSamples = memoryBufferView.getInt32(
+            numSamplesAddress,
+            true,
+          );
+          await this._pvFree(numSamplesAddress);
+
+          const outputMemoryBuffer = new Int16Array(this._wasmMemory.buffer);
+          const pcm = outputMemoryBuffer.slice(
+            pcmAddress / Int16Array.BYTES_PER_ELEMENT,
+            (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
+          );
+          await this._pvOrcaPcmDelete(pcmAddress);
+
+          return pcm.length > 0 ? pcm : null;
+        })
+        .then((result: OrcaStreamSynthesizeResult) => {
+          resolve(result);
+        })
+        .catch(async (error: any) => {
+          reject(error);
+        });
+    });
+  }
+
+  /**
+   * Releases the resources acquired by the OrcaStream object.
+   */
+  public async close(): Promise<void> {
+    await this._pvOrcaStreamClose(this._streamAddress);
+  }
+}
+
+export type OrcaStream = Stream
+
+/**
  * JavaScript/WebAssembly Binding for Orca
  */
 export class Orca {
@@ -128,7 +382,6 @@ export class Orca {
   private readonly _pvOrcaStreamClose: pv_orca_stream_close_type;
   private readonly _functionMutex: Mutex;
 
-  private readonly _OrcaStream: any;
   private static _wasm: string;
   private static _wasmSimd: string;
   private static _sdk: string = 'web';
@@ -166,224 +419,6 @@ export class Orca {
     this._pvOrcaStreamClose = handleWasm.pvOrcaStreamClose;
 
     this._functionMutex = new Mutex();
-
-    /**
-     * OrcaStream object that converts a stream of text to a stream of audio.
-     */
-    this._OrcaStream = class OrcaStream {
-      private readonly _Orca: Orca;
-      private readonly _streamAddress: number;
-
-      private constructor(
-        orca: Orca,
-        streamAddress: number,
-      ) {
-        this._Orca = orca;
-        this._streamAddress = streamAddress;
-      }
-
-      /**
-       * Adds a chunk of text to the Stream object and generates audio if enough text has been added.
-       * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
-       * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
-       * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
-       * for the remaining text that has not yet been synthesized.
-       *
-       * @param text A chunk of text from a text input stream, comprised of valid characters.
-       *             Valid characters can be retrieved by calling `validCharacters`.
-       *             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
-       *             They need to be added in a single call to this function.
-       *             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
-       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
-       *             audio chunk has been produced.
-       */
-      public async synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
-        if (typeof text !== 'string') {
-          throw new OrcaErrors.OrcaInvalidArgumentError(
-            'The argument \'text\' must be provided as a string',
-          );
-        }
-
-        if (text.trim().length > Orca._maxCharacterLimit) {
-          throw new OrcaErrors.OrcaInvalidArgumentError(
-            `'text' length must be smaller than ${Orca._maxCharacterLimit}`,
-          );
-        }
-
-        return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
-          this._Orca._functionMutex
-            .runExclusive(async () => {
-              if (this._Orca._wasmMemory === undefined) {
-                throw new OrcaErrors.OrcaInvalidStateError(
-                  'Attempted to call Orca stream synthesize after release.',
-                );
-              }
-
-              const memoryBufferText = new Uint8Array(this._Orca._wasmMemory.buffer);
-              const encodedText = new TextEncoder().encode(text);
-              const textAddress = await this._Orca._alignedAlloc(
-                Uint8Array.BYTES_PER_ELEMENT,
-                (encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-              );
-              if (textAddress === 0) {
-                throw new OrcaErrors.OrcaOutOfMemoryError(
-                  'malloc failed: Cannot allocate memory',
-                );
-              }
-              memoryBufferText.set(encodedText, textAddress);
-              memoryBufferText[textAddress + encodedText.length] = 0;
-
-              const numSamplesAddress = await this._Orca._alignedAlloc(
-                Int32Array.BYTES_PER_ELEMENT,
-                Int32Array.BYTES_PER_ELEMENT,
-              );
-              if (numSamplesAddress === 0) {
-                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-              }
-
-              const streamSynthesizeStatus = await this._Orca._pvOrcaStreamSynthesize(
-                this._streamAddress,
-                textAddress,
-                numSamplesAddress,
-                this._Orca._streamPcmAddressAddress,
-              );
-              await this._Orca._pvFree(textAddress);
-
-              const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
-              const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
-
-              if (streamSynthesizeStatus !== PvStatus.SUCCESS) {
-                const messageStack = await Orca.getMessageStack(
-                  this._Orca._pvGetErrorStack,
-                  this._Orca._pvFreeErrorStack,
-                  this._Orca._messageStackAddressAddressAddress,
-                  this._Orca._messageStackDepthAddress,
-                  memoryBufferView,
-                  memoryBufferUint8,
-                );
-
-                throw pvStatusToException(streamSynthesizeStatus, 'Stream synthesize failed', messageStack);
-              }
-
-              const pcmAddress = memoryBufferView.getInt32(
-                this._Orca._streamPcmAddressAddress,
-                true,
-              );
-
-              const numSamples = memoryBufferView.getInt32(
-                numSamplesAddress,
-                true,
-              );
-              await this._Orca._pvFree(numSamplesAddress);
-
-              const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
-              const pcm = outputMemoryBuffer.slice(
-                pcmAddress / Int16Array.BYTES_PER_ELEMENT,
-                (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
-              );
-              await this._Orca._pvOrcaPcmDelete(pcmAddress);
-
-              return pcm.length > 0 ? pcm : null;
-            })
-            .then((result: OrcaStreamSynthesizeResult) => {
-              resolve(result);
-            })
-            .catch(async (error: any) => {
-              reject(error);
-            });
-        });
-      }
-
-      /**
-       * Generates audio for all the buffered text that was added to the OrcaStream object
-       * via `OrcaStream.synthesize()`.
-       *
-       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
-       *         audio chunk has been produced.
-       */
-      public async flush(): Promise<OrcaStreamSynthesizeResult> {
-        return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
-          this._Orca._functionMutex
-            .runExclusive(async () => {
-              if (this._Orca._wasmMemory === undefined) {
-                throw new OrcaErrors.OrcaInvalidStateError('Attempted to call OrcaStream flush after release.');
-              }
-
-              const numSamplesAddress = await this._Orca._alignedAlloc(
-                Int32Array.BYTES_PER_ELEMENT,
-                Int32Array.BYTES_PER_ELEMENT,
-              );
-              if (numSamplesAddress === 0) {
-                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-              }
-
-              const pcmAddressAddress = await this._Orca._alignedAlloc(
-                Int32Array.BYTES_PER_ELEMENT,
-                Int32Array.BYTES_PER_ELEMENT,
-              );
-              if (pcmAddressAddress === 0) {
-                throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
-              }
-
-              const streamFlushStatus = await this._Orca._pvOrcaStreamFlush(
-                this._streamAddress,
-                numSamplesAddress,
-                pcmAddressAddress,
-              );
-
-              const memoryBufferView = new DataView(this._Orca._wasmMemory.buffer);
-              const memoryBufferUint8 = new Uint8Array(this._Orca._wasmMemory.buffer);
-
-              if (streamFlushStatus !== PvStatus.SUCCESS) {
-                const messageStack = await Orca.getMessageStack(
-                  this._Orca._pvGetErrorStack,
-                  this._Orca._pvFreeErrorStack,
-                  this._Orca._messageStackAddressAddressAddress,
-                  this._Orca._messageStackDepthAddress,
-                  memoryBufferView,
-                  memoryBufferUint8,
-                );
-
-                throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
-              }
-
-              const pcmAddress = memoryBufferView.getInt32(
-                pcmAddressAddress,
-                true,
-              );
-              await this._Orca._pvFree(pcmAddressAddress);
-
-              const numSamples = memoryBufferView.getInt32(
-                numSamplesAddress,
-                true,
-              );
-              await this._Orca._pvFree(numSamplesAddress);
-
-              const outputMemoryBuffer = new Int16Array(this._Orca._wasmMemory.buffer);
-              const pcm = outputMemoryBuffer.slice(
-                pcmAddress / Int16Array.BYTES_PER_ELEMENT,
-                (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
-              );
-              await this._Orca._pvOrcaPcmDelete(pcmAddress);
-
-              return pcm.length > 0 ? pcm : null;
-            })
-            .then((result: OrcaStreamSynthesizeResult) => {
-              resolve(result);
-            })
-            .catch(async (error: any) => {
-              reject(error);
-            });
-        });
-      }
-
-      /**
-       * Releases the resources acquired by the OrcaStream object.
-       */
-      public async close(): Promise<void> {
-        await this._Orca._pvOrcaStreamClose(this._streamAddress);
-      }
-    };
   }
 
   /**
@@ -754,8 +789,8 @@ export class Orca {
       speechRate: 1.0,
       randomState: null,
     },
-  ): Promise<typeof this._OrcaStream> {
-    return new Promise<typeof this._OrcaStream>((resolve, reject) => {
+  ): Promise<OrcaStream> {
+    return new Promise<OrcaStream>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
           if (this._wasmMemory === undefined) {
@@ -852,7 +887,23 @@ export class Orca {
           const streamAddress = memoryBufferView.getInt32(streamAddressAddress, true);
           await this._pvFree(streamAddressAddress);
 
-          return new this._OrcaStream(this, streamAddress);
+          return new Stream(
+            this._wasmMemory,
+            this._alignedAlloc,
+            this._pvFree,
+            this._pvGetErrorStack,
+            this._pvFreeErrorStack,
+            this._messageStackAddressAddressAddress,
+            this._messageStackDepthAddress,
+            this._functionMutex,
+            this._streamPcmAddressAddress,
+            this._pvOrcaPcmDelete,
+            this._pvOrcaStreamSynthesize,
+            this._pvOrcaStreamFlush,
+            this._pvOrcaStreamClose,
+            streamAddress,
+            Orca.getMessageStack,
+          );
         })
         .then(result => {
           resolve(result);

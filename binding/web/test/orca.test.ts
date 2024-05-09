@@ -144,23 +144,23 @@ describe('Orca Binding', function() {
               );
 
               try {
-                const OrcaStream = await orca.streamOpen({ randomState: testData.random_state });
+                const orcaStream = await orca.streamOpen({ randomState: testData.random_state });
 
-                const streamPcm = [];
+                const streamPcm: number[] = [];
                 for (const c of testData.test_sentences.text.split('')) {
-                  const pcm = await OrcaStream.synthesize(c);
+                  const pcm = await orcaStream.synthesize(c);
                   if (pcm !== null) {
                     streamPcm.push(...pcm);
                   }
                 }
 
-                const endPcm = await OrcaStream.flush();
+                const endPcm = await orcaStream.flush();
                 if (endPcm !== null) {
                   streamPcm.push(...endPcm);
                 }
 
                 compareArrays(new Int16Array(streamPcm), rawPcm, 500);
-                await OrcaStream.close();
+                await orcaStream.close();
               } catch (e) {
                 expect(e).to.be.undefined;
               }
@@ -397,7 +397,7 @@ describe('Orca Binding', function() {
         const errors: OrcaError[] = [];
         try {
           await orca.synthesize('test');
-        } catch (e) {
+        } catch (e: any) {
           errors.push(e);
         }
 

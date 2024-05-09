@@ -29,6 +29,155 @@ import { loadModel } from '@picovoice/web-utils';
 
 import { pvStatusToException } from './orca_errors';
 
+class StreamWorker {
+  readonly _worker: Worker;
+
+  constructor(orcaWorker: Worker) {
+    this._worker = orcaWorker;
+  }
+
+  /**
+   * Adds a chunk of text to the Stream object in a worker and generates audio if enough text has been added.
+   * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+   * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
+   * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
+   * for the remaining text that has not yet been synthesized.
+   *
+   * @param text A chunk of text from a text input stream, comprised of valid characters.
+   *             Valid characters can be retrieved by calling `validCharacters`.
+   *             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+   *             They need to be added in a single call to this function.
+   *             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+   * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+   *         audio chunk has been produced.
+   */
+  public synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
+    const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<OrcaWorkerStreamSynthesizeResponse>,
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.result);
+              break;
+            case 'failed':
+            case 'error':
+              // eslint-disable-next-line no-case-declarations
+              reject(pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack,
+              ));
+              break;
+            default:
+              reject(pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`,
+              ));
+          }
+        };
+      },
+    );
+
+    this._worker.postMessage(
+      {
+        command: 'streamSynthesize',
+        text: text,
+      },
+    );
+
+    return returnPromise;
+  }
+
+  /**
+   * Generates audio for all the buffered text that was added to the OrcaStream object
+   * via `OrcaStream.synthesize()`.
+   *
+   * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
+   *         audio chunk has been produced.
+   */
+  public flush(): Promise<OrcaStreamSynthesizeResult> {
+    const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
+      (resolve, reject) => {
+        this._worker.onmessage = (
+          event: MessageEvent<OrcaWorkerStreamFlushResponse>,
+        ): void => {
+          switch (event.data.command) {
+            case 'ok':
+              resolve(event.data.result);
+              break;
+            case 'failed':
+            case 'error':
+              reject(pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack,
+              ));
+              break;
+            default:
+              reject(pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`,
+              ));
+          }
+        };
+      },
+    );
+
+    this._worker.postMessage({
+      command: 'streamFlush',
+    });
+
+    return returnPromise;
+  }
+
+  /**
+   * Releases the resources acquired by the OrcaStream object.
+   */
+  public close(): Promise<void> {
+    const returnPromise: Promise<void> = new Promise((resolve, reject) => {
+      this._worker.onmessage = (
+        event: MessageEvent<OrcaWorkerStreamCloseResponse>,
+      ): void => {
+        switch (event.data.command) {
+          case 'ok':
+            resolve();
+            break;
+          case 'failed':
+          case 'error':
+            reject(
+              pvStatusToException(
+                event.data.status,
+                event.data.shortMessage,
+                event.data.messageStack,
+              ),
+            );
+            break;
+          default:
+            reject(
+              pvStatusToException(
+                PvStatus.RUNTIME_ERROR,
+                // @ts-ignore
+                `Unrecognized command: ${event.data.command}`,
+              ),
+            );
+        }
+      };
+    });
+
+    this._worker.postMessage({
+      command: 'streamClose',
+    });
+
+    return returnPromise;
+  }
+}
+
+export type OrcaStreamWorker = StreamWorker
+
 export class OrcaWorker {
   private readonly _worker: Worker;
   private readonly _version: string;
@@ -39,8 +188,6 @@ export class OrcaWorker {
   private static _wasm: string;
   private static _wasmSimd: string;
   private static _sdk: string = 'web';
-
-  private readonly _OrcaStream: any;
 
   private constructor(
     worker: Worker,
@@ -54,153 +201,6 @@ export class OrcaWorker {
     this._sampleRate = sampleRate;
     this._maxCharacterLimit = maxCharacterLimit;
     this._validCharacters = validCharacters;
-
-    this._OrcaStream = class OrcaStream {
-      private readonly _worker: Worker;
-
-      private constructor(orcaWorker: Worker) {
-        this._worker = orcaWorker;
-      }
-
-      /**
-       * Adds a chunk of text to the Stream object in a worker and generates audio if enough text has been added.
-       * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
-       * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
-       * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
-       * for the remaining text that has not yet been synthesized.
-       *
-       * @param text A chunk of text from a text input stream, comprised of valid characters.
-       *             Valid characters can be retrieved by calling `validCharacters`.
-       *             Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
-       *             They need to be added in a single call to this function.
-       *             The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
-       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
-       *         audio chunk has been produced.
-       */
-      public synthesize(text: string): Promise<OrcaStreamSynthesizeResult> {
-        const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
-          (resolve, reject) => {
-            this._worker.onmessage = (
-              event: MessageEvent<OrcaWorkerStreamSynthesizeResponse>,
-            ): void => {
-              switch (event.data.command) {
-                case 'ok':
-                  resolve(event.data.result);
-                  break;
-                case 'failed':
-                case 'error':
-                  // eslint-disable-next-line no-case-declarations
-                  reject(pvStatusToException(
-                    event.data.status,
-                    event.data.shortMessage,
-                    event.data.messageStack,
-                  ));
-                  break;
-                default:
-                  reject(pvStatusToException(
-                    PvStatus.RUNTIME_ERROR,
-                    // @ts-ignore
-                    `Unrecognized command: ${event.data.command}`,
-                  ));
-              }
-            };
-          },
-        );
-
-        this._worker.postMessage(
-          {
-            command: 'streamSynthesize',
-            text: text,
-          },
-        );
-
-        return returnPromise;
-      }
-
-      /**
-       * Generates audio for all the buffered text that was added to the OrcaStream object
-       * via `OrcaStream.synthesize()`.
-       *
-       * @return The generated audio as a sequence of 16-bit linearly-encoded integers, `null` if no
-       *         audio chunk has been produced.
-       */
-      public flush(): Promise<OrcaStreamSynthesizeResult> {
-        const returnPromise: Promise<OrcaStreamSynthesizeResult> = new Promise(
-          (resolve, reject) => {
-            this._worker.onmessage = (
-              event: MessageEvent<OrcaWorkerStreamFlushResponse>,
-            ): void => {
-              switch (event.data.command) {
-                case 'ok':
-                  resolve(event.data.result);
-                  break;
-                case 'failed':
-                case 'error':
-                  reject(pvStatusToException(
-                    event.data.status,
-                    event.data.shortMessage,
-                    event.data.messageStack,
-                  ));
-                  break;
-                default:
-                  reject(pvStatusToException(
-                    PvStatus.RUNTIME_ERROR,
-                    // @ts-ignore
-                    `Unrecognized command: ${event.data.command}`,
-                  ));
-              }
-            };
-          },
-        );
-
-        this._worker.postMessage({
-          command: 'streamFlush',
-        });
-
-        return returnPromise;
-      }
-
-      /**
-       * Releases the resources acquired by the OrcaStream object.
-       */
-      public close(): Promise<void> {
-        const returnPromise: Promise<void> = new Promise((resolve, reject) => {
-          this._worker.onmessage = (
-            event: MessageEvent<OrcaWorkerStreamCloseResponse>,
-          ): void => {
-            switch (event.data.command) {
-              case 'ok':
-                resolve();
-                break;
-              case 'failed':
-              case 'error':
-                reject(
-                  pvStatusToException(
-                    event.data.status,
-                    event.data.shortMessage,
-                    event.data.messageStack,
-                  ),
-                );
-                break;
-              default:
-                reject(
-                  pvStatusToException(
-                    PvStatus.RUNTIME_ERROR,
-                    // @ts-ignore
-                    `Unrecognized command: ${event.data.command}`,
-                  ),
-                );
-            }
-          };
-        });
-
-        this._worker.postMessage({
-          command: 'streamClose',
-        });
-
-        return returnPromise;
-      }
-    };
   }
 
   /**
@@ -449,15 +449,15 @@ export class OrcaWorker {
    * @param synthesizeParams.speechRate Configure the rate of speech of the synthesized speech.
    * @param synthesizeParams.randomState Configure the random seed for the synthesized speech.
    */
-  public streamOpen(synthesizeParams: OrcaSynthesizeParams = {}): Promise<typeof this._OrcaStream> {
-    const returnPromise: Promise<typeof this._OrcaStream> = new Promise(
+  public streamOpen(synthesizeParams: OrcaSynthesizeParams = {}): Promise<OrcaStreamWorker> {
+    const returnPromise: Promise<OrcaStreamWorker> = new Promise(
       (resolve, reject) => {
         this._worker.onmessage = (
           event: MessageEvent<OrcaWorkerStreamOpenResponse>,
         ): void => {
           switch (event.data.command) {
             case 'ok':
-              resolve(new this._OrcaStream(this._worker));
+              resolve(new StreamWorker(this._worker));
               break;
             case 'failed':
             case 'error':
