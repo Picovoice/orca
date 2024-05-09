@@ -37,6 +37,7 @@ struct ContentView: View {
                 )
                 .disabled(toggleDisabled)
                 .onChange(of: streamingMode) { _ in text = "" }
+                .foregroundColor(Color.black)
                           
                 if viewModel.state == .STREAM_PLAYING {
                     GeometryReader { geometry in
@@ -51,6 +52,7 @@ struct ContentView: View {
                                        alignment: .topLeading)
                                 .font(.title3)
                                 .background(lightGray)
+                                .foregroundColor(Color.black)
                         }
                     }
                 } else {
@@ -67,10 +69,13 @@ struct ContentView: View {
                                                maxHeight: .infinity)
                                         .font(.title3)
                                         .background(lightGray)
-                                        .onChange(of: text) { _ in
-                                            text = String(text.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
+                                        .foregroundColor(Color.black)
+                                        .onChange(of: text) { newValue in
+                                            let updatedText = String(newValue.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
+                                            text = updatedText.replacingOccurrences(of: "’", with: "'")
                                             viewModel.isValid(text: text)
                                         }
+                                        .disabled(viewModel.state == .PLAYING)
 
                                     if text.count == 0 {
                                         Text("Enter any text to be synthesized")
@@ -96,10 +101,9 @@ struct ContentView: View {
                             .font(.body)
                             .foregroundColor(Color.gray)
                     } else {
-                        Text(viewModel.streamSecs)
+                        Text(viewModel.streamHelperText)
                             .padding()
                             .font(.body)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .foregroundColor(Color.black)
                     }
                 } else if viewModel.state == .INIT || viewModel.state == .READY {

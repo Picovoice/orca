@@ -41,7 +41,7 @@ class ViewModel: ObservableObject {
     @Published var sampleRate: Int32 = 0
     @Published var maxCharacterLimit: Int32 = 0
     @Published var textStream = ""
-    @Published var streamSecs = ""
+    @Published var streamHelperText = ""
     @Published var errorMessage = ""
     @Published var invalidTextMessage = ""
     @Published var streamInvalidTextMessage = ""
@@ -87,11 +87,10 @@ class ViewModel: ObservableObject {
 
     public func toggleStreaming() {
         if state == UIState.READY || state == UIState.STREAM_OPEN {
-            self.textStream = ""
-            self.streamSecs = ""
-            
             if orcaStream == nil {
                 do {
+                    self.textStream = ""
+                    self.streamHelperText = "Enter text and press synthesize"
                     orcaStream = try orca.streamOpen()
                     self.state = UIState.STREAM_OPEN
                 } catch {
@@ -121,7 +120,6 @@ class ViewModel: ObservableObject {
     
     private func runStreamSynthesis(text: String) {
         self.textStream = ""
-        self.streamSecs = ""
         self.state = UIState.STREAM_PLAYING
         
         do {
@@ -223,7 +221,7 @@ class ViewModel: ObservableObject {
 
             pcmStreamQueueLatch.wait()
             DispatchQueue.main.async {
-                self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+                self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
             }
 
             while isTextStreamQueueActive.get() || !isTextStreamEmpty() {
@@ -236,7 +234,7 @@ class ViewModel: ObservableObject {
                                 addToPcmStream(pcm: pcm!)
                                 audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
                                 DispatchQueue.main.async {
-                                    self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+                                    self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
                                 }
                                 if numIterations == self.NUM_AUDIO_WAIT_CHUNKS {
                                     playStreamQueueLatch.signal()
@@ -260,7 +258,7 @@ class ViewModel: ObservableObject {
                     addToPcmStream(pcm: pcm!)
                     audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
                     DispatchQueue.main.async {
-                        self.streamSecs = getSecsString(secs: audioSynthesizedSecs)
+                        self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
                     }
                     if !isPlayStreamQueueStarted {
                         playStreamQueueLatch.signal()
