@@ -158,20 +158,19 @@ const orcaStream = await orca.streamOpen();
 Then, call `synthesize` on `orcaStream` to generate speech from a stream of text:
 
 ```typescript
-function getNextTextChunk(): string {
-  ... // function to get the next text chunk
+function* textStream(): IterableIterator<string> {
+  ... // yield text chunks e.g. from an LLM response
 }
 
-for (;;) {
-  const pcm = await orcaStream.synthesize(getNextTextChunk());
+for (const textChunk of textStream()) {
+  const pcm = await orcaStream.synthesize(textChunk);
   if (pcm !== null) {
     // handle pcm
   }
-  // break at end of text stream
 }
 ```
 
-`orcaStream` buffers input text until there is enough to generate audio. If there is not enough text to generate
+The `OrcaStream` object buffers input text until there is enough to generate audio. If there is not enough text to generate
 audio, `null` is returned.
 
 When done, call `flush` to synthesize any remaining text, and `close` to delete the `orcaStream` object.

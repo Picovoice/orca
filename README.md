@@ -109,6 +109,7 @@ Orca provides a set of parameters to control the synthesized speech. The followi
 |  Parameter  | Default |                                                        Description                                                         |
 |:-----------:|:-------:|:--------------------------------------------------------------------------------------------------------------------------:|
 | speech rate |   1.0   | Speed of generated speech. Valid values are within [0.7, 1.3]. <br/>Higher (lower) values generate faster (slower) speech. |
+| random state| random | Sets the random state for sampling during synthesis. <br/>Valid values are all non-negative integers. <br/>If not provided, a random seed will be chosen. |
 
 ### Audio output
 
@@ -297,6 +298,8 @@ the text to be synthesized including potential [custom pronunciations](#custom-p
 
 When done be sure to explicitly release the resources using `orca.delete()`.
 
+For more details, see the [iOS SDK](./binding/ios/).
+
 ### C
 
 The header file [include/pv_orca.h](./include/pv_orca.h) contains relevant information on Orca's C SDK.
@@ -455,12 +458,48 @@ const orca = await OrcaWorker.create(
   "${ACCESS_KEY}",
   { base64: orcaParams }
 );
-
-const speechPcm = await orca.synthesize("${TEXT}")
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/). Finally, when done
-release the resources using `orca.release()`.
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+#### Streaming synthesis
+
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one.
+Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object:
+
+```typescript
+const orcaStream = await orca.streamOpen();
+
+function* textStream(): IterableIterator<string> {
+  ... // yield text chunks e.g. from an LLM response
+}
+
+for (const textChunk of textStream()) {
+  const pcm = await orcaStream.synthesize(textChunk);
+  if (pcm !== null) {
+    // handle pcm
+  }
+}
+
+const flushedPcm = orcaStream.flush();
+if (flushedPcm !== null) {
+  // handle pcm
+}
+
+orcaStream.close();
+```
+
+#### Single synthesis
+
+```typescript
+const { speechPcm, alignments } = await orca.synthesize("${TEXT}")
+```
+
+#### Release resources
+
+Finally, when done release the resources using `orca.release()`.
+
+For more details, see the [Web SDK](./binding/web/).
 
 ### Android
 
@@ -485,17 +524,41 @@ try {
         .setAccessKey(accessKey)
         .setModelPath(modelPath)
         .build(appContext);
-
-    short[] pcm = orca.synthesize(
-        "${TEXT}",
-        new OrcaSynthesizeParams.Builder().build());
-
 } catch (OrcaException ex) { }
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with an
 Orca [voice model file](./lib/common) and `${TEXT}` with the text to be synthesized including
 potential [custom pronunciations](#custom-pronunciations).
+
+#### Streaming synthesis
+
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one.
+Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object: 
+
+```java
+Orca.OrcaStream orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
+
+for (String textChunk : textGenerator()) {
+  short[] pcm = orcaStream.synthesize(textChunk);
+  if (pcm != null) {
+    // handle pcm
+  }
+}
+
+short[] flushedPcm = orcaStream.flush();
+if (flushedPcm != null) {
+  // handle pcm
+}
+```
+
+#### Single synthesis
+
+```java
+OrcaAudio audio = orca.synthesize(
+    "${TEXT}",
+    new OrcaSynthesizeParams.Builder().build());
+```
 
 Finally, when done make sure to explicitly release the resources:
 
