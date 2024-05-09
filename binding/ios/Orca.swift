@@ -109,10 +109,6 @@ public class Orca {
         ///   audio chunk has been produced.
         /// - Throws: OrcaError
         public func synthesize(text: String) throws -> [Int16]? {
-            if orca == nil {
-                throw OrcaInvalidStateError("Unable to synthesize - orca has been released")
-            }
-
             if stream == nil {
                 throw OrcaInvalidStateError("Unable to synthesize - stream not open")
             }
@@ -145,10 +141,6 @@ public class Orca {
         ///   audio chunk has been produced.
         /// - Throws: OrcaError
         public func flush() throws -> [Int16]? {
-            if orca == nil {
-                throw OrcaInvalidStateError("Unable to flush - orca has been released")
-            }
-
             if stream == nil {
                 throw OrcaInvalidStateError("Unable to flush - stream not open")
             }
