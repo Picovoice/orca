@@ -7,8 +7,8 @@ android {
         applicationId "ai.picovoice.orcademo"
         minSdkVersion 21
         targetSdkVersion defaultTargetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "2.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,11 +30,10 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'ai.picovoice:orca-android:0.1.0'
+    implementation 'ai.picovoice:orca-android:0.2.0'
 }
 
 tasks.register('copyParams', Copy) {

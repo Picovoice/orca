@@ -28,13 +28,23 @@ import org.junit.Rule;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import static org.junit.Assert.assertEquals;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+
+import ai.picovoice.orca.OrcaWord;
+import ai.picovoice.orca.OrcaPhoneme;
 
 public class BaseTest {
 
@@ -46,7 +56,6 @@ public class BaseTest {
     AssetManager assetManager;
     String testResourcesPath;
     JsonObject testJson;
-    String leopardModelPath;
     String accessKey;
 
     @Before
@@ -89,35 +98,64 @@ public class BaseTest {
         };
     }
 
-    protected static float getWordErrorRate(
-            String transcript,
-            String expectedTranscript,
-            boolean useCER) {
-        String splitter = (useCER) ? "" : " ";
-        return (float) levenshteinDistance(
-                transcript.split(splitter),
-                expectedTranscript.split(splitter)) / transcript.length();
-    }
-
-    private static int levenshteinDistance(String[] words1, String[] words2) {
-        int[][] res = new int[words1.length + 1][words2.length + 1];
-        for (int i = 0; i <= words1.length; i++) {
-            res[i][0] = i;
-        }
-        for (int j = 0; j <= words2.length; j++) {
-            res[0][j] = j;
-        }
-        for (int i = 1; i <= words1.length; i++) {
-            for (int j = 1; j <= words2.length; j++) {
-                res[i][j] = Math.min(
-                        Math.min(
-                                res[i - 1][j] + 1,
-                                res[i][j - 1] + 1),
-                        res[i - 1][j - 1] + (words1[i - 1].equalsIgnoreCase(words2[j - 1]) ? 0 : 1)
-                );
+    protected static boolean compareArrays(short[] arr1, short[] arr2, int step) {
+        for (int i = 0; i < arr1.length - step; i += step) {
+            if (!(Math.abs(arr1[i] - arr2[i]) <= 500)) {
+                return false;
             }
         }
-        return res[words1.length][words2.length];
+        return true;
+    }
+
+    protected static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {
+        short[] result = new short[existingArray.length + arrayToAdd.length];
+
+        System.arraycopy(existingArray, 0, result, 0, existingArray.length);
+        System.arraycopy(arrayToAdd, 0, result, existingArray.length, arrayToAdd.length);
+
+        return result;
+    }
+
+    protected static short[] readAudioFile(String audioFile) throws Exception {
+        FileInputStream audioInputStream = new FileInputStream(audioFile);
+        ByteArrayOutputStream audioByteBuffer = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        for (int length; (length = audioInputStream.read(buffer)) != -1; ) {
+            audioByteBuffer.write(buffer, 0, length);
+        }
+        byte[] rawData = audioByteBuffer.toByteArray();
+
+        short[] pcm = new short[rawData.length / 2];
+        ByteBuffer pcmBuff = ByteBuffer.wrap(rawData).order(ByteOrder.LITTLE_ENDIAN);
+        pcmBuff.asShortBuffer().get(pcm);
+        pcm = Arrays.copyOfRange(pcm, 22, pcm.length);
+
+        return pcm;
+    }
+
+    protected void validateMetadata(
+            OrcaWord[] words,
+            OrcaWord[] expectedWords,
+            boolean isExpectExact
+    ) {
+        assertEquals(words.length, expectedWords.length);
+        for (int i = 0; i < words.length; i++) {
+            assertEquals(words[i].getWord(), expectedWords[i].getWord());
+            if (isExpectExact) {
+                assertEquals(words[i].getStartSec(), expectedWords[i].getStartSec(), 0.1);
+                assertEquals(words[i].getEndSec(), expectedWords[i].getEndSec(), 0.1);
+            }
+            OrcaPhoneme[] phonemes = words[i].getPhonemeArray();
+            OrcaPhoneme[] expectedPhonemes = expectedWords[i].getPhonemeArray();
+            assertEquals(phonemes.length, expectedPhonemes.length);
+            for (int j = 0; j < phonemes.length; j++) {
+                assertEquals(phonemes[j].getPhoneme(), expectedPhonemes[j].getPhoneme());
+                if (isExpectExact) {
+                    assertEquals(phonemes[j].getStartSec(), expectedPhonemes[j].getStartSec(), 0.1);
+                    assertEquals(phonemes[j].getEndSec(), expectedPhonemes[j].getEndSec(), 0.1);
+                }
+            }
+        }
     }
 
     private void extractAssetsRecursively(String path) throws IOException {
