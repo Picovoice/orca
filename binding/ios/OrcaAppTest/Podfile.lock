@@ -2,20 +2,15 @@ PODS:
   - Orca-iOS (0.2.0)
 
 DEPENDENCIES:
-  - Orca-iOS (from `https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec`)
+  - Orca-iOS (~> 0.2.0)
 
-EXTERNAL SOURCES:
-  Orca-iOS:
-    :podspec: https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec
-
-CHECKOUT OPTIONS:
-  Orca-iOS:
-    :commit: 7ec64c7c38432e4c1c54d6e15cb64d53832edb36
-    :git: https://github.com/Picovoice/orca.git
+SPEC REPOS:
+  trunk:
+    - Orca-iOS
 
 SPEC CHECKSUMS:
-  Orca-iOS: a7d8273a1cec96462335db1a80dc5e25cd9fc259
+  Orca-iOS: 01bbf44ba52a102104fc09aded6bfda7beb4865e
 
-PODFILE CHECKSUM: b04a645e4c1e8d708466100414564f1761f6ec76
+PODFILE CHECKSUM: 01d0a4d9f05893e5371be0f1775f4f59ed59da27
 
 COCOAPODS: 1.15.2

@@ -2,5 +2,5 @@ source 'https://cdn.cocoapods.org/'
 platform :ios, '13.0'
 
 target 'OrcaDemo' do
-  pod 'Orca-iOS', :podspec => 'https://raw.githubusercontent.com/Picovoice/orca/ios-v0.2-update/binding/ios/Orca-iOS.podspec'
+  pod 'Orca-iOS', '~> 0.2.0'
 end
