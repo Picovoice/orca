@@ -1,8 +1,9 @@
-# Orca Text-to-Speech Engine
+# Orca Streaming Text-to-Speech Engine
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Orca is an on-device text-to-speech engine producing high-quality, realistic, spoken audio with zero latency. Orca is:
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency 
+voice assistants. Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
@@ -18,7 +19,8 @@ Orca is an on-device text-to-speech engine producing high-quality, realistic, sp
 ## Installation
 
 <!-- markdown-link-check-disable -->
-The Orca iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Orca-iOS). To import it into your iOS project, add the following line to your Podfile and run `pod install`:
+The Orca iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Orca-iOS). To import it into your iOS
+project, add the following line to your Podfile and run `pod install`:
 <!-- markdown-link-check-enable -->
 
 ```ruby
@@ -27,13 +29,18 @@ pod 'Orca-iOS'
 
 ## AccessKey
 
-Orca requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Orca SDKs.
+Orca requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts as your credentials when using Orca
+SDKs.
 You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
 Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get your `AccessKey`.
 
 ## Usage
 
-Create an instance of the engine:
+Orca supports two modes of operation: streaming and single synthesis.
+In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
+In the single synthesis mode, a complete text is synthesized in a single call to the Orca engine.
+
+Create an instance of the Orca engine:
 
 ```swift
 import Orca
@@ -51,24 +58,64 @@ do {
 
 Alternatively, you can provide `modelPath` as an absolute path to the model file on device.
 
-You can synthesize speech by calling one of the `synthesize` methods:
+To synthesize a text stream, create an `Orca.OrcaStream` object and add text to it one-by-one:
 
 ```swift
-// return raw pcm
-let pcm = try orca.synthesize(text: "${TEXT}")
+let orcaStream = try orca.streamOpen()
 
-// save to a file
-try orca.synthesizeToFile(text: "${TEXT}", outputPath: "${OUTPUT_PATH}")
+for textChunk in textGenerator() {
+  let pcm = orcaStream.synthesize(textChunk)
+  if pcm != nil {
+    // handle pcm
+  }
+}
+
+let pcm = orcaStream.flush()
+if pcm != nil {
+  // handle pcm
+}
+```
+
+The `textGenerator()` function can be any stream generating text, for example an LLM response.
+Orca produces audio chunks in parallel to the incoming text stream, and returns the raw PCM whenever enough context has
+been added via `orcaStream.synthesize()`.
+To ensure smooth transitions between chunks, the `orcaStream.synthesize()` function returns an audio chunk that only
+includes the audio for a portion of the text that has been added.
+To generate the audio for the remaining text, `orcaStream.flush()` needs to be invoked.
+When done with streaming text synthesis, the `Orca.OrcaStream` object needs to be closed:
+
+```swift
+orcaStream.close()
+```
+
+If the complete text is known before synthesis, single synthesis mode can be used to generate speech in a single call to
+Orca:
+
+```swift
+// Return raw PCM and alignments
+let (pcm, wordArray) = try orca.synthesize(text: "${TEXT}")
+
+// Save the generated audio to a WAV file directly
+let wordArray = try orca.synthesizeToFile(text: "${TEXT}", outputPath: "${OUTPUT_PATH}")
 ```
 
 Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the path to save the generated audio as a
 single-channel 16-bit PCM WAV file.
-
+In single synthesis mode, Orca returns metadata of the synthesized audio in the form of an array of `OrcaWord`
+objects.
 When done, resources have to be released explicitly:
 
 ```swift
 orca.delete()
 ```
+
+### Text input
+
+Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
+basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
+`validCharacters()` method provided in the Orca SDK you are using.
+Pronunciations of characters or words not supported by this list can be achieved with
+[custom pronunciations](#custom-pronunciations).
 
 ### Custom pronunciations
 
@@ -99,26 +146,48 @@ and replace `${MODEL_FILE_PATH}` or `${MODEL_FILE_URL}` with the path to the mod
 
 ### Speech control
 
-Orca allows for keyword arguments to be provided to the `synthesize` methods to control the synthesized speech:
+Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `streamOopen`
+method or the single synthesis methods `synthesize` and `synthesizeToFile`:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value
   produces speech that is faster (slower). The default is `1.0`.
+- `randomState`: Sets the random state for sampling during synthesis. This can be used to ensure that the synthesized
+  speech is deterministic across different runs.
 
 ```swift
 let pcm = orca.synthesize(
     text: "${TEXT}",
-    speechRate: 1.0)
+    speechRate: 1.0,
+    randomState: 1)
 ```
 
 ### Orca properties
 
-To obtain the set of valid punctuation symbols, call `Orca.validPunctuationSymbols`.
+To obtain the set of valid characters, call `Orca.validCharacters`.
 To retrieve the maximum number of characters allowed, call `Orca.maxCharacterLimit`.
 The sample rate of Orca is `Orca.sampleRate`.
 
+### Alignment Metadata
+
+Along with the raw PCM or saved audio file, Orca returns metadata for the synthesized audio in single synthesis mode.
+The `OrcaWord` object has the following properties:
+
+- **Word:** String representation of the word.
+- **Start Time:** Indicates when the word started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the word ended in the synthesized audio. Value is in seconds.
+- **Phonemes:** An array of `OrcaPhoneme` objects.
+
+The `OrcaPhoneme` object has the following properties:
+
+- **Phoneme:** String representation of the phoneme.
+- **Start Time:** Indicates when the phoneme started in the synthesized audio. Value is in seconds.
+- **End Time:** Indicates when the phoneme ended in the synthesized audio. Value is in seconds.
+
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable in [`OrcaAppTestUITests.swift`](OrcaAppTest/OrcaAppTestUITests/OrcaAppTestUITests.swift). Open `OrcaAppTest.xcworkspace` with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable
+in [`OrcaAppTestUITests.swift`](OrcaAppTest/OrcaAppTestUITests/OrcaAppTestUITests.swift). Open `OrcaAppTest.xcworkspace`
+with XCode and run the tests with `Product > Test`.
 
 ## Demo App
 

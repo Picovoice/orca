@@ -40,10 +40,10 @@ class PerformanceTest: BaseTest {
 
             for i in 0...numTestIterations {
                 var totalNSec = 0.0
-                let orca = try? Orca(accessKey: accessKey, modelPath: modelPath)
+                let orca = try Orca(accessKey: accessKey, modelPath: modelPath)
 
                 let before = CFAbsoluteTimeGetCurrent()
-                let pcm = try? orca?.synthesize(text: self.testData!.test_sentences.text)
+                let (pcm, wordArray) = try orca.synthesize(text: self.testData!.test_sentences.text)
                 let after = CFAbsoluteTimeGetCurrent()
                 totalNSec += (after - before)
 
@@ -51,7 +51,7 @@ class PerformanceTest: BaseTest {
                 if i > 0 {
                     results.append(totalNSec)
                 }
-                orca?.delete()
+                orca.delete()
             }
 
             let avgNSec = results.reduce(0.0, +) / Double(numTestIterations)

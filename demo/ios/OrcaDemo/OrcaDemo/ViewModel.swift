@@ -17,25 +17,35 @@ enum UIState {
     case PROCESSING
     case SYNTHESIZED
     case PLAYING
+    case STREAM_OPEN
+    case STREAM_PLAYING
     case ERROR
 }
 
 class ViewModel: ObservableObject {
     private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    
+    private let NUM_AUDIO_WAIT_CHUNKS = 1
 
     private var orca: Orca!
+    private var orcaStream: Orca.OrcaStream!
     private var player: AudioPlayer = AudioPlayer()
+    private var playerStream: AudioPlayerStream!
     private var previousText = ""
     private var subscriptions = Set<AnyCancellable>()
 
     private let audioFilePath = "temp.wav"
     private var audioFile: URL!
-
-    @Published var errorMessage = ""
+    
     @Published var state = UIState.INIT
-    @Published var maxCharacterLimit = Orca.maxCharacterLimit
+    @Published var sampleRate: Int32 = 0
+    @Published var maxCharacterLimit: Int32 = 0
+    @Published var textStream = ""
+    @Published var streamHelperText = ""
+    @Published var errorMessage = ""
     @Published var invalidTextMessage = ""
-
+    @Published var streamInvalidTextMessage = ""
+    
     init() {
         initialize()
     }
@@ -44,6 +54,8 @@ class ViewModel: ObservableObject {
         state = UIState.INIT
         do {
             try orca = Orca(accessKey: ACCESS_KEY, modelPath: "orca_params_female.pv")
+            maxCharacterLimit = orca.maxCharacterLimit!
+            sampleRate = orca.sampleRate!
             state = UIState.READY
 
             let audioDir = try FileManager.default.url(
@@ -73,14 +85,214 @@ class ViewModel: ObservableObject {
         orca.delete()
     }
 
+    public func toggleStreaming() {
+        if state == UIState.READY || state == UIState.STREAM_OPEN {
+            if orcaStream == nil {
+                do {
+                    self.textStream = ""
+                    self.streamHelperText = "Enter text and press synthesize"
+                    orcaStream = try orca.streamOpen()
+                    self.state = UIState.STREAM_OPEN
+                } catch {
+                    self.errorMessage = "\(error.localizedDescription)"
+                    self.state = UIState.ERROR
+                }
+            } else {
+                orcaStream.close()
+                orcaStream = nil
+                self.state = UIState.READY
+            }
+        }
+    }
+
     public func toggleSynthesize(text: String) {
+        if state == UIState.STREAM_OPEN {
+            runStreamSynthesis(text: text)
+            return
+        }
+        
         if state == UIState.PLAYING {
             toggleSynthesizeOff()
         } else {
             toggleSynthesizeOn(text: text)
         }
     }
+    
+    private func runStreamSynthesis(text: String) {
+        self.textStream = ""
+        self.state = UIState.STREAM_PLAYING
+        
+        do {
+            playerStream = try AudioPlayerStream(sampleRate: Double(self.sampleRate))
+        } catch {
+            self.errorMessage = "\(error.localizedDescription)"
+            self.state = UIState.ERROR
+        }
 
+        let textStreamQueue = DispatchQueue(label: "text-stream-queue")
+        let textStreamQueueConcurrent = DispatchQueue(label: "text-stream-queue-concurrent", attributes: .concurrent)
+        var textStreamArray = [String]()
+        let isTextStreamQueueActive = AtomicBool(false)
+
+        func isTextStreamEmpty() -> Bool {
+            return textStreamQueueConcurrent.sync {
+                textStreamArray.isEmpty
+            }
+        }
+
+        func getFromTextStream() -> String? {
+            var word: String?
+            textStreamQueueConcurrent.sync {
+                if !textStreamArray.isEmpty {
+                    word = textStreamArray.removeFirst()
+                }
+            }
+            return word
+        }
+
+        func addToTextStream(word: String) {
+            textStreamQueueConcurrent.async(flags: .barrier) {
+                textStreamArray.append(word)
+            }
+        }
+
+        let pcmStreamQueue = DispatchQueue(label: "pcm-stream-queue")
+        let pcmStreamQueueConcurrent = DispatchQueue(label: "pcm-stream-queue-concurrent", attributes: .concurrent)
+        var pcmStreamArray = [[Int16]]()
+        let isPcmStreamQueueActive = AtomicBool(false)
+
+        func isPcmStreamEmpty() -> Bool {
+            return pcmStreamQueueConcurrent.sync {
+                pcmStreamArray.isEmpty
+            }
+        }
+
+        func getFromPcmStream() -> [Int16]? {
+            var pcm: [Int16]?
+            pcmStreamQueueConcurrent.sync {
+                if !pcmStreamArray.isEmpty {
+                    pcm = pcmStreamArray.removeFirst()
+                }
+            }
+            return pcm
+        }
+
+        func addToPcmStream(pcm: [Int16]) {
+            pcmStreamQueueConcurrent.async(flags: .barrier) {
+                pcmStreamArray.append(pcm)
+            }
+        }
+
+        let playStreamQueue = DispatchQueue(label: "play-stream-queue")
+        let pcmStreamQueueLatch = DispatchSemaphore(value: 0)
+        let playStreamQueueLatch = DispatchSemaphore(value: 0)
+        
+        func getSecsString(secs: Float) -> String {
+            return "Seconds of audio synthesized: " + String(format: "%.3f", secs) + "s"
+        }
+
+        textStreamQueue.async {
+            isTextStreamQueueActive.set(true)
+
+            var isPcmStreamQueueStarted = false
+            let words = text.split(separator: " ")
+            for word in words {
+                let wordWithSpace = String(word) + " "
+                addToTextStream(word: wordWithSpace)
+                if isPcmStreamQueueStarted == false {
+                    pcmStreamQueueLatch.signal()
+                    isPcmStreamQueueStarted = true
+                }
+                usleep(100 * 1000)
+                DispatchQueue.main.async {
+                    self.textStream.append(wordWithSpace)
+                }
+            }
+
+            isTextStreamQueueActive.set(false)
+        }
+
+        pcmStreamQueue.async {
+            isPcmStreamQueueActive.set(true)
+
+            var audioSynthesizedSecs: Float = 0
+            var numIterations = 0
+            var isPlayStreamQueueStarted = false
+
+            pcmStreamQueueLatch.wait()
+            DispatchQueue.main.async {
+                self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
+            }
+
+            while isTextStreamQueueActive.get() || !isTextStreamEmpty() {
+                if !isTextStreamEmpty() {
+                    do {
+                        let word = getFromTextStream()
+                        if word != nil {
+                            let pcm = try self.orcaStream.synthesize(text: word!)
+                            if pcm != nil {
+                                addToPcmStream(pcm: pcm!)
+                                audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
+                                DispatchQueue.main.async {
+                                    self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
+                                }
+                                if numIterations == self.NUM_AUDIO_WAIT_CHUNKS {
+                                    playStreamQueueLatch.signal()
+                                    isPlayStreamQueueStarted = true
+                                }
+                                numIterations += 1
+                            }
+                        }
+                    } catch {
+                        DispatchQueue.main.async {
+                            self.errorMessage = "\(error.localizedDescription)"
+                            self.state = UIState.ERROR
+                        }
+                    }
+                }
+            }
+
+            do {
+                let pcm = try self.orcaStream.flush()
+                if pcm != nil {
+                    addToPcmStream(pcm: pcm!)
+                    audioSynthesizedSecs += Float(pcm!.count) / Float(self.sampleRate)
+                    DispatchQueue.main.async {
+                        self.streamHelperText = getSecsString(secs: audioSynthesizedSecs)
+                    }
+                    if !isPlayStreamQueueStarted {
+                        playStreamQueueLatch.signal()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "\(error.localizedDescription)"
+                    self.state = UIState.ERROR
+                }
+            }
+
+            isPcmStreamQueueActive.set(false)
+        }
+
+        playStreamQueue.async {
+            playStreamQueueLatch.wait()
+
+            while isPcmStreamQueueActive.get() || !isPcmStreamEmpty() {
+                if !isPcmStreamEmpty() {
+                    let pcm = getFromPcmStream()
+                    self.playerStream.playStreamPCM(pcm!) { isPlaying in
+                        if !isPlaying {
+                            DispatchQueue.main.async {
+                                self.playerStream.stopStreamPCM()
+                                self.state = UIState.STREAM_OPEN
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     public func toggleSynthesizeOff() {
         player.stop()
         state = UIState.READY
@@ -127,27 +339,21 @@ class ViewModel: ObservableObject {
     }
 
     public func isValid(text: String) {
-        do {
-            let characters = try orca.validCharacters
-            let regex = try NSRegularExpression(
-                pattern: "[^\(characters.joined(separator: ""))\\s{}|']",
-                options: .caseInsensitive)
-            let range = NSRange(text.startIndex..<text.endIndex, in: text)
-            let matches = regex.matches(in: text, range: range)
-
-            let unexpectedCharacters = NSOrderedSet(array: matches.map {
-                String(text[Range($0.range, in: text)!])
-            })
-
-            if unexpectedCharacters.count > 0 {
-                let characterString = unexpectedCharacters.array.map { "\($0)" }.joined(separator: ", ")
-                self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
-            } else {
-                self.invalidTextMessage = ""
+        var nonAllowedCharacters = [Character]()
+        for i in 0..<text.count {
+            let char = text[text.index(text.startIndex, offsetBy: i)]
+            if !orca.validCharacters!.contains(String(char)) && !nonAllowedCharacters.contains(char) {
+                nonAllowedCharacters.append(char)
             }
-        } catch {
-            self.errorMessage = "\(error.localizedDescription)"
-            self.state = UIState.ERROR
+        }
+
+        if nonAllowedCharacters.count > 0 {
+            let characterString = nonAllowedCharacters.map { "\($0)" }.joined(separator: ", ")
+            self.invalidTextMessage = "Text contains the following invalid characters: `\(characterString)`"
+            self.streamInvalidTextMessage = "The following characters will be ignored: `\(characterString)`"
+        } else {
+            self.invalidTextMessage = ""
+            self.streamInvalidTextMessage = ""
         }
     }
 }
