@@ -9,8 +9,7 @@ on:
       - 'lib/common/**'
       - '.github/workflows/ios-perf.yml'
   pull_request:
-    # TODO: delete "orca-prepare-v0.2" before release
-    branches: [ main, 'v[0-9]+.[0-9]+', 'orca-prepare-v0.2' ]
+    branches: [ main, 'v[0-9]+.[0-9]+' ]
     paths:
       - 'lib/ios/**'
       - 'lib/common/**'
@@ -27,10 +26,10 @@ jobs:
 
     strategy:
       matrix:
-        device: [ios-perf]
+        device: [ ios-perf ]
         include:
-        - device: ios-perf
-          performanceThresholdSec: 0.5
+          - device: ios-perf
+            performanceThresholdSec: 0.5
 
     steps:
       - name: Checkout
