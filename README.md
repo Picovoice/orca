@@ -274,7 +274,7 @@ For more details see [Python SDK](./binding/python/README.md).
 
 ### iOS
 
-Create an instance of the engine and synthesize:
+Create an instance of the engine:
 
 ```swift
 import Orca
@@ -286,15 +286,47 @@ let modelPath = Bundle(for: type(of: self)).path(
 do {
   let orca = try Orca(accessKey: "${ACCESS_KEY}", modelPath: modelPath)
 } catch {}
+```
 
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/) and `${MODEL_FILE}`
+with the model file name for Orca.
+
+#### Streaming synthesis
+
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one via the `synthesize` method.
+Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object:
+
+```swift
+let orcaStream = try orca.streamOpen()
+
+for textChunk in textGenerator() {
+  let pcm = orcaStream.synthesize(textChunk)
+  if pcm != nil {
+    // handle pcm
+  }
+}
+
+let pcm = orcaStream.flush()
+if pcm != nil {
+  // handle pcm
+}
+
+orcaStream.close()
+```
+
+`textGenerator()` can be any stream generating text, for example an LLM response.
+
+#### Single synthesis
+
+```swift
 do {
-    let pcm = try orca.synthesize(text: "${TEXT}")
+    let (pcm, wordArray) = try orca.synthesize(text: "${TEXT}")
 } catch {}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/), `${MODEL_FILE}`
-with the model file name for Orca and `${TEXT}` with
-the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+Replace `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+#### Release resources
 
 When done be sure to explicitly release the resources using `orca.delete()`.
 
@@ -464,7 +496,7 @@ Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://con
 
 #### Streaming synthesis
 
-To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one.
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one via the `synthesize` method.
 Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object:
 
 ```typescript
@@ -533,7 +565,7 @@ potential [custom pronunciations](#custom-pronunciations).
 
 #### Streaming synthesis
 
-To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one.
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one via the `synthesize`.
 Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object: 
 
 ```java
