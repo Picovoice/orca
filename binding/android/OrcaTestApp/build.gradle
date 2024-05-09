@@ -6,10 +6,6 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        // TODO: remove before release
-        maven {
-            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1325'
-        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.4.2'
@@ -20,10 +16,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // TODO: remove before release
-        maven {
-            url 'https://s01.oss.sonatype.org/content/repositories/aipicovoice-1325'
-        }
     }
 }
 
