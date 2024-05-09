@@ -43,7 +43,7 @@ class PerformanceTest: BaseTest {
                 let orca = try? Orca(accessKey: accessKey, modelPath: modelPath)
 
                 let before = CFAbsoluteTimeGetCurrent()
-                let pcm = try? orca?.synthesize(text: self.testData!.test_sentences.text)
+                let (pcm, wordArray) = try? orca?.synthesize(text: self.testData!.test_sentences.text)
                 let after = CFAbsoluteTimeGetCurrent()
                 totalNSec += (after - before)
 
