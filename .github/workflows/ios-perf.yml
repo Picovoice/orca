@@ -26,10 +26,10 @@ jobs:
 
     strategy:
       matrix:
-        device: [ios-perf]
+        device: [ ios-perf ]
         include:
-        - device: ios-perf
-          performanceThresholdSec: 0.5
+          - device: ios-perf
+            performanceThresholdSec: 0.5
 
     steps:
       - name: Checkout

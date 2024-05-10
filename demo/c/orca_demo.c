@@ -140,7 +140,7 @@ int picovoice_main(int argc, char **argv) {
 
     void *orca_library = open_dl(library_path);
     if (!orca_library) {
-        fprintf(stderr, "Failed to open library at '%s'.\n", library_path);
+        fprintf(stderr, "Failed to open library at `%s`.\n", library_path);
         exit(EXIT_FAILURE);
     }
 
@@ -164,20 +164,6 @@ int picovoice_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_valid_characters_func)(pv_orca_t *, int32_t *, const char *const **) =
-            load_symbol(orca_library, "pv_orca_valid_characters");
-    if (!pv_orca_valid_characters_func) {
-        print_dl_error("Failed to load 'pv_orca_valid_characters'");
-        exit(EXIT_FAILURE);
-    }
-
-    pv_status_t (*pv_orca_sample_rate_func)(pv_orca_t *, int32_t *) =
-            load_symbol(orca_library, "pv_orca_sample_rate");
-    if (!pv_orca_sample_rate_func) {
-        print_dl_error("Failed to load 'pv_orca_sample_rate'");
-        exit(EXIT_FAILURE);
-    }
-
     pv_status_t (*pv_orca_synthesize_params_init_func)(pv_orca_synthesize_params_t **) =
             load_symbol(orca_library, "pv_orca_synthesize_params_init");
     if (!pv_orca_synthesize_params_init_func) {
@@ -192,23 +178,29 @@ int picovoice_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_synthesize_params_set_speech_rate_func)(pv_orca_synthesize_params_t *, float) =
-            load_symbol(orca_library, "pv_orca_synthesize_params_set_speech_rate");
-    if (!pv_orca_synthesize_params_set_speech_rate_func) {
-        print_dl_error("Failed to load 'pv_orca_synthesize_params_set_speech_rate'");
-        exit(EXIT_FAILURE);
-    }
-
-    pv_status_t (*pv_orca_synthesize_to_file_func)(pv_orca_t *, const char *, const pv_orca_synthesize_params_t *, const char *) =
+    pv_status_t (*pv_orca_synthesize_to_file_func)(
+            pv_orca_t *,
+            const char *,
+            const pv_orca_synthesize_params_t *,
+            const char *,
+            int32_t *num_alignments,
+            pv_orca_word_alignment_t ***alignments) =
             load_symbol(orca_library, "pv_orca_synthesize_to_file");
     if (!pv_orca_synthesize_to_file_func) {
         print_dl_error("Failed to load 'pv_orca_synthesize_to_file'");
         exit(EXIT_FAILURE);
     }
 
-    void (*pv_orca_delete_pcm_func)(int16_t *) = load_symbol(orca_library, "pv_orca_delete_pcm");
-    if (!pv_orca_delete_pcm_func) {
-        print_dl_error("Failed to load 'pv_orca_delete_pcm'");
+    pv_status_t (*pv_orca_word_alignments_delete_func)(int32_t, pv_orca_word_alignment_t **) =
+            load_symbol(orca_library, "pv_orca_word_alignments_delete");
+    if (!pv_orca_word_alignments_delete_func) {
+        print_dl_error("Failed to load 'pv_orca_word_alignments_delete'");
+        exit(EXIT_FAILURE);
+    }
+
+    void (*pv_orca_pcm_delete_func)(int16_t *) = load_symbol(orca_library, "pv_orca_pcm_delete");
+    if (!pv_orca_pcm_delete_func) {
+        print_dl_error("Failed to load 'pv_orca_pcm_delete'");
         exit(EXIT_FAILURE);
     }
 
@@ -242,10 +234,10 @@ int picovoice_main(int argc, char **argv) {
     pv_orca_t *orca = NULL;
     pv_status_t orca_status = pv_orca_init_func(access_key, model_path, &orca);
     if (orca_status != PV_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to create an instance of Orca with '%s'", pv_status_to_string_func(orca_status));
+        fprintf(stderr, "Failed to create an instance of Orca with `%s`", pv_status_to_string_func(orca_status));
         error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
         if (error_status != PV_STATUS_SUCCESS) {
-            fprintf(stderr, ".\nUnable to get Orca error state with '%s'.\n", pv_status_to_string_func(error_status));
+            fprintf(stderr, ".\nUnable to get Orca error state with `%s`.\n", pv_status_to_string_func(error_status));
             exit(EXIT_FAILURE);
         }
 
@@ -260,8 +252,9 @@ int picovoice_main(int argc, char **argv) {
     struct timeval after;
     gettimeofday(&after, NULL);
 
-    double init_sec = ((double) (after.tv_sec - before.tv_sec) +
-                       ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
+    double init_sec =
+            ((double) (after.tv_sec - before.tv_sec) +
+             ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
     fprintf(stdout, "Initialized Orca in %.1f sec\n", init_sec);
 
     pv_orca_synthesize_params_t *synthesize_params = NULL;
@@ -269,13 +262,13 @@ int picovoice_main(int argc, char **argv) {
     if (synthesize_params_status != PV_STATUS_SUCCESS) {
         fprintf(
                 stderr,
-                "Failed to create an instance of Orca synthesize params with '%s'",
+                "Failed to create an instance of Orca synthesize params with `%s`",
                 pv_status_to_string_func(synthesize_params_status));
         error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
         if (error_status != PV_STATUS_SUCCESS) {
             fprintf(
                     stderr,
-                    ".\nUnable to get Orca synthesize params error state with '%s'.\n",
+                    ".\nUnable to get Orca synthesize params error state with `%s`.\n",
                     pv_status_to_string_func(error_status));
             exit(EXIT_FAILURE);
         }
@@ -291,23 +284,27 @@ int picovoice_main(int argc, char **argv) {
     double proc_sec = 0.;
     gettimeofday(&before, NULL);
 
-    fprintf(stdout, "Synthesizing text '%s' ...\n", text);
+    fprintf(stdout, "\nSynthesizing text `%s`\n", text);
 
+    int32_t num_alignments = 0;
+    pv_orca_word_alignment_t **alignments = NULL;
     pv_status_t synthesize_status = pv_orca_synthesize_to_file_func(
             orca,
             text,
             synthesize_params,
-            output_path);
+            output_path,
+            &num_alignments,
+            &alignments);
     if (synthesize_status != PV_STATUS_SUCCESS) {
         fprintf(
                 stderr,
-                "Failed to synthesize text with '%s'",
+                "Failed to synthesize text with `%s`",
                 pv_status_to_string_func(synthesize_params_status));
         error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
         if (error_status != PV_STATUS_SUCCESS) {
             fprintf(
                     stderr,
-                    ".\nUnable to get Orca synthesize error state with '%s'.\n",
+                    ".\nUnable to get Orca synthesize error state with `%s`.\n",
                     pv_status_to_string_func(error_status));
             exit(EXIT_FAILURE);
         }
@@ -322,11 +319,44 @@ int picovoice_main(int argc, char **argv) {
 
     gettimeofday(&after, NULL);
 
-    proc_sec += ((double) (after.tv_sec - before.tv_sec) +
-                 ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
+    proc_sec +=
+            ((double) (after.tv_sec - before.tv_sec) +
+             ((double) (after.tv_usec - before.tv_usec)) * 1e-6);
 
-    fprintf(stdout, "Synthesized text in %.1f sec\n", proc_sec);
+    if (num_alignments > 0) {
+        fprintf(stdout, "\nWord alignments");
+        if (num_alignments > 3) {
+            fprintf(stdout, " (only showing first 3):\n");
+        } else {
+            fprintf(stdout, ":\n");
+        }
+        int32_t num_alignments_shown = num_alignments > 3 ? 3 : num_alignments;
+        for (int32_t i = 0; i < num_alignments_shown; i++) {
+            fprintf(
+                    stdout,
+                    "word=\"%s\", start_sec=%.2f, end_sec=%.2f\n",
+                    alignments[i]->word,
+                    alignments[i]->start_sec,
+                    alignments[i]->end_sec);
+            for (int32_t j = 0; j < alignments[i]->num_phonemes; j++) {
+                fprintf(
+                        stdout,
+                        "\tphoneme=\"%s\", start_sec=%.2f, end_sec=%.2f\n",
+                        alignments[i]->phonemes[j]->phoneme,
+                        alignments[i]->phonemes[j]->start_sec,
+                        alignments[i]->phonemes[j]->end_sec);
+            }
+        }
+    }
+
+    fprintf(stdout, "\nSynthesized text in %.2f sec\n", proc_sec);
     fprintf(stdout, "Saved audio to `%s`\n", output_path);
+
+    pv_status_t delete_status = pv_orca_word_alignments_delete_func(num_alignments, alignments);
+    if (delete_status != PV_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to delete word alignments with `%s`.\n", pv_status_to_string_func(delete_status));
+        exit(EXIT_FAILURE);
+    }
 
     pv_orca_synthesize_params_delete_func(synthesize_params);
     pv_orca_delete_func(orca);

@@ -45,11 +45,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            proc_performance_threshold_sec: 1.5
+            proc_performance_threshold_rtf: 5.0
           - os: windows-latest
-            proc_performance_threshold_sec: 1.5
+            proc_performance_threshold_rtf: 3.0
           - os: macos-latest
-            proc_performance_threshold_sec: 2.5
+            proc_performance_threshold_rtf: 3.0
 
     steps:
       - uses: actions/checkout@v3
@@ -60,7 +60,7 @@ jobs:
           python-version: '3.10'
 
       - name: Pre-build dependencies
-        run: python -m pip install --upgrade pip
+        run: python3 -m pip install --upgrade pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -70,7 +70,7 @@ jobs:
           python3 test_orca_perf.py
           --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
           --num-test-iterations 10
-          --proc-performance-threshold-sec ${{matrix.proc_performance_threshold_sec}}
+          --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}
 
   perf-self-hosted:
     runs-on: ${{ matrix.machine }}
@@ -81,17 +81,17 @@ jobs:
         machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, jetson]
         include:
           - machine: rpi3-32
-            proc_performance_threshold_sec: 10.0
+            proc_performance_threshold_rtf: 1.0
           - machine: rpi3-64
-            proc_performance_threshold_sec: 6.0
+            proc_performance_threshold_rtf: 1.0
           - machine: rpi4-32
-            proc_performance_threshold_sec: 5.0
+            proc_performance_threshold_rtf: 2.0
           - machine: rpi4-64
-            proc_performance_threshold_sec: 4.0
+            proc_performance_threshold_rtf: 2.0
           - machine: rpi5-64
-            proc_performance_threshold_sec: 2.0
+            proc_performance_threshold_rtf: 2.0
           - machine: jetson
-            proc_performance_threshold_sec: 4.0
+            proc_performance_threshold_rtf: 2.0
 
     steps:
       - uses: actions/checkout@v3
@@ -108,7 +108,7 @@ jobs:
           python3 test_orca_perf.py
           --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
           --num-test-iterations 10
-          --proc-performance-threshold-sec ${{matrix.proc_performance_threshold_sec}}
+          --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}
 
       - name: Machine state after
         working-directory: resources/.scripts

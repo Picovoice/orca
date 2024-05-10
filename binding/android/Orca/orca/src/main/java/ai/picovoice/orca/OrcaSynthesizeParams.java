@@ -18,12 +18,14 @@ package ai.picovoice.orca;
 public class OrcaSynthesizeParams {
 
     private final float speechRate;
+    private final long randomState;
 
     /**
      * Constructor.
      */
-    private OrcaSynthesizeParams(float speechRate) {
+    private OrcaSynthesizeParams(float speechRate, long randomState) {
         this.speechRate = speechRate;
+        this.randomState = randomState;
     }
 
     /**
@@ -36,11 +38,21 @@ public class OrcaSynthesizeParams {
     }
 
     /**
+     * Getter for the random state (i.e. the random state for the synthesized speech).
+     *
+     * @return Random State.
+     */
+    public long getRandomState() {
+        return this.randomState;
+    }
+
+    /**
      * Builder for creating instance of OrcaSynthesizeParams.
      */
     public static class Builder {
 
         private float speechRate = 1.0f;
+        private long randomState = -1;
 
         /**
          * Sets the speech rate.
@@ -50,6 +62,17 @@ public class OrcaSynthesizeParams {
          */
         public Builder setSpeechRate(float speechRate) {
             this.speechRate = speechRate;
+            return this;
+        }
+
+        /**
+         * Sets the random state.
+         *
+         * @param randomState The random state for the synthesized speech.
+         * @return Modified builder object.
+         */
+        public Builder setRandomState(long randomState) {
+            this.randomState = randomState;
             return this;
         }
 
@@ -66,7 +89,7 @@ public class OrcaSynthesizeParams {
                 );
             }
 
-            return new OrcaSynthesizeParams(speechRate);
+            return new OrcaSynthesizeParams(speechRate, randomState);
         }
     }
 }

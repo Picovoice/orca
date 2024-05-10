@@ -27,14 +27,35 @@ export enum PvStatus {
   ACTIVATION_REFUSED,
 }
 
-export type SynthesizeParams = {
-  speechRate?: number
-}
-
 /**
  * OrcaModel types
  */
 export type OrcaModel = PvModel;
+
+export type OrcaSynthesizeParams = {
+  speechRate?: number;
+  randomState?: number | null;
+}
+
+export type OrcaPhoneme = {
+  phoneme: string;
+  startSec: number;
+  endSec: number;
+}
+
+export type OrcaAlignment = {
+  word: string;
+  startSec: number;
+  endSec: number;
+  phonemes: OrcaPhoneme[];
+}
+
+export type OrcaSynthesizeResult = {
+  pcm: Int16Array;
+  alignments: OrcaAlignment[];
+}
+
+export type OrcaStreamSynthesizeResult = Int16Array | null
 
 export type OrcaWorkerInitRequest = {
   command: 'init';
@@ -48,17 +69,39 @@ export type OrcaWorkerInitRequest = {
 export type OrcaWorkerSynthesizeRequest = {
   command: 'synthesize';
   text: string;
-  synthesizeParams?: SynthesizeParams;
+  synthesizeParams: OrcaSynthesizeParams;
 };
 
 export type OrcaWorkerReleaseRequest = {
   command: 'release';
 };
 
+export type OrcaWorkerStreamOpenRequest = {
+  command: 'streamOpen';
+  synthesizeParams: OrcaSynthesizeParams;
+}
+
+export type OrcaWorkerStreamSynthesizeRequest = {
+  command: 'streamSynthesize';
+  text: string;
+};
+
+export type OrcaWorkerStreamFlushRequest = {
+  command: 'streamFlush';
+};
+
+export type OrcaWorkerStreamCloseRequest = {
+  command: 'streamClose';
+};
+
 export type OrcaWorkerRequest =
   | OrcaWorkerInitRequest
   | OrcaWorkerSynthesizeRequest
-  | OrcaWorkerReleaseRequest;
+  | OrcaWorkerReleaseRequest
+  | OrcaWorkerStreamOpenRequest
+  | OrcaWorkerStreamSynthesizeRequest
+  | OrcaWorkerStreamFlushRequest
+  | OrcaWorkerStreamCloseRequest;
 
 export type OrcaWorkerFailureResponse = {
   command: 'failed' | 'error';
@@ -82,7 +125,7 @@ export type OrcaWorkerSynthesizeResponse =
   | OrcaWorkerFailureResponse
   | {
   command: 'ok';
-  result: Int16Array;
+  result: OrcaSynthesizeResult;
 };
 
 export type OrcaWorkerReleaseResponse =
@@ -91,7 +134,37 @@ export type OrcaWorkerReleaseResponse =
   command: 'ok';
 };
 
+export type OrcaWorkerStreamOpenResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: any;
+};
+
+export type OrcaWorkerStreamSynthesizeResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: OrcaStreamSynthesizeResult;
+};
+
+export type OrcaWorkerStreamFlushResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+  result: OrcaStreamSynthesizeResult;
+};
+
+export type OrcaWorkerStreamCloseResponse =
+  | OrcaWorkerFailureResponse
+  | {
+  command: 'ok';
+};
+
 export type OrcaWorkerResponse =
   | OrcaWorkerInitResponse
   | OrcaWorkerSynthesizeResponse
-  | OrcaWorkerReleaseResponse;
+  | OrcaWorkerReleaseResponse
+  | OrcaWorkerStreamOpenResponse
+  | OrcaWorkerStreamSynthesizeResponse
+  | OrcaWorkerStreamFlushResponse;

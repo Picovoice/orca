@@ -26,16 +26,31 @@ class OrcaNative {
 
     static native String[] getValidCharacters(long object) throws OrcaException;
 
-    static native int getMaxCharacterLimit();
+    static native int getMaxCharacterLimit(long object) throws OrcaException;
 
-    static native short[] synthesize(
+    static native OrcaAudio synthesize(
             long object,
             String text,
-            float speechRate) throws OrcaException;
+            float speechRate,
+            long randomState) throws OrcaException;
 
-    static native void synthesizeToFile(
+    static native OrcaAudio synthesizeToFile(
             long object,
             String text,
             String outputPath,
-            float speechRate) throws OrcaException;
+            float speechRate,
+            long randomState) throws OrcaException;
+
+    static native long streamOpen(
+            long object,
+            float speechRate,
+            long randomState) throws OrcaException;
+
+    static native short[] streamSynthesize(
+            long object,
+            String text) throws OrcaException;
+
+    static native short[] streamFlush(long object) throws OrcaException;
+
+    static native void streamClose(long object);
 }

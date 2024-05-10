@@ -11,25 +11,31 @@
 
 import json
 import os
+import struct
+import wave
 from dataclasses import dataclass
-from typing import Sequence, Tuple
+from typing import List, Sequence
 
-from typing import List
+from _orca import Orca
 
 
 @dataclass
-class TestSentences:
+class TestData:
     text: str
     text_no_punctuation: str
     text_custom_pronunciation: str
+    text_alignment: str
     text_invalid: Sequence[str]
+    alignments: Sequence[Orca.WordAlignment]
+    random_state: int
+    audio_data_folder: str
 
 
-def get_test_data() -> Tuple[TestSentences, float]:
-    data_file_path = os.path.join(os.path.dirname(__file__), "../../resources/.test/test_data.json")
-    with open(data_file_path, encoding="utf8") as data_file:
-        test_data = json.loads(data_file.read())
-    return TestSentences(**test_data["test_sentences"]), test_data["wer_threshold"]
+def read_wav_file(path: str) -> Sequence[int]:
+    with wave.open(path, 'rb') as f:
+        buffer = f.readframes(f.getnframes())
+        # minus 4 because of the header
+        return struct.unpack(f"{f.getnframes() - 4}h", buffer)
 
 
 def get_model_paths() -> List[str]:
@@ -37,7 +43,39 @@ def get_model_paths() -> List[str]:
     return [os.path.join(model_folder, model_name) for model_name in os.listdir(model_folder)]
 
 
+def get_test_data() -> TestData:
+    data_file_path = os.path.join(os.path.dirname(__file__), "../../resources/.test/test_data.json")
+    with open(data_file_path, encoding="utf8") as data_file:
+        test_data = json.loads(data_file.read())
+
+    alignments = []
+    for word_data in test_data["alignments"]:
+        phonemes = []
+        for phoneme_data in word_data["phonemes"]:
+            phoneme = Orca.PhonemeAlignment(
+                phoneme=phoneme_data["phoneme"],
+                start_sec=phoneme_data["start_sec"],
+                end_sec=phoneme_data["end_sec"])
+            phonemes.append(phoneme)
+
+        word = Orca.WordAlignment(
+            word=word_data["word"],
+            start_sec=word_data["start_sec"],
+            end_sec=word_data["end_sec"],
+            phonemes=phonemes)
+        alignments.append(word)
+
+    test_data = TestData(
+        alignments=alignments,
+        random_state=test_data["random_state"],
+        audio_data_folder=test_data["audio_data_folder"],
+        **test_data["test_sentences"])
+
+    return test_data
+
+
 __all__ = [
     "get_test_data",
     "get_model_paths",
+    "read_wav_file",
 ]

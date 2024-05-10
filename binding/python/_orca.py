@@ -1,10 +1,12 @@
 import os
+from collections import namedtuple
 from ctypes import *
 from enum import Enum
 from typing import (
     Optional,
     Sequence,
-    Set)
+    Set,
+    Tuple)
 
 
 class OrcaError(Exception):
@@ -75,44 +77,151 @@ class OrcaActivationRefusedError(OrcaError):
     pass
 
 
-class Orca(object):
+class PicovoiceStatuses(Enum):
+    SUCCESS = 0
+    OUT_OF_MEMORY = 1
+    IO_ERROR = 2
+    INVALID_ARGUMENT = 3
+    STOP_ITERATION = 4
+    KEY_ERROR = 5
+    INVALID_STATE = 6
+    RUNTIME_ERROR = 7
+    ACTIVATION_ERROR = 8
+    ACTIVATION_LIMIT_REACHED = 9
+    ACTIVATION_THROTTLED = 10
+    ACTIVATION_REFUSED = 11
+
+
+_PICOVOICE_STATUS_TO_EXCEPTION = {
+    PicovoiceStatuses.OUT_OF_MEMORY: OrcaMemoryError,
+    PicovoiceStatuses.IO_ERROR: OrcaIOError,
+    PicovoiceStatuses.INVALID_ARGUMENT: OrcaInvalidArgumentError,
+    PicovoiceStatuses.STOP_ITERATION: OrcaStopIterationError,
+    PicovoiceStatuses.KEY_ERROR: OrcaKeyError,
+    PicovoiceStatuses.INVALID_STATE: OrcaInvalidStateError,
+    PicovoiceStatuses.RUNTIME_ERROR: OrcaRuntimeError,
+    PicovoiceStatuses.ACTIVATION_ERROR: OrcaActivationError,
+    PicovoiceStatuses.ACTIVATION_LIMIT_REACHED: OrcaActivationLimitError,
+    PicovoiceStatuses.ACTIVATION_THROTTLED: OrcaActivationThrottledError,
+    PicovoiceStatuses.ACTIVATION_REFUSED: OrcaActivationRefusedError,
+}
+
+
+class COrcaPhonemeAlignment(Structure):
+    _fields_ = [
+        ("phoneme", c_char_p),
+        ("start_sec", c_float),
+        ("end_sec", c_float),
+    ]
+
+
+class COrcaWordAlignment(Structure):
+    _fields_ = [
+        ("word", c_char_p),
+        ("start_sec", c_float),
+        ("end_sec", c_float),
+        ("num_phonemes", c_int32),
+        ("phonemes", POINTER(POINTER(COrcaPhonemeAlignment))),
+    ]
+
+
+class Orca:
     """
     Python binding for Orca Text-to-Speech engine.
     """
-
-    class PicovoiceStatuses(Enum):
-        SUCCESS = 0
-        OUT_OF_MEMORY = 1
-        IO_ERROR = 2
-        INVALID_ARGUMENT = 3
-        STOP_ITERATION = 4
-        KEY_ERROR = 5
-        INVALID_STATE = 6
-        RUNTIME_ERROR = 7
-        ACTIVATION_ERROR = 8
-        ACTIVATION_LIMIT_REACHED = 9
-        ACTIVATION_THROTTLED = 10
-        ACTIVATION_REFUSED = 11
-
-    _PICOVOICE_STATUS_TO_EXCEPTION = {
-        PicovoiceStatuses.OUT_OF_MEMORY: OrcaMemoryError,
-        PicovoiceStatuses.IO_ERROR: OrcaIOError,
-        PicovoiceStatuses.INVALID_ARGUMENT: OrcaInvalidArgumentError,
-        PicovoiceStatuses.STOP_ITERATION: OrcaStopIterationError,
-        PicovoiceStatuses.KEY_ERROR: OrcaKeyError,
-        PicovoiceStatuses.INVALID_STATE: OrcaInvalidStateError,
-        PicovoiceStatuses.RUNTIME_ERROR: OrcaRuntimeError,
-        PicovoiceStatuses.ACTIVATION_ERROR: OrcaActivationError,
-        PicovoiceStatuses.ACTIVATION_LIMIT_REACHED: OrcaActivationLimitError,
-        PicovoiceStatuses.ACTIVATION_THROTTLED: OrcaActivationThrottledError,
-        PicovoiceStatuses.ACTIVATION_REFUSED: OrcaActivationRefusedError,
-    }
 
     class COrca(Structure):
         pass
 
     class COrcaSynthesizeParams(Structure):
         pass
+
+    class COrcaStream(Structure):
+        pass
+
+    class OrcaStream:
+        """
+        Orca Stream object that converts a stream of text to a stream of audio.
+        """
+
+        def __init__(self, handle: POINTER('Orca.COrcaStream'), orca: 'Orca') -> None:
+            self._handle = handle
+            self._orca = orca
+
+        def synthesize(self, text: str) -> Optional[Sequence[int]]:
+            """
+            Adds a chunk of text to the Stream object and generates audio if enough text has been added.
+            This function is expected to be called multiple times with consecutive chunks of text from a text stream.
+            The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
+            buffered text into audio. The caller needs to use `pv_orca_stream_flush()` to generate the audio chunk
+            for the remaining text that has not yet been synthesized.
+            The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
+
+            :param text: A chunk of text from a text input stream, comprised of valid characters.
+            Valid characters can be retrieved by calling `pv_orca_valid_characters()`.
+            Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
+            They need to be added in a single call to this function.
+            The pronunciation is expressed in ARPAbet format, e.g.: `I {liv|L IH V} in {Sevilla|S EH V IY Y AH}`.
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `None` if no
+            audio chunk has been produced.
+            """
+
+            c_num_samples = c_int32()
+            c_pcm = POINTER(c_int16)()
+
+            status = self._orca._stream_synthesize_func(
+                self._handle,
+                text.encode("utf-8"),
+                byref(c_num_samples),
+                byref(c_pcm)
+            )
+            if status is not PicovoiceStatuses.SUCCESS:
+                raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                    message="Unable to synthesize text in Orca stream",
+                    message_stack=self._orca._get_error_stack())
+
+            pcm = None
+            if c_num_samples.value > 0:
+                pcm = [c_pcm[i] for i in range(c_num_samples.value)]
+
+            self._orca._pcm_delete_func(c_pcm)
+
+            return pcm
+
+        def flush(self) -> Optional[Sequence[int]]:
+            """
+            Generates audio for all the buffered text that was added to the OrcaStream object
+            via `pv_orca_stream_synthesize()`.
+            The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
+
+            :return: The generated audio as a sequence of 16-bit linearly-encoded integers, `None` if no
+            audio chunk has been produced.
+            """
+
+            c_num_samples = c_int32()
+            c_pcm = POINTER(c_int16)()
+
+            status = self._orca._stream_flush_func(
+                self._handle,
+                byref(c_num_samples),
+                byref(c_pcm)
+            )
+            if status is not PicovoiceStatuses.SUCCESS:
+                raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                    message="Unable to flush Orca stream",
+                    message_stack=self._orca._get_error_stack())
+
+            pcm = [c_pcm[i] for i in range(c_num_samples.value)]
+            self._orca._pcm_delete_func(c_pcm)
+
+            return pcm
+
+        def close(self) -> None:
+            """
+            Releases the resources acquired by the OrcaStream object.
+            """
+
+            self._orca._stream_close_func(self._handle)
 
     def __init__(self, access_key: str, model_path: str, library_path: str) -> None:
         """
@@ -142,7 +251,7 @@ class Orca(object):
 
         self._get_error_stack_func = library.pv_get_error_stack
         self._get_error_stack_func.argtypes = [POINTER(POINTER(c_char_p)), POINTER(c_int)]
-        self._get_error_stack_func.restype = self.PicovoiceStatuses
+        self._get_error_stack_func.restype = PicovoiceStatuses
 
         self._free_error_stack_func = library.pv_free_error_stack
         self._free_error_stack_func.argtypes = [POINTER(c_char_p)]
@@ -150,12 +259,12 @@ class Orca(object):
 
         init_func = library.pv_orca_init
         init_func.argtypes = [c_char_p, c_char_p, POINTER(POINTER(self.COrca))]
-        init_func.restype = self.PicovoiceStatuses
+        init_func.restype = PicovoiceStatuses
 
         self._handle = POINTER(self.COrca)()
         status = init_func(access_key.encode(), model_path.encode(), byref(self._handle))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message='Initialization failed',
                 message_stack=self._get_error_stack())
 
@@ -163,27 +272,58 @@ class Orca(object):
         self._delete_func.argtypes = [POINTER(self.COrca)]
         self._delete_func.restype = None
 
-        self._valid_characters_func = library.pv_orca_valid_characters
-        self._valid_characters_func.argtypes = [
+        valid_characters_func = library.pv_orca_valid_characters
+        valid_characters_func.argtypes = [
             POINTER(self.COrca),
             POINTER(c_int32),
             POINTER(POINTER(POINTER(c_char_p))),
         ]
-        self._valid_characters_func.restype = self.PicovoiceStatuses
+        valid_characters_func.restype = PicovoiceStatuses
 
-        self._valid_characters_delete_func = library.pv_orca_valid_characters_delete
-        self._valid_characters_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
-        self._valid_characters_delete_func.restype = None
+        valid_characters_delete_func = library.pv_orca_valid_characters_delete
+        valid_characters_delete_func.argtypes = [POINTER(POINTER(c_char_p))]
+        valid_characters_delete_func.restype = None
 
-        self._sample_rate_func = library.pv_orca_sample_rate
-        self._sample_rate_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
-        self._sample_rate_func.restype = self.PicovoiceStatuses
+        c_num_characters = c_int32()
+        c_characters = POINTER(POINTER(c_char_p))()
+        status = valid_characters_func(self._handle, byref(c_num_characters), byref(c_characters))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca valid characters",
+                message_stack=self._get_error_stack())
 
-        self._max_character_limit = library.pv_orca_max_character_limit()
+        num_characters = c_num_characters.value
+        characters_array_pointer = cast(c_characters, POINTER(c_char_p * num_characters))
+        self._valid_characters = set([symbol.decode('utf-8') for symbol in list(characters_array_pointer.contents)])
+        valid_characters_delete_func(c_characters)
+
+        sample_rate_func = library.pv_orca_sample_rate
+        sample_rate_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
+        sample_rate_func.restype = PicovoiceStatuses
+
+        c_sample_rate = c_int32()
+        status = sample_rate_func(self._handle, byref(c_sample_rate))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca sample rate",
+                message_stack=self._get_error_stack())
+        self._sample_rate = c_sample_rate.value
+
+        max_character_limit_func = library.pv_orca_max_character_limit
+        max_character_limit_func.argtypes = [POINTER(self.COrca), POINTER(c_int32)]
+        max_character_limit_func.restype = PicovoiceStatuses
+
+        c_max_character_limit = c_int32()
+        status = max_character_limit_func(self._handle, byref(c_max_character_limit))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to get Orca maximum character limit",
+                message_stack=self._get_error_stack())
+        self._max_character_limit = c_max_character_limit.value
 
         self._synthesize_params_init_func = library.pv_orca_synthesize_params_init
         self._synthesize_params_init_func.argtypes = [POINTER(POINTER(self.COrcaSynthesizeParams))]
-        self._synthesize_params_init_func.restype = self.PicovoiceStatuses
+        self._synthesize_params_init_func.restype = PicovoiceStatuses
 
         self._synthesize_params_delete_func = library.pv_orca_synthesize_params_delete
         self._synthesize_params_delete_func.argtypes = [POINTER(self.COrcaSynthesizeParams)]
@@ -191,7 +331,11 @@ class Orca(object):
 
         self._synthesize_params_set_speech_rate_func = library.pv_orca_synthesize_params_set_speech_rate
         self._synthesize_params_set_speech_rate_func.argtypes = [POINTER(self.COrcaSynthesizeParams), c_float]
-        self._synthesize_params_set_speech_rate_func.restype = self.PicovoiceStatuses
+        self._synthesize_params_set_speech_rate_func.restype = PicovoiceStatuses
+
+        self._synthesize_params_set_random_state_func = library.pv_orca_synthesize_params_set_random_state
+        self._synthesize_params_set_random_state_func.argtypes = [POINTER(self.COrcaSynthesizeParams), c_int64]
+        self._synthesize_params_set_random_state_func.restype = PicovoiceStatuses
 
         self._synthesize_func = library.pv_orca_synthesize
         self._synthesize_func.argtypes = [
@@ -200,8 +344,10 @@ class Orca(object):
             POINTER(self.COrcaSynthesizeParams),
             POINTER(c_int32),
             POINTER(POINTER(c_int16)),
+            POINTER(c_int32),
+            POINTER(POINTER(POINTER(COrcaWordAlignment))),
         ]
-        self._synthesize_func.restype = self.PicovoiceStatuses
+        self._synthesize_func.restype = PicovoiceStatuses
 
         self._synthesize_to_file_func = library.pv_orca_synthesize_to_file
         self._synthesize_to_file_func.argtypes = [
@@ -209,17 +355,55 @@ class Orca(object):
             c_char_p,
             POINTER(self.COrcaSynthesizeParams),
             c_char_p,
+            POINTER(c_int32),
+            POINTER(POINTER(POINTER(COrcaWordAlignment))),
         ]
-        self._synthesize_to_file_func.restype = self.PicovoiceStatuses
+        self._synthesize_to_file_func.restype = PicovoiceStatuses
 
-        self._delete_pcm_func = library.pv_orca_delete_pcm
-        self._delete_pcm_func.argtypes = [POINTER(c_int16)]
-        self._delete_pcm_func.restype = None
+        self._word_alignments_delete_func = library.pv_orca_word_alignments_delete
+        self._word_alignments_delete_func.argtypes = [c_int32, POINTER(POINTER(COrcaWordAlignment))]
+        self._word_alignments_delete_func.restype = PicovoiceStatuses
+
+        self._pcm_delete_func = library.pv_orca_pcm_delete
+        self._pcm_delete_func.argtypes = [POINTER(c_int16)]
+        self._pcm_delete_func.restype = None
+
+        self._stream_open_func = library.pv_orca_stream_open
+        self._stream_open_func.argtypes = [
+            POINTER(self.COrca),
+            POINTER(self.COrcaSynthesizeParams),
+            POINTER(POINTER(self.COrcaStream))
+        ]
+        self._stream_open_func.restype = PicovoiceStatuses
+
+        self._stream_synthesize_func = library.pv_orca_stream_synthesize
+        self._stream_synthesize_func.argtypes = [
+            POINTER(self.COrcaStream),
+            c_char_p,
+            POINTER(c_int32),
+            POINTER(POINTER(c_int16))
+        ]
+        self._stream_synthesize_func.restype = PicovoiceStatuses
+
+        self._stream_flush_func = library.pv_orca_stream_flush
+        self._stream_flush_func.argtypes = [
+            POINTER(self.COrcaStream),
+            POINTER(c_int32),
+            POINTER(POINTER(c_int16))
+        ]
+        self._stream_flush_func.restype = PicovoiceStatuses
+
+        self._stream_close_func = library.pv_orca_stream_close
+        self._stream_close_func.argtypes = [POINTER(self.COrcaStream)]
+        self._stream_close_func.restype = None
 
         version_func = library.pv_orca_version
         version_func.argtypes = []
         version_func.restype = c_char_p
         self._version = version_func().decode("utf-8")
+
+    PhonemeAlignment = namedtuple('Phoneme', ['phoneme', 'start_sec', 'end_sec'])
+    WordAlignment = namedtuple('Word', ['word', 'start_sec', 'end_sec', 'phonemes'])
 
     def delete(self) -> None:
         """Releases resources acquired by Orca."""
@@ -230,36 +414,13 @@ class Orca(object):
     def valid_characters(self) -> Set[str]:
         """Set of characters supported by Orca."""
 
-        c_num_characters = c_int32()
-        c_characters = POINTER(POINTER(c_char_p))()
-
-        status = self._valid_characters_func(self._handle, byref(c_num_characters), byref(c_characters))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca valid characters",
-                message_stack=self._get_error_stack())
-
-        num_characters = c_num_characters.value
-        characters_array_pointer = cast(c_characters, POINTER(c_char_p * num_characters))
-        characters = set([symbol.decode('utf-8') for symbol in list(characters_array_pointer.contents)])
-
-        self._valid_characters_delete_func(c_characters)
-
-        return characters
+        return self._valid_characters
 
     @property
     def sample_rate(self) -> int:
         """Audio sample rate of generated audio."""
 
-        c_sample_rate = c_int32()
-
-        status = self._sample_rate_func(self._handle, byref(c_sample_rate))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
-                message="Unable to get Orca sample rate",
-                message_stack=self._get_error_stack())
-
-        return c_sample_rate.value
+        return self._sample_rate
 
     @property
     def max_character_limit(self) -> int:
@@ -270,7 +431,8 @@ class Orca(object):
     def synthesize(
             self,
             text: str,
-            speech_rate: Optional[float] = None) -> Sequence[int]:
+            speech_rate: Optional[float] = None,
+            random_state: Optional[int] = None) -> Tuple[Sequence[int], Sequence[WordAlignment]]:
         """
         Generates audio from text. The returned audio contains the speech representation of the text.
 
@@ -278,37 +440,49 @@ class Orca(object):
         `self.max_character_limit`. Allowed characters can be retrieved by calling `self.pv_orca_valid_characters`.
         Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`.
         The pronunciation is expressed in ARPAbet format, e.g.: "I {live|L IH V} in {Sevilla|S EH V IY Y AH}".
-        :param speech_rate: Rate of speech of the synthesized audio.
-        :return: The generated audio, stored as a sequence of 16-bit linearly-encoded integers.
+        :param speech_rate: Rate of speech of the synthesized audio. Higher numbers correspond to faster speech.
+        Valid values are within [0.7, 1.3].
+        :param random_state: Random seed for the synthesis process. Valid values are all non-negative integer. If not
+        provided, a random seed will be chosen.
+        :return: A tuple containing the generated audio as a sequence of 16-bit linearly-encoded integers
+        and a sequence of OrcaWordAlignment objects representing the word alignments.
         """
 
-        c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate)
+        c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate, random_state=random_state)
 
         c_num_samples = c_int32()
         c_pcm = POINTER(c_int16)()
+        c_num_alignments = c_int32()
+        c_alignments = POINTER(POINTER(COrcaWordAlignment))()
+
         status = self._synthesize_func(
             self._handle,
             text.encode("utf-8"),
             c_synthesize_params,
             byref(c_num_samples),
-            byref(c_pcm))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
+            byref(c_pcm),
+            byref(c_num_alignments),
+            byref(c_alignments))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Unable to synthesize speech",
                 message_stack=self._get_error_stack())
 
         pcm = [c_pcm[i] for i in range(c_num_samples.value)]
+        self._pcm_delete_func(c_pcm)
 
-        self._delete_pcm_func(c_pcm)
+        alignments = self._get_alignments(c_num_alignments=c_num_alignments, c_alignments=c_alignments)
+
         self._synthesize_params_delete_func(c_synthesize_params)
 
-        return pcm
+        return pcm, alignments
 
     def synthesize_to_file(
             self,
             text: str,
             output_path: str,
-            speech_rate: Optional[float] = None) -> None:
+            speech_rate: Optional[float] = None,
+            random_state: Optional[int] = None) -> Sequence[WordAlignment]:
         """
         Generates audio from text. The returned audio contains the speech representation of the text.
 
@@ -319,21 +493,57 @@ class Orca(object):
         :param output_path: Absolute path to the output audio file. The output file is saved as `WAV (.wav)`
         and consists of a single mono channel.
         :param speech_rate: Rate of speech of the generated audio.
+        :param random_state: Random seed for the synthesis process.
+        :return: A sequence of OrcaWordAlignment objects representing the word alignments.
         """
 
-        c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate)
+        c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate, random_state=random_state)
+
+        c_num_alignments = c_int32()
+        c_alignments = POINTER(POINTER(COrcaWordAlignment))()
 
         status = self._synthesize_to_file_func(
             self._handle,
             text.encode("utf-8"),
             c_synthesize_params,
-            output_path.encode("utf-8"))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
+            output_path.encode("utf-8"),
+            byref(c_num_alignments),
+            byref(c_alignments))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Unable to synthesize speech",
                 message_stack=self._get_error_stack())
 
+        alignments = self._get_alignments(c_num_alignments=c_num_alignments, c_alignments=c_alignments)
+
         self._synthesize_params_delete_func(c_synthesize_params)
+
+        return alignments
+
+    def stream_open(self, speech_rate: Optional[float] = None, random_state: Optional[int] = None) -> 'Orca.OrcaStream':
+        """
+        Opens a stream for streaming text synthesis.
+
+        :param speech_rate: Rate of speech of the generated audio.
+        :param random_state: Random seed for the synthesis process.
+        :return: An instance of Orca.OrcaStream.
+        """
+
+        c_synthesize_params = self._get_c_synthesize_params(speech_rate=speech_rate, random_state=random_state)
+
+        stream_handle = POINTER(Orca.COrcaStream)()
+        status = self._stream_open_func(
+            self._handle,
+            c_synthesize_params,
+            byref(stream_handle))
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to open Orca stream",
+                message_stack=self._get_error_stack())
+
+        self._synthesize_params_delete_func(c_synthesize_params)
+
+        return self.OrcaStream(stream_handle, self)
 
     @property
     def version(self) -> str:
@@ -341,20 +551,67 @@ class Orca(object):
 
         return self._version
 
-    def _get_c_synthesize_params(self, speech_rate: Optional[float] = None) -> POINTER(COrcaSynthesizeParams):
+    def _get_alignments(
+            self,
+            c_num_alignments: c_int32,
+            c_alignments: POINTER(POINTER(COrcaWordAlignment))) -> Sequence[WordAlignment]:
+        alignments = []
+        for i in range(c_num_alignments.value):
+            word_alignment = c_alignments[i].contents
+            word = word_alignment.word.decode("utf-8")
+            start_sec = word_alignment.start_sec
+            end_sec = word_alignment.end_sec
+            num_phonemes = word_alignment.num_phonemes
+            phoneme_alignments = []
+            for j in range(num_phonemes):
+                phoneme_alignment = word_alignment.phonemes[j].contents
+                phoneme = phoneme_alignment.phoneme.decode("utf-8")
+                phoneme_start_sec = phoneme_alignment.start_sec
+                phoneme_end_sec = phoneme_alignment.end_sec
+                phoneme_alignment = self.PhonemeAlignment(
+                    phoneme=phoneme,
+                    start_sec=phoneme_start_sec,
+                    end_sec=phoneme_end_sec)
+                phoneme_alignments.append(phoneme_alignment)
+            word_alignment = self.WordAlignment(
+                word=word,
+                start_sec=start_sec,
+                end_sec=end_sec,
+                phonemes=phoneme_alignments)
+            alignments.append(word_alignment)
+
+        status = self._word_alignments_delete_func(c_num_alignments.value, c_alignments)
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                message="Unable to delete Orca word alignments",
+                message_stack=self._get_error_stack())
+
+        return alignments
+
+    def _get_c_synthesize_params(
+            self,
+            speech_rate: Optional[float] = None,
+            random_state: Optional[int] = None) -> POINTER(COrcaSynthesizeParams):
         c_params = POINTER(self.COrcaSynthesizeParams)()
 
         status = self._synthesize_params_init_func(byref(c_params))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                 message="Unable to create Orca synthesize params object",
                 message_stack=self._get_error_stack())
 
         if speech_rate is not None:
             status = self._synthesize_params_set_speech_rate_func(c_params, c_float(speech_rate))
-            if status is not self.PicovoiceStatuses.SUCCESS:
-                raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](
+            if status is not PicovoiceStatuses.SUCCESS:
+                raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
                     message="Unable to set Orca speech rate",
+                    message_stack=self._get_error_stack())
+
+        if random_state is not None:
+            status = self._synthesize_params_set_random_state_func(c_params, c_int64(random_state))
+            if status is not PicovoiceStatuses.SUCCESS:
+                raise _PICOVOICE_STATUS_TO_EXCEPTION[status](
+                    message="Unable to set Orca random state",
                     message_stack=self._get_error_stack())
 
         return c_params
@@ -364,8 +621,8 @@ class Orca(object):
         message_stack_depth = c_int()
 
         status = self._get_error_stack_func(byref(message_stack_ref), byref(message_stack_depth))
-        if status is not self.PicovoiceStatuses.SUCCESS:
-            raise self._PICOVOICE_STATUS_TO_EXCEPTION[status](message="Unable to get Orca error state")
+        if status is not PicovoiceStatuses.SUCCESS:
+            raise _PICOVOICE_STATUS_TO_EXCEPTION[status](message="Unable to get Orca error state")
 
         message_stack = list()
         for i in range(message_stack_depth.value):

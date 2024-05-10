@@ -4,7 +4,7 @@ const { join } = require('path');
 console.log('Copying the orca & leopard models...');
 
 const testDirectory = join(__dirname, '..', 'test');
-const fixturesDirectory = join(__dirname, '..', 'cypress', 'fixtures');
+const fixturesDirectory = join(__dirname, '..', 'cypress', 'fixtures', 'resources');
 
 const paramsSourceDirectory = join(
   __dirname,
@@ -21,16 +21,7 @@ const sourceDirectory = join(
   '..',
   '..',
   'resources',
-);
-
-const testingModelFilesSourceDirectory = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'resources',
   '.test',
-  'models',
 );
 
 try {
@@ -40,12 +31,12 @@ try {
     fs.copyFileSync(join(paramsSourceDirectory, file), join(testDirectory, file));
   });
 
-  fs.readdirSync(testingModelFilesSourceDirectory).forEach(file => {
-    fs.copyFileSync(join(testingModelFilesSourceDirectory, file), join(testDirectory, file));
-  });
+  fs.mkdirSync(join(fixturesDirectory, '.test', 'wav'), { recursive: true });
+  fs.copyFileSync(join(sourceDirectory, 'test_data.json'), join(fixturesDirectory, '.test', 'test_data.json'));
 
-  fs.mkdirSync(join(fixturesDirectory, '.test'), { recursive: true });
-  fs.copyFileSync(join(sourceDirectory, '.test', 'test_data.json'), join(fixturesDirectory, '.test', 'test_data.json'));
+  fs.readdirSync(join(sourceDirectory, 'wav')).forEach(file => {
+    fs.copyFileSync(join(sourceDirectory, 'wav', file), join(fixturesDirectory, '.test', 'wav', file));
+  });
 } catch (error) {
   console.error(error);
 }

@@ -3,3 +3,4 @@ dist
 MANIFEST.in
 pvorcademo
 pvorcademo.egg-info
+__pycache__/

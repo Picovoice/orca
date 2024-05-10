@@ -1,8 +1,12 @@
-import { Orca } from './orca';
-import { OrcaWorker } from './orca_worker';
+import { Orca, OrcaStream } from './orca';
+import { OrcaWorker, OrcaStreamWorker } from './orca_worker';
 
 import {
   OrcaModel,
+  OrcaSynthesizeParams,
+  OrcaPhoneme,
+  OrcaAlignment,
+  OrcaSynthesizeResult,
   OrcaWorkerInitRequest,
   OrcaWorkerSynthesizeRequest,
   OrcaWorkerReleaseRequest,
@@ -26,8 +30,15 @@ OrcaWorker.setWasmSimd(orcaWasmSimd);
 
 export {
   Orca,
+  OrcaStream,
+  OrcaErrors,
   OrcaModel,
+  OrcaSynthesizeParams,
+  OrcaPhoneme,
+  OrcaAlignment,
+  OrcaSynthesizeResult,
   OrcaWorker,
+  OrcaStreamWorker,
   OrcaWorkerInitRequest,
   OrcaWorkerSynthesizeRequest,
   OrcaWorkerReleaseRequest,
@@ -37,5 +48,4 @@ export {
   OrcaWorkerReleaseResponse,
   OrcaWorkerFailureResponse,
   OrcaWorkerResponse,
-  OrcaErrors,
 };

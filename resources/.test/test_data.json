@@ -3,12 +3,9 @@
     "text": "It doesn't matter how slowly you go, as long as you do not stop!",
     "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
     "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!",
+    "text_alignment": "Test alignment.",
     "text_invalid": [
-      "Numbers 1992",
-      "7.38",
-      "",
-      "Symbols *&$",
-      "reiner@gmail.com",
+      "Symbols *$",
       "Escape characters \n",
       "\"ی\", \"ء\"",
       "ॐÁ hindi and spanish",
@@ -24,5 +21,94 @@
       "Wrong {custom|K AH S T AM } pron"
     ]
   },
-  "wer_threshold": 0.2
+  "random_state": 42,
+  "alignments": [
+    {
+      "word": "Test",
+      "start_sec": 0.000,
+      "end_sec": 0.32,
+      "phonemes": [
+        {
+          "phoneme": "T",
+          "start_sec": 0.00,
+          "end_sec": 0.09
+        },
+        {
+          "phoneme": "EH",
+          "start_sec": 0.093,
+          "end_sec": 0.19
+        },
+        {
+          "phoneme": "S",
+          "start_sec": 0.19,
+          "end_sec": 0.25
+        },
+        {
+          "phoneme": "T",
+          "start_sec": 0.25,
+          "end_sec": 0.32
+        }
+      ]
+    },
+    {
+      "word": "alignment",
+      "start_sec": 0.32,
+      "end_sec": 0.85,
+      "phonemes": [
+        {
+          "phoneme": "AH",
+          "start_sec": 0.32,
+          "end_sec": 0.37
+        },
+        {
+          "phoneme": "L",
+          "start_sec": 0.37,
+          "end_sec": 0.44
+        },
+        {
+          "phoneme": "AY",
+          "start_sec": 0.44,
+          "end_sec": 0.53
+        },
+        {
+          "phoneme": "N",
+          "start_sec": 0.53,
+          "end_sec": 0.60
+        },
+        {
+          "phoneme": "M",
+          "start_sec": 0.60,
+          "end_sec": 0.65
+        },
+        {
+          "phoneme": "AH",
+          "start_sec": 0.65,
+          "end_sec": 0.72
+        },
+        {
+          "phoneme": "N",
+          "start_sec": 0.72,
+          "end_sec": 0.78
+        },
+        {
+          "phoneme": "T",
+          "start_sec": 0.78,
+          "end_sec": 0.85
+        }
+      ]
+    },
+    {
+      "word": ".",
+      "start_sec": 0.85,
+      "end_sec": 0.94,
+      "phonemes": [
+        {
+          "phoneme": ".",
+          "start_sec": 0.85,
+          "end_sec": 0.94
+        }
+      ]
+    }
+  ],
+  "audio_data_folder": "resources/.test/wav/"
 }

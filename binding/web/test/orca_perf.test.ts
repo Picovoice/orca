@@ -1,5 +1,5 @@
 import { Orca, OrcaWorker } from '../';
-import testData from '../cypress/fixtures/.test/test_data.json';
+import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 const NUM_TEST_ITERATIONS = Number(Cypress.env('NUM_TEST_ITERATIONS'));

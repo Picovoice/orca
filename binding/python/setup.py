@@ -49,10 +49,10 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setuptools.setup(
     name="pvorca",
-    version="0.1.4",
+    version="0.2.1",
     author="Picovoice",
     author_email="hello@picovoice.ai",
-    description="Orca Text-to-Speech Engine.",
+    description="Orca Streaming Text-to-Speech Engine",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Picovoice/orca",
@@ -66,6 +66,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Topic :: Multimedia :: Sound/Audio :: Speech",
     ],
-    python_requires='>=3.7',
-    keywords="Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
+    python_requires='>=3.8',
+    keywords="Streaming Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
 )
