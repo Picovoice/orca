@@ -68,21 +68,23 @@ class OrcaAppTestUITests: BaseTest {
 
             orcaStream.close()
 
-            let groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleStream : self.testAudioFemaleStream)
+            let groundTruth = try self.getPcm(
+                fileUrl: index == 0 ? self.testAudioMaleStream : self.testAudioFemaleStream)
 
             XCTAssertEqual(fullPcm.count, groundTruth.count)
             XCTAssertTrue(compareArrays(arr1: fullPcm, arr2: groundTruth, step: 1))
         }
     }
 
-
     func testSynthesize() throws {
         for (index, orca) in self.orcas.enumerated() {
-            let (pcm, wordArray) = try orca.synthesize(text: self.testData!.test_sentences.text, randomState: self.testData!.random_state)
+            let (pcm, wordArray) = try orca.synthesize(
+                text: self.testData!.test_sentences.text, randomState: self.testData!.random_state)
             XCTAssertGreaterThan(pcm.count, 0)
             XCTAssertGreaterThan(wordArray.count, 0)
 
-            let groundTruth = try self.getPcm(fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
+            let groundTruth = try self.getPcm(
+                fileUrl: index == 0 ? self.testAudioMaleSingle : self.testAudioFemaleSingle)
             XCTAssertEqual(pcm.count, groundTruth.count)
             XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1))
         }
@@ -90,7 +92,8 @@ class OrcaAppTestUITests: BaseTest {
 
     func testAlignments() throws {
         for (index, orca) in self.orcas.enumerated() {
-            let (pcm, wordArray) = try orca.synthesize(text: self.testData!.test_sentences.text_alignment, randomState: self.testData!.random_state)
+            let (pcm, wordArray) = try orca.synthesize(
+                text: self.testData!.test_sentences.text_alignment, randomState: self.testData!.random_state)
             XCTAssertGreaterThan(pcm.count, 0)
             XCTAssertGreaterThan(wordArray.count, 0)
 
@@ -100,17 +103,24 @@ class OrcaAppTestUITests: BaseTest {
                                         appropriateFor: nil,
                                         create: false)
             let audioFile = audioDir.appendingPathComponent("test.wav")
-            let synthToFileWordArray = try orca.synthesizeToFile(text: self.testData!.test_sentences.text_alignment, outputURL: audioFile)
+            let synthToFileWordArray = try orca.synthesizeToFile(
+                text: self.testData!.test_sentences.text_alignment, outputURL: audioFile)
             try FileManager().removeItem(at: audioFile)
 
             var synthesizeTestData = [OrcaWord]()
             for alignment in self.testData!.alignments {
                 var phonemeArray = [OrcaPhoneme]()
                 for phoneme in alignment.phonemes {
-                    phonemeArray.append(OrcaPhoneme(phoneme: phoneme.phoneme, startSec: phoneme.start_sec, endSec: phoneme.end_sec))
+                    phonemeArray.append(OrcaPhoneme(
+                        phoneme: phoneme.phoneme, startSec: phoneme.start_sec, endSec: phoneme.end_sec))
                 }
 
-                synthesizeTestData.append(OrcaWord(word: alignment.word, startSec: alignment.start_sec, endSec: alignment.end_sec, phonemeArray: phonemeArray))
+                synthesizeTestData.append(
+                    OrcaWord(
+                        word: alignment.word,
+                        startSec: alignment.start_sec,
+                        endSec: alignment.end_sec,
+                        phonemeArray: phonemeArray))
             }
 
             validateMetadata(words: wordArray, expectedWords: synthesizeTestData, isExpectExact: index == 1)
@@ -128,8 +138,10 @@ class OrcaAppTestUITests: BaseTest {
 
     func testSynthesizeSpeechRate() throws {
         for orca in self.orcas {
-            let (pcm: pcmFast, wordArray: wordArrayFast) = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 1.3)
-            let (pcm: pcmSlow, wordArray: wordArraySlow) = try orca.synthesize(text: self.testData!.test_sentences.text, speechRate: 0.7)
+            let (pcm: pcmFast, wordArray: wordArrayFast) = try orca.synthesize(
+                text: self.testData!.test_sentences.text, speechRate: 1.3)
+            let (pcm: pcmSlow, wordArray: wordArraySlow) = try orca.synthesize(
+                text: self.testData!.test_sentences.text, speechRate: 0.7)
 
             XCTAssertLessThan(pcmFast.count, pcmSlow.count)
             XCTAssertEqual(wordArrayFast.count, wordArraySlow.count)
@@ -144,18 +156,19 @@ class OrcaAppTestUITests: BaseTest {
 
     func testSynthesizeRandomState() throws {
         for orca in self.orcas {
-            let (pcm: pcm1, wordArray: wordArray1) = try orca.synthesize(text: self.testData!.test_sentences.text, randomState: 1)
+            let (pcm: pcm1, wordArray: wordArray1) = try orca.synthesize(
+                text: self.testData!.test_sentences.text, randomState: 1)
             XCTAssertGreaterThan(pcm1.count, 0)
             XCTAssertGreaterThan(wordArray1.count, 0)
 
-            let (pcm: pcm2, wordArray: wordArray2) = try orca.synthesize(text: self.testData!.test_sentences.text, randomState: 2)
+            let (pcm: pcm2, wordArray: wordArray2) = try orca.synthesize(
+                text: self.testData!.test_sentences.text, randomState: 2)
             XCTAssertGreaterThan(pcm2.count, 0)
             XCTAssertGreaterThan(wordArray2.count, 0)
 
             XCTAssertNotEqual(pcm1, pcm2)
         }
     }
-
 
     func testSynthesizeToFile() throws {
         let audioDir = try FileManager.default.url(

@@ -24,7 +24,7 @@ enum UIState {
 
 class ViewModel: ObservableObject {
     private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
-    
+
     private let NUM_AUDIO_WAIT_CHUNKS = 1
 
     private var orca: Orca!
@@ -36,7 +36,7 @@ class ViewModel: ObservableObject {
 
     private let audioFilePath = "temp.wav"
     private var audioFile: URL!
-    
+
     @Published var state = UIState.INIT
     @Published var sampleRate: Int32 = 0
     @Published var maxCharacterLimit: Int32 = 0
@@ -45,7 +45,7 @@ class ViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var invalidTextMessage = ""
     @Published var streamInvalidTextMessage = ""
-    
+
     init() {
         initialize()
     }
@@ -110,18 +110,18 @@ class ViewModel: ObservableObject {
             runStreamSynthesis(text: text)
             return
         }
-        
+
         if state == UIState.PLAYING {
             toggleSynthesizeOff()
         } else {
             toggleSynthesizeOn(text: text)
         }
     }
-    
+
     private func runStreamSynthesis(text: String) {
         self.textStream = ""
         self.state = UIState.STREAM_PLAYING
-        
+
         do {
             playerStream = try AudioPlayerStream(sampleRate: Double(self.sampleRate))
         } catch {
@@ -186,7 +186,7 @@ class ViewModel: ObservableObject {
         let playStreamQueue = DispatchQueue(label: "play-stream-queue")
         let pcmStreamQueueLatch = DispatchSemaphore(value: 0)
         let playStreamQueueLatch = DispatchSemaphore(value: 0)
-        
+
         func getSecsString(secs: Float) -> String {
             return "Seconds of audio synthesized: " + String(format: "%.3f", secs) + "s"
         }
@@ -292,7 +292,7 @@ class ViewModel: ObservableObject {
             }
         }
     }
-    
+
     public func toggleSynthesizeOff() {
         player.stop()
         state = UIState.READY

@@ -5,5 +5,7 @@ disabled_rules:
   - implicit_getter
   - cyclomatic_complexity
   - function_parameter_count
+  - file_length
+  - type_body_length
 excluded:
   - ${PWD}/**/Pods

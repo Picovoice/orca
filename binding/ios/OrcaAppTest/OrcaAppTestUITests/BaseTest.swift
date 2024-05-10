@@ -55,10 +55,14 @@ class BaseTest: XCTestCase {
     var orcas: [Orca] = []
     var testData: TestData?
 
-    let testAudioMaleSingle = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_male_single", withExtension: "wav")!
-    let testAudioMaleStream = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_male_stream", withExtension: "wav")!
-    let testAudioFemaleSingle = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_female_single", withExtension: "wav")!
-    let testAudioFemaleStream = Bundle(for: BaseTest.self).url(forResource: "test_resources/wav/orca_params_female_stream", withExtension: "wav")!
+    let testAudioMaleSingle = Bundle(for: BaseTest.self)
+        .url(forResource: "test_resources/wav/orca_params_male_single", withExtension: "wav")!
+    let testAudioMaleStream = Bundle(for: BaseTest.self)
+        .url(forResource: "test_resources/wav/orca_params_male_stream", withExtension: "wav")!
+    let testAudioFemaleSingle = Bundle(for: BaseTest.self)
+        .url(forResource: "test_resources/wav/orca_params_female_single", withExtension: "wav")!
+    let testAudioFemaleStream = Bundle(for: BaseTest.self)
+        .url(forResource: "test_resources/wav/orca_params_female_stream", withExtension: "wav")!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -98,14 +102,11 @@ class BaseTest: XCTestCase {
     }
 
     func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
-        for i in stride(from: 0, to: arr1.count - step, by: step) {
-            if !(abs(arr1[i] - arr2[i]) <= 500) {
-                return false
-            }
+        for i in stride(from: 0, to: arr1.count - step, by: step) where !(abs(arr1[i] - arr2[i]) <= 500) {
+            return false
         }
         return true
     }
-
 
     func getPcm(fileUrl: URL) throws -> [Int16] {
         let data = try Data(contentsOf: fileUrl)
@@ -115,7 +116,6 @@ class BaseTest: XCTestCase {
         }
         return pcmData
     }
-
 
     func validateMetadata(words: [OrcaWord], expectedWords: [OrcaWord], isExpectExact: Bool) {
         XCTAssertEqual(words.count, expectedWords.count)

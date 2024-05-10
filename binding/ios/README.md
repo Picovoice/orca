@@ -2,8 +2,8 @@
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
-Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency 
-voice assistants. Orca is:
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice
+assistants. Orca is:
 
 - Private; All voice processing runs locally.
 - Cross-Platform:
@@ -146,7 +146,7 @@ and replace `${MODEL_FILE_PATH}` or `${MODEL_FILE_URL}` with the path to the mod
 
 ### Speech control
 
-Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `streamOopen`
+Orca allows for keyword arguments to control the synthesized speech. They can be provided to the `streamOpen`
 method or the single synthesis methods `synthesize` and `synthesizeToFile`:
 
 - `speechRate`: Controls the speed of the generated speech. Valid values are within [0.7, 1.3]. A higher (lower) value

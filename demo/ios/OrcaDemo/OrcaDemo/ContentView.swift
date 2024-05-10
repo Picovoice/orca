@@ -25,7 +25,7 @@ struct ContentView: View {
             || viewModel.state == .INIT || (!streamingMode && !viewModel.invalidTextMessage.isEmpty)
         let toggleDisabled = interactionDisabled || viewModel.state == .STREAM_PLAYING
         let buttonDisabled = toggleDisabled || text.isEmpty
-        
+
         GeometryReader { _ in
             VStack(spacing: 10) {
                 Toggle(
@@ -38,7 +38,7 @@ struct ContentView: View {
                 .disabled(toggleDisabled)
                 .onChange(of: streamingMode) { _ in text = "" }
                 .foregroundColor(Color.black)
-                          
+
                 if viewModel.state == .STREAM_PLAYING {
                     GeometryReader { geometry in
                         ScrollView {
@@ -71,7 +71,8 @@ struct ContentView: View {
                                         .background(lightGray)
                                         .foregroundColor(Color.black)
                                         .onChange(of: text) { newValue in
-                                            let updatedText = String(newValue.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
+                                            let updatedText = String(
+                                                newValue.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
                                             text = updatedText.replacingOccurrences(of: "’", with: "'")
                                             viewModel.isValid(text: text)
                                         }
@@ -93,7 +94,7 @@ struct ContentView: View {
                         }
                     }
                 }
-                
+
                 if streamingMode {
                     if viewModel.state == .STREAM_OPEN && !viewModel.streamInvalidTextMessage.isEmpty {
                         Text(viewModel.streamInvalidTextMessage)

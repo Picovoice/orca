@@ -57,3 +57,4 @@ numpy
 btns
 Btns
 pltf
+usleep

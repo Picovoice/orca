@@ -461,7 +461,12 @@ public class Orca {
     ///   - randomState: Random seed for the synthesis process.
     /// - Returns: An array of OrcaWord objects representing the word alignments.
     /// - Throws: OrcaError
-    public func synthesizeToFile(text: String, outputURL: URL, speechRate: Double? = nil, randomState: Int64? = nil) throws -> [OrcaWord] {
+    public func synthesizeToFile(
+        text: String,
+        outputURL: URL,
+        speechRate: Double? = nil,
+        randomState: Int64? = nil
+    ) throws -> [OrcaWord] {
         try synthesizeToFile(text: text, outputPath: outputURL.path, speechRate: speechRate, randomState: randomState)
     }
 
