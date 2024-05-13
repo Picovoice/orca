@@ -11,6 +11,7 @@
 
 openai==1.17.0
 pvcheetah==2.0.1
+pvorca==0.2.1
 pvrecorder==1.2.2
 sounddevice==0.4.6
 tiktoken==0.6.0

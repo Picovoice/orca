@@ -5,6 +5,8 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 This demo showcases how [Orca Streaming Text-to-Speech](https://picovoice.ai/platform/orca/) can be seamlessly
 integrated into LLM-applications to drastically reduce the audio latency of voice assistants.
 
+[![](https://img.youtube.com/vi/TpK3wOrn-5Q/0.jpg)](https://www.youtube.com/watch?v=TpK3wOrn-5Q)
+
 ## Technologies
 
 In this demo, the user can interact with a voice assistant in real-time by leveraging GenAI technologies.
@@ -34,8 +36,16 @@ To run all features of this demo, access keys are required for:
 
 ## Usage
 
+Install dependencies:
+
 ```bash
-python llm_voice_assistant_demo.py --picovoice-access-key ${PV_ACCESS_KEY} --openai-access-key ${OPEN_AI_KEY}
+pip3 install -r requirements.txt    
+```
+
+Run the demo:
+
+```bash
+python3 llm_voice_assistant_demo.py --picovoice-access-key ${PV_ACCESS_KEY} --openai-access-key ${OPEN_AI_KEY}
 ```
 
 Replace `${PV_ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console,
