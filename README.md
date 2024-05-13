@@ -67,7 +67,7 @@ incoming text streams in real-time, generating audio continuously, i.e., as the 
 Orca generates speech in parallel.
 This enables seamless conversations with voice assistants, eliminating any audio delays.
 
-![](https://github.com/Picovoice/orca/blob/orca-prepare-v0.2/resources/assets/orca_streaming_animation.gif)
+![](https://github.com/Picovoice/orca/blob/main/resources/assets/orca_streaming_animation.gif)
 
 Orca also supports single synthesis mode, where a complete text is synthesized in a single call to the Orca engine.
 
