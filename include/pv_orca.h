@@ -29,11 +29,11 @@ extern "C" {
  *     1) Single synthesis: converts a given text to audio. Function `pv_orca_synthesize()` returns the raw audio data,
  *        function `pv_orca_synthesize_to_file()` saves the audio to a file.
  *     2) Streaming synthesis: Converts a stream of text to a stream of audio. An OrcaStream object can be opened with
- *        `pv_orca_stream_open()` and text can be added with `pv_orca_stream_synthesize()`. The audio is
- *        generated in chunks whenever enough text has been buffered. When the text stream is finalized,
- *        the caller needs to use `pv_orca_stream_flush()` to generate the audio for the remaining text that has
- *        not been synthesized. The stream can be closed with `pv_orca_stream_close()`.
- *        Single synthesis functions cannot be called while a stream is open.
+ *        `pv_orca_stream_open()` and text chunks can be added with `pv_orca_stream_synthesize()`.
+ *        The incoming text is buffered internally and only when enough context is available will an audio chunk
+ *        be generated. When the text stream has concluded, the caller needs to use `pv_orca_stream_flush()`
+ *        to generate the audio for the remaining buffer that has yet to be synthesized. The stream can be closed
+ *        with `pv_orca_stream_close()`. Single synthesis functions cannot be called while a stream is open.
  */
 typedef struct pv_orca pv_orca_t;
 
@@ -101,7 +101,7 @@ PV_API pv_status_t pv_orca_max_character_limit(const pv_orca_t *object, int32_t 
  * Forward declaration for pv_orca_synthesize_params object. This object can be parsed to Orca synthesize functions to
  * control the synthesized audio. An instance can be created with `pv_orca_synthesize_params_init()` and deleted with
  * `pv_orca_synthesize_params_delete()`. The object's properties can be set with `pv_orca_synthesize_params_set_*()`
- * and returned with `pv_orca_synthesize_params_get_*()`.
+ * and returned with `pv_orca_synthesize_params_get_()*`.
  */
 typedef struct pv_orca_synthesize_params pv_orca_synthesize_params_t;
 
@@ -273,7 +273,7 @@ PV_API pv_status_t pv_orca_stream_open(
  * The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
  *
  * @param object The OrcaStream object.
- * @param text A chunk of text from a text input stream, comprised of valid characters.
+ * @param text A chunk of text from a text input stream. Characters not supported by Orca will be ignored.
  * Valid characters can be retrieved by calling `pv_orca_valid_characters()`.
  * Custom pronunciations can be embedded in the text via the syntax `{word|pronunciation}`. They need to be
  * added in a single call to this function. The pronunciation is expressed in ARPAbet format,

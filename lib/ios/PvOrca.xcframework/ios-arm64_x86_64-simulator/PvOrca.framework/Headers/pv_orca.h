@@ -29,11 +29,11 @@ extern "C" {
  *     1) Single synthesis: converts a given text to audio. Function `pv_orca_synthesize()` returns the raw audio data,
  *        function `pv_orca_synthesize_to_file()` saves the audio to a file.
  *     2) Streaming synthesis: Converts a stream of text to a stream of audio. An OrcaStream object can be opened with
- *        `pv_orca_stream_open()` and text can be added with `pv_orca_stream_synthesize()`. The audio is
- *        generated in chunks whenever enough text has been buffered. When the text stream is finalized,
- *        the caller needs to use `pv_orca_stream_flush()` to generate the audio for the remaining text that has
- *        not been synthesized. The stream can be closed with `pv_orca_stream_close()`.
- *        Single synthesis functions cannot be called while a stream is open.
+ *        `pv_orca_stream_open()` and text chunks can be added with `pv_orca_stream_synthesize()`.
+ *        The incoming text is buffered internally and only when enough context is available will an audio chunk
+ *        be generated. When the text stream has concluded, the caller needs to use `pv_orca_stream_flush()`
+ *        to generate the audio for the remaining buffer that has yet to be synthesized. The stream can be closed
+ *        with `pv_orca_stream_close()`. Single synthesis functions cannot be called while a stream is open.
  */
 typedef struct pv_orca pv_orca_t;
 
@@ -190,7 +190,8 @@ typedef struct {
 /**
  * Generates audio from text. The returned audio contains the speech representation of the text.
  * This function returns `PV_STATUS_INVALID_STATE` if an OrcaStream object is open.
- * The memory of the returned audio is allocated by Orca and can be deleted with `pv_orca_pcm_delete()`
+ * The memory of the returned audio and the alignment metadata is allocated by Orca and can be deleted with
+ * `pv_orca_pcm_delete()` and `pv_orca_word_alignments_delete()`, respectively.
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling
@@ -219,6 +220,8 @@ PV_API pv_status_t pv_orca_synthesize(
 /**
  * Generates audio from text and saves it to a file. The file contains the speech representation of the text.
  * This function returns `PV_STATUS_INVALID_STATE` if an OrcaStream object is open.
+ * The memory of the returned alignment metadata is allocated by Orca and can be deleted with
+ * `pv_orca_word_alignments_delete()`.
  *
  * @param object The Orca object.
  * @param text Text to be converted to audio. The maximum length can be attained by calling
@@ -264,7 +267,7 @@ PV_API pv_status_t pv_orca_stream_open(
 /**
  * Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
  * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
- * The incoming text is buffered as it arrives until the length is long enough to convert a chunk of the buffered
+ * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the buffered
  * text into audio. The caller needs to use `pv_orca_stream_flush()` to generate the audio chunk for the remaining
  * text that has not yet been synthesized.
  * The caller is responsible for deleting the generated audio with `pv_orca_pcm_delete()`.
