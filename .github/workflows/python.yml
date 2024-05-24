@@ -51,6 +51,14 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
+      # TODO: remove after release
+      - name: Build dependencies
+        run: |
+          python -m pip install -U pip setuptools
+          pip install wheel 
+          python3 setup.py sdist bdist_wheel 
+          pip install --force-reinstall dist/pvorca-0.2.1-py3-none-any.whl
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -69,6 +77,14 @@ jobs:
 
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
+
+      # TODO: remove after release
+      - name: Build dependencies
+        run: |
+          python -m pip install -U pip setuptools
+          pip install wheel 
+          python3 setup.py sdist bdist_wheel 
+          pip install --force-reinstall dist/pvorca-0.2.1-py3-none-any.whl
 
       - name: Install dependencies
         run: pip install -r requirements.txt
