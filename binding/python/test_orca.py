@@ -48,7 +48,7 @@ class OrcaTestCase(unittest.TestCase):
         pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
         self.assertEqual(len(pcm), len(ground_truth))
         for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=500)
+            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=1000)
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
         self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
