@@ -28,7 +28,8 @@ const EXPECTED_VALID_CHARACTERS = [
   'Y', 'Z', '\'', '{', '}', '|', ' ',
   '-', '1', '2', '3', '4', '5', '6',
   '7', '8', '9', '0', '@', '%', '&',
-  '\n', '_', '(', ')',
+  '\n', '_', '(', ')', '°', 'º', '²',
+  '³',
 ];
 
 const EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = 'female';
