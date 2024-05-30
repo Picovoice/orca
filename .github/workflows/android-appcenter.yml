@@ -61,7 +61,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build app
-        run: ./gradlew assembleDebug --info
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Build androidTest
         run: ./gradlew assembleAndroidTest
