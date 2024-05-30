@@ -70,7 +70,6 @@ class OrcaAppTestUITests: BaseTest {
 
             let groundTruth = try self.getPcm(
                 fileUrl: index == 0 ? self.testAudioMaleStream : self.testAudioFemaleStream)
-
             XCTAssertEqual(fullPcm.count, groundTruth.count)
             XCTAssertTrue(compareArrays(arr1: fullPcm, arr2: groundTruth, step: 1))
         }

@@ -6,7 +6,7 @@
     "text_alignment": "Test alignment.",
     "text_invalid": [
       "Symbols *$",
-      "Escape characters \r",
+      "Escape characters \\",
       "\"ی\", \"ء\"",
       "ॐÁ hindi and spanish",
       "Б russian",
