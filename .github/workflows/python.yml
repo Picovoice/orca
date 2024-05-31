@@ -14,6 +14,7 @@ on:
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
       - 'lib/windows/**'
+      - 'resources/.test/**'
   pull_request:
     branches: [ main, 'v[0-9]+.[0-9]+' ]
     paths:
@@ -26,6 +27,7 @@ on:
       - 'lib/mac/**'
       - 'lib/raspberry-pi/**'
       - 'lib/windows/**'
+      - 'resources/.test/**'
 
 defaults:
   run:

@@ -2,13 +2,13 @@ source 'https://cdn.cocoapods.org/'
 platform :ios, '13.0'
 
 target 'OrcaAppTest' do
-  pod 'Orca-iOS', '~> 0.2.0'
+  pod 'Orca-iOS', '~> 0.2.1'
 end
 
 target 'OrcaAppTestUITests' do
-  pod 'Orca-iOS', '~> 0.2.0'
+  pod 'Orca-iOS', '~> 0.2.1'
 end
 
 target 'PerformanceTest' do
-  pod 'Orca-iOS', '~> 0.2.0'
+  pod 'Orca-iOS', '~> 0.2.1'
 end
