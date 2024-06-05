@@ -85,6 +85,15 @@ public class Orca {
     public static let version = String(cString: pv_orca_version())
 
     private static var sdk = "ios"
+    
+    private func swapApostrophesAndQuotes(_ text: String) throws -> String {
+        var output = text
+        output = output.replacingOccurrences(of: "’", with: "'")
+        output = output.replacingOccurrences(of: "‘", with: "'")
+        output = output.replacingOccurrences(of: "“", with: "\"")
+        output = output.replacingOccurrences(of: "”", with: "\"")
+        return output
+    }
 
     /// OrcaStream object that converts a stream of text to a stream of audio.
     public class OrcaStream {
@@ -115,10 +124,12 @@ public class Orca {
 
             var cNumSamples: Int32 = 0
             var cPcm: UnsafeMutablePointer<Int16>?
+            
+            var formattedText = swapApostrophesAndQuotes(text)
 
             let status = pv_orca_stream_synthesize(
                 stream,
-                text,
+                formattedText,
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
@@ -315,10 +326,12 @@ public class Orca {
 
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
+        
+        var formattedText = swapApostrophesAndQuotes(text)
 
         let status = pv_orca_synthesize(
             handle,
-            text,
+            formattedText,
             cSynthesizeParams,
             &cNumSamples,
             &cPcm,
