@@ -69,6 +69,15 @@ public struct OrcaWord {
     }
 }
 
+private func swapApostrophesAndQuotes(_ text: String) -> String {
+    var output = text
+    output = output.replacingOccurrences(of: "’", with: "'")
+    output = output.replacingOccurrences(of: "‘", with: "'")
+    output = output.replacingOccurrences(of: "“", with: "\"")
+    output = output.replacingOccurrences(of: "”", with: "\"")
+    return output
+}
+
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
 
@@ -85,15 +94,6 @@ public class Orca {
     public static let version = String(cString: pv_orca_version())
 
     private static var sdk = "ios"
-    
-    private func swapApostrophesAndQuotes(_ text: String) -> String {
-        var output = text
-        output = output.replacingOccurrences(of: "’", with: "'")
-        output = output.replacingOccurrences(of: "‘", with: "'")
-        output = output.replacingOccurrences(of: "“", with: "\"")
-        output = output.replacingOccurrences(of: "”", with: "\"")
-        return output
-    }
 
     /// OrcaStream object that converts a stream of text to a stream of audio.
     public class OrcaStream {
