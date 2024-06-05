@@ -11,7 +11,7 @@ import XCTest
 import Orca
 
 class OrcaAppTestUITests: BaseTest {
-
+    
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
@@ -34,6 +34,10 @@ class OrcaAppTestUITests: BaseTest {
         for orca in self.orcas {
             XCTAssertGreaterThan(orca.validCharacters!.count, 0)
             XCTAssert(orca.validCharacters!.contains(","))
+            XCTAssert(orca.validCharacters!.contains("‘"))
+            XCTAssert(orca.validCharacters!.contains("’"))
+            XCTAssert(orca.validCharacters!.contains("“"))
+            XCTAssert(orca.validCharacters!.contains("”"))
         }
     }
 
@@ -178,16 +182,72 @@ class OrcaAppTestUITests: BaseTest {
         let audioFile = audioDir.appendingPathComponent("test.wav")
 
         for orca in self.orcas {
-            try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputURL: audioFile)
+            let wordArrayFromURL = try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputURL: audioFile)
             XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            XCTAssertGreaterThan(wordArrayFromURL.count, 0)
             try FileManager().removeItem(at: audioFile)
 
-            try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputPath: audioFile.path)
+            let wordArrayFromPath = try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputPath: audioFile.path)
             XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            XCTAssertGreaterThan(wordArrayFromPath.count, 0)
             try FileManager().removeItem(at: audioFile)
         }
     }
+    
+    let textQuotes = "iOS uses different quotation marks for ‘single quotes’ and “double quotes” instead of the default ASCII ones."
+    
+    func testStreamingQuotes() throws {
+        for orca in self.orcas {
+            let orcaStream = try orca.streamOpen()
 
+            var fullPcm = [Int16]()
+            for c in textQuotes {
+                if let pcm = try orcaStream.synthesize(text: String(c)) {
+                    if !pcm.isEmpty {
+                        fullPcm.append(contentsOf: pcm)
+                    }
+                }
+            }
+
+            if let flushedPcm = try orcaStream.flush(), !flushedPcm.isEmpty {
+                fullPcm.append(contentsOf: flushedPcm)
+            }
+
+            orcaStream.close()
+            XCTAssertGreaterThan(fullPcm.count, 0)
+        }
+    }
+    
+    func testSynthesizeQuotes() throws {
+        for orca in self.orcas {
+            let (pcm, wordArray) = try orca.synthesize(
+                text: textQuotes)
+            XCTAssertGreaterThan(pcm.count, 0)
+            XCTAssertGreaterThan(wordArray.count, 0)
+        }
+    }
+
+    func testSynthesizeToFileQuotes() throws {
+        let audioDir = try FileManager.default.url(
+                                    for: .documentDirectory,
+                                    in: .userDomainMask,
+                                    appropriateFor: nil,
+                                    create: false)
+        let audioFile = audioDir.appendingPathComponent("test.wav")
+
+        for orca in self.orcas {
+            let wordArrayFromURL = try orca.synthesizeToFile(text: textQuotes, outputURL: audioFile)
+            XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            XCTAssertGreaterThan(wordArrayFromURL.count, 0)
+            try FileManager().removeItem(at: audioFile)
+
+            let wordArrayFromPath = try orca.synthesizeToFile(text: textQuotes, outputPath: audioFile.path)
+            XCTAssert(FileManager().fileExists(atPath: audioFile.path))
+            XCTAssertGreaterThan(wordArrayFromPath.count, 0)
+            try FileManager().removeItem(at: audioFile)
+        }
+    }
+    
     func testVersion() throws {
         XCTAssertGreaterThan(Orca.version.count, 0)
     }

@@ -70,10 +70,8 @@ struct ContentView: View {
                                         .font(.title3)
                                         .background(lightGray)
                                         .foregroundColor(Color.black)
-                                        .onChange(of: text) { newValue in
-                                            let updatedText = String(
-                                                newValue.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
-                                            text = updatedText.replacingOccurrences(of: "’", with: "'")
+                                        .onChange(of: text) { _ in
+                                            text = String(text.prefix(Int(exactly: viewModel.maxCharacterLimit)!))
                                             viewModel.isValid(text: text)
                                         }
                                         .disabled(viewModel.state == .PLAYING)
