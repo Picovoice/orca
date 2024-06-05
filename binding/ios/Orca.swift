@@ -69,7 +69,7 @@ public struct OrcaWord {
     }
 }
 
-private func swapApostrophesAndQuotes(_ text: String) -> String {
+private func swapQuotes(_ text: String) -> String {
     var output = text
     output = output.replacingOccurrences(of: "’", with: "'")
     output = output.replacingOccurrences(of: "‘", with: "'")
@@ -125,7 +125,7 @@ public class Orca {
             var cNumSamples: Int32 = 0
             var cPcm: UnsafeMutablePointer<Int16>?
             
-            let formattedText = swapApostrophesAndQuotes(text)
+            let formattedText = swapQuotes(text)
 
             let status = pv_orca_stream_synthesize(
                 stream,
@@ -327,7 +327,7 @@ public class Orca {
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
         
-        let formattedText = swapApostrophesAndQuotes(text)
+        let formattedText = swapQuotes(text)
 
         let status = pv_orca_synthesize(
             handle,
@@ -414,7 +414,7 @@ public class Orca {
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
         
-        let formattedText = swapApostrophesAndQuotes(text)
+        let formattedText = swapQuotes(text)
 
         let status = pv_orca_synthesize_to_file(
             handle,
