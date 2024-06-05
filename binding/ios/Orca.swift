@@ -86,7 +86,7 @@ public class Orca {
 
     private static var sdk = "ios"
     
-    private func swapApostrophesAndQuotes(_ text: String) throws -> String {
+    private func swapApostrophesAndQuotes(_ text: String) -> String {
         var output = text
         output = output.replacingOccurrences(of: "’", with: "'")
         output = output.replacingOccurrences(of: "‘", with: "'")
@@ -239,7 +239,7 @@ public class Orca {
             let messageStack = try getMessageStack()
             throw pvStatusToOrcaError(validCharactersStatus, "Unable to get Orca valid characters", messageStack)
         }
-        var validCharacters: Set<String> = []
+        var validCharacters: Set<String> = ["‘", "’", "“", "”"]
         for i in 0..<cNumCharacters {
             if let cString = cCharacters?.advanced(by: Int(i)).pointee {
                 let swiftString = String(cString: cString)
