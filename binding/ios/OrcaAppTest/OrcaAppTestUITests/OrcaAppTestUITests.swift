@@ -11,7 +11,7 @@ import XCTest
 import Orca
 
 class OrcaAppTestUITests: BaseTest {
-    
+
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
