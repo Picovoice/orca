@@ -11,9 +11,9 @@
 		02A1194B268D39A700A2AC99 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1194A268D39A700A2AC99 /* ContentView.swift */; };
 		02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02A1194C268D39AB00A2AC99 /* Assets.xcassets */; };
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
-		0E4C868FC87CC8D8B5D6F7C8 /* libPods-OrcaDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FF94FCA7900409CAB4C9019 /* libPods-OrcaDemo.a */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
 		1E001B6A2B7D451200D8E72D /* orca_params_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_female.pv */; };
+		93BE66087E58F64A2193D44C /* libPods-OrcaDemo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6293833704AEC548A02FB651 /* libPods-OrcaDemo.a */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */; };
 /* End PBXBuildFile section */
@@ -25,11 +25,11 @@
 		02A1194C268D39AB00A2AC99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		02A11951268D39AB00A2AC99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
+		1C5DAA8ED5D246C3A58AA45B /* Pods-OrcaDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.release.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.release.xcconfig"; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		1E001B692B7D451200D8E72D /* orca_params_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_female.pv; path = ../../../../lib/common/orca_params_female.pv; sourceTree = "<group>"; };
-		4FF94FCA7900409CAB4C9019 /* libPods-OrcaDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		7992D0D1A458A83C060AD8D2 /* Pods-OrcaDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.release.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.release.xcconfig"; sourceTree = "<group>"; };
-		B9F7F370B37AD23ED8588225 /* Pods-OrcaDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.debug.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		3B38AA40E88807F9C21BFD02 /* Pods-OrcaDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OrcaDemo.debug.xcconfig"; path = "Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		6293833704AEC548A02FB651 /* libPods-OrcaDemo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OrcaDemo.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E125E1882BE99DCA008B6D56 /* AtomicBool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicBool.swift; sourceTree = "<group>"; };
 		E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerStream.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -39,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0E4C868FC87CC8D8B5D6F7C8 /* libPods-OrcaDemo.a in Frameworks */,
+				93BE66087E58F64A2193D44C /* libPods-OrcaDemo.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,7 +52,7 @@
 				02A11947268D39A700A2AC99 /* OrcaDemo */,
 				02A11946268D39A700A2AC99 /* Products */,
 				8DB92FF3DC81AB04D3FF7242 /* Pods */,
-				A9EDD7D388908D989A16DD3B /* Frameworks */,
+				D4BC0C682CB4645A73894BC8 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -83,16 +83,16 @@
 		8DB92FF3DC81AB04D3FF7242 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				B9F7F370B37AD23ED8588225 /* Pods-OrcaDemo.debug.xcconfig */,
-				7992D0D1A458A83C060AD8D2 /* Pods-OrcaDemo.release.xcconfig */,
+				3B38AA40E88807F9C21BFD02 /* Pods-OrcaDemo.debug.xcconfig */,
+				1C5DAA8ED5D246C3A58AA45B /* Pods-OrcaDemo.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		A9EDD7D388908D989A16DD3B /* Frameworks */ = {
+		D4BC0C682CB4645A73894BC8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				4FF94FCA7900409CAB4C9019 /* libPods-OrcaDemo.a */,
+				6293833704AEC548A02FB651 /* libPods-OrcaDemo.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -104,11 +104,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 02A11954268D39AB00A2AC99 /* Build configuration list for PBXNativeTarget "OrcaDemo" */;
 			buildPhases = (
-				F5BF40EEECBF2D03B3E401C0 /* [CP] Check Pods Manifest.lock */,
+				953F197786B352AA828626D7 /* [CP] Check Pods Manifest.lock */,
 				02A11941268D39A700A2AC99 /* Sources */,
 				02A11942268D39A700A2AC99 /* Frameworks */,
 				02A11943268D39A700A2AC99 /* Resources */,
-				EE144A1AEF5967F9C2A22B79 /* [CP] Embed Pods Frameworks */,
+				C4DE16407A77E6DE174EE4DB /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -164,24 +164,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		EE144A1AEF5967F9C2A22B79 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		F5BF40EEECBF2D03B3E401C0 /* [CP] Check Pods Manifest.lock */ = {
+		953F197786B352AA828626D7 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -201,6 +184,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C4DE16407A77E6DE174EE4DB /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OrcaDemo/Pods-OrcaDemo-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -340,7 +340,7 @@
 		};
 		02A11955268D39AB00A2AC99 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B9F7F370B37AD23ED8588225 /* Pods-OrcaDemo.debug.xcconfig */;
+			baseConfigurationReference = 3B38AA40E88807F9C21BFD02 /* Pods-OrcaDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -363,7 +363,7 @@
 		};
 		02A11956268D39AB00A2AC99 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7992D0D1A458A83C060AD8D2 /* Pods-OrcaDemo.release.xcconfig */;
+			baseConfigurationReference = 1C5DAA8ED5D246C3A58AA45B /* Pods-OrcaDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
