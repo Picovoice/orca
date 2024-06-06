@@ -182,20 +182,23 @@ class OrcaAppTestUITests: BaseTest {
         let audioFile = audioDir.appendingPathComponent("test.wav")
 
         for orca in self.orcas {
-            let wordArrayFromURL = try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputURL: audioFile)
+            let wordArrayFromURL = try orca.synthesizeToFile(
+                text: self.testData!.test_sentences.text, outputURL: audioFile)
             XCTAssert(FileManager().fileExists(atPath: audioFile.path))
             XCTAssertGreaterThan(wordArrayFromURL.count, 0)
             try FileManager().removeItem(at: audioFile)
 
-            let wordArrayFromPath = try orca.synthesizeToFile(text: self.testData!.test_sentences.text, outputPath: audioFile.path)
+            let wordArrayFromPath = try orca.synthesizeToFile(
+                text: self.testData!.test_sentences.text, outputPath: audioFile.path)
             XCTAssert(FileManager().fileExists(atPath: audioFile.path))
             XCTAssertGreaterThan(wordArrayFromPath.count, 0)
             try FileManager().removeItem(at: audioFile)
         }
     }
-    
-    let textQuotes = "iOS uses different quotation marks for ‘single quotes’ and “double quotes” instead of the default ASCII ones."
-    
+
+    let textQuotes =
+        "iOS uses different quotation marks for ‘single’ and “double” quotes."
+
     func testStreamingQuotes() throws {
         for orca in self.orcas {
             let orcaStream = try orca.streamOpen()
@@ -217,7 +220,7 @@ class OrcaAppTestUITests: BaseTest {
             XCTAssertGreaterThan(fullPcm.count, 0)
         }
     }
-    
+
     func testSynthesizeQuotes() throws {
         for orca in self.orcas {
             let (pcm, wordArray) = try orca.synthesize(
@@ -247,7 +250,7 @@ class OrcaAppTestUITests: BaseTest {
             try FileManager().removeItem(at: audioFile)
         }
     }
-    
+
     func testVersion() throws {
         XCTAssertGreaterThan(Orca.version.count, 0)
     }

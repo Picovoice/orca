@@ -124,7 +124,7 @@ public class Orca {
 
             var cNumSamples: Int32 = 0
             var cPcm: UnsafeMutablePointer<Int16>?
-            
+
             let formattedText = swapQuotes(text)
 
             let status = pv_orca_stream_synthesize(
@@ -326,7 +326,7 @@ public class Orca {
 
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
-        
+
         let formattedText = swapQuotes(text)
 
         let status = pv_orca_synthesize(
@@ -413,7 +413,7 @@ public class Orca {
 
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
-        
+
         let formattedText = swapQuotes(text)
 
         let status = pv_orca_synthesize_to_file(
