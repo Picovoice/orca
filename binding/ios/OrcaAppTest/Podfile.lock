@@ -1,16 +1,16 @@
 PODS:
-  - Orca-iOS (0.2.1)
+  - Orca-iOS (0.2.2)
 
 DEPENDENCIES:
-  - Orca-iOS (~> 0.2.1)
+  - Orca-iOS (~> 0.2.2)
 
 SPEC REPOS:
   trunk:
     - Orca-iOS
 
 SPEC CHECKSUMS:
-  Orca-iOS: f6b6124d78189e26c8c0457022a5948217ebe2d3
+  Orca-iOS: 567ca0e53671d8fc28ba15338db8fe4ff5101d8d
 
-PODFILE CHECKSUM: c74fc8347aa5171d01ba9ce86c96a401037847d4
+PODFILE CHECKSUM: 2deb98490df78cf895d797180dcfeccea4f2ad25
 
 COCOAPODS: 1.15.2

@@ -69,6 +69,15 @@ public struct OrcaWord {
     }
 }
 
+private func swapQuotes(_ text: String) -> String {
+    var output = text
+    output = output.replacingOccurrences(of: "’", with: "'")
+    output = output.replacingOccurrences(of: "‘", with: "'")
+    output = output.replacingOccurrences(of: "“", with: "\"")
+    output = output.replacingOccurrences(of: "”", with: "\"")
+    return output
+}
+
 /// iOS (Swift) binding for Orca Text-to-Speech engine. Provides a Swift interface to the Orca library.
 public class Orca {
 
@@ -116,9 +125,11 @@ public class Orca {
             var cNumSamples: Int32 = 0
             var cPcm: UnsafeMutablePointer<Int16>?
 
+            let formattedText = swapQuotes(text)
+
             let status = pv_orca_stream_synthesize(
                 stream,
-                text,
+                formattedText,
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
@@ -228,7 +239,7 @@ public class Orca {
             let messageStack = try getMessageStack()
             throw pvStatusToOrcaError(validCharactersStatus, "Unable to get Orca valid characters", messageStack)
         }
-        var validCharacters: Set<String> = []
+        var validCharacters: Set<String> = ["‘", "’", "“", "”"]
         for i in 0..<cNumCharacters {
             if let cString = cCharacters?.advanced(by: Int(i)).pointee {
                 let swiftString = String(cString: cString)
@@ -316,9 +327,11 @@ public class Orca {
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
 
+        let formattedText = swapQuotes(text)
+
         let status = pv_orca_synthesize(
             handle,
-            text,
+            formattedText,
             cSynthesizeParams,
             &cNumSamples,
             &cPcm,
@@ -401,9 +414,11 @@ public class Orca {
         var cNumAlignments: Int32 = 0
         var cAlignments: UnsafeMutablePointer<UnsafeMutablePointer<pv_orca_word_alignment_t>?>?
 
+        let formattedText = swapQuotes(text)
+
         let status = pv_orca_synthesize_to_file(
             handle,
-            text,
+            formattedText,
             cSynthesizeParams,
             outputPath,
             &cNumAlignments,
