@@ -179,9 +179,11 @@ async function streamingDemo() {
     function playStream() {
       if (pcmBuffer.length === 0) return;
 
-      const pcm = pcmBuffer.shift();
-      const pcmToPlay = convert(pcm, 'int16', 'uint8');
-      speaker?.write(pcmToPlay);
+      const pcmInt16 = pcmBuffer.shift();
+
+      // for some reason, "speaker" does not accept Int16Array
+      const pcmUint8 = convert(pcmInt16, 'int16', 'uint8');
+      speaker?.write(pcmUint8);
 
       playStream();
     }
