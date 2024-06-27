@@ -18,7 +18,7 @@ const { execSync } = require('child_process');
 const tiktoken = require('tiktoken');
 const convert = require('pcm-convert');
 
-const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
+const { Orca, OrcaActivationLimitReachedError } = require('../../binding/nodejs/');
 
 program
   .requiredOption(

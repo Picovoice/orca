@@ -15,7 +15,7 @@ const { program } = require('commander');
 const fs = require('fs');
 const { WaveFile } = require('wavefile');
 
-const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
+const { Orca, OrcaActivationLimitReachedError } = require('../../binding/nodejs/');
 
 program
   .requiredOption(

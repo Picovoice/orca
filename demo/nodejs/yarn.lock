@@ -5,11 +5,6 @@
 "@picovoice/orca-node@file:../../binding/nodejs":
   version "0.2.0"
 
-"@picovoice/pvrecorder-node@=1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@picovoice/pvrecorder-node/-/pvrecorder-node-1.2.2.tgz#41c39719b408e29c581b3094a9ff4c59f282b026"
-  integrity sha512-GuzZhWslbR4TLE3VxTiqjax8Mc8f1nB69bY5jag4ETlCxo7q/KpeUbWRvojhtNVPvpFLbospZAb6vfgxkEqgJQ==
-
 audio-format@^2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/audio-format/-/audio-format-2.3.2.tgz#f23fc73b308c6dfba1904da6d4cd9c7621731abd"
