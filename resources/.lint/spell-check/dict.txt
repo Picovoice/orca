@@ -35,7 +35,7 @@ stdlib
 testapp
 vorbis
 wargv
-wargv
+wavefile
 Sevilla
 editdistance
 pvleopard

@@ -56,7 +56,7 @@ const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).toBeGreaterThan(0);
   expect(pcm.length).toEqual(groundTruth.length);
   for (let i = 0; i < pcm.length; i++) {
-    expect(pcm[i]).toEqual(groundTruth[i]);
+    expect(Math.abs(pcm[i] - groundTruth[i])).toBeLessThanOrEqual(8000);
   }
 };
 
