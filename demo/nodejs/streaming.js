@@ -17,6 +17,7 @@ const { performance } = require('perf_hooks');
 const { execSync } = require('child_process');
 const tiktoken = require('tiktoken');
 const convert = require('pcm-convert');
+const Speaker = require('speaker');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
 
@@ -162,7 +163,6 @@ async function streamingDemo() {
     console.log(`\nOrca version: ${engineInstance.version}`);
     const stream = engineInstance.streamOpen();
 
-    const Speaker = require('speaker');
     const speaker = new Speaker({
       channels: 1,
       bitDepth: 8,
