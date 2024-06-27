@@ -19,7 +19,7 @@ const tiktoken = require('tiktoken');
 const convert = require('pcm-convert');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
-const Speaker = require('speaker');
+// const Speaker = require('speaker');
 
 program
   .requiredOption(
