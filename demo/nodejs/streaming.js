@@ -163,17 +163,17 @@ async function streamingDemo() {
     console.log(`\nOrca version: ${engineInstance.version}`);
     const stream = engineInstance.streamOpen();
 
-    let speaker = null;
-    try {
-      const Speaker = require('speaker');
-      speaker = new Speaker({
-        channels: 1,
-        bitDepth: 8,
-        sampleRate: engineInstance.sampleRate,
-      });
-    } catch (e) {
-      console.log(`Failed to initialize node-speaker library: ${e}`);
-    }
+    // let speaker = null;
+    // try {
+    //   const Speaker = require('speaker');
+    //   speaker = new Speaker({
+    //     channels: 1,
+    //     bitDepth: 8,
+    //     sampleRate: engineInstance.sampleRate,
+    //   });
+    // } catch (e) {
+    //   console.log(`Failed to initialize node-speaker library: ${e}`);
+    // }
 
     const pcmBuffer = [];
 
@@ -182,7 +182,7 @@ async function streamingDemo() {
 
       const pcm = pcmBuffer.shift();
       const pcmToPlay = convert(pcm, 'int16', 'uint8');
-      speaker?.write(pcmToPlay);
+      // speaker?.write(pcmToPlay);
 
       playStream();
     }
@@ -222,7 +222,7 @@ async function streamingDemo() {
     console.log(`Time to receive first audio: ${timeFirstAudioAvailable} seconds after text stream started`);
     console.log('\nWaiting for audio to finish...');
 
-    speaker?.end();
+    // speaker?.end();
     stream.close();
     engineInstance?.release();
   } catch (err) {
