@@ -32,7 +32,7 @@ jobs:
         node-version: [ 16.x, 18.x, 20.x ]
         include:
           - os: ubuntu-latest
-            install_dep: sudo apt install libasound2-dev -y
+            install-dep: sudo apt install libasound2-dev -y
 
     steps:
       - uses: actions/checkout@v3
@@ -43,7 +43,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: yarn install
+        run: |
+          ${{ matrix.install-dep }}
+          yarn install
 
       - name: Test streaming
         run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -t "Hello, I am Orca!"
