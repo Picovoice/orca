@@ -76,9 +76,9 @@ function fileDemo() {
     const endTime = performance.now();
     const processingTime = ((endTime - startTime) / 1000).toFixed(2);
     const pcm = loadPcm(outputPath);
-    const lengthSec = pcm.length / engineInstance.sampleRate;
+    const lengthSec = (pcm.length / engineInstance.sampleRate).toFixed(2);
 
-    console.log(`Orca took ${processingTime} seconds to synthesize ${lengthSec} seconds of speech which is ~${lengthSec / processingTime} times faster than real-time.`);
+    console.log(`Orca took ${processingTime} seconds to synthesize ${lengthSec} seconds of speech which is ~${(lengthSec / processingTime).toFixed(2)} times faster than real-time.`);
     console.log(`Audio written to ${outputPath}.`);
     if (verbose) {
       console.table(

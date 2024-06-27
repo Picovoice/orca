@@ -66,9 +66,6 @@ jobs:
     strategy:
       matrix:
         machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, jetson ]
-        include:
-          - machine: rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, jetson
-            install-dep: sudo apt install libasound2-dev -y
 
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +78,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ${{ matrix.install-dep }}
+          sudo apt install libasound2-dev -y
           yarn install
 
       - name: Test streaming
