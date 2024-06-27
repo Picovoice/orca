@@ -19,11 +19,7 @@ const tiktoken = require('tiktoken');
 const convert = require('pcm-convert');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
-
-process.on('uncaughtException', function(err) {
-  console.error(err);
-  console.log('Node NOT Exiting...');
-});
+const Speaker = require('speaker');
 
 program
   .requiredOption(
@@ -168,13 +164,33 @@ async function streamingDemo() {
     const stream = engineInstance.streamOpen();
 
     let speaker = null;
-    try {
+
+    const initSpeaker = () => {
       const Speaker = require('speaker');
       speaker = new Speaker({
         channels: 1,
         bitDepth: 8,
         sampleRate: engineInstance.sampleRate,
       });
+    };
+
+    try {
+      if (os.platform() === 'linux') {
+        const { exec } = require('child_process');
+        exec('cat /proc/asound/cards', (error, stdout) => {
+          if (error) {
+            console.error(`Error executing command: ${error}`);
+            return;
+          }
+          if (stdout.trim().length > 0) {
+            initSpeaker();
+          } else {
+            console.log('No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
+          }
+        });
+      } else {
+        initSpeaker();
+      }
     } catch (e) {
       console.log(`Failed to initialize node-speaker library: ${e}`);
     }
