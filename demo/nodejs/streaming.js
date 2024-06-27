@@ -26,6 +26,10 @@ program
     '-a, --access_key <string>',
     'AccessKey obtain from the Picovoice Console (https://console.picovoice.ai/)',
   )
+  .requiredOption(
+    '-t, --text_to_stream <string>',
+    'Text to be streamed to Orca',
+  )
   .option(
     '-l, --library_file_path <string>',
     'Absolute path to dynamic library',
@@ -34,13 +38,10 @@ program
     '-m, --model_file_path <string>',
     'Absolute path to orca model',
   )
-  .requiredOption(
-    '-t, --text_to_stream <string>',
-    'Text to be streamed to Orca',
-  )
   .option(
     '--tokens_per_second <number>',
-    'Number of tokens per second to be streamed to Orca, simulating an LLM response', 15,
+    'Number of tokens per second to be streamed to Orca, simulating an LLM response',
+    '15',
   )
   .option(
     '--audio_wait_chunks <number>',

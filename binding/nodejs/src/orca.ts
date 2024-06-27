@@ -62,7 +62,7 @@ class Stream {
   }
 
   /**
-   * Adds a chunk of text to the Stream object and generates audio if enough text has been added.
+   * Adds a chunk of text to the OrcaStream object and generates audio if enough text has been added.
    * This function is expected to be called multiple times with consecutive chunks of text from a text stream.
    * The incoming text is buffered as it arrives until there is enough context to convert a chunk of the
    * buffered text into audio. The caller needs to use `OrcaStream.flush()` to generate the audio chunk
