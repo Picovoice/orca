@@ -34,7 +34,7 @@ jobs:
           - os: ubuntu-latest
             install-dep: sudo apt install libasound2-dev -y
           - os: macos-latest
-            install-dep: brew install setuptools
+            install-dep: brew install python-setuptools
     steps:
       - uses: actions/checkout@v3
 
