@@ -43,6 +43,7 @@ xcworkspace
 sounddevice
 tiktoken
 samplerate
+systeminformation
 dtype
 outdata
 AILLM

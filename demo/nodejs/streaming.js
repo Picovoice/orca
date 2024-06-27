@@ -20,7 +20,6 @@ const tiktoken = require('tiktoken');
 const convert = require('pcm-convert');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
-const Speaker = require('speaker');
 
 program
   .requiredOption(
@@ -175,21 +174,14 @@ async function streamingDemo() {
       });
     };
 
-    try {
-      if (os.platform() === 'linux') {
-        await si.audio((devices) => {
-          if (devices.length > 0) {
-            initSpeaker();
-          } else {
-            console.log('No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
-          }
-        });
-      } else {
+    await si.audio((devices) => {
+      if (devices.length > 0) {
+        console.log(`Playing from device: ${devices[0].name}`);
         initSpeaker();
+      } else {
+        console.log('No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
       }
-    } catch (e) {
-      console.log(`Failed to initialize node-speaker library: ${e}`);
-    }
+    });
 
     const pcmBuffer = [];
 
