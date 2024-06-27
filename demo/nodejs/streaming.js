@@ -176,6 +176,7 @@ async function streamingDemo() {
 
     await si.audio((devices) => {
       if (devices.length > 0) {
+        console.log(`Found devices: ${JSON.stringify(devices)}`);
         console.log(`Playing from device: ${devices[0].name}`);
         initSpeaker();
       } else {
