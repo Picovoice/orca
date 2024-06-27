@@ -32,7 +32,7 @@ jobs:
         node-version: [ 16.x, 18.x, 20.x ]
         include:
           - os: ubuntu-latest
-            install-dep: sudo apt install libasound2-dev -y
+            install-dep: aplay -l
           - os: macos-latest
             install-dep: brew install python-setuptools
     steps:
