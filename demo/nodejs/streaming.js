@@ -204,6 +204,9 @@ async function streamingDemo() {
 
     const flushedPcm = stream.flush();
     if (flushedPcm !== null) {
+      if (timeFirstAudioAvailable === null) {
+        timeFirstAudioAvailable = ((performance.now() - startTime) / 1000).toFixed(2);
+      }
       pcmBuffer.push(flushedPcm);
       playStream();
     }

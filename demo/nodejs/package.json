@@ -4,7 +4,7 @@
   "description": "Picovoice Orca Node.js file-based and streaming demos",
   "scripts": {
     "file": "node file.js",
-    "stream": "node stream.js"
+    "streaming": "node streaming.js"
   },
   "bin": {
     "orca-file-demo": "./file.js",

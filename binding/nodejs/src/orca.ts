@@ -221,7 +221,7 @@ export class Orca {
     this._handle = orcaHandleAndStatus!.handle;
     this._version = pvOrca.version();
     this._sampleRate = sampleRate.sample_rate;
-    this._validCharacters = validCharacters.characters;
+    this._validCharacters = validCharacters.valid_characters;
     this._maxCharacterLimit = maxCharacterLimit.max_character_limit;
   }
 
