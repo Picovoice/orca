@@ -20,6 +20,11 @@ const convert = require('pcm-convert');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
 
+process.on('uncaughtException', function(err) {
+  console.error(err);
+  console.log('Node NOT Exiting...');
+});
+
 program
   .requiredOption(
     '-a, --access_key <string>',
