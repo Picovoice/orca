@@ -176,7 +176,6 @@ async function streamingDemo() {
 
     await si.audio((devices) => {
       if (devices.length > 0) {
-        console.log(`Found devices: ${JSON.stringify(devices)}`);
         console.log(`Playing from device: ${devices[0].name}`);
         initSpeaker();
       } else {
@@ -193,7 +192,11 @@ async function streamingDemo() {
 
       // for some reason, "speaker" does not accept Int16Array
       const pcmUint8 = convert(pcmInt16, 'int16', 'uint8');
-      speaker?.write(pcmUint8);
+      try {
+        speaker?.write(pcmUint8);
+      } catch (e) {
+        console.log(`Unable to play audio: ${e}`);
+      }
 
       playStream();
     }
@@ -233,7 +236,11 @@ async function streamingDemo() {
     console.log(`Time to receive first audio: ${timeFirstAudioAvailable} seconds after text stream started`);
     console.log('\nWaiting for audio to finish...');
 
-    speaker?.end();
+    try {
+      speaker?.end();
+    } catch (e) {
+      console.log(`Unable to close speaker: ${e}`);
+    }
     stream.close();
     engineInstance?.release();
   } catch (err) {
