@@ -78,7 +78,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install libasound2-dev -y
+          sudo apt-get install libasound2-dev -y
           yarn install
 
       - name: Test streaming
