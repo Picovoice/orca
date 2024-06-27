@@ -12,6 +12,7 @@
 'use strict';
 
 const os = require('os');
+const si = require('systeminformation');
 const { program } = require('commander');
 const { performance } = require('perf_hooks');
 const { execSync } = require('child_process');
@@ -176,13 +177,8 @@ async function streamingDemo() {
 
     try {
       if (os.platform() === 'linux') {
-        const { exec } = require('child_process');
-        exec('cat /proc/asound/cards', (error, stdout) => {
-          if (error) {
-            console.error(`Error executing command: ${error}`);
-            return;
-          }
-          if (stdout.trim().length > 0) {
+        await si.audio((devices) => {
+          if (devices.length > 0) {
             initSpeaker();
           } else {
             console.log('No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
