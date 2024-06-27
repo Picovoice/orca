@@ -33,6 +33,8 @@ jobs:
         include:
           - os: ubuntu-latest
             install-dep: sudo apt install libasound2-dev -y
+          - os: macos-latest
+            install-dep: python3 -m pip install setuptools
     steps:
       - uses: actions/checkout@v3
 
