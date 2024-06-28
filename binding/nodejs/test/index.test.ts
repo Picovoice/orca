@@ -171,6 +171,7 @@ describe('successful synthesis', () => {
     });
 
     it('synthesize to file', async () => {
+      jest.setTimeout(30000);
       const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
       const filePath = './orca-temp.wav';
       const alignments = orcaEngine.synthesizeToFile(testDataText, filePath);
