@@ -76,10 +76,11 @@ jobs:
         working-directory: binding/nodejs
       # ********************************************************
 
+      - name: Install system dependencies
+        run: sudo apt install alsa-utils libasound2-dev -y
+
       - name: Install dependencies
-        run: |
-          sudo apt install alsa-utils libasound2-dev -y
-          yarn install
+        run: yarn install
 
       - name: Test streaming
         run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -t "Hello, I am Orca!"
