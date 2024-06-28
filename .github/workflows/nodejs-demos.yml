@@ -77,7 +77,10 @@ jobs:
       # ********************************************************
 
       - name: Install system dependencies
-        run: sudo apt-get install libasound2-dev
+        run: |
+          sudo apt-get install libasound2-dev
+          cd node_modules/speaker/deps/mpg123
+          ./configure
 
       - name: Install dependencies
         run: yarn install
