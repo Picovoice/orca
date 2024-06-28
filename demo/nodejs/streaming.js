@@ -181,7 +181,7 @@ async function streamingDemo() {
         }
       });
     } catch (e) {
-      console.error('\nNote: External package \'node-speaker\' was not successfully. This package may not be compatible with your machine. ' +
+      console.error('\nNote: External package \'node-speaker\' was not installed successfully. This package may not be compatible with your machine. ' +
         'Orca will generate the pcm, but it will not be played to your speakers.');
     }
 
