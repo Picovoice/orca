@@ -78,7 +78,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install alsa-base alsa-utils libasound2-dev -y
+          sudo apt install alsa-utils libasound2-dev -y
           yarn install
 
       - name: Test streaming
