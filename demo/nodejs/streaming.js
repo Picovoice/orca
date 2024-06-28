@@ -165,23 +165,25 @@ async function streamingDemo() {
 
     let speaker = null;
 
-    const initSpeaker = () => {
-      const Speaker = require('speaker');
-      speaker = new Speaker({
-        channels: 1,
-        bitDepth: 8,
-        sampleRate: engineInstance.sampleRate,
+    try {
+      require.resolve('speaker');
+      await si.audio((devices) => {
+        if (devices.length > 0 && devices[0].driver !== null) {
+          console.log(`Playing from device: ${devices[0].name}`);
+          const Speaker = require('speaker');
+          speaker = new Speaker({
+            channels: 1,
+            bitDepth: 8,
+            sampleRate: engineInstance.sampleRate,
+          });
+        } else {
+          console.error('Note: No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
+        }
       });
-    };
-
-    await si.audio((devices) => {
-      if (devices.length > 0 && devices[0].driver !== null) {
-        console.log(`Playing from device: ${devices[0].name}`);
-        initSpeaker();
-      } else {
-        console.log('No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
-      }
-    });
+    } catch (e) {
+      console.error('\nNote: External package \'node-speaker\' was not successfully. This package may not be compatible with your machine. ' +
+        'Orca will generate the pcm, but it will not be played to your speakers.');
+    }
 
     const pcmBuffer = [];
 
@@ -195,7 +197,7 @@ async function streamingDemo() {
       try {
         speaker?.write(pcmUint8);
       } catch (e) {
-        console.log(`Unable to play audio: ${e}`);
+        console.log(`'node-speaker' unable to play audio: ${e}`);
       }
 
       playStream();
@@ -203,10 +205,10 @@ async function streamingDemo() {
 
     process.stdout.write('\nSimulated text stream: ');
 
-    const startTime = performance.now();
     let timeFirstAudioAvailable = null;
     const tokens = tokenizeText(text);
 
+    const startTime = performance.now();
     for (const token of tokens) {
       process.stdout.write(token);
       const pcm = stream.synthesize(token);
@@ -221,7 +223,6 @@ async function streamingDemo() {
       }
       await sleepSecs(1 / tokensPerSeconds);
     }
-    const elapsedTime = ((performance.now() - startTime) / 1000).toFixed(2);
 
     const flushedPcm = stream.flush();
     if (flushedPcm !== null) {
@@ -231,16 +232,13 @@ async function streamingDemo() {
       pcmBuffer.push(flushedPcm);
       playStream();
     }
+    const elapsedTime = ((performance.now() - startTime) / 1000).toFixed(2);
 
     console.log(`\n\nTime to finish text stream: ${elapsedTime} seconds`);
     console.log(`Time to receive first audio: ${timeFirstAudioAvailable} seconds after text stream started`);
     console.log('\nWaiting for audio to finish...');
 
-    try {
-      speaker?.end();
-    } catch (e) {
-      console.log(`Unable to close speaker: ${e}`);
-    }
+    speaker?.end();
     stream.close();
     engineInstance?.release();
   } catch (err) {
