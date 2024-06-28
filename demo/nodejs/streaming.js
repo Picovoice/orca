@@ -175,7 +175,7 @@ async function streamingDemo() {
     };
 
     await si.audio((devices) => {
-      if (devices.length > 0) {
+      if (devices.length > 0 && devices[0].driver !== null) {
         console.log(`Playing from device: ${devices[0].name}`);
         initSpeaker();
       } else {
