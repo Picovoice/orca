@@ -12,7 +12,7 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 [![Twitter URL](https://img.shields.io/twitter/url?label=%40AiPicovoice&style=social&url=https%3A%2F%2Ftwitter.com%2FAiPicovoice)](https://twitter.com/AiPicovoice)<!-- markdown-link-check-disable-line -->
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCAdi9sTCXLosG1XeqDwLx7w?label=YouTube&style=social)](https://www.youtube.com/channel/UCAdi9sTCXLosG1XeqDwLx7w)
 
-Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency 
+Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency
 voice assistants. Orca is:
 
 - Private; All voice processing runs locally.
@@ -43,12 +43,14 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
         - [C Demos](#c-demos)
         - [Web Demos](#web-demos)
         - [Android Demo](#android-demo)
+        - [Node.js Demo](#nodejs-demos)
     - [SDKs](#sdks)
         - [Python](#python)
         - [iOS](#ios)
         - [C](#c)
         - [Web](#web)
         - [Android](#android)
+        - [Node.js](#nodejs)
     - [Releases](#releases)
     - [FAQ](#faq)
 
@@ -106,10 +108,10 @@ The following are the voices currently available:
 
 Orca provides a set of parameters to control the synthesized speech. The following table lists the available parameters:
 
-|  Parameter  | Default |                                                        Description                                                         |
-|:-----------:|:-------:|:--------------------------------------------------------------------------------------------------------------------------:|
-| speech rate |   1.0   | Speed of generated speech. Valid values are within [0.7, 1.3]. <br/>Higher (lower) values generate faster (slower) speech. |
-| random state| random | Sets the random state for sampling during synthesis. <br/>Valid values are all non-negative integers. <br/>If not provided, a random seed will be chosen. |
+|  Parameter   | Default |                                                                        Description                                                                        |
+|:------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| speech rate  |   1.0   |                Speed of generated speech. Valid values are within [0.7, 1.3]. <br/>Higher (lower) values generate faster (slower) speech.                 |
+| random state | random  | Sets the random state for sampling during synthesis. <br/>Valid values are all non-negative integers. <br/>If not provided, a random seed will be chosen. |
 
 ### Audio output
 
@@ -209,6 +211,31 @@ application.
 Replace `"${YOUR_ACCESS_KEY_HERE}"` in the
 file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java)
 with your `AccessKey`.
+
+### Node.js Demos
+
+Install the demo package:
+
+```console
+yarn global add @picovoice/orca-node-demo
+```
+
+Run the streaming demo:
+
+```console
+orca-streaming-demo --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+```
+
+Run the file demo:
+
+```console
+orca-file-demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${AUDIO_PATH}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
+`${AUDIO_PATH}` with a path to an output WAV file.
+
+For more information about Node.js demos go to [demo/nodejs](./demo/nodejs).
 
 ## SDKs
 
@@ -503,7 +530,7 @@ Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaSt
 const orcaStream = await orca.streamOpen();
 
 function* textStream(): IterableIterator<string> {
-  ... // yield text chunks e.g. from an LLM response
+... // yield text chunks e.g. from an LLM response
 }
 
 for (const textChunk of textStream()) {
@@ -513,7 +540,7 @@ for (const textChunk of textStream()) {
   }
 }
 
-const flushedPcm = orcaStream.flush();
+const flushedPcm = await orcaStream.flush();
 if (flushedPcm !== null) {
   // handle pcm
 }
@@ -524,10 +551,8 @@ orcaStream.close();
 #### Single synthesis
 
 ```typescript
-const { speechPcm, alignments } = await orca.synthesize("${TEXT}")
+const { pcm, alignments } = await orca.synthesize("${TEXT}")
 ```
-
-#### Release resources
 
 Finally, when done release the resources using `orca.release()`.
 
@@ -566,7 +591,7 @@ potential [custom pronunciations](#custom-pronunciations).
 #### Streaming synthesis
 
 To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one via the `synthesize`.
-Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object: 
+Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object:
 
 ```java
 Orca.OrcaStream orcaStream = orca.streamOpen(new OrcaSynthesizeParams.Builder().build());
@@ -599,6 +624,61 @@ orca.delete()
 ```
 
 For more details, see the [Android SDK](./binding/android/README.md).
+
+### Node.js
+
+Install the Node.js SDK:
+
+```console
+yarn add @picovoice/orca-node
+```
+
+Create instances of the Orca class:
+
+```typescript
+const Orca = require("@picovoice/orca-node");
+const accessKey = "${ACCESS_KEY}" // Obtained from the Picovoice Console (https://console.picovoice.ai/)
+let orca = new Orca(accessKey);
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+#### Streaming synthesis
+
+To synthesize a text stream, create an `OrcaStream` object and add text to it one-by-one via the `synthesize` method.
+Call `flush` to synthesize any remaining text, and `close` to delete the `OrcaStream` object:
+
+```typescript
+const orcaStream = orca.streamOpen();
+
+function* textStream(): IterableIterator<string> {
+  // ... yield text chunks e.g. from an LLM response
+}
+
+for (const textChunk of textStream()) {
+  const pcm = orcaStream.synthesize(textChunk);
+  if (pcm !== null) {
+    // handle pcm
+  }
+}
+
+const flushedPcm = orcaStream.flush();
+if (flushedPcm !== null) {
+  // handle pcm
+}
+
+orcaStream.close();
+```
+
+#### Single synthesis
+
+```typescript
+const { pcm, alignments } = orca.synthesize("${TEXT}")
+```
+
+Finally, when done release the resources using `orca.release()`.
+
+For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
