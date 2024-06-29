@@ -170,14 +170,12 @@ describe('successful synthesis', () => {
       testOrcaSynthesize(model.modelFilePath, testDataCustomPronunciation);
     });
 
-    it('synthesize to file', async () => {
-      jest.setTimeout(30000);
+    it('synthesize to file', () => {
       const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
       const filePath = './orca-temp.wav';
       const alignments = orcaEngine.synthesizeToFile(testDataText, filePath);
       validateAlignments(alignments);
       expect(fs.existsSync(filePath)).toBeTruthy();
-      await fs.promises.unlink(filePath);
       orcaEngine.release();
     });
 
