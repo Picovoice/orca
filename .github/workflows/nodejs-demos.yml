@@ -76,9 +76,6 @@ jobs:
         working-directory: binding/nodejs
       # ********************************************************
 
-      - name: Install system dependencies
-        run: sudo apt-get install libasound2-dev
-
       - name: Install dependencies
         run: yarn install
 
