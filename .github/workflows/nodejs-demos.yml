@@ -77,7 +77,7 @@ jobs:
       # ********************************************************
 
       - name: Install system dependencies
-        run: sudo apt-get install libasound2-dev -y
+        run: sudo apt-get install libasound2-dev
 
       - name: Install dependencies
         run: yarn install
