@@ -45,7 +45,7 @@ jobs:
 
       # ************** REMOVE AFTER RELEASE ********************
       - name: Build Node.js SDK
-        run: npm install --global yarn; yarn && yarn build
+        run: yarn && yarn build
         working-directory: binding/nodejs
       # ********************************************************
 
@@ -72,7 +72,7 @@ jobs:
 
       # ************** REMOVE AFTER RELEASE ********************
       - name: Build Node.js SDK
-        run: npm install --global yarn; yarn && yarn build
+        run: yarn && yarn build
         working-directory: binding/nodejs
       # ********************************************************
 
