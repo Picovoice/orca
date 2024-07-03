@@ -46,6 +46,7 @@ program
   .option(
     '--audio_wait_chunks <number>',
     'Number of PCM chunks to wait before starting to play audio',
+    '0',
   );
 
 if (process.argv.length < 2) {
@@ -153,15 +154,15 @@ async function streamingDemo() {
   }
 
   try {
-    let engineInstance = new Orca(
+    let orca = new Orca(
       accessKey,
       {
         'modelPath': modelFilePath,
         'libraryPath': libraryFilePath,
       },
     );
-    console.log(`\nOrca version: ${engineInstance.version}`);
-    const stream = engineInstance.streamOpen();
+    console.log(`\nOrca version: ${orca.version}`);
+    const stream = orca.streamOpen();
 
     let speaker = null;
 
@@ -174,7 +175,7 @@ async function streamingDemo() {
           speaker = new Speaker({
             channels: 1,
             bitDepth: 8,
-            sampleRate: engineInstance.sampleRate,
+            sampleRate: orca.sampleRate,
           });
         } else {
           console.error('Note: No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
@@ -240,7 +241,7 @@ async function streamingDemo() {
 
     speaker?.end();
     stream.close();
-    engineInstance?.release();
+    orca?.release();
   } catch (err) {
     if (err instanceof OrcaActivationLimitReachedError) {
       console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);

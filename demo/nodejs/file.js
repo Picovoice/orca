@@ -56,7 +56,7 @@ function fileDemo() {
   let modelFilePath = program['model_file_path'];
   let verbose = program['verbose'];
 
-  let engineInstance = new Orca(
+  let orca = new Orca(
     accessKey,
     {
       'modelPath': modelFilePath,
@@ -72,11 +72,11 @@ function fileDemo() {
 
   try {
     const startTime = performance.now();
-    const alignments = engineInstance.synthesizeToFile(text, outputPath);
+    const alignments = orca.synthesizeToFile(text, outputPath);
     const endTime = performance.now();
     const processingTime = ((endTime - startTime) / 1000).toFixed(2);
     const pcm = loadPcm(outputPath);
-    const lengthSec = (pcm.length / engineInstance.sampleRate).toFixed(2);
+    const lengthSec = (pcm.length / orca.sampleRate).toFixed(2);
 
     console.log(`Orca took ${processingTime} seconds to synthesize ${lengthSec} seconds of speech which is ~${(lengthSec / processingTime).toFixed(2)} times faster than real-time.`);
     console.log(`Audio written to ${outputPath}.`);
@@ -106,7 +106,7 @@ function fileDemo() {
     }
   }
 
-  engineInstance.release();
+  orca.release();
 }
 
 fileDemo();
