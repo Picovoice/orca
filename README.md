@@ -3,6 +3,7 @@
 [![GitHub](https://img.shields.io/github/license/Picovoice/orca)](https://github.com/Picovoice/orca/)
 
 [![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/orca-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/orca-android/)
+[![npm](https://img.shields.io/npm/v/@picovoice/orca-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/orca-node)
 [![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)
 [![CocoaPods](https://img.shields.io/cocoapods/v/Orca-iOS)](https://cocoapods.org/pods/Orca-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
