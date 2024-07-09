@@ -1,7 +1,7 @@
 name: Bug report
 description: Bugs in Orca
 title: "Orca Issue: "
-labels: ["bug"]
+labels: [ "bug" ]
 body:
   - type: markdown
     attributes:
@@ -22,7 +22,10 @@ body:
     attributes:
       label: SDK
       options:
+        - Android
         - C
+        - iOS
+        - Node.js
         - Python
         - Web
     validations:
