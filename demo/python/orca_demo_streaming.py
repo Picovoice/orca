@@ -15,111 +15,23 @@ import re
 import subprocess
 import threading
 import time
-import traceback
 from dataclasses import dataclass
 from queue import Queue
+from collections import deque
+from itertools import chain
 from typing import (
-    Any,
     Callable,
-    Dict,
     Optional,
     Sequence,
 )
 
-import numpy as np
 import pvorca
 import tiktoken
-from numpy.typing import NDArray
 from pvorca import OrcaActivationLimitError, OrcaInvalidArgumentError
-from sounddevice import (
-    OutputStream,
-    query_devices,
-    PortAudioError,
-)
+from pvspeaker import PvSpeaker
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
 CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
-
-
-class StreamingAudioDevice:
-    def __init__(self, device_index: Optional[int] = None) -> None:
-        if device_index is None:
-            device_info = query_devices(kind="output")
-            device_index = int(device_info["index"])
-
-        self._device_index = device_index
-        self._queue: Queue[Sequence[int]] = Queue()
-
-        self._buffer = None
-        self._stream = None
-        self._sample_rate = None
-        self._blocksize = None
-
-    def start(self, sample_rate: int) -> None:
-        self._sample_rate = sample_rate
-        self._blocksize = self._sample_rate // 20
-        self._stream = OutputStream(
-            channels=1,
-            samplerate=self._sample_rate,
-            dtype=np.int16,
-            device=self._device_index,
-            callback=self._callback,
-            blocksize=self._blocksize)
-        self._stream.start()
-
-    # noinspection PyShadowingNames
-    # noinspection PyUnusedLocal
-    def _callback(self, outdata: NDArray, frames: int, time: Any, status: Any) -> None:
-        if self._queue.empty():
-            outdata[:] = 0
-            return
-
-        pcm = self._queue.get()
-        outdata[:, 0] = pcm
-
-    def play(self, pcm_chunk: Sequence[int]) -> None:
-        if self._stream is None:
-            raise ValueError("Stream is not started. Call `start` method first.")
-
-        pcm_chunk = np.array(pcm_chunk, dtype=np.int16)
-
-        if self._buffer is not None:
-            if pcm_chunk is not None:
-                pcm_chunk = np.concatenate([self._buffer, pcm_chunk])
-            else:
-                pcm_chunk = self._buffer
-            self._buffer = None
-
-        length = pcm_chunk.shape[0]
-        for index_block in range(0, length, self._blocksize):
-            if (length - index_block) < self._blocksize:
-                self._buffer = pcm_chunk[index_block: index_block + (length - index_block)]
-            else:
-                self._queue.put_nowait(pcm_chunk[index_block: index_block + self._blocksize])
-
-    def flush_and_terminate(self) -> None:
-        self.flush()
-        self.terminate()
-
-    def flush(self) -> None:
-        if self._buffer is not None:
-            chunk = np.zeros(self._blocksize, dtype=np.int16)
-            chunk[:self._buffer.shape[0]] = self._buffer
-            self._queue.put_nowait(chunk)
-
-        time_interval = self._blocksize / self._sample_rate
-        while not self._queue.empty():
-            time.sleep(time_interval)
-
-        time.sleep(time_interval)
-
-    def terminate(self) -> None:
-        self._stream.stop()
-        self._stream.close()
-
-    @staticmethod
-    def list_output_devices() -> Dict[str, Any]:
-        return query_devices(kind="output")
 
 
 def linux_machine() -> str:
@@ -159,7 +71,7 @@ class OrcaThread:
 
     def __init__(
             self,
-            play_audio_callback: Callable[[Sequence[int]], None],
+            write_audio_callback: Callable[[Sequence[int]], int],
             access_key: str,
             num_tokens_per_second: int,
             model_path: Optional[str] = None,
@@ -171,7 +83,7 @@ class OrcaThread:
         self._orca_stream = self._orca.stream_open()
         self._sample_rate = self._orca.sample_rate
 
-        self._play_audio_callback = play_audio_callback
+        self.write_audio_callback = write_audio_callback
         self._num_tokens_per_second = num_tokens_per_second
         assert self._num_tokens_per_second > 0
 
@@ -179,7 +91,7 @@ class OrcaThread:
         self._thread = None
 
         self._time_first_audio_available = -1
-        self._pcm_buffer: Queue[Sequence[int]] = Queue()
+        self._pcm_buffer = deque()
 
         self._wait_chunks = audio_wait_chunks or self._get_first_audio_wait_chunks()
         self._num_pcm_chunks_processed = 0
@@ -197,8 +109,6 @@ class OrcaThread:
         while True:
             orca_input = self._queue.get()
             if orca_input is None:
-                while not self._pcm_buffer.empty():
-                    self._play_audio_callback(self._pcm_buffer.get())
                 break
 
             try:
@@ -210,12 +120,11 @@ class OrcaThread:
                 raise ValueError(f"Orca could not synthesize text input `{orca_input.text}`: `{e}`")
 
             if pcm is not None:
-                if self._num_pcm_chunks_processed < self._wait_chunks:
-                    self._pcm_buffer.put_nowait(pcm)
-                else:
-                    while not self._pcm_buffer.empty():
-                        self._play_audio_callback(self._pcm_buffer.get())
-                    self._play_audio_callback(pcm)
+                self._pcm_buffer.append(pcm)
+                pcm_to_play = self._pcm_buffer.popleft()
+                written = self.write_audio_callback(pcm_to_play)
+                if written < len(pcm_to_play):
+                    self._pcm_buffer.appendleft(pcm_to_play[written:])
 
                 if self._num_pcm_chunks_processed == 0:
                     self._time_first_audio_available = time.time()
@@ -233,10 +142,10 @@ class OrcaThread:
     def synthesize(self, text: str) -> None:
         self._queue.put_nowait(self.OrcaInput(text=text, flush=False))
 
-    def flush(self) -> None:
+    def flush(self) -> deque:
         self._queue.put_nowait(self.OrcaInput(text="", flush=True))
         self._close_thread_blocking()
-        self.start()
+        return self._pcm_buffer
 
     def delete(self) -> None:
         self._close_thread_blocking()
@@ -318,11 +227,13 @@ def main() -> None:
         "--show_audio_devices",
         action="store_true",
         help="Only list available audio output devices and exit")
-    parser.add_argument('--audio-device-index', type=int, default=None, help='Index of input audio device')
+    parser.add_argument('--audio-device-index', type=int, default=-1, help='Index of input audio device')
     args = parser.parse_args()
 
     if args.show_audio_devices:
-        print(StreamingAudioDevice.list_output_devices())
+        devices = PvSpeaker.get_available_devices()
+        for i in range(len(devices)):
+            print("index: %d, device name: %s" % (i, devices[i]))
         exit(0)
 
     access_key = args.access_key
@@ -333,25 +244,10 @@ def main() -> None:
     audio_wait_chunks = args.audio_wait_chunks
     audio_device_index = args.audio_device_index
 
-    try:
-        audio_device = StreamingAudioDevice(device_index=audio_device_index)
-        # Some systems may have issues with PortAudio only when starting the audio device. Test it here.
-        audio_device.start(sample_rate=16000)
-        audio_device.terminate()
-        play_audio_callback = audio_device.play
-    except PortAudioError:
-        print(traceback.format_exc())
-        print(
-            "WARNING: Failed to initialize audio device, see details above. Falling back to running "
-            "the demo without audio playback.\n")
-        audio_device = None
-
-        # noinspection PyUnusedLocal
-        def play_audio_callback(pcm: Sequence[int]):
-            pass
+    speaker = PvSpeaker(sample_rate=22050, bits_per_sample=16, buffer_size_secs=1, device_index=audio_device_index)
 
     orca = OrcaThread(
-        play_audio_callback=play_audio_callback,
+        write_audio_callback=speaker.write,
         num_tokens_per_second=tokens_per_second,
         access_key=access_key,
         model_path=model_path,
@@ -360,8 +256,8 @@ def main() -> None:
     )
 
     orca.start()
-    if audio_device is not None:
-        audio_device.start(sample_rate=orca.sample_rate)
+    if speaker is not None:
+        speaker.start()
 
     try:
         print(f"Orca version: {orca.version}\n")
@@ -379,16 +275,19 @@ def main() -> None:
 
         text_stream_duration_seconds = time.time() - time_start_text_stream
 
-        orca.flush()
+        remaining_pcm = orca.flush()
 
         first_audio_available_seconds = orca.get_time_first_audio_available() - time_start_text_stream
         print(f"\n\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
-        if audio_device is not None:
+        if speaker is not None:
             print("Waiting for audio to finish ...")
-            audio_device.flush_and_terminate()
+            speaker.flush(list(chain.from_iterable(remaining_pcm)))
 
+    except KeyboardInterrupt:
+        speaker.stop()
+        print("\nStopped...")
     except OrcaActivationLimitError:
         print("AccessKey has reached its processing limit")
     finally:
