@@ -14,12 +14,14 @@ import platform
 import re
 import subprocess
 import threading
+import multiprocessing
 import time
 from dataclasses import dataclass
 from os import remove
 from queue import Queue
 from collections import deque
 from itertools import chain
+from time import sleep
 from typing import (
     Callable,
     Optional,
@@ -194,6 +196,29 @@ def tokenize_text(text: str) -> Sequence[str]:
     return tokens_with_custom_pronunciations
 
 
+def worker_function(queue, sample_rate, audio_wait_chunks):
+    speaker = PvSpeaker(sample_rate=sample_rate, bits_per_sample=16, buffer_size_secs=audio_wait_chunks)
+    speaker.start()
+
+    pcm_buf = deque()
+
+    while True:
+        if len(pcm_buf) > 0:
+            buf_pcm = pcm_buf.popleft()
+        else:
+            buf_pcm = queue.get()
+            if buf_pcm is None:
+                break
+
+        worker_written = speaker.write(buf_pcm)
+        if worker_written < len(buf_pcm):
+            pcm_buf.appendleft(buf_pcm[worker_written:])
+
+    speaker.flush()
+    speaker.stop()
+    speaker.delete()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -248,15 +273,12 @@ def main() -> None:
     orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
 
     # TODO: Make audio_wait_chunks a proper param
-    speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=audio_wait_chunks,
-                        device_index=audio_device_index)
 
     stream = orca.stream_open()
 
-    if speaker is not None:
-        speaker.start()
-
-    pcm_buf = deque()
+    queue = multiprocessing.Queue()
+    process = multiprocessing.Process(target=worker_function, args=(queue, orca.sample_rate, audio_wait_chunks))
+    process.start()
 
     try:
         print(f"Orca version: {orca.version}\n")
@@ -270,30 +292,29 @@ def main() -> None:
 
             pcm = stream.synthesize(text=token)
             if pcm is not None:
-                if len(pcm_buf) != 0:
-                    pcm_buf.append(pcm)
-                    pcm = pcm_buf.popleft()
-                written = speaker.write(pcm)
-                if written < len(pcm):
-                    pcm_buf.appendleft(pcm[written:])
+                queue.put(pcm)
 
             time.sleep(1 / tokens_per_second)
 
         # text_stream_duration_seconds = time.time() - time_start_text_stream
 
         remaining_pcm = stream.flush()
-        pcm_buf.append(remaining_pcm)
+        if remaining_pcm is not None:
+            queue.put(remaining_pcm)
+
+        queue.put(None)
+        process.join()
 
         # first_audio_available_seconds = orca.get_time_first_audio_available() - time_start_text_stream
         # print(f"\n\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         # print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
-        if speaker is not None:
-            print("\nWaiting for audio to finish ...")
-            speaker.flush(list(chain.from_iterable(pcm_buf)))
+        # if speaker is not None:
+        print("\nWaiting for audio to finish ...")
+
 
     except KeyboardInterrupt:
-        speaker.stop()
+        # speaker.stop()
         print("\nStopped...")
     except OrcaActivationLimitError:
         print("AccessKey has reached its processing limit")
