@@ -369,7 +369,7 @@ void *threadFunction(void *arg) {
                 pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
             }
         } else {
-            sleep(1);
+            usleep(100 * 1000);
         }
     }
 
