@@ -1,3 +1,6 @@
 [submodule "demo/c/dr_libs"]
 	path = demo/c/dr_libs
 	url = ../../mackron/dr_libs.git
+[submodule "demo/c/pvspeaker"]
+	path = demo/c/pvspeaker
+	url = ../pvspeaker.git
