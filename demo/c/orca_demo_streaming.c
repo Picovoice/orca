@@ -16,7 +16,6 @@ the License.
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <unistd.h>
 
 #if !(defined(_WIN32) || defined(_WIN64))
 
@@ -234,6 +233,7 @@ typedef struct Deque {
     Node *front;
     Node *rear;
     size_t size;
+    pthread_mutex_t mutex; // Mutex to protect deque
 } Deque;
 
 Deque *createDeque();
@@ -253,6 +253,7 @@ Deque *createDeque() {
     }
     deque->front = deque->rear = NULL;
     deque->size = 0;
+    pthread_mutex_init(&deque->mutex, NULL);
     return deque;
 }
 
@@ -269,6 +270,7 @@ Node *createNode(int16_t *pcm, int32_t num_samples) {
 }
 
 void pushFront(Deque *deque, int16_t *pcm, int32_t num_samples) {
+    pthread_mutex_lock(&deque->mutex); // Lock mutex
     Node *node = createNode(pcm, num_samples);
     if (isEmpty(deque)) {
         deque->front = deque->rear = node;
@@ -278,9 +280,11 @@ void pushFront(Deque *deque, int16_t *pcm, int32_t num_samples) {
         deque->front = node;
     }
     deque->size++;
+    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
 }
 
 void pushRear(Deque *deque, int16_t *pcm, int32_t num_samples) {
+    pthread_mutex_lock(&deque->mutex); // Lock mutex
     Node *node = createNode(pcm, num_samples);
     if (isEmpty(deque)) {
         deque->front = deque->rear = node;
@@ -290,9 +294,11 @@ void pushRear(Deque *deque, int16_t *pcm, int32_t num_samples) {
         deque->rear = node;
     }
     deque->size++;
+    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
 }
 
 NodeData popFront(Deque *deque) {
+    pthread_mutex_lock(&deque->mutex); // Lock mutex
     NodeData data = {NULL, 0};
     if (isEmpty(deque)) {
         printf("Deque is empty\n");
@@ -309,6 +315,7 @@ NodeData popFront(Deque *deque) {
     }
     free(temp);
     deque->size--;
+    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
     return data;
 }
 
@@ -333,10 +340,12 @@ int isEmpty(Deque *deque) {
 }
 
 void freeDeque(Deque *deque) {
+    pthread_mutex_lock(&deque->mutex); // Lock mutex
     while (!isEmpty(deque)) {
         popFront(deque);
     }
     free(deque);
+    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
 }
 
 typedef struct {
@@ -353,24 +362,15 @@ void *threadFunction(void *arg) {
     Deque *deque = data->deque;
     pv_speaker_t *speaker = data->speaker;
 
-    while (true) {
-        if (!isEmpty(deque)) {
-            NodeData node_data = popFront(deque);
-            if (node_data.num_samples == 0) {
-                break;
-            }
-            int32_t written_length = 0;
-            pv_speaker_status_t speaker_status = pv_speaker_write(speaker, (int8_t *) node_data.pcm, node_data.num_samples, &written_length);
-            if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-                fprintf(stderr, "Failed to write pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
-                exit(1);
-            }
-            if (written_length < node_data.num_samples) {
-                pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
-            }
-        } else {
-            usleep(100 * 1000);
-        }
+    NodeData node_data = popFront(deque);
+    int32_t written_length = 0;
+    pv_speaker_status_t speaker_status = pv_speaker_write(speaker, (int8_t *) node_data.pcm, node_data.num_samples, &written_length);
+    if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
+        fprintf(stderr, "Failed to write pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
+        exit(1);
+    }
+    if (written_length < node_data.num_samples) {
+        pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
     }
 
     return NULL;
@@ -648,11 +648,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     pthread_t thread;
     ThreadData data = {speaker, deque};
 
-    if (pthread_create(&thread, NULL, threadFunction, &data)) {
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-    }
-
     char character[MAX_NUM_BYTES_PER_CHARACTER] = {0};
     for (int32_t i = 0; i < (int32_t) strlen(text); i++) {
         if (num_chunks > (MAX_NUM_CHUNKS - 1)) {
@@ -701,6 +696,10 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             start_chunks[num_chunks] = timestamp;
 
             pushRear(deque, pcm_chunk, num_samples_chunk);
+            if (pthread_create(&thread, NULL, threadFunction, &data)) {
+                fprintf(stderr, "Error creating thread\n");
+                return 1;
+            }
         }
     }
 
@@ -718,11 +717,22 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pushRear(deque, NULL, 0);
-
     if (pthread_join(thread, NULL)) {
         fprintf(stderr, "Error joining thread\n");
         return 2;
+    }
+
+    while (!isEmpty(deque)) {
+        NodeData node_data = popFront(deque);
+        int32_t written_length = 0;
+        pv_speaker_status_t speaker_status = pv_speaker_write(speaker, (int8_t *) node_data.pcm, node_data.num_samples, &written_length);
+        if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
+            fprintf(stderr, "Failed to write pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
+            exit(1);
+        }
+        if (written_length < node_data.num_samples) {
+            pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
+        }
     }
     freeDeque(deque);
 
