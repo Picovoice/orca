@@ -13,22 +13,16 @@ import argparse
 import platform
 import re
 import subprocess
-import threading
 import time
-from dataclasses import dataclass
-from os import remove
-from queue import Queue
 from collections import deque
 from itertools import chain
 from typing import (
-    Callable,
-    Optional,
     Sequence,
 )
 
 import pvorca
 import tiktoken
-from pvorca import OrcaActivationLimitError, OrcaInvalidArgumentError
+from pvorca import OrcaActivationLimitError
 from pvspeaker import PvSpeaker
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
@@ -136,12 +130,16 @@ def main() -> None:
         "--buffer_size_secs",
         type=int,
         default=20,
-        help="Size of internal buffer for pvspeaker")
+        help="The size in seconds of the internal buffer used by pvspeaker to play audio.")
     parser.add_argument(
         "--show_audio_devices",
         action="store_true",
         help="Only list available audio output devices and exit")
-    parser.add_argument('--audio-device-index', type=int, default=-1, help='Index of input audio device')
+    parser.add_argument(
+        '--audio-device-index',
+        type=int,
+        default=-1,
+        help='Index of input audio device')
     args = parser.parse_args()
 
     if args.show_audio_devices:
@@ -160,16 +158,17 @@ def main() -> None:
     audio_device_index = args.audio_device_index
 
     orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
-
-    speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
-                        device_index=audio_device_index)
-
     stream = orca.stream_open()
 
-    if speaker is not None:
-        speaker.start()
-
+    speaker = None
     pcm_buf = deque()
+    try:
+        speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
+                            device_index=audio_device_index)
+        speaker.start()
+    except ValueError:
+        print(
+            "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, but it will not be played.\n")
 
     try:
         print(f"Orca version: {orca.version}\n")
@@ -177,30 +176,29 @@ def main() -> None:
         print(f"Simulated text stream:")
         tokens = tokenize_text(text=text)
 
-        time_start_text_stream = time.time()
-        time_first_audio_available = None
         is_start_playing = False
+        time_first_audio_available = None
+        time_start_text_stream = time.time()
+
         for token in tokens:
             print(f"{token}", end="", flush=True)
-
             pcm = stream.synthesize(text=token)
-            time_start_pvspeaker_write = time.time()
+
             if pcm is not None:
                 if time_first_audio_available is None:
                     time_first_audio_available = time.time()
-                pcm_buf.append(pcm)
-                if len(pcm_buf) >= audio_wait_chunks:
-                    is_start_playing = True
-            if is_start_playing and len(pcm_buf) != 0:
+                if speaker is not None:
+                    pcm_buf.append(pcm)
+                    if len(pcm_buf) > audio_wait_chunks:
+                        is_start_playing = True
+
+            if is_start_playing and len(pcm_buf) > 0:
                 pcm = pcm_buf.popleft()
                 written = speaker.write(pcm)
                 if written < len(pcm):
-                    print(f" [appendleft] ")
                     pcm_buf.appendleft(pcm[written:])
-            pvspeaker_write_duration_seconds = time.time() - time_start_pvspeaker_write
-            print(f" [{pvspeaker_write_duration_seconds:.8f}] ")
 
-            time.sleep(min(0, (1 / tokens_per_second) - pvspeaker_write_duration_seconds))
+            time.sleep(1 / tokens_per_second)
 
         text_stream_duration_seconds = time.time() - time_start_text_stream
 
@@ -211,7 +209,7 @@ def main() -> None:
 
         first_audio_available_seconds = time_first_audio_available - time_start_text_stream
         print(f"\n\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
-        print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
+        print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started")
 
         if speaker is not None:
             print("\nWaiting for audio to finish ...")
@@ -221,7 +219,7 @@ def main() -> None:
         speaker.stop()
         print("\nStopped...")
     except OrcaActivationLimitError:
-        print("AccessKey has reached its processing limit")
+        print("\nAccessKey has reached its processing limit")
     finally:
         orca.delete()
 
