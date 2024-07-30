@@ -125,18 +125,15 @@ class OrcaThread:
             if pcm is not None:
                 if self._num_pcm_chunks_processed == 0:
                     self._time_first_audio_available = time.time()
-                self._pcm_buffer.append(pcm)
+                self._num_pcm_chunks_processed += 1
 
-                if self._num_pcm_chunks_processed < self._wait_chunks:
-                    continue
-                else:
+                self._pcm_buffer.append(pcm)
+                if self._num_pcm_chunks_processed > self._wait_chunks:
                     while len(self._pcm_buffer) > 0:
                         pcm_chunk = self._pcm_buffer.popleft()
                         written = self._play_audio_callback(pcm_chunk)
                         if written < len(pcm_chunk):
                             self._pcm_buffer.appendleft(pcm_chunk[written:])
-
-                self._num_pcm_chunks_processed += 1
 
     def _close_thread_blocking(self):
         self._queue.put_nowait(None)
