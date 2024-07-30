@@ -184,19 +184,19 @@ def main() -> None:
             print(f"{token}", end="", flush=True)
             pcm = stream.synthesize(text=token)
 
-            if pcm is not None:
-                if time_first_audio_available is None:
-                    time_first_audio_available = time.time()
-                if speaker is not None:
-                    pcm_buf.append(pcm)
-                    if len(pcm_buf) > audio_wait_chunks:
-                        is_start_playing = True
-
-            if is_start_playing and len(pcm_buf) > 0:
-                pcm = pcm_buf.popleft()
-                written = speaker.write(pcm)
-                if written < len(pcm):
-                    pcm_buf.appendleft(pcm[written:])
+            # if pcm is not None:
+            #     if time_first_audio_available is None:
+            #         time_first_audio_available = time.time()
+            #     if speaker is not None:
+            #         pcm_buf.append(pcm)
+            #         if len(pcm_buf) > audio_wait_chunks:
+            #             is_start_playing = True
+            #
+            # if is_start_playing and len(pcm_buf) > 0:
+            #     pcm = pcm_buf.popleft()
+            #     written = speaker.write(pcm)
+            #     if written < len(pcm):
+            #         pcm_buf.appendleft(pcm[written:])
 
             time.sleep(1 / tokens_per_second)
 
