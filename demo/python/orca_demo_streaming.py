@@ -162,13 +162,13 @@ def main() -> None:
 
     speaker = None
     pcm_buf = deque()
-    try:
-        speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
-                            device_index=audio_device_index)
-        speaker.start()
-    except ValueError:
-        print(
-            "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, but it will not be played.\n")
+    # try:
+    #     speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
+    #                         device_index=audio_device_index)
+    #     speaker.start()
+    # except ValueError:
+    #     print(
+    #         "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, but it will not be played.\n")
 
     try:
         print(f"Orca version: {orca.version}\n")
