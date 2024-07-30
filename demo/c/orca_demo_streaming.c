@@ -383,9 +383,10 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     const char *text = NULL;
     const char *output_path = NULL;
     int32_t device_index = -1;
+    int32_t audio_wait_chunks = 0;
 
     int32_t c;
-    while ((c = getopt_long(argc, argv, "l:m:a:t:o:i:s", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "l:m:a:t:o:w:i:s", long_options, NULL)) != -1) {
         switch (c) {
             case 'l':
                 library_path = optarg;
@@ -401,6 +402,9 @@ int32_t picovoice_main(int32_t argc, char **argv) {
                 break;
             case 'o':
                 output_path = optarg;
+                break;
+            case 'w':
+                audio_wait_chunks = (int32_t) strtol(optarg, NULL, 10);
                 break;
             case 'i':
                 device_index = (int32_t) strtol(optarg, NULL, 10);
@@ -649,6 +653,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     ThreadData data = {speaker, deque};
 
     char character[MAX_NUM_BYTES_PER_CHARACTER] = {0};
+    int32_t num_pcm = 0;
     for (int32_t i = 0; i < (int32_t) strlen(text); i++) {
         if (num_chunks > (MAX_NUM_CHUNKS - 1)) {
             fprintf(stderr, "Trying to synthesize too many chunks. Only `%d` chunks are supported.\n", MAX_NUM_CHUNKS);
@@ -695,10 +700,13 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             end_chunks[num_chunks++] = timestamp;
             start_chunks[num_chunks] = timestamp;
 
+            num_pcm++;
             pushRear(deque, pcm_chunk, num_samples_chunk);
-            if (pthread_create(&thread, NULL, threadFunction, &data)) {
-                fprintf(stderr, "Error creating thread\n");
-                return 1;
+            if (num_pcm >= audio_wait_chunks) {
+                if (pthread_create(&thread, NULL, threadFunction, &data)) {
+                    fprintf(stderr, "Error creating thread\n");
+                    return 1;
+                }
             }
         }
     }
