@@ -123,6 +123,8 @@ class OrcaThread:
                 raise ValueError(f"Orca could not synthesize text input `{orca_input.text}`: `{e}`")
 
             if pcm is not None:
+                if self._num_pcm_chunks_processed == 0:
+                    self._time_first_audio_available = time.time()
                 self._pcm_buffer.append(pcm)
 
                 if self._num_pcm_chunks_processed < self._wait_chunks:
@@ -134,9 +136,7 @@ class OrcaThread:
                         if written < len(pcm_chunk):
                             self._pcm_buffer.appendleft(pcm_chunk[written:])
 
-                    if self._num_pcm_chunks_processed == 0:
-                        self._time_first_audio_available = time.time()
-                    self._num_pcm_chunks_processed += 1
+                self._num_pcm_chunks_processed += 1
 
     def _close_thread_blocking(self):
         self._queue.put_nowait(None)
