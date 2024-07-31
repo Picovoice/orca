@@ -309,7 +309,10 @@ def main() -> None:
         print(f"\n\nTime to finish text stream:  {text_stream_duration_seconds:.2f} seconds")
         print(f"Time to receive first audio: {first_audio_available_seconds:.2f} seconds after text stream started\n")
 
+        if speaker is not None:
+            print("Waiting for audio to finish ...")
         orca_thread.flush_audio()
+
         if speaker is not None:
             speaker.delete()
     except KeyboardInterrupt:
