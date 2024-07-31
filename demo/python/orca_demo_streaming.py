@@ -103,15 +103,18 @@ class OrcaThread:
                 wait_chunks = 1
         return wait_chunks
 
+    def _play_buffered_pcm(self):
+        while len(self._pcm_buffer) > 0:
+            pcm_chunk = self._pcm_buffer.popleft()
+            written = self._play_audio_callback(pcm_chunk)
+            if written < len(pcm_chunk):
+                self._pcm_buffer.appendleft(pcm_chunk[written:])
+
     def _run(self) -> None:
         while True:
             orca_input = self._queue.get()
             if orca_input is None:
-                while len(self._pcm_buffer) > 0:
-                    pcm_chunk = self._pcm_buffer.popleft()
-                    written = self._play_audio_callback(pcm_chunk)
-                    if written < len(pcm_chunk):
-                        self._pcm_buffer.appendleft(pcm_chunk[written:])
+                self._play_buffered_pcm()
                 break
 
             try:
@@ -129,11 +132,7 @@ class OrcaThread:
 
                 self._pcm_buffer.append(pcm)
                 if self._num_pcm_chunks_processed > self._wait_chunks:
-                    while len(self._pcm_buffer) > 0:
-                        pcm_chunk = self._pcm_buffer.popleft()
-                        written = self._play_audio_callback(pcm_chunk)
-                        if written < len(pcm_chunk):
-                            self._pcm_buffer.appendleft(pcm_chunk[written:])
+                    self._play_buffered_pcm()
 
     def _close_thread_blocking(self):
         self._queue.put_nowait(None)
@@ -261,7 +260,6 @@ def main() -> None:
         speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
                             device_index=audio_device_index)
         speaker.start()
-    # TODO: PvSpeaker Error?
     except ValueError:
         print(
             "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, but it will not be played.\n")
@@ -271,7 +269,6 @@ def main() -> None:
             if speaker is not None:
                 return speaker.write(pcm)
             return 0
-        # TODO: PvSpeaker Error?
         except ValueError:
             pass
         return 0
@@ -280,7 +277,6 @@ def main() -> None:
         try:
             if speaker is not None:
                 speaker.flush()
-        # TODO: PvSpeaker Error?
         except ValueError:
             pass
 
