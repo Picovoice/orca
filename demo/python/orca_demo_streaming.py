@@ -18,10 +18,12 @@ import time
 from dataclasses import dataclass
 from queue import Queue
 from collections import deque
+from itertools import chain
 from typing import (
     Callable,
     Optional,
-    Sequence, Any,
+    Sequence,
+    Any,
 )
 
 import pvorca
@@ -71,7 +73,7 @@ class OrcaThread:
     def __init__(
             self,
             orca: Any,
-            flush_audio_callback: Callable,
+            flush_audio_callback: Callable[[Sequence[int]], None],
             play_audio_callback: Callable[[Sequence[int]], int],
             num_tokens_per_second: int,
             audio_wait_chunks: Optional[int] = None,
@@ -103,18 +105,10 @@ class OrcaThread:
                 wait_chunks = 1
         return wait_chunks
 
-    def _play_buffered_pcm(self):
-        while len(self._pcm_buffer) > 0:
-            pcm_chunk = self._pcm_buffer.popleft()
-            written = self._play_audio_callback(pcm_chunk)
-            if written < len(pcm_chunk):
-                self._pcm_buffer.appendleft(pcm_chunk[written:])
-
     def _run(self) -> None:
         while True:
             orca_input = self._queue.get()
             if orca_input is None:
-                self._play_buffered_pcm()
                 break
 
             try:
@@ -132,7 +126,11 @@ class OrcaThread:
 
                 self._pcm_buffer.append(pcm)
                 if self._num_pcm_chunks_processed > self._wait_chunks:
-                    self._play_buffered_pcm()
+                    if len(self._pcm_buffer) > 0:
+                        pcm = self._pcm_buffer.popleft()
+                    written = self._play_audio_callback(pcm)
+                    if written < len(pcm):
+                        self._pcm_buffer.appendleft(pcm[written:])
 
     def _close_thread_blocking(self):
         self._queue.put_nowait(None)
@@ -150,7 +148,8 @@ class OrcaThread:
         self._close_thread_blocking()
 
     def flush_audio(self) -> None:
-        self._thread = threading.Thread(target=self._flush_audio_callback)
+        remaining_pcm = list(chain.from_iterable(self._pcm_buffer))
+        self._thread = threading.Thread(target=self._flush_audio_callback, args=(remaining_pcm,))
         self._thread.start()
         self._thread.join()
 
@@ -268,16 +267,16 @@ def main() -> None:
         try:
             if speaker is not None:
                 return speaker.write(pcm)
-            return 0
+            return len(pcm)
         except ValueError:
             pass
-        return 0
+        return len(pcm)
 
-    def flush_audio_callback() -> None:
+    def flush_audio_callback(pcm: Sequence[int]) -> None:
         try:
             if speaker is not None:
-                speaker.flush()
-        except ValueError:
+                speaker.flush(pcm)
+        except MemoryError:
             pass
 
     orca_thread = OrcaThread(
