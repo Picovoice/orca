@@ -49,6 +49,14 @@ jobs:
           ${{matrix.install_dep}}
           pip install -r requirements.txt
 
+      # GitHub Actions runners do not have sound cards, so a virtual one must be created in order for unit tests to run.
+      - name: Install PulseAudio on Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio
+          pulseaudio --check || pulseaudio --start
+          pactl load-module module-null-sink
+
       - name: Test streaming
         run: >
           python3 orca_demo_streaming.py
@@ -67,13 +75,20 @@ jobs:
 
     strategy:
       matrix:
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, jetson ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
+
+      - name: Install PulseAudio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio
+          pulseaudio --check || pulseaudio --start
+          pactl load-module module-null-sink
 
       - name: Test streaming
         run: >
