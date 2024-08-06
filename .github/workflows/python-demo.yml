@@ -51,6 +51,7 @@ jobs:
 
       # GitHub Actions runners do not have sound cards, so a virtual one must be created in order for unit tests to run.
       - name: Install PulseAudio on Ubuntu
+        if: matrix.machine == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y pulseaudio
