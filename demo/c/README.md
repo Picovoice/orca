@@ -32,11 +32,8 @@ In the single synthesis mode, the text is synthesized in a single call to the Or
 Use CMake to build the Orca demo target:
 
 ```console
-cmake -S demo/c/ -B demo/c/build -DPV_SPEAKER_PLATFORM={PV_SPEAKER_PLATFORM} && cmake --build demo/c/build --target orca_demo_streaming
+cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_demo_streaming
 ```
-
-The `{PV_SPEAKER_PLATFORM}` variable will set the compilation flags for the given platform. Exclude this variable
-to get a list of possible values.
 
 ### Usage
 

@@ -10,8 +10,8 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 */
+
 #include <getopt.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,8 +35,6 @@ the License.
 #include "dr_wav.h"
 
 #include "pv_orca.h"
-
-#include "pv_speaker.h"
 
 #define MAX_NUM_CHUNKS              (500)
 #define MAX_NUM_BYTES_PER_CHARACTER (5)
@@ -200,193 +198,15 @@ void handle_error(
     pv_free_error_stack_func(message_stack);
 }
 
-static void show_audio_devices(void) {
-    char **device_list = NULL;
-    int32_t device_list_length = 0;
-
-    pv_speaker_status_t status = pv_speaker_get_available_devices(&device_list_length, &device_list);
-    if (status != PV_SPEAKER_STATUS_SUCCESS) {
-        fprintf(stderr, "failed to get audio devices with `%s`.\n", pv_speaker_status_to_string(status));
-        exit(1);
-    }
-
-    for (int32_t i = 0; i < device_list_length; i++) {
-        fprintf(stdout, "[%d] %s\n", i, device_list[i]);
-    }
-
-    pv_speaker_free_available_devices(device_list_length, device_list);
-}
-
-typedef struct {
-    int16_t *pcm;
-    int32_t num_samples;
-} NodeData;
-
-typedef struct Node {
-    int16_t *pcm;
-    int32_t num_samples;
-    struct Node *prev;
-    struct Node *next;
-} Node;
-
-typedef struct Deque {
-    Node *front;
-    Node *rear;
-    size_t size;
-    pthread_mutex_t mutex; // Mutex to protect deque
-} Deque;
-
-Deque *createDeque();
-Node *createNode(int16_t *pcm, int32_t num_samples);
-void pushFront(Deque *deque, int16_t *pcm, int32_t num_samples);
-void pushRear(Deque *deque, int16_t *pcm, int32_t num_samples);
-NodeData popFront(Deque *deque);
-void popRear(Deque *deque);
-int isEmpty(Deque *deque);
-void freeDeque(Deque *deque);
-
-Deque *createDeque() {
-    Deque *deque = (Deque *) malloc(sizeof(Deque));
-    if (deque == NULL) {
-        perror("Failed to create deque");
-        exit(EXIT_FAILURE);
-    }
-    deque->front = deque->rear = NULL;
-    deque->size = 0;
-    pthread_mutex_init(&deque->mutex, NULL);
-    return deque;
-}
-
-Node *createNode(int16_t *pcm, int32_t num_samples) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    if (node == NULL) {
-        perror("Failed to create node");
-        exit(EXIT_FAILURE);
-    }
-    node->pcm = pcm;
-    node->num_samples = num_samples;
-    node->prev = node->next = NULL;
-    return node;
-}
-
-void pushFront(Deque *deque, int16_t *pcm, int32_t num_samples) {
-    pthread_mutex_lock(&deque->mutex); // Lock mutex
-    Node *node = createNode(pcm, num_samples);
-    if (isEmpty(deque)) {
-        deque->front = deque->rear = node;
-    } else {
-        node->next = deque->front;
-        deque->front->prev = node;
-        deque->front = node;
-    }
-    deque->size++;
-    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
-}
-
-void pushRear(Deque *deque, int16_t *pcm, int32_t num_samples) {
-    pthread_mutex_lock(&deque->mutex); // Lock mutex
-    Node *node = createNode(pcm, num_samples);
-    if (isEmpty(deque)) {
-        deque->front = deque->rear = node;
-    } else {
-        node->prev = deque->rear;
-        deque->rear->next = node;
-        deque->rear = node;
-    }
-    deque->size++;
-    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
-}
-
-NodeData popFront(Deque *deque) {
-    pthread_mutex_lock(&deque->mutex); // Lock mutex
-    NodeData data = {NULL, 0};
-    if (isEmpty(deque)) {
-        printf("Deque is empty\n");
-        return data;
-    }
-    Node *temp = deque->front;
-    data.pcm = temp->pcm;
-    data.num_samples = temp->num_samples;
-    deque->front = deque->front->next;
-    if (deque->front != NULL) {
-        deque->front->prev = NULL;
-    } else {
-        deque->rear = NULL;
-    }
-    free(temp);
-    deque->size--;
-    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
-    return data;
-}
-
-void popRear(Deque *deque) {
-    if (isEmpty(deque)) {
-        printf("Deque is empty\n");
-        return;
-    }
-    Node *temp = deque->rear;
-    deque->rear = deque->rear->prev;
-    if (deque->rear != NULL) {
-        deque->rear->next = NULL;
-    } else {
-        deque->front = NULL;
-    }
-    free(temp);
-    deque->size--;
-}
-
-int isEmpty(Deque *deque) {
-    return deque->size == 0;
-}
-
-void freeDeque(Deque *deque) {
-    pthread_mutex_lock(&deque->mutex); // Lock mutex
-    while (!isEmpty(deque)) {
-        popFront(deque);
-    }
-    free(deque);
-    pthread_mutex_unlock(&deque->mutex); // Unlock mutex
-}
-
-typedef struct {
-    pv_speaker_t *speaker;
-    Deque *deque;
-} ThreadData;
-
-// Thread function
-void *threadFunction(void *arg) {
-    // Cast the argument to ThreadData*
-    ThreadData *data = (ThreadData *) arg;
-
-    // Access the struct members
-    Deque *deque = data->deque;
-    pv_speaker_t *speaker = data->speaker;
-
-    NodeData node_data = popFront(deque);
-    int32_t written_length = 0;
-    pv_speaker_status_t speaker_status = pv_speaker_write(speaker, (int8_t *) node_data.pcm, node_data.num_samples, &written_length);
-    if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to write pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
-        exit(1);
-    }
-    if (written_length < node_data.num_samples) {
-        pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
-    }
-
-    return NULL;
-}
-
 int32_t picovoice_main(int32_t argc, char **argv) {
     const char *library_path = NULL;
     const char *model_path = NULL;
     const char *access_key = NULL;
     const char *text = NULL;
     const char *output_path = NULL;
-    int32_t device_index = -1;
-    int32_t audio_wait_chunks = 0;
 
     int32_t c;
-    while ((c = getopt_long(argc, argv, "l:m:a:t:o:w:i:s", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "l:m:a:t:o:", long_options, NULL)) != -1) {
         switch (c) {
             case 'l':
                 library_path = optarg;
@@ -403,19 +223,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             case 'o':
                 output_path = optarg;
                 break;
-            case 'w':
-                audio_wait_chunks = (int32_t) strtol(optarg, NULL, 10);
-                break;
-            case 'i':
-                device_index = (int32_t) strtol(optarg, NULL, 10);
-                if (device_index < -1) {
-                    fprintf(stderr, "device index should be either `-1` (default) or a non-negative valid index\n");
-                    exit(1);
-                }
-                break;
-            case 's':
-                show_audio_devices();
-                exit(0);
             default:
                 exit(EXIT_FAILURE);
         }
@@ -567,19 +374,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_speaker_t *speaker = NULL;
-    pv_speaker_status_t speaker_status = pv_speaker_init(sample_rate, 16, 20, device_index, &speaker);
-    if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to initialize audio device with `%s`.\n", pv_speaker_status_to_string(speaker_status));
-        exit(1);
-    }
-
-    speaker_status = pv_speaker_start(speaker);
-    if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to start device with %s.\n", pv_speaker_status_to_string(speaker_status));
-        exit(1);
-    }
-
     drwav_data_format format;
     format.container = drwav_container_riff;
     format.format = DR_WAVE_FORMAT_PCM;
@@ -647,13 +441,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    Deque *deque = createDeque();
-
-    pthread_t thread;
-    ThreadData data = {speaker, deque};
-
     char character[MAX_NUM_BYTES_PER_CHARACTER] = {0};
-    int32_t num_pcm = 0;
     for (int32_t i = 0; i < (int32_t) strlen(text); i++) {
         if (num_chunks > (MAX_NUM_CHUNKS - 1)) {
             fprintf(stderr, "Trying to synthesize too many chunks. Only `%d` chunks are supported.\n", MAX_NUM_CHUNKS);
@@ -699,15 +487,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             num_samples_chunks[num_chunks] = num_samples_chunk;
             end_chunks[num_chunks++] = timestamp;
             start_chunks[num_chunks] = timestamp;
-
-            num_pcm++;
-            pushRear(deque, pcm_chunk, num_samples_chunk);
-            if (num_pcm >= audio_wait_chunks) {
-                if (pthread_create(&thread, NULL, threadFunction, &data)) {
-                    fprintf(stderr, "Error creating thread\n");
-                    return 1;
-                }
-            }
         }
     }
 
@@ -725,34 +504,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_join(thread, NULL)) {
-        fprintf(stderr, "Error joining thread\n");
-        return 2;
-    }
-
-    while (!isEmpty(deque)) {
-        NodeData node_data = popFront(deque);
-        int32_t written_length = 0;
-        pv_speaker_status_t speaker_status = pv_speaker_write(speaker, (int8_t *) node_data.pcm, node_data.num_samples, &written_length);
-        if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-            fprintf(stderr, "Failed to write pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
-            exit(1);
-        }
-        if (written_length < node_data.num_samples) {
-            pushFront(deque, &node_data.pcm[written_length * 16 / 2], node_data.num_samples - written_length);
-        }
-    }
-    freeDeque(deque);
-
     if (num_samples_chunk > 0) {
-        int32_t written_length = 0;
-        int8_t *pcm_ptr = (int8_t *) pcm_chunk;
-        speaker_status = pv_speaker_flush(speaker, pcm_ptr, num_samples_chunk, &written_length);
-        if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-            fprintf(stderr, "Failed to flush pcm with %s.\n", pv_speaker_status_to_string(speaker_status));
-            exit(1);
-        }
-
         if (pcm_chunk_prev == NULL) {
             pcm_chunk_init(num_samples_chunk, pcm_chunk, &pcm_chunk_prev);
             pcm_chunk_head = pcm_chunk_prev;
@@ -769,12 +521,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     pv_orca_stream_close_func(orca_stream);
     pv_orca_synthesize_params_delete_func(synthesize_params);
     pv_orca_delete_func(orca);
-
-    speaker_status = pv_speaker_stop(speaker);
-    if (speaker_status != PV_SPEAKER_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to stop device with %s.\n", pv_speaker_status_to_string(speaker_status));
-        exit(1);
-    }
 
     int32_t num_samples = 0;
     pcm_chunk_t *pcm_chunk_iter = pcm_chunk_head;
@@ -810,8 +556,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     fprintf(
             stdout,
             "\nGenerated %d audio chunk%s in %.2f seconds.\n",
-            num_chunks,
-            num_chunks == 1 ? "" : "s",
+            num_chunks, num_chunks == 1 ? "" : "s",
             end_chunks[num_chunks - 1] - start_chunks[0]);
 
     for (int32_t i = 0; i < num_chunks; i++) {
