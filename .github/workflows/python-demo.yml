@@ -75,13 +75,6 @@ jobs:
       - name: Install dependencies
         run: pip3 install -r requirements.txt
 
-      - name: Install PulseAudio
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pulseaudio
-          pulseaudio --check || pulseaudio --start
-          pactl load-module module-null-sink
-
       - name: Test streaming
         run: >
           python3 orca_demo_streaming.py
