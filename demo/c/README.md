@@ -17,6 +17,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 - **For Windows Only**: [MinGW](https://www.mingw-w64.org/) is required to build the demo.
 
 # Speech Synthesis Demos
+
 Orca supports two modes of operation: streaming and single synthesis.
 In the streaming synthesis mode, Orca processes an incoming text stream in real-time and generates audio in parallel.
 This is demonstrated in the Orca streaming demo.
@@ -72,7 +73,7 @@ To run the Orca demo:
 ./demo/c/build/orca_demo -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
-Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${MODEL_PATH}` with 
+Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${MODEL_PATH}` with
 a path to any of the model files available under [lib/common](../../lib/common), `${ACCESS_KEY}` with AccessKey
 obtained from [Picovoice Console](https://console.picovoice.ai/), `${TEXT}` with the text to be synthesized,
 and `${WAV_OUTPUT_PATH}` with a path to a output audio file.
