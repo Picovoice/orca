@@ -20,7 +20,7 @@ voice assistants. Orca is:
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Android and iOS
-    - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
+    - Raspberry Pi (3, 4, 5)
     - Chrome, Safari, Firefox, and Edge
 
 **Please note that Orca is currently in development. While we prioritize stability and compatibility, certain aspects of

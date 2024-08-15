@@ -53,7 +53,6 @@ body:
         - macOS (x86_64, arm64)
         - Windows (x86_64)
         - Raspberry Pi
-        - NVIDIA Jetson
     validations:
       required: true
   - type: input

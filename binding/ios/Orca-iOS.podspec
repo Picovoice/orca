@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
         - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
         - Android and iOS
         - Chrome, Safari, Firefox, and Edge
-        - Raspberry Pi (5, 4, 3) and NVIDIA Jetson Nano
+        - Raspberry Pi (3, 4, 5)
     DESC
     s.homepage = 'https://github.com/Picovoice/orca/tree/main/binding/ios'
     s.author = { 'Picovoice' => 'hello@picovoice.ai' }
