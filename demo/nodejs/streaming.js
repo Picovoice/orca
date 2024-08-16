@@ -12,13 +12,12 @@
 'use strict';
 
 const os = require('os');
-const si = require('systeminformation');
 const { program } = require('commander');
 const { performance } = require('perf_hooks');
 const { execSync } = require('child_process');
 const tiktoken = require('tiktoken');
-const convert = require('pcm-convert');
 
+const { PvSpeaker } = require('@picovoice/pvspeaker-node');
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
 
 program
@@ -46,7 +45,20 @@ program
   .option(
     '--audio_wait_chunks <number>',
     'Number of PCM chunks to wait before starting to play audio',
-    '0',
+  )
+  .option(
+    '--buffer_size_secs <number>',
+    'The size in seconds of the internal buffer used by PvSpeaker to play audio',
+    '20',
+  )
+  .option(
+    '--audio_device_index <number>',
+    'Index of input audio device',
+    '-1',
+  )
+  .option(
+    '--show_audio_devices',
+    'Only list available audio output devices and exit',
   );
 
 if (process.argv.length < 2) {
@@ -142,6 +154,17 @@ async function streamingDemo() {
   let text = program['text_to_stream'];
   let tokensPerSeconds = program['tokens_per_second'];
   let audioWaitChunks = program['audio_wait_chunks'];
+  let bufferSizeSecs = Number(program['buffer_size_secs']);
+  let deviceIndex = Number(program['audio_device_index']);
+  let showAudioDevices = program['show_audio_devices'];
+
+  if (showAudioDevices) {
+    const devices = PvSpeaker.getAvailableDevices();
+    for (let i = 0; i < devices.length; i++) {
+      console.log(`index: ${i}, device name: ${devices[i]}`);
+    }
+    return;
+  }
 
   if (audioWaitChunks === undefined || audioWaitChunks === null) {
     audioWaitChunks = 0;
@@ -154,7 +177,7 @@ async function streamingDemo() {
   }
 
   try {
-    let orca = new Orca(
+    const orca = new Orca(
       accessKey,
       {
         'modelPath': modelFilePath,
@@ -167,42 +190,17 @@ async function streamingDemo() {
     let speaker = null;
 
     try {
-      require.resolve('speaker');
-      await si.audio((devices) => {
-        if (devices.length > 0 && devices[0].driver !== null) {
-          console.log(`Playing from device: ${devices[0].name}`);
-          const Speaker = require('speaker');
-          speaker = new Speaker({
-            channels: 1,
-            bitDepth: 8,
-            sampleRate: orca.sampleRate,
-          });
-        } else {
-          console.error('Note: No sound card(s) detected. Orca will generate the pcm, but no audio will be played.');
-        }
-      });
+      const bitsPerSample = 16;
+      speaker = new PvSpeaker(orca.sampleRate, bitsPerSample, { bufferSizeSecs, deviceIndex });
+      speaker.start();
     } catch (e) {
-      console.error('\nNote: External package \'node-speaker\' was not installed successfully. This package may not be compatible with your machine. ' +
-        'Orca will generate the pcm, but it will not be played to your speakers.');
+      console.error('\nNote: External package \'@picovoice/pvspeaker-node\' failed to initialize.' +
+        ' Orca will generate the pcm, but it will not be played to your speakers.');
     }
 
-    const pcmBuffer = [];
-
-    function playStream() {
-      if (pcmBuffer.length === 0) return;
-
-      const pcmInt16 = pcmBuffer.shift();
-
-      // for some reason, "speaker" does not accept Int16Array
-      const pcmUint8 = convert(pcmInt16, 'int16', 'uint8');
-      try {
-        speaker?.write(pcmUint8);
-      } catch (e) {
-        console.log(`'node-speaker' unable to play audio: ${e}`);
-      }
-
-      playStream();
-    }
+    let pcmBuffer = [];
+    let numAudioChunks = 0;
+    let isStartedPlaying = false;
 
     process.stdout.write('\nSimulated text stream: ');
 
@@ -217,11 +215,19 @@ async function streamingDemo() {
         if (timeFirstAudioAvailable === null) {
           timeFirstAudioAvailable = ((performance.now() - startTime) / 1000).toFixed(2);
         }
-        pcmBuffer.push(pcm);
-        if (pcmBuffer.length >= audioWaitChunks) {
-          playStream();
-        }
+        pcmBuffer.push(...pcm);
+        numAudioChunks++;
       }
+
+      if (pcmBuffer.length > 0 && speaker !== null && (isStartedPlaying || numAudioChunks >= audioWaitChunks)) {
+        const arrayBuffer = new Int16Array(pcmBuffer).buffer;
+        const written = speaker.write(arrayBuffer);
+        if (written < arrayBuffer.byteLength) {
+          pcmBuffer = pcmBuffer.slice(written);
+        }
+        isStartedPlaying = true;
+      }
+
       await sleepSecs(1 / tokensPerSeconds);
     }
 
@@ -230,8 +236,7 @@ async function streamingDemo() {
       if (timeFirstAudioAvailable === null) {
         timeFirstAudioAvailable = ((performance.now() - startTime) / 1000).toFixed(2);
       }
-      pcmBuffer.push(flushedPcm);
-      playStream();
+      pcmBuffer.push(...flushedPcm);
     }
     const elapsedTime = ((performance.now() - startTime) / 1000).toFixed(2);
 
@@ -239,9 +244,14 @@ async function streamingDemo() {
     console.log(`Time to receive first audio: ${timeFirstAudioAvailable} seconds after text stream started`);
     console.log('\nWaiting for audio to finish...');
 
-    speaker?.end();
+    if (speaker !== null) {
+      const arrayBuffer = new Int16Array(pcmBuffer).buffer;
+      speaker.flush(arrayBuffer);
+      speaker.stop();
+      speaker.release();
+    }
     stream.close();
-    orca?.release();
+    orca.release();
   } catch (err) {
     if (err instanceof OrcaActivationLimitReachedError) {
       console.error(`AccessKey '${accessKey}' has reached it's processing limit.`);

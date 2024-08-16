@@ -54,6 +54,7 @@ frombuffer
 drwav
 wchars
 pvrecorder
+pvspeaker
 pvcheetah
 itok
 numpy
