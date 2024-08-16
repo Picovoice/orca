@@ -23,12 +23,11 @@ from typing import (
     Callable,
     Optional,
     Sequence,
-    Any,
 )
 
 import pvorca
 import tiktoken
-from pvorca import OrcaActivationLimitError, OrcaInvalidArgumentError
+from pvorca import Orca, OrcaActivationLimitError, OrcaInvalidArgumentError
 from pvspeaker import PvSpeaker
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
@@ -72,7 +71,7 @@ class OrcaThread:
 
     def __init__(
             self,
-            orca: Any,
+            orca: Orca,
             flush_audio_callback: Callable[[Sequence[int]], None],
             play_audio_callback: Callable[[Sequence[int]], int],
             num_tokens_per_second: int,
