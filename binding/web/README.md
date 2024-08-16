@@ -12,7 +12,7 @@ voice assistants. Orca is:
     - Linux (x86_64), macOS (x86_64, arm64), and Windows (x86_64)
     - Android and iOS
     - Chrome, Safari, Firefox, and Edge
-    - Raspberry Pi (3, 4, 5) and NVIDIA Jetson Nano
+    - Raspberry Pi (3, 4, 5)
 
 ## Compatibility
 
@@ -170,7 +170,8 @@ for (const textChunk of textStream()) {
 }
 ```
 
-The `OrcaStream` object buffers input text until there is enough to generate audio. If there is not enough text to generate
+The `OrcaStream` object buffers input text until there is enough to generate audio. If there is not enough text to
+generate
 audio, `null` is returned.
 
 When done, call `flush` to synthesize any remaining text, and `close` to delete the `orcaStream` object.
