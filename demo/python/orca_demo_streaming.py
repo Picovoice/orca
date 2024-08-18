@@ -23,12 +23,15 @@ from typing import (
     Callable,
     Optional,
     Sequence,
-    Any,
 )
 
 import pvorca
 import tiktoken
-from pvorca import OrcaActivationLimitError, OrcaInvalidArgumentError
+from pvorca import (
+    Orca,
+    OrcaActivationLimitError,
+    OrcaInvalidArgumentError,
+)
 from pvspeaker import PvSpeaker
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
@@ -72,7 +75,7 @@ class OrcaThread:
 
     def __init__(
             self,
-            orca: Any,
+            orca: Orca,
             flush_audio_callback: Callable[[Sequence[int]], None],
             play_audio_callback: Callable[[Sequence[int]], int],
             num_tokens_per_second: int,
@@ -257,12 +260,16 @@ def main() -> None:
 
     speaker = None
     try:
-        speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16, buffer_size_secs=buffer_size_secs,
-                            device_index=audio_device_index)
+        speaker = PvSpeaker(
+            sample_rate=orca.sample_rate,
+            bits_per_sample=16,
+            buffer_size_secs=buffer_size_secs,
+            device_index=audio_device_index)
         speaker.start()
     except RuntimeError or ValueError:
         print(
-            "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, but it will not be played.\n")
+            "\nWarning: Failed to initialize PvSpeaker. Orca will still generate PCM data, "
+            "but it will not be played.\n")
 
     def play_audio_callback(pcm: Sequence[int]) -> int:
         try:

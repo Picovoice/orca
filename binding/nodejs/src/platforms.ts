@@ -24,7 +24,6 @@ const X86_64 = 'x64';
 const ARM_32 = 'arm';
 const ARM_64 = 'arm64';
 
-const PLATFORM_JETSON = 'jetson';
 const PLATFORM_LINUX = 'linux';
 const PLATFORM_MAC = 'mac';
 const PLATFORM_RASPBERRY_PI = 'raspberry-pi';
@@ -81,10 +80,6 @@ SYSTEM_TO_LIBRARY_PATH.set(
   `${PLATFORM_RASPBERRY_PI}/${ARM_CPU_CORTEX_A76}${ARM_CPU_64}/pv_orca.node`,
 );
 SYSTEM_TO_LIBRARY_PATH.set(
-  `${SYSTEM_LINUX}/${ARM_CPU_CORTEX_A57}${ARM_CPU_64}`,
-  `${PLATFORM_JETSON}/${ARM_CPU_CORTEX_A57}${ARM_CPU_64}/pv_orca.node`,
-);
-SYSTEM_TO_LIBRARY_PATH.set(
   `${SYSTEM_WINDOWS}/${X86_64}`,
   `${PLATFORM_WINDOWS}/amd64/pv_orca.node`,
 );
@@ -111,8 +106,6 @@ function getLinuxPlatform(): string {
     case '0xd08':
     case '0xd0b':
       return PLATFORM_RASPBERRY_PI;
-    case '0xd07':
-      return PLATFORM_JETSON;
     default:
       throw new OrcaRuntimeError(`Unsupported CPU: '${cpuPart}'`);
   }

@@ -35,7 +35,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
             platform: linux
@@ -76,7 +76,7 @@ jobs:
 
     strategy:
       matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
         include:
           - machine: rpi3-32
             platform: raspberry-pi
