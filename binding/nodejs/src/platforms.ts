@@ -31,7 +31,6 @@ const PLATFORM_WINDOWS = 'windows';
 
 const ARM_CPU_64 = '-aarch64';
 const ARM_CPU_CORTEX_A53 = 'cortex-a53';
-const ARM_CPU_CORTEX_A57 = 'cortex-a57';
 const ARM_CPU_CORTEX_A72 = 'cortex-a72';
 const ARM_CPU_CORTEX_A76 = 'cortex-a76';
 
@@ -121,8 +120,6 @@ function getLinuxMachine(arch: string): string {
   switch (cpuPart) {
     case '0xd03':
       return ARM_CPU_CORTEX_A53 + archInfo;
-    case '0xd07':
-      return ARM_CPU_CORTEX_A57 + archInfo;
     case '0xd08':
       return ARM_CPU_CORTEX_A72 + archInfo;
     case '0xd0b':
