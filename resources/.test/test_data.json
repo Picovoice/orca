@@ -26,53 +26,53 @@
     {
       "word": "Test",
       "start_sec": 0.000,
-      "end_sec": 0.36,
+      "end_sec": 0.37,
       "phonemes": [
         {
           "phoneme": "T",
           "start_sec": 0.00,
-          "end_sec": 0.10
+          "end_sec": 0.12
         },
         {
           "phoneme": "EH",
-          "start_sec": 0.10,
-          "end_sec": 0.21
+          "start_sec": 0.12,
+          "end_sec": 0.22
         },
         {
           "phoneme": "S",
-          "start_sec": 0.21,
-          "end_sec": 0.29
+          "start_sec": 0.22,
+          "end_sec": 0.30
         },
         {
           "phoneme": "T",
-          "start_sec": 0.29,
-          "end_sec": 0.36
+          "start_sec": 0.30,
+          "end_sec": 0.37
         }
       ]
     },
     {
       "word": "alignment",
-      "start_sec": 0.36,
+      "start_sec": 0.37,
       "end_sec": 0.86,
       "phonemes": [
         {
           "phoneme": "AH",
-          "start_sec": 0.36,
+          "start_sec": 0.37,
           "end_sec": 0.42
         },
         {
           "phoneme": "L",
           "start_sec": 0.42,
-          "end_sec": 0.50
+          "end_sec": 0.51
         },
         {
           "phoneme": "AY",
-          "start_sec": 0.50,
-          "end_sec": 0.57
+          "start_sec": 0.51,
+          "end_sec": 0.58
         },
         {
           "phoneme": "N",
-          "start_sec": 0.57,
+          "start_sec": 0.58,
           "end_sec": 0.65
         },
         {
@@ -110,5 +110,6 @@
       ]
     }
   ],
-  "audio_data_folder": "resources/.test/wav/"
+  "audio_data_folder": "resources/.test/wav/",
+  "exact_alignment_test_model_identifier": "orca_params_female"
 }

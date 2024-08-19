@@ -23,8 +23,6 @@ test_data = get_test_data()
 
 
 class OrcaTestCase(unittest.TestCase):
-    EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = "female"
-
     access_key: str
     orcas: List[Orca]
     model_paths: List[str]
@@ -105,7 +103,7 @@ class OrcaTestCase(unittest.TestCase):
     def test_synthesize_alignment_exact(self) -> None:
         orca = [
             orca for i, orca in enumerate(self.orcas) if
-            self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
+            test_data.exact_alignment_test_model_identifier in self.model_paths[i]].pop()
         pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
@@ -115,7 +113,7 @@ class OrcaTestCase(unittest.TestCase):
 
     def test_synthesize_alignment(self) -> None:
         for i, orca in enumerate(self.orcas):
-            if self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]:
+            if test_data.exact_alignment_test_model_identifier in self.model_paths[i]:
                 continue
 
             pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
