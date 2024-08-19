@@ -17,7 +17,7 @@ const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 const EXPECTED_VALID_CHARACTERS = [
-  '.', ':', ',', '"', '?', '!', 'a',
+  '.', ':', ',', ''', '?', '!', 'a',
   'b', 'c', 'd', 'e', 'f', 'g', 'h',
   'i', 'j', 'k', 'l', 'm', 'n', 'o',
   'p', 'q', 'r', 's', 't', 'u', 'v',
@@ -29,10 +29,10 @@ const EXPECTED_VALID_CHARACTERS = [
   '-', '/', '1', '2', '3', '4', '5',
   '6', '7', '8', '9', '0', '@', '%',
   '&', '\n', '_', '(', ')', '°', 'º',
-  '²', '³',
+  '²', '³', '$', '€', '¥', '₪', '£',
+  '₩', '₺', '₱', '₽', '฿', '₴', '₹', 
+  '¢', '+', '=',
 ];
-
-const EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = 'female';
 
 const compareArrays = (arr1: Int16Array, arr2: Int16Array, step: number) => {
   expect(arr1.length).eq(arr2.length);
@@ -179,7 +179,7 @@ describe('Orca Binding', function() {
         }
       });
 
-      if (modelFileSuffix === EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER) {
+      if (publicPath.includes(testData.exact_alignment_test_model_identifier)) {
         it(`should be able to process alignment exact [${modelFileSuffix}] (${instanceString})`, async () => {
           try {
             const orca = await instance.create(
