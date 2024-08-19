@@ -929,7 +929,7 @@ export class Orca {
   private static async initWasm(accessKey: string, modelPath: string, wasmBase64: string): Promise<OrcaWasmOutput> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
     const memory = new WebAssembly.Memory({ initial: 7500 });
-    const memoryBufferUint8 = new Uint8Array(memory.buffer);
+    let memoryBufferUint8 = new Uint8Array(memory.buffer);
     const pvError = new PvError();
     const exports = await buildWasm(memory, wasmBase64, pvError);
 
@@ -1017,7 +1017,7 @@ export class Orca {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const memoryBufferView = new DataView(memory.buffer);
+    let memoryBufferView: DataView;
 
     const initStatus = await pv_orca_init(
       accessKeyAddress,
@@ -1026,6 +1026,8 @@ export class Orca {
     await pv_free(accessKeyAddress);
     await pv_free(modelPathAddress);
     if (initStatus !== PvStatus.SUCCESS) {
+      memoryBufferView = new DataView(memory.buffer);
+      memoryBufferUint8 = new Uint8Array(memory.buffer);
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,
         pv_free_error_stack,
@@ -1038,6 +1040,7 @@ export class Orca {
       throw pvStatusToException(initStatus, 'Initialization failed', messageStack, pvError);
     }
 
+    memoryBufferView = new DataView(memory.buffer);
     const objectAddress = memoryBufferView.getInt32(objectAddressAddress, true);
     await pv_free(objectAddressAddress);
 
@@ -1050,6 +1053,7 @@ export class Orca {
     }
     const sampleRateStatus = await pv_orca_sample_rate(objectAddress, sampleRateAddress);
     if (sampleRateStatus !== PvStatus.SUCCESS) {
+      memoryBufferUint8 = new Uint8Array(memory.buffer);
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,
         pv_free_error_stack,
@@ -1074,6 +1078,7 @@ export class Orca {
     }
     const maxCharacterLimitStatus = await pv_orca_max_character_limit(objectAddress, maxCharacterLimitAddress);
     if (maxCharacterLimitStatus !== PvStatus.SUCCESS) {
+      memoryBufferUint8 = new Uint8Array(memory.buffer);
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,
         pv_free_error_stack,
@@ -1111,6 +1116,7 @@ export class Orca {
       validCharactersAddressAddressAddress,
     );
     if (validCharactersStatus !== PvStatus.SUCCESS) {
+      memoryBufferUint8 = new Uint8Array(memory.buffer);
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,
         pv_free_error_stack,
@@ -1127,6 +1133,7 @@ export class Orca {
     const validCharactersAddressAddress = memoryBufferView.getInt32(validCharactersAddressAddressAddress, true);
 
     const validCharacters: string[] = [];
+    memoryBufferUint8 = new Uint8Array(memory.buffer);
     for (let i = 0; i < numCharacters; i++) {
       const charIndex = memoryBufferView.getInt32(validCharactersAddressAddress + i * Int32Array.BYTES_PER_ELEMENT, true);
       validCharacters.push(
