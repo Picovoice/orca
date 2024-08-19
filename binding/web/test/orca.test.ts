@@ -17,7 +17,7 @@ const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 const EXPECTED_VALID_CHARACTERS = [
-  '.', ':', ',', ''', '?', '!', 'a',
+  '.', ':', ',', '"', '?', '!', 'a',
   'b', 'c', 'd', 'e', 'f', 'g', 'h',
   'i', 'j', 'k', 'l', 'm', 'n', 'o',
   'p', 'q', 'r', 's', 't', 'u', 'v',
