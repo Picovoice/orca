@@ -51,7 +51,7 @@ class BaseTest: XCTestCase {
         "female"
     ]
 
-    let accessKey = "PI5vbMlGH3K4+HgfM8hk9eIDF6i7CfZMQsn/9MmPrczi7sCfVioy6w=="
+    let accessKey = "{TESTING_ACCESS_KEY_HERE}"
     var orcas: [Orca] = []
     var testData: TestData?
 
