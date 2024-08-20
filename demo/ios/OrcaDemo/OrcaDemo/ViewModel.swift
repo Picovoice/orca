@@ -23,7 +23,7 @@ enum UIState {
 }
 
 class ViewModel: ObservableObject {
-    private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    private let ACCESS_KEY = "PI5vbMlGH3K4+HgfM8hk9eIDF6i7CfZMQsn/9MmPrczi7sCfVioy6w==" // Obtained from Picovoice Console (https://console.picovoice.ai)
 
     private let NUM_AUDIO_WAIT_CHUNKS = 1
 
