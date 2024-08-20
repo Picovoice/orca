@@ -73,9 +73,9 @@ Orca also supports single synthesis mode, where a complete text is synthesized i
 
 ### Text input
 
-Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
-basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
-`valid_characters()` method provided in the Orca SDK you are using.
+Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks. 
+You can get a list of all supported characters by calling the `valid_characters()` method provided 
+in the Orca SDK you are using.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
 
@@ -680,7 +680,7 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
-### v1.0.0 - Aug 19th, 2024
+### v1.0.0 - Aug 20th, 2024
 
 - Improved voice quality
 - Significantly reduced latency in streaming synthesis
