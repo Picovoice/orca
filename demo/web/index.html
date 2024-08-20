@@ -232,7 +232,7 @@
       const audioBuffer = [];
       let streamSource;
 
-      async function playStream() {
+      function playStream() {
         if (isPlayingStream) return;
 
         if (audioBuffer.length === 0) {
@@ -251,7 +251,7 @@
 
         streamSource.onended = async () => {
           isPlayingStream = false;
-          await playStream();
+          playStream();
         };
 
         streamSource.start();
@@ -298,8 +298,8 @@
               const time = curSecs + newSecs;
               streamSecondsDisplayEl.innerText = time.toFixed(3);
               audioBuffer.push(createBuffer(wordPcm));
-              if (numIterations === 1) {
-                await playStream();
+              if (numIterations === 1 || !isPlayingStream) {
+                playStream();
               }
               numIterations++;
             }
