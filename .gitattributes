@@ -6,7 +6,8 @@ binding/android/** linguist-detectable=false
 binding/android/Orca/orca/src/main/java/ai/picovoice/orca/Orca.java linguist-detectable=true
 binding/ios/OrcaAppTest/** linguist-detectable=false
 binding/rust/tests/** linguist-detectable=false
-binding/node/test/** linguist-detectable=false
+binding/nodejs/** linguist-detectable=false
+binding/nodejs/src/orca.ts linguist-detectable=true
 binding/web/** linguist-detectable=false
 binding/web/src/orca.ts linguist-detectable=true
 
