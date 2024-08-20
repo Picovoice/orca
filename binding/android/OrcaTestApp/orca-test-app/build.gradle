@@ -106,7 +106,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'ai.picovoice:orca-android:0.2.1'
+    implementation 'ai.picovoice:orca-android:1.0.0'
 
     // Espresso UI Testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -115,7 +115,7 @@ dependencies {
     })
     androidTestImplementation('com.microsoft.appcenter:espresso-test-extension:1.4')
     androidTestImplementation('androidx.test.espresso:espresso-intents:3.5.1')
-    androidTestImplementation('ai.picovoice:orca-android:0.2.1')
+    androidTestImplementation('ai.picovoice:orca-android:1.0.0')
 }
 
 afterEvaluate {
