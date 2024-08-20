@@ -26,86 +26,86 @@
     {
       "word": "Test",
       "start_sec": 0.000,
-      "end_sec": 0.35,
+      "end_sec": 0.372,
       "phonemes": [
         {
           "phoneme": "T",
-          "start_sec": 0.00,
-          "end_sec": 0.10
+          "start_sec": 0.000,
+          "end_sec": 0.104
         },
         {
           "phoneme": "EH",
-          "start_sec": 0.10,
-          "end_sec": 0.20
+          "start_sec": 0.104,
+          "end_sec": 0.197
         },
         {
           "phoneme": "S",
-          "start_sec": 0.20,
-          "end_sec": 0.28
+          "start_sec": 0.197,
+          "end_sec": 0.279
         },
         {
           "phoneme": "T",
-          "start_sec": 0.28,
-          "end_sec": 0.35
+          "start_sec": 0.279,
+          "end_sec": 0.372
         }
       ]
     },
     {
       "word": "alignment",
-      "start_sec": 0.35,
-      "end_sec": 0.85,
+      "start_sec": 0.372,
+      "end_sec": 0.859,
       "phonemes": [
         {
           "phoneme": "AH",
-          "start_sec": 0.35,
-          "end_sec": 0.41
+          "start_sec": 0.372,
+          "end_sec": 0.430
         },
         {
           "phoneme": "L",
-          "start_sec": 0.41,
-          "end_sec": 0.49
+          "start_sec": 0.430,
+          "end_sec": 0.511
         },
         {
           "phoneme": "AY",
-          "start_sec": 0.49,
-          "end_sec": 0.56
+          "start_sec": 0.511,
+          "end_sec": 0.569
         },
         {
           "phoneme": "N",
-          "start_sec": 0.56,
-          "end_sec": 0.64
+          "start_sec": 0.569,
+          "end_sec": 0.650
         },
         {
           "phoneme": "M",
-          "start_sec": 0.64,
-          "end_sec": 0.69
+          "start_sec": 0.650,
+          "end_sec": 0.697
         },
         {
           "phoneme": "AH",
-          "start_sec": 0.69,
-          "end_sec": 0.73
+          "start_sec": 0.697,
+          "end_sec": 0.743
         },
         {
           "phoneme": "N",
-          "start_sec": 0.73,
-          "end_sec": 0.78
+          "start_sec": 0.743,
+          "end_sec": 0.789
         },
         {
           "phoneme": "T",
-          "start_sec": 0.78,
-          "end_sec": 0.85
+          "start_sec": 0.789,
+          "end_sec": 0.859
         }
       ]
     },
     {
       "word": ".",
-      "start_sec": 0.85,
-      "end_sec": 0.88,
+      "start_sec": 0.859,
+      "end_sec": 0.906,
       "phonemes": [
         {
           "phoneme": ".",
-          "start_sec": 0.85,
-          "end_sec": 0.88
+          "start_sec": 0.859,
+          "end_sec": 0.906
         }
       ]
     }
