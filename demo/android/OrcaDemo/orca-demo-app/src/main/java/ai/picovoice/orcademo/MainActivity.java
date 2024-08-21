@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Set<Character> invalidChars = new HashSet<>();
                 Matcher m = validationRegex.matcher(text);
-                while(m.find()) {
+                while (m.find()) {
                     invalidChars.add(text.charAt(m.start()));
                 }
 
@@ -444,8 +444,11 @@ public class MainActivity extends AppCompatActivity {
         CountDownLatch streamingAudioLatch = new CountDownLatch(1);
 
         executor.submit(() -> {
+            mainHandler.post(() -> {
+                streamTextView.setText("");
+            });
+
             isStreamingText.set(true);
-            streamingSynthesisLatch.countDown();
 
             String[] words = text.split(" ");
             for (String word : words) {
@@ -455,6 +458,7 @@ public class MainActivity extends AppCompatActivity {
                     textStream.add(finalWord);
                     streamTextView.append(finalWord);
                 });
+                streamingSynthesisLatch.countDown();
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ignored) { }
@@ -466,7 +470,6 @@ public class MainActivity extends AppCompatActivity {
         executorStreamingSynthesis.submit(() -> {
             try {
                 mainHandler.post(() -> {
-                    streamTextView.setText("");
                     streamSecsTextView.setText("Seconds of audio synthesized: 0.000s");
                     synthesizeButton.setEnabled(false);
                 });
@@ -537,7 +540,7 @@ public class MainActivity extends AppCompatActivity {
                 audioTrack.play();
 
                 streamingAudioLatch.await();
-                while(isQueueingStreamingPcm.get() || !pcmQueue.isEmpty()) {
+                while (isQueueingStreamingPcm.get() || !pcmQueue.isEmpty()) {
                     if (!pcmQueue.isEmpty()) {
                         short[] pcm = pcmQueue.poll();
                         if (pcm != null && pcm.length > 0) {
@@ -549,7 +552,10 @@ public class MainActivity extends AppCompatActivity {
                 audioTrack.stop();
                 audioTrack.release();
 
-                mainHandler.post(() -> setUIState(UIState.EDIT));
+                mainHandler.post(() -> {
+                    setUIState(UIState.EDIT);
+                    streamTextView.setText("");
+                });
             } catch (Exception e) {
                 mainHandler.post(() -> displayError(e.toString()));
             }

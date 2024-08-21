@@ -228,16 +228,19 @@
       });
 
       // Streaming Synthesis
-      let isPlayingStream = false;
+      let isPlayingAudio = false;
+      let isStreaming = false;
       const audioBuffer = [];
       let streamSource;
 
-      async function playStream() {
-        if (isPlayingStream) return;
+      function playStream() {
+        if (isPlayingAudio) return;
 
         if (audioBuffer.length === 0) {
-          streamPlayBtnEl.disabled = false;
-          streamCloseBtnEl.disabled = false;
+          if (!isStreaming) {
+            streamPlayBtnEl.disabled = false;
+            streamCloseBtnEl.disabled = false;
+          }
           return;
         } else {
           streamPlayBtnEl.disabled = true;
@@ -250,12 +253,12 @@
         streamSource.connect(originalAudioGain);
 
         streamSource.onended = async () => {
-          isPlayingStream = false;
-          await playStream();
+          isPlayingAudio = false;
+          playStream();
         };
 
         streamSource.start();
-        isPlayingStream = true;
+        isPlayingAudio = true;
       }
 
       async function streamOpen() {
@@ -282,6 +285,7 @@
       async function streamPlay() {
         writeMessage('Synthesizing and playing speech! Please listen for audio.');
         try {
+          isStreaming = true;
           streamTextDisplayEl.innerText = '';
           streamSecondsDisplayEl.innerText = '0';
 
@@ -298,8 +302,8 @@
               const time = curSecs + newSecs;
               streamSecondsDisplayEl.innerText = time.toFixed(3);
               audioBuffer.push(createBuffer(wordPcm));
-              if (numIterations === 1) {
-                await playStream();
+              if (numIterations === 1 || !isPlayingAudio) {
+                playStream();
               }
               numIterations++;
             }
@@ -313,10 +317,12 @@
             const time = curSecs + newSecs;
             streamSecondsDisplayEl.innerText = time.toFixed(3);
             audioBuffer.push(createBuffer(flushPcm));
-            await playStream();
+            playStream();
           }
         } catch (err) {
           writeMessage(err);
+        } finally {
+          isStreaming = false;
         }
       }
 
