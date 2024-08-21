@@ -931,8 +931,8 @@ export class Orca {
 
   private static async initWasm(accessKey: string, modelPath: string, wasmBase64: string): Promise<OrcaWasmOutput> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
-    const memory = new WebAssembly.Memory({ initial: 7500 });
-    let memoryBufferUint8 = new Uint8Array(memory.buffer);
+    const memory = new WebAssembly.Memory({ initial: 1600, maximum: 6000 });
+    const memoryBufferUint8 = new Uint8Array(memory.buffer);
     const pvError = new PvError();
     const exports = await buildWasm(memory, wasmBase64, pvError);
 
@@ -1020,15 +1020,14 @@ export class Orca {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
+    const memoryBufferView = new DataView(memory.buffer);
+
     const initStatus = await pv_orca_init(
       accessKeyAddress,
       modelPathAddress,
       objectAddressAddress);
     await pv_free(accessKeyAddress);
     await pv_free(modelPathAddress);
-
-    const memoryBufferView = new DataView(memory.buffer);
-    memoryBufferUint8 = new Uint8Array(memory.buffer);
 
     if (initStatus !== PvStatus.SUCCESS) {
       const messageStack = await Orca.getMessageStack(

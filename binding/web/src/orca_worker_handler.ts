@@ -92,7 +92,7 @@ self.onmessage = async function(
           self.postMessage({
             command: 'error',
             status: PvStatus.RUNTIME_ERROR,
-            shortMessage: 'Orca synthesize error',
+            shortMessage: e.message,
           });
         }
       }
