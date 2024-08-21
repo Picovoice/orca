@@ -2,8 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/orca-web@file:../../binding/web":
+"@picovoice/orca-web@~1.0.0":
   version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-1.0.0.tgz#2a9d228d347aab095cb94934031b9dee4bc90a4b"
+  integrity sha512-3Mj4ZG4uz28q8nRyRGwmUlTdZH0O501Z1SCu5jYosteewtiP6s0QHQxbZntG2NN58kVIayohTl61fViuFz8W4w==
   dependencies:
     "@picovoice/web-utils" "=1.4.2"
 
