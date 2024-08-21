@@ -134,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 runOnUiThread(() ->
                         numCharsTextView.setText(String.format(
-                            "%d/%d",
-                            s.toString().length(),
-                            orca.getMaxCharacterLimit()))
+                                "%d/%d",
+                                s.toString().length(),
+                                orca.getMaxCharacterLimit()))
                 );
                 validateText(s.toString());
             }
@@ -249,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void validateText(String text) {
         if (text.length() > 0) {
-            if (text.length() >= orca.getMaxCharacterLimit()) {
+            if (text.length() > orca.getMaxCharacterLimit()) {
                 runOnUiThread(() -> {
                     setUIState(UIState.ERROR);
                     infoTextView.setText("Too many characters");
@@ -461,7 +461,8 @@ public class MainActivity extends AppCompatActivity {
                 streamingSynthesisLatch.countDown();
                 try {
                     Thread.sleep(100);
-                } catch (InterruptedException ignored) { }
+                } catch (InterruptedException ignored) {
+                }
             }
 
             isStreamingText.set(false);
