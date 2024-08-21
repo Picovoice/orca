@@ -931,7 +931,7 @@ export class Orca {
 
   private static async initWasm(accessKey: string, modelPath: string, wasmBase64: string): Promise<OrcaWasmOutput> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
-    const memory = new WebAssembly.Memory({ initial: 1600, maximum: 6000 });
+    const memory = new WebAssembly.Memory({ initial: 1600 });
     const memoryBufferUint8 = new Uint8Array(memory.buffer);
     const pvError = new PvError();
     const exports = await buildWasm(memory, wasmBase64, pvError);
