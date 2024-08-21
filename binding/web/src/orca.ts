@@ -589,8 +589,8 @@ export class Orca {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const memoryBufferView = new DataView(this._wasmMemory.buffer);
-          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
+          let memoryBufferView = new DataView(this._wasmMemory.buffer);
+          let memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
 
           const initStatus = await this._pvOrcaSynthesizeParamsInit(synthesizeParamsAddressAddress);
           if (initStatus !== PvStatus.SUCCESS) {
@@ -689,6 +689,9 @@ export class Orca {
           );
           await this._pvFree(textAddress);
           await this._pvOrcaSynthesizeParamsDelete(synthesizeParamsAddress);
+
+          memoryBufferView = new DataView(this._wasmMemory.buffer);
+          memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
 
           if (synthesizeStatus !== PvStatus.SUCCESS) {
             const messageStack = await Orca.getMessageStack(
@@ -928,7 +931,7 @@ export class Orca {
 
   private static async initWasm(accessKey: string, modelPath: string, wasmBase64: string): Promise<OrcaWasmOutput> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
-    const memory = new WebAssembly.Memory({ initial: 7500 });
+    const memory = new WebAssembly.Memory({ initial: 1600 });
     const memoryBufferUint8 = new Uint8Array(memory.buffer);
     const pvError = new PvError();
     const exports = await buildWasm(memory, wasmBase64, pvError);
@@ -1025,6 +1028,7 @@ export class Orca {
       objectAddressAddress);
     await pv_free(accessKeyAddress);
     await pv_free(modelPathAddress);
+
     if (initStatus !== PvStatus.SUCCESS) {
       const messageStack = await Orca.getMessageStack(
         pv_get_error_stack,

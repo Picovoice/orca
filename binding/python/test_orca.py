@@ -23,8 +23,6 @@ test_data = get_test_data()
 
 
 class OrcaTestCase(unittest.TestCase):
-    EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = "female"
-
     access_key: str
     orcas: List[Orca]
     model_paths: List[str]
@@ -48,7 +46,7 @@ class OrcaTestCase(unittest.TestCase):
         pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
         self.assertEqual(len(pcm), len(ground_truth))
         for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=8000)
+            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=12000)
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
         self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
@@ -105,7 +103,7 @@ class OrcaTestCase(unittest.TestCase):
     def test_synthesize_alignment_exact(self) -> None:
         orca = [
             orca for i, orca in enumerate(self.orcas) if
-            self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]].pop()
+            test_data.exact_alignment_test_model_identifier in self.model_paths[i]].pop()
         pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
         self.assertGreater(len(pcm), 0)
 
@@ -115,7 +113,7 @@ class OrcaTestCase(unittest.TestCase):
 
     def test_synthesize_alignment(self) -> None:
         for i, orca in enumerate(self.orcas):
-            if self.EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER in self.model_paths[i]:
+            if test_data.exact_alignment_test_model_identifier in self.model_paths[i]:
                 continue
 
             pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)

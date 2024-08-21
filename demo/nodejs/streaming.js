@@ -132,8 +132,6 @@ function linuxMachine() {
   switch (cpuPart) {
     case '0xd03':
       return 'cortex-a53' + archInfo;
-    case '0xd07':
-      return 'cortex-a57' + archInfo;
     case '0xd08':
       return 'cortex-a72' + archInfo;
     case '0xd0b':

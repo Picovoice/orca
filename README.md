@@ -23,9 +23,6 @@ voice assistants. Orca is:
     - Raspberry Pi (3, 4, 5)
     - Chrome, Safari, Firefox, and Edge
 
-**Please note that Orca is currently in development. While we prioritize stability and compatibility, certain aspects of
-Orca may undergo changes as we continually enhance and refine the engine to provide the best user experience possible.**
-
 ## Table of Contents
 
 - [Orca](#orca)
@@ -57,7 +54,7 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ## Language Support
 
-- Orca Text-to-Speech currently supports English only.
+- Orca Streaming Text-to-Speech currently supports English only.
 - Support for [additional languages is available for commercial customers](https://picovoice.ai/consulting/) on a
   case-by-case basis.
 
@@ -65,7 +62,7 @@ Orca may undergo changes as we continually enhance and refine the engine to prov
 
 ### Orca input and output streaming synthesis
 
-Orca is a text-to-speech engine designed specifically for LLMs. It can process
+Orca is a streaming text-to-speech engine designed specifically for LLMs. It can process
 incoming text streams in real-time, generating audio continuously, i.e., as the LLM produces tokens,
 Orca generates speech in parallel.
 This enables seamless conversations with voice assistants, eliminating any audio delays.
@@ -76,9 +73,9 @@ Orca also supports single synthesis mode, where a complete text is synthesized i
 
 ### Text input
 
-Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
-basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
-`valid_characters()` method provided in the Orca SDK you are using.
+Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks. 
+You can get a list of all supported characters by calling the `valid_characters()` method provided 
+in the Orca SDK you are using.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
 
@@ -682,6 +679,13 @@ Finally, when done release the resources using `orca.release()`.
 For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
+
+### v1.0.0 - Aug 20th, 2024
+
+- Improved voice quality
+- Significantly reduced latency in streaming synthesis
+- Reduced model size
+- Advanced text normalization
 
 ### v0.2.0 - May 3rd, 2024
 

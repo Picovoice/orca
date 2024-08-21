@@ -27,7 +27,11 @@ from typing import (
 
 import pvorca
 import tiktoken
-from pvorca import Orca, OrcaActivationLimitError, OrcaInvalidArgumentError
+from pvorca import (
+    Orca,
+    OrcaActivationLimitError,
+    OrcaInvalidArgumentError,
+)
 from pvspeaker import PvSpeaker
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
@@ -53,8 +57,6 @@ def linux_machine() -> str:
 
     if "0xd03" == cpu_part:
         return "cortex-a53" + arch_info
-    elif "0xd07" == cpu_part:
-        return "cortex-a57" + arch_info
     elif "0xd08" == cpu_part:
         return "cortex-a72" + arch_info
     elif "0xd0b" == cpu_part:

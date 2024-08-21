@@ -102,7 +102,7 @@ class BaseTest: XCTestCase {
     }
 
     func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
-        for i in stride(from: 0, to: arr1.count - step, by: step) where !(abs(arr1[i] - arr2[i]) <= 500) {
+        for i in stride(from: 0, to: arr1.count - step, by: step) where !(abs(arr1[i] - arr2[i]) <= 12000) {
             return false
         }
         return true

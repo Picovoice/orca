@@ -29,6 +29,7 @@ class TestData:
     alignments: Sequence[Orca.WordAlignment]
     random_state: int
     audio_data_folder: str
+    exact_alignment_test_model_identifier: str
 
 
 def read_wav_file(path: str) -> Sequence[int]:
@@ -49,7 +50,7 @@ def get_test_data() -> TestData:
         test_data = json.loads(data_file.read())
 
     alignments = []
-    for word_data in test_data["alignments"]:
+    for word_data in test_data.pop("alignments"):
         phonemes = []
         for phoneme_data in word_data["phonemes"]:
             phoneme = Orca.PhonemeAlignment(
@@ -65,11 +66,11 @@ def get_test_data() -> TestData:
             phonemes=phonemes)
         alignments.append(word)
 
+    test_sentences = test_data.pop("test_sentences")
     test_data = TestData(
         alignments=alignments,
-        random_state=test_data["random_state"],
-        audio_data_folder=test_data["audio_data_folder"],
-        **test_data["test_sentences"])
+        **test_data,
+        **test_sentences)
 
     return test_data
 
