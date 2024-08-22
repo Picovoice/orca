@@ -145,7 +145,7 @@ class TimingPrinter:
 
         red, green, blue = self._print_colored_progress_bar(num_seconds_first_llm_token)
 
-        num_seconds_string = f"{round(num_seconds_first_llm_token, 1):.1f}s"
+        num_seconds_string = f"{round(num_seconds_first_llm_token, 2):.2f}s"
         print(f" {self._colored_string(num_seconds_string, red, green, blue)}", flush=True)
 
     def _print_timer_bar_tts(self, num_seconds_first_audio: float) -> None:
@@ -153,7 +153,7 @@ class TimingPrinter:
 
         red, green, blue = self._print_colored_progress_bar(num_seconds_first_audio, bold=True)
 
-        num_seconds_string = f"{round(num_seconds_first_audio, 1):.1f}s"
+        num_seconds_string = f"{round(num_seconds_first_audio, 2):.2f}s"
         print(f" {self._colored_string(num_seconds_string, red, green, blue, bold=True)}", flush=True)
 
     def print_timing_stats(self, num_seconds_first_llm_token: float, num_seconds_first_audio: float) -> None:

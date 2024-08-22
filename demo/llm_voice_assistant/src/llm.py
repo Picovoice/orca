@@ -30,10 +30,10 @@ class LLMs(Enum):
 
 class LLM:
     SYSTEM_MESSAGE = """
-    You are a friendly voice assistant in customer service of an e-commerce platform.
+    You are a friendly voice assistant.
     Use natural, conversational language that are clear and easy to follow (short sentences, simple words).
     Only use english letters and punctuation, no special characters.
-    Keep the conversation flowing naturally.
+    Keep the conversation flowing naturally and ask follow-up questions.
     """
 
     def __init__(self, system_message: str = SYSTEM_MESSAGE) -> None:
