@@ -16,7 +16,7 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency
 voice assistants. Orca is:
 
-- Private; All voice processing runs locally.
+- Private; All speech synthesis runs locally.
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Android and iOS

@@ -297,9 +297,9 @@ def main() -> None:
     try:
         print(f"Orca version: {orca.version}\n")
 
-        print(f"Simulated text stream:")
         tokens = tokenize_text(text=text)
 
+        print(f"Simulated text stream:")
         time_start_text_stream = time.time()
         for token in tokens:
             print(f"{token}", end="", flush=True)

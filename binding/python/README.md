@@ -7,7 +7,7 @@ Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency
 voice assistants. Orca is:
 
-- Private; All voice processing runs locally.
+- Private; All speech synthesis runs locally.
 - Cross-Platform:
     - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
     - Android and iOS
@@ -106,9 +106,8 @@ orca.delete()
 
 ### Text input
 
-Orca accepts the 26 lowercase (a-z) and 26 uppercase (A-Z) letters of the English alphabet, numbers,
-basic symbols, as well as common punctuation marks. You can get a list of all supported characters by calling the
-`valid_characters()` method provided in the Orca SDK you are using.
+Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks. 
+You can get a list of all supported characters with the `.valid_characters` property.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
 
