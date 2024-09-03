@@ -7,10 +7,10 @@
   resolved "https://registry.yarnpkg.com/@picovoice/orca-node/-/orca-node-1.0.0.tgz#812728c3183a914eff6b3189dfa958ef4d44f2f7"
   integrity sha512-YDTqJ5KsueBC4Nj0Zo287VF+/y7SRjXbOyHy8h66joJYPF0QNsz8oDCzbQO7hzymNbkFXd0crMPK+gQElvd83w==
 
-"@picovoice/pvspeaker-node@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@picovoice/pvspeaker-node/-/pvspeaker-node-1.0.0.tgz#6b87b86138a8bb256e46ea41cb7d258ff8534337"
-  integrity sha512-qhH4ktObGj/Dd7iiptPXqf89U3l7FbCiaB1xY439YE3EFLsfsvZvjAzEwsF5A01h47AbXJTCdAjvkXrcsdt0/w==
+"@picovoice/pvspeaker-node@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@picovoice/pvspeaker-node/-/pvspeaker-node-1.0.1.tgz#0524c9509a88eb50f3975cbe3c5012058a54619b"
+  integrity sha512-4/QBYcp3GZ+2ewq2QuyCn7pnqXdfwj90qbINecKtBsCXKLtl/XHLmXOqgfoy+RBSXmA5wjV/LuOHvqVibrxAuQ==
 
 commander@^6.1.0:
   version "6.2.1"

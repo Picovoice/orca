@@ -220,9 +220,7 @@ async function streamingDemo() {
       if (pcmBuffer.length > 0 && speaker !== null && (isStartedPlaying || numAudioChunks >= audioWaitChunks)) {
         const arrayBuffer = new Int16Array(pcmBuffer).buffer;
         const written = speaker.write(arrayBuffer);
-        if (written < arrayBuffer.byteLength) {
-          pcmBuffer = pcmBuffer.slice(written);
-        }
+        pcmBuffer = pcmBuffer.slice(written);
         isStartedPlaying = true;
       }
 
