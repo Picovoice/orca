@@ -28,9 +28,6 @@ import androidx.test.espresso.util.HumanReadables;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.microsoft.appcenter.espresso.Factory;
-import com.microsoft.appcenter.espresso.ReportHelper;
-
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -89,9 +86,6 @@ class WaitForTextAction implements ViewAction {
 public class IntegrationTest {
 
     @Rule
-    public ReportHelper reportHelper = Factory.getReportHelper();
-
-    @Rule
     public ActivityScenarioRule<MainActivity> activityScenarioRule =
             new ActivityScenarioRule<>(MainActivity.class);
 
@@ -103,12 +97,6 @@ public class IntegrationTest {
     @After
     public void intentsTeardown() {
         Intents.release();
-    }
-
-    @After
-    public void TearDown() {
-        // DO NOT REMOVE - this is required for AppCenter testing
-        reportHelper.label("Stopping App");
     }
 
     @Test
