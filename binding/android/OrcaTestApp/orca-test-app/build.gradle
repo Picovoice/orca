@@ -80,10 +80,12 @@ android {
         androidTest {
             java {
                 if (System.getProperty("testBuildType", "debug") == "perf") {
-                    exclude "**/OrcaTest.java"
+                    exclude "**/StandardTests.java"
+                    exclude "**/ModelTests.java"
                     exclude "**/IntegrationTest.java"
                 } else if (System.getProperty("testBuildType", "debug") == "integ") {
-                    exclude "**/OrcaTest.java"
+                    exclude "**/StandardTests.java"
+                    exclude "**/ModelTests.java"
                     exclude "**/PerformanceTest.java"
                 } else {
                     exclude "**/IntegrationTest.java"
@@ -99,6 +101,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'ai.picovoice.orca.testapp'
 }
 
 dependencies {
