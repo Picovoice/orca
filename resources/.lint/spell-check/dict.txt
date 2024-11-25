@@ -41,6 +41,7 @@ wavefile
 Sevilla
 editdistance
 pvleopard
+xcuitest
 xcworkspace
 sounddevice
 tiktoken
