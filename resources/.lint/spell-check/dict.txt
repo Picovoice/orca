@@ -41,6 +41,8 @@ wavefile
 Sevilla
 editdistance
 pvleopard
+xcframework
+xcodeproj
 xcuitest
 xcworkspace
 sounddevice

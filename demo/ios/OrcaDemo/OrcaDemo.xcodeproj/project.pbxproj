@@ -13,6 +13,7 @@
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
 		1E001B6A2B7D451200D8E72D /* orca_params_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_female.pv */; };
+		E109D1A32CFE4F380014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D1A22CFE4F380014F5AA /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */; };
 /* End PBXBuildFile section */
@@ -35,6 +36,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E109D1A32CFE4F380014F5AA /* Orca in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,7 +48,6 @@
 			children = (
 				02A11947268D39A700A2AC99 /* OrcaDemo */,
 				02A11946268D39A700A2AC99 /* Products */,
-				8DB92FF3DC81AB04D3FF7242 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -72,13 +73,6 @@
 				E125E1882BE99DCA008B6D56 /* AtomicBool.swift */,
 			);
 			path = OrcaDemo;
-			sourceTree = "<group>";
-		};
-		8DB92FF3DC81AB04D3FF7242 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -124,6 +118,9 @@
 				Base,
 			);
 			mainGroup = 02A1193C268D39A700A2AC99;
+			packageReferences = (
+				E109D1A12CFE4F380014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */,
+			);
 			productRefGroup = 02A11946268D39A700A2AC99 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -344,6 +341,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E109D1A12CFE4F380014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../orca;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E109D1A22CFE4F380014F5AA /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Orca;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 02A1193D268D39A700A2AC99 /* Project object */;
 }
