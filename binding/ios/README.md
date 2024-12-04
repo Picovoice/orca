@@ -19,9 +19,14 @@ assistants. Orca is:
 ## Installation
 
 <!-- markdown-link-check-disable -->
-The Orca iOS binding is available via [Cocoapods](https://cocoapods.org/pods/Orca-iOS). To import it into your iOS
-project, add the following line to your Podfile and run `pod install`:
+The Orca iOS binding is available via [Swift Package Manager](https://www.swift.org/documentation/package-manager/) or [CocoaPods](https://cocoapods.org/pods/Orca-iOS).
 <!-- markdown-link-check-enable -->
+
+To import the package using SPM, open up your project's Package Dependencies in XCode and add:
+```
+https://github.com/Picovoice/orca.git
+```
+To import it into your iOS project using CocoaPods, add the following line to your Podfile:
 
 ```ruby
 pod 'Orca-iOS'
@@ -184,9 +189,7 @@ The `OrcaPhoneme` object has the following properties:
 
 ## Running Unit Tests
 
-Copy your `AccessKey` into the `accessKey` variable
-in [`OrcaAppTestUITests.swift`](OrcaAppTest/OrcaAppTestUITests/OrcaAppTestUITests.swift). Open `OrcaAppTest.xcworkspace`
-with XCode and run the tests with `Product > Test`.
+Copy your `AccessKey` into the `accessKey` variable in [`OrcaAppTestUITests.swift`](OrcaAppTest/OrcaAppTestUITests/OrcaAppTestUITests.swift). Open [`OrcaAppTest.xcodeproj`](OrcaAppTest/OrcaAppTest.xcodeproj) with XCode and run the tests with `Product > Test`.
 
 ## Demo App
 
