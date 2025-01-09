@@ -18,7 +18,7 @@ voice assistants. Orca is:
 
 - Private; All speech synthesis runs locally.
 - Cross-Platform:
-    - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64)
+    - Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64, arm64)
     - Android and iOS
     - Raspberry Pi (3, 4, 5)
     - Chrome, Safari, Firefox, and Edge

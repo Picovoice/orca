@@ -41,6 +41,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # ************ REMOVE AFTER RELEASE ***************
+      - name: build local binding
+        run: |
+          python3 -m pip install setuptools wheel
+          python3 -m setup sdist bdist_wheel
+        working-directory: binding/python
+      # ************ REMOVE AFTER RELEASE ***************
+
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
@@ -67,10 +75,18 @@ jobs:
 
     strategy:
       matrix:
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
 
     steps:
       - uses: actions/checkout@v3
+
+      # ************ REMOVE AFTER RELEASE ***************
+      - name: build local binding
+        run: |
+          python3 -m pip install setuptools wheel
+          python3 -m setup sdist bdist_wheel
+        working-directory: binding/python
+      # ************ REMOVE AFTER RELEASE ***************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
