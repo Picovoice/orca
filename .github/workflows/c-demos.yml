@@ -94,7 +94,7 @@ jobs:
           - machine: rpi5-64
             platform: raspberry-pi
             arch: cortex-a76-aarch64
-            machine: pv-windows-arm64
+          - machine: pv-windows-arm64
             platform: windows
             arch: arm64
             make_file: "MinGW Makefiles"
