@@ -2,15 +2,13 @@
 # yarn lockfile v1
 
 
-"@picovoice/orca-node@=1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@picovoice/orca-node/-/orca-node-1.0.0.tgz#812728c3183a914eff6b3189dfa958ef4d44f2f7"
-  integrity sha512-YDTqJ5KsueBC4Nj0Zo287VF+/y7SRjXbOyHy8h66joJYPF0QNsz8oDCzbQO7hzymNbkFXd0crMPK+gQElvd83w==
-
-"@picovoice/pvspeaker-node@^1.0.1":
+"@picovoice/orca-node@../../binding/nodejs":
   version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@picovoice/pvspeaker-node/-/pvspeaker-node-1.0.1.tgz#0524c9509a88eb50f3975cbe3c5012058a54619b"
-  integrity sha512-4/QBYcp3GZ+2ewq2QuyCn7pnqXdfwj90qbINecKtBsCXKLtl/XHLmXOqgfoy+RBSXmA5wjV/LuOHvqVibrxAuQ==
+
+"@picovoice/pvspeaker-node@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@picovoice/pvspeaker-node/-/pvspeaker-node-1.0.2.tgz#5603864038ba7f2a8ce7f82507f68f4e3f1568b8"
+  integrity sha512-x7MTp6pdon7Dce1lp0yiM8wQcKkYt9jyLqiK2hjUuq85vGlILBpUfKCspuEUVZnyG/5tMic6VsGfXgET7n+O7A==
 
 commander@^6.1.0:
   version "6.2.1"
