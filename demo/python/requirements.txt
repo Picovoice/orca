@@ -1,4 +1,4 @@
-numpy>=1.24.0; sys_platform != 'win32' or platform_machine != 'arm64'
+numpy>=1.24.0; sys_platform != 'win32' or platform_machine != 'ARM64'
 ../../binding/python/dist/pvorca-1.0.1-py3-none-any.whl
 pvspeaker==1.0.4
-tiktoken==0.6.0; sys_platform != 'win32' or platform_machine != 'arm64'
+tiktoken==0.6.0; sys_platform != 'win32' or platform_machine != 'ARM64'
