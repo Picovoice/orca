@@ -67,6 +67,7 @@ if (process.argv.length < 2) {
 program.parse(process.argv);
  
 function splitText(text) {
+  // TODO: Remove once tiktoken supports windows-arm64
   if (os.platform() === 'win32' && os.arch() === 'arm64') {
     const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
     const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
