@@ -105,7 +105,7 @@ jobs:
           submodules: recursive
 
       - name: Create build directory
-        run: cmake -G ${{ matrix.make_file }} -B ./build
+        run: cmake -G "${{ matrix.make_file }}" -B ./build
 
       - name: Build demo
         run: |
