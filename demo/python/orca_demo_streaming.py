@@ -26,13 +26,17 @@ from typing import (
 )
 
 import pvorca
-import tiktoken
 from pvorca import (
     Orca,
     OrcaActivationLimitError,
     OrcaInvalidArgumentError,
 )
 from pvspeaker import PvSpeaker
+
+try:
+    import tiktoken
+except:
+    pass
 
 CUSTOM_PRON_PATTERN = r"\{(.*?\|.*?)\}"
 CUSTOM_PRON_PATTERN_NO_WHITESPACE = r"\{(.*?\|.*?)\}(?!\s)"
@@ -170,8 +174,18 @@ def tokenize_text(text: str) -> Sequence[str]:
     custom_pronunciations = re.findall(CUSTOM_PRON_PATTERN, text)
     custom_pronunciations = set(["{" + pron + "}" for pron in custom_pronunciations])
 
-    encoder = tiktoken.encoding_for_model("gpt-4")
-    tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
+    try:
+        encoder = tiktoken.encoding_for_model("gpt-4")
+        tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
+    except:
+        ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+        PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+        tokens_raw = [text[0]]
+        for ch in text[1:]:
+            if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
+                tokens_raw.append(ch)
+            else:
+                tokens_raw[-1] += ch
 
     custom_pron = ""
     tokens_with_custom_pronunciations = []

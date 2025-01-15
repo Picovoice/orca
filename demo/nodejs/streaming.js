@@ -65,6 +65,30 @@ if (process.argv.length < 2) {
   program.help();
 }
 program.parse(process.argv);
+ 
+function splitText(text) {
+  if (os.platform() === 'win32' && os.arch() === 'arm64') {
+    const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+    const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+    const tokensRaw = [ text[0] ]
+    for (let i = 1; i < text.length; i++) {
+      let ch = text[i];
+      let token = tokensRaw[tokensRaw.length - 1];
+      if ((ALPHA_NUMERIC.includes(ch) && !ALPHA_NUMERIC.includes(token[token.length - 1])) || PUNCTUATION.includes(ch)) {
+        tokensRaw.push(ch);
+      } else {
+        tokensRaw[tokensRaw.length - 1] += ch;
+      }
+    }
+    return tokensRaw;
+  } else {
+    const textDecoder = new TextDecoder();
+    const encoder = tiktoken.encoding_for_model('gpt-4');
+    const tokensRaw = Array.from(encoder.encode(text), e => textDecoder.decode(encoder.decode([e])));
+    encoder.free();
+    return tokensRaw;
+  }
+}
 
 function tokenizeText(text) {
   const CUSTOM_PRON_PATTERN = /\{(.*?\|.*?)}/g;
@@ -74,16 +98,12 @@ function tokenizeText(text) {
   let customPronunciations = text.match(CUSTOM_PRON_PATTERN) || [];
   customPronunciations = new Set(customPronunciations);
 
-  const encoder = tiktoken.encoding_for_model('gpt-4');
-  const tokensRaw = Array.from(encoder.encode(text), e => encoder.decode([e]));
-  encoder.free();
+  const tokensRaw = splitText(text);
 
   let customPron = '';
   const tokensWithCustomPronunciations = [];
-  const textDecoder = new TextDecoder();
 
-  tokensRaw.forEach((t, i) => {
-    const token = textDecoder.decode(t);
+  tokensRaw.forEach((token, i) => {
     let inCustomPron = false;
     customPronunciations.forEach(pron => {
       const inCustomPronGlobal = customPron.length > 0;
