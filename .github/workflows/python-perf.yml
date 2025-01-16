@@ -109,3 +109,27 @@ jobs:
       - name: Machine state after
         working-directory: resources/.scripts
         run: bash machine-state.sh
+
+  perf-windows-arm64:
+    runs-on: ${{ matrix.machine }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [ pv-windows-arm64 ]
+        include:
+          - machine: pv-windows-arm64
+            proc_performance_threshold_rtf: 3.0
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test
+        run: >
+          python3 test_orca_perf.py
+          --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --num-test-iterations 10
+          --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}
