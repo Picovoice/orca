@@ -1,14 +1,13 @@
-demo/** linguist-detectable=false
-lib/** linguist-detectable=false
-res/** linguist-detectable=false
-
-binding/android/** linguist-detectable=false
-binding/android/Orca/orca/src/main/java/ai/picovoice/orca/Orca.java linguist-detectable=true
+binding/android/OrcaTestApp linguist-detectable=false
+binding/android/Orca/orca/src/main/java/ai/picovoice/orca/exception/** linguist-detectable=false
 binding/ios/OrcaAppTest/** linguist-detectable=false
 binding/rust/tests/** linguist-detectable=false
 binding/nodejs/** linguist-detectable=false
-binding/nodejs/src/orca.ts linguist-detectable=true
-binding/web/** linguist-detectable=false
-binding/web/src/orca.ts linguist-detectable=true
-
+binding/web/cypress/** linguist-detectable=false
+binding/web/scripts/** linguist-detectable=false
+binding/web/src/orca.ts linguist-detectable=false
+binding/web/test/** linguist-detectable=false
+demo/** linguist-detectable=false
+lib/** linguist-detectable=false
+res/** linguist-detectable=false
 *.py linguist-detectable=true
