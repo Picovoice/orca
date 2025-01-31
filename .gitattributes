@@ -1,4 +1,4 @@
-binding/android/OrcaTestApp linguist-detectable=false
+binding/android/OrcaTestApp/** linguist-detectable=false
 binding/android/Orca/orca/src/main/java/ai/picovoice/orca/exception/** linguist-detectable=false
 binding/ios/OrcaAppTest/** linguist-detectable=false
 binding/rust/tests/** linguist-detectable=false
