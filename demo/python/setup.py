@@ -57,6 +57,6 @@ setuptools.setup(
             "orca_demo_streaming=pvorcademo.orca_demo_streaming:main",
         ],
     ),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     keywords="Streaming Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
 )
