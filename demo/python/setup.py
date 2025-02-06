@@ -26,14 +26,14 @@ with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as f:
     long_description = f.read()
 
 if platform.platform() != 'win32' or platform.machine() != 'ARM64':
-    dependencies = ["numpy>=1.24.0", "pvorca==1.0.1", "pvspeaker==1.0.4", "tiktoken==0.6.0"]
+    dependencies = ["numpy>=1.24.0", "pvorca==1.0.2", "pvspeaker==1.0.4", "tiktoken==0.6.0"]
 else:
-    dependencies = ["pvorca==1.0.1", "pvspeaker==1.0.4"]
+    dependencies = ["pvorca==1.0.2", "pvspeaker==1.0.4"]
 
 
 setuptools.setup(
     name="pvorcademo",
-    version="1.0.2",
+    version="1.0.3",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Orca Streaming Text-to-Speech Engine demos",
@@ -57,6 +57,6 @@ setuptools.setup(
             "orca_demo_streaming=pvorcademo.orca_demo_streaming:main",
         ],
     ),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     keywords="Streaming Text-to-Speech, TTS, Speech Synthesis, Voice Generation, Speech Engine",
 )
