@@ -1,4 +1,4 @@
 numpy>=1.24.0; sys_platform != 'win32' or platform_machine != 'ARM64'
-pvorca==1.0.1
+pvorca==1.0.2
 pvspeaker==1.0.4
 tiktoken==0.8.0; sys_platform != 'win32' or platform_machine != 'ARM64'
