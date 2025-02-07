@@ -74,7 +74,7 @@ streamed to Orca.
 To synthesize speech in a single call to Orca and without audio playback, run the following:
 
 ```console
-dotnet run -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+dotnet run -c FileDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with your text to be synthesized,
