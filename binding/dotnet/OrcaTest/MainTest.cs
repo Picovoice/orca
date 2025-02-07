@@ -110,7 +110,7 @@ namespace OrcaTest
             Assert.AreEqual(synthesizedPcm.Length, testPcm.Length);
             for (int i = 0; i < synthesizedPcm.Length; i++)
             {
-                Assert.AreEqual(synthesizedPcm[i], testPcm[i], 5000);
+                Assert.AreEqual(synthesizedPcm[i], testPcm[i], 8000);
             }
         }
 

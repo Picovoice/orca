@@ -50,7 +50,7 @@ namespace OrcaDemo
         private static int GetFirstAudioWaitChunks()
         {
             int waitChunks = 0;
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 string machine = LinuxMachine();
                 if (machine.Contains("cortex"))

@@ -63,9 +63,13 @@ namespace Pv
         {
             string archInfo = "";
             if (_arch == Architecture.X64)
+            {
                 return "x86_64";
+            }
             else if (_arch == Architecture.Arm64)
+            {
                 archInfo = "-aarch64";
+            }
 
             string cpuPart = GetCpuPart();
             switch (cpuPart)
@@ -122,7 +126,9 @@ namespace Pv
             string cpuInfo = File.ReadAllText("/proc/cpuinfo");
             string[] cpuPartList = cpuInfo.Split('\n').Where(x => x.Contains("CPU part")).ToArray();
             if (cpuPartList.Length == 0)
+            {
                 throw new PlatformNotSupportedException($"Unsupported CPU.\n{cpuInfo}");
+            }
 
             string cpuPart = cpuPartList[0].Split(' ').Last().ToLower();
             return cpuPart;
