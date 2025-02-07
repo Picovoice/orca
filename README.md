@@ -351,7 +351,7 @@ Orca.OrcaStream stream = orca.StreamOpen();
 
 foreach (string textChunk in TextGenerator())
 {
-    short[] streamPcm = orcaStream.Synthesize(c.ToString());
+    short[] streamPcm = orcaStream.Synthesize(textChunk);
     if (streamPcm != null)
     {
         // handle pcm chunk
