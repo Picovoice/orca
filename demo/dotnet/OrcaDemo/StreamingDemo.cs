@@ -17,9 +17,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Timers;
 
-using Pv;
-
 using Tiktoken;
+
+using Pv;
 
 namespace OrcaDemo
 {
@@ -106,10 +106,10 @@ namespace OrcaDemo
                     orcaThread.Synthesize(token);
                     Thread.Sleep(1000 / tokensPerSecond);
                 }
-                double textStreamDurationSeconds = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - timeStartTextStream) / (double) 1000;
+                double textStreamDurationSeconds = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - timeStartTextStream) / (double)1000;
 
                 orcaThread.Flush();
-                double firstAudioAvailableSeconds = (orcaThread.FirstAudioAvailableMilliseconds - timeStartTextStream) / (double) 1000;
+                double firstAudioAvailableSeconds = (orcaThread.FirstAudioAvailableMilliseconds - timeStartTextStream) / (double)1000;
                 Console.WriteLine($"\n\nTime to finish text stream:  {textStreamDurationSeconds:F2} seconds");
                 Console.WriteLine($"Time to receive first audio: {firstAudioAvailableSeconds:F2} seconds after text stream started\n");
 

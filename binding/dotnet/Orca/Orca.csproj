@@ -89,14 +89,14 @@
             <Visible>false</Visible>
         </Content>
         <Content Include="..\..\..\lib\windows\arm64\libpv_orca.dll">
-			<PackagePath>
-				build/net6.0/lib/windows/arm64/libpv_orca.dll;
-				build/net8.0/lib/windows/arm64/libpv_orca.dll;
-			</PackagePath>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>lib\windows\arm64\libpv_orca.dll</Link>
-			<Visible>false</Visible>
-		</Content>
+            <PackagePath>
+                build/net6.0/lib/windows/arm64/libpv_orca.dll;
+                build/net8.0/lib/windows/arm64/libpv_orca.dll;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\windows\arm64\libpv_orca.dll</Link>
+            <Visible>false</Visible>
+        </Content>
     </ItemGroup>
     <ItemGroup>
         <Content Include="..\..\..\lib\common\orca_params_female.pv">
