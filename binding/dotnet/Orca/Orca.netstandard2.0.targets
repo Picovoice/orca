@@ -17,6 +17,13 @@
 		</Content>
 		<Content Include="$(MSBuildThisFileDirectory)lib/**">
 			<Link>lib/%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <PackagePath>content/picovoice/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Visible>false</Visible>
+		</Content>
+		<Content Include="$(MSBuildThisFileDirectory)/../common/orca_params_female.pv">
+			<Link>lib/common/orca_params_female.pv</Link>
+            <PackagePath>content/picovoice/common/orca_params_female.pv</PackagePath>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Visible>false</Visible>
 		</Content>
