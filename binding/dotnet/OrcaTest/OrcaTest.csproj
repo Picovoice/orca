@@ -29,11 +29,6 @@
           <Link>libpv_orca.dll</Link>
           <Visible>false</Visible>
       </Content>
-      <Content Include="..\..\..\lib\linux\x86_64\libpv_orca.so">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <Link>libpv_orca.so</Link>
-          <Visible>false</Visible>
-      </Content>
       <Content Include="..\..\..\lib\mac\x86_64\libpv_orca.dylib">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <Link>libpv_orca.dylib</Link>

@@ -16,6 +16,7 @@
         <Description>Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice assistants.</Description>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <PackageIcon>pv_circle_512.png</PackageIcon>
+        <PackageId>$(Authors).$(AssemblyName)</PackageId>
     </PropertyGroup>
 
     <!--.NET Standard 2.0+ libs-->
