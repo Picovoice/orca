@@ -22,24 +22,24 @@
     <ItemGroup>
         <Content Include="Orca.netstandard2.0.targets">
           <PackagePath>
-                build/netstandard2.0/Orca.targets;
+                buildTransitive/netstandard2.0/Orca.targets;
             </PackagePath>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Orca.targets">
             <PackagePath>
-                build/netcoreapp3.0;
-                build/net6.0;
-                build/net8.0;
+                buildTransitive/netcoreapp3.0;
+                buildTransitive/net6.0;
+                buildTransitive/net8.0;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="..\..\..\lib\windows\amd64\libpv_orca.dll">
             <PackagePath>
-                build/netstandard2.0/libpv_orca.dll;
-                build/netcoreapp3.0/lib/windows/amd64/libpv_orca.dll;
-                build/net6.0/lib/windows/amd64/libpv_orca.dll;
-                build/net8.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive/netstandard2.0/libpv_orca.dll;
+                buildTransitive/netcoreapp3.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive/net6.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive/net8.0/lib/windows/amd64/libpv_orca.dll;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\windows\amd64\libpv_orca.dll</Link>
@@ -48,10 +48,10 @@
 
         <Content Include="..\..\..\lib\mac\x86_64\libpv_orca.dylib">
             <PackagePath>
-                build/netstandard2.0/libpv_orca.dylib;
-                build/netcoreapp3.0/lib/mac/x86_64/libpv_orca.dylib;
-                build/net6.0/lib/mac/x86_64/libpv_orca.dylib;
-                build/net8.0/lib/mac/x86_64/libpv_orca.dylib;
+                buildTransitive/netstandard2.0/libpv_orca.dylib;
+                buildTransitive/netcoreapp3.0/lib/mac/x86_64/libpv_orca.dylib;
+                buildTransitive/net6.0/lib/mac/x86_64/libpv_orca.dylib;
+                buildTransitive/net8.0/lib/mac/x86_64/libpv_orca.dylib;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\mac\x86_64\libpv_orca.dylib</Link>
@@ -63,8 +63,8 @@
     <ItemGroup>
         <Content Include="..\..\..\lib\raspberry-pi\**\*">
             <PackagePath>
-                build/net6.0/lib/raspberry-pi;
-                build/net8.0/lib/raspberry-pi;
+                buildTransitive/net6.0/lib/raspberry-pi;
+                buildTransitive/net8.0/lib/raspberry-pi;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\raspberry-pi\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -72,8 +72,8 @@
         </Content>
         <Content Include="..\..\..\lib\linux\x86_64\libpv_orca.so">
             <PackagePath>
-                build/net6.0/lib/linux/x86_64/libpv_orca.so;
-                build/net8.0/lib/linux/x86_64/libpv_orca.so;
+                buildTransitive/net6.0/lib/linux/x86_64/libpv_orca.so;
+                buildTransitive/net8.0/lib/linux/x86_64/libpv_orca.so;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\linux\x86_64\libpv_orca.so</Link>
@@ -81,8 +81,8 @@
         </Content>
         <Content Include="..\..\..\lib\mac\arm64\libpv_orca.dylib">
             <PackagePath>
-                build/net6.0/lib/mac/arm64/libpv_orca.dylib;
-                build/net8.0/lib/mac/arm64/libpv_orca.dylib;
+                buildTransitive/net6.0/lib/mac/arm64/libpv_orca.dylib;
+                buildTransitive/net8.0/lib/mac/arm64/libpv_orca.dylib;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\mac\arm64\libpv_orca.dylib</Link>
@@ -90,8 +90,8 @@
         </Content>
         <Content Include="..\..\..\lib\windows\arm64\libpv_orca.dll">
             <PackagePath>
-                build/net6.0/lib/windows/arm64/libpv_orca.dll;
-                build/net8.0/lib/windows/arm64/libpv_orca.dll;
+                buildTransitive/net6.0/lib/windows/arm64/libpv_orca.dll;
+                buildTransitive/net8.0/lib/windows/arm64/libpv_orca.dll;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\windows\arm64\libpv_orca.dll</Link>
@@ -101,10 +101,7 @@
     <ItemGroup>
         <Content Include="..\..\..\lib\common\orca_params_female.pv">
             <PackagePath>
-                build/netstandard2.0/lib/common/orca_params_female.pv;
-                build/netcoreapp3.0/lib/common/orca_params_female.pv;
-                build/net6.0/lib/common/orca_params_female.pv;
-                build/net8.0/lib/common/orca_params_female.pv;
+                buildTransitive/common/orca_params_female.pv;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\common\orca_params_female.pv</Link>
