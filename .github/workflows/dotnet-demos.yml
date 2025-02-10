@@ -48,7 +48,7 @@ jobs:
       working-directory: binding/dotnet/Orca
 
     - name: Install Local Packages
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Orca
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
     # ********************************************************
 
     - name: .NET build file demo
@@ -96,7 +96,7 @@ jobs:
       working-directory: binding/dotnet/Orca
 
     - name: Install Local Packages
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Orca
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
     # ********************************************************
 
     - name: .NET build file demo

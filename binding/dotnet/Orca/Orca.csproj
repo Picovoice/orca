@@ -20,13 +20,13 @@
 
     <!--.NET Standard 2.0+ libs-->
     <ItemGroup>
-        <Content Include="Orca.netstandard2.0.targets">
+        <Content Include="Picovoice.Orca.netstandard2.0.targets">
           <PackagePath>
-                buildTransitive/netstandard2.0/Orca.targets;
+                buildTransitive/netstandard2.0/Picovoice.Orca.targets;
             </PackagePath>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-        <Content Include="Orca.targets">
+        <Content Include="Picovoice.Orca.targets">
             <PackagePath>
                 buildTransitive/netcoreapp3.0;
                 buildTransitive/net6.0;

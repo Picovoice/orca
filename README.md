@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)
 [![CocoaPods](https://img.shields.io/cocoapods/v/Orca-iOS)](https://cocoapods.org/pods/Orca-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
-[![Nuget](https://img.shields.io/nuget/v/Orca)](https://www.nuget.org/packages/Orca/)<!-- markdown-link-check-disable-line -->
+[![Nuget](https://img.shields.io/nuget/v/Orca)](https://www.nuget.org/packages/Picovoice.Orca/)<!-- markdown-link-check-disable-line -->
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -329,7 +329,7 @@ For more details see [Python SDK](./binding/python/README.md).
 
 Install the .NET SDK using NuGet or the dotnet CLI:
 ```console
-dotnet add package Orca
+dotnet add package Picovoice.Orca
 ```
 
 Create an instance of the engine:
