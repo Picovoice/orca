@@ -1,10 +1,10 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<ItemGroup>
-         <Content Include="$(MSBuildThisFileDirectory)../../lib/netstandard2.0/Orca.dll">
-             <Link>Orca.dll</Link>
-             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-             <Visible>False</Visible>
-         </Content>
+		 <Content Include="$(MSBuildThisFileDirectory)../../lib/netstandard2.0/Orca.dll">
+			 <Link>Orca.dll</Link>
+			 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			 <Visible>False</Visible>
+		 </Content>
 		<Content Include="$(MSBuildThisFileDirectory)libpv_orca.dll">
 			<Link>libpv_orca.dll</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -17,13 +17,13 @@
 		</Content>
 		<Content Include="$(MSBuildThisFileDirectory)lib/**">
 			<Link>lib/%(RecursiveDir)%(Filename)%(Extension)</Link>
-            <PackagePath>content/picovoice/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+			<PackagePath>content/picovoice/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Visible>false</Visible>
 		</Content>
 		<Content Include="$(MSBuildThisFileDirectory)/../common/orca_params_female.pv">
 			<Link>lib/common/orca_params_female.pv</Link>
-            <PackagePath>content/picovoice/common/orca_params_female.pv</PackagePath>
+			<PackagePath>content/picovoice/common/orca_params_female.pv</PackagePath>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Visible>false</Visible>
 		</Content>
