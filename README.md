@@ -7,6 +7,7 @@
 [![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)
 [![CocoaPods](https://img.shields.io/cocoapods/v/Orca-iOS)](https://cocoapods.org/pods/Orca-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
+[![Nuget](https://img.shields.io/nuget/v/Picovoice.Orca)](https://www.nuget.org/packages/Picovoice.Orca/)
 
 Made in Vancouver, Canada by [Picovoice](https://picovoice.ai)
 
@@ -37,6 +38,7 @@ voice assistants. Orca is:
     - [AccessKey](#accesskey)
     - [Demos](#demos)
         - [Python Demos](#python-demos)
+        - [.NET Demos](#net-demos)
         - [iOS Demo](#ios-demo)
         - [C Demos](#c-demos)
         - [Web Demos](#web-demos)
@@ -44,6 +46,7 @@ voice assistants. Orca is:
         - [Node.js Demo](#nodejs-demos)
     - [SDKs](#sdks)
         - [Python](#python)
+        - [.NET](#net)
         - [iOS](#ios)
         - [C](#c)
         - [Web](#web)
@@ -73,8 +76,8 @@ Orca also supports single synthesis mode, where a complete text is synthesized i
 
 ### Text input
 
-Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks. 
-You can get a list of all supported characters by calling the `valid_characters()` method provided 
+Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks.
+You can get a list of all supported characters by calling the `valid_characters()` method provided
 in the Orca SDK you are using.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
@@ -153,6 +156,31 @@ Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` wi
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
 For more information about Python demos go to [demo/python](demo/python).
+
+### .NET Demos
+
+From [demo/dotnet/OrcaDemo](demo/dotnet/OrcaDemo) build the demo:
+
+```console
+dotnet build -c StreamingDemo.Release
+```
+
+Run the streaming demo:
+
+```console
+dotnet build -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+```
+
+Run the single synthesis demo:
+
+```console
+dotnet build -c FileDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
+`${WAV_OUTPUT_PATH}` with a path to an output WAV file.
+
+For more information about .NET demos go to [demo/dotnet](demo/dotnet).
 
 ### iOS Demo
 
@@ -297,6 +325,77 @@ orca.delete()
 
 For more details see [Python SDK](./binding/python/README.md).
 
+### .NET
+
+Install the .NET SDK using NuGet or the dotnet CLI:
+```console
+dotnet add package Picovoice.Orca
+```
+
+Create an instance of the engine:
+
+```csharp
+using Pv;
+
+Orca orca = Orca.Create("${ACCESS_KEY}");
+```
+
+Replace `${ACCESS_KEY}` with yours obtained from [Picovoice Console](https://console.picovoice.ai/).
+
+#### Streaming synthesis
+
+To synthesize a text stream, create an Orca Stream object and add text to it one-by-one:
+
+```csharp
+Orca.OrcaStream stream = orca.StreamOpen();
+
+foreach (string textChunk in TextGenerator())
+{
+    short[] streamPcm = orcaStream.Synthesize(textChunk);
+    if (streamPcm != null)
+    {
+        // handle pcm chunk
+    }
+}
+
+short[] flushPcm = orcaStream.Flush();
+if (flushPcm != null)
+{
+    // handle final pcm chunk
+}
+```
+
+`OrcaStream` implements `IDisposable`, so you either call `.Dispose()` to close it or wrap it in a using statement:
+
+```csharp
+using(Orca.OrcaStream stream = orca.StreamOpen())
+{
+    // .. OrcaStream usage here
+}
+```
+
+#### Single synthesis
+
+Use single synthesis mode if the complete text is known in advance:
+
+```csharp
+OrcaAudio res = orca.Synthesize("${TEXT}");
+```
+
+Replace `${TEXT}` with the text to be synthesized including potential [custom pronunciations](#custom-pronunciations).
+
+`Orca` will have its resources freed by the garbage collector, but to have resources freed immediately after use,
+wrap it in a using statement:
+
+```csharp
+using(Orca orca = Orca.Create(accessKey))
+{
+    // .. Orca usage here
+}
+```
+
+For more details see [.NET SDK](./binding/dotnet/).
+
 ### iOS
 
 Create an instance of the engine:
@@ -403,9 +502,9 @@ extern char *get_next_text_chunk(void);
 int32_t num_samples_chunk = 0;
 int16_t *pcm_chunk = NULL;
 status = pv_orca_stream_synthesize(
-    orca_stream, 
-    get_next_text_chunk(), 
-    &num_samples_chunk, 
+    orca_stream,
+    get_next_text_chunk(),
+    &num_samples_chunk,
     &pcm_chunk);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
@@ -477,7 +576,7 @@ for (int32_t i = 0; i < num_alignments; i++) {
                 alignments[i].phonemes[j].phoneme,
                 alignments[i].phonemes[j].start_sec,
                 alignments[i].phonemes[j].end_sec);
-    
+
     }
 }
 ```

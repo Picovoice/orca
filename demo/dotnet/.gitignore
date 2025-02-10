@@ -1,0 +1,5 @@
+.vs
+OrcaDemo/bin/**
+OrcaDemo/obj/**
+OrcaDemo/Properties/**
+*.user

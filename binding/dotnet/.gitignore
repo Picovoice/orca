@@ -1,0 +1,9 @@
+.vscode
+.vs
+*.user
+Orca/bin
+Orca/obj
+Orca/Properties
+OrcaTest/bin
+OrcaTest/obj
+TestResults

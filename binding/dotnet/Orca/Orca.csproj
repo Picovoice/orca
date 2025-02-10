@@ -1,0 +1,125 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net6.0;netcoreapp3.0;netstandard2.0</TargetFrameworks>
+        <Version>1.0.0</Version>
+        <Authors>Picovoice</Authors>
+        <Company />
+        <Product>Orca Streaming Text-to-Speech Engine</Product>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Picovoice/orca</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/Picovoice/orca.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>ai, offline, private, text to speech, tts, orca, voice, speech</PackageTags>
+        <PackageReleaseNotes>See https://github.com/Picovoice/orca/ </PackageReleaseNotes>
+        <Copyright>Picovoice 2025</Copyright>
+        <Description>Orca is an on-device streaming text-to-speech engine that is designed for use with LLMs, enabling zero-latency voice assistants.</Description>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageIcon>pv_circle_512.png</PackageIcon>
+        <PackageId>$(Authors).$(AssemblyName)</PackageId>
+    </PropertyGroup>
+
+    <!--.NET Standard 2.0+ libs-->
+    <ItemGroup>
+        <Content Include="Picovoice.Orca.netstandard2.0.targets">
+          <PackagePath>
+                buildTransitive/netstandard2.0/Picovoice.Orca.targets;
+            </PackagePath>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Picovoice.Orca.targets">
+            <PackagePath>
+                buildTransitive/netcoreapp3.0;
+                buildTransitive/net6.0;
+                buildTransitive/net8.0;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="..\..\..\lib\windows\amd64\libpv_orca.dll">
+            <PackagePath>
+                buildTransitive/netstandard2.0/libpv_orca.dll;
+                buildTransitive/netcoreapp3.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive/net6.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive/net8.0/lib/windows/amd64/libpv_orca.dll;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\windows\amd64\libpv_orca.dll</Link>
+            <Visible>false</Visible>
+        </Content>
+
+        <Content Include="..\..\..\lib\mac\x86_64\libpv_orca.dylib">
+            <PackagePath>
+                buildTransitive/netstandard2.0/libpv_orca.dylib;
+                buildTransitive/netcoreapp3.0/lib/mac/x86_64/libpv_orca.dylib;
+                buildTransitive/net6.0/lib/mac/x86_64/libpv_orca.dylib;
+                buildTransitive/net8.0/lib/mac/x86_64/libpv_orca.dylib;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\mac\x86_64\libpv_orca.dylib</Link>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+
+    <!--.NET 6.0+ libs-->
+    <ItemGroup>
+        <Content Include="..\..\..\lib\raspberry-pi\**\*">
+            <PackagePath>
+                buildTransitive/net6.0/lib/raspberry-pi;
+                buildTransitive/net8.0/lib/raspberry-pi;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\raspberry-pi\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>false</Visible>
+        </Content>
+        <Content Include="..\..\..\lib\linux\x86_64\libpv_orca.so">
+            <PackagePath>
+                buildTransitive/net6.0/lib/linux/x86_64/libpv_orca.so;
+                buildTransitive/net8.0/lib/linux/x86_64/libpv_orca.so;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\linux\x86_64\libpv_orca.so</Link>
+            <Visible>false</Visible>
+        </Content>
+        <Content Include="..\..\..\lib\mac\arm64\libpv_orca.dylib">
+            <PackagePath>
+                buildTransitive/net6.0/lib/mac/arm64/libpv_orca.dylib;
+                buildTransitive/net8.0/lib/mac/arm64/libpv_orca.dylib;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\mac\arm64\libpv_orca.dylib</Link>
+            <Visible>false</Visible>
+        </Content>
+        <Content Include="..\..\..\lib\windows\arm64\libpv_orca.dll">
+            <PackagePath>
+                buildTransitive/net6.0/lib/windows/arm64/libpv_orca.dll;
+                buildTransitive/net8.0/lib/windows/arm64/libpv_orca.dll;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\windows\arm64\libpv_orca.dll</Link>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="..\..\..\lib\common\orca_params_female.pv">
+            <PackagePath>
+                buildTransitive/common/orca_params_female.pv;
+            </PackagePath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>lib\common\orca_params_female.pv</Link>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Content\" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="Content\pv_circle_512.png">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>README.md</PackagePath>
+        </None>
+    </ItemGroup>
+</Project>

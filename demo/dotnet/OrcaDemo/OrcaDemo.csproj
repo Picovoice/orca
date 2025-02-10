@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <Configurations>FileDemo.Debug;FileDemo.Release;StreamingDemo.Debug;StreamingDemo.Release</Configurations>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'FileDemo.Debug' Or '$(Configuration)' == 'FileDemo.Release'">
+        <StartupObject>OrcaDemo.FileDemo</StartupObject>
+        <TargetName>OrcaFileDemo</TargetName>
+        <AssemblyName>OrcaFileDemo</AssemblyName>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'StreamingDemo.Debug' Or '$(Configuration)' == 'StreamingDemo.Release'">
+        <StartupObject>OrcaDemo.StreamingDemo</StartupObject>
+        <TargetName>OrcaStreamingDemo</TargetName>
+        <AssemblyName>OrcaStreamingDemo</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Picovoice.Orca" Version="1.0.0" />
+        <PackageReference Include="PvSpeaker" Version="1.0.1" />
+        <PackageReference Include="Spectre.Console" Version="0.49.1" />
+        <PackageReference Include="Tiktoken" Version="2.2.0" />
+    </ItemGroup>
+</Project>
