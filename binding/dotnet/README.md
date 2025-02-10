@@ -39,7 +39,7 @@ Platform compatible with .NET 6.0+:
 
 ## Installation
 
-You can install the latest version of Orca by getting the latest [Orca Nuget package](https://www.nuget.org/packages/Picovoice.Orca/)<!-- markdown-link-check-disable-line -->
+You can install the latest version of Orca by getting the latest [Orca Nuget package](https://www.nuget.org/packages/Picovoice.Orca/)
 in Visual Studio or using the .NET CLI.
 
 ```console
