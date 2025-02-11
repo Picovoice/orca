@@ -24,17 +24,10 @@ export function getTestData() {
   return TEST_DATA_JSON;
 }
 
-export function getModelPathFemale(): string {
+export function getModelPath(name: string): string {
   return path.join(
     ROOT_DIR,
-    'lib/common/orca_params_female.pv',
+    'lib/common/',
+    name,
   );
 }
-
-export function getModelPathMale(): string {
-  return path.join(
-    ROOT_DIR,
-    'lib/common/orca_params_male.pv',
-  );
-}
-
