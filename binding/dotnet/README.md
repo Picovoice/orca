@@ -208,4 +208,4 @@ The `OrcaPhoneme` object has the following properties:
 
 ## Demos
 
-The [Orca dotnet demo project](https://github.com/Picovoice/orca/tree/main/demo/dotnet) is a .NET command line application that allows for synthesizing audio using Orca. <!-- markdown-link-check-disable-line -->
+The [Orca dotnet demo project](https://github.com/Picovoice/orca/tree/main/demo/dotnet) is a .NET command line application that allows for synthesizing audio using Orca.
