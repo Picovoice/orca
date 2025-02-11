@@ -13,11 +13,14 @@ import argparse
 import os
 import sys
 import unittest
+
 from time import perf_counter
+from parameterized import parameterized
+from typing import List
 
 from _orca import Orca
 from _util import default_library_path
-from test_util import get_model_paths, get_test_data
+from test_util import get_model_path, get_test_data
 
 test_data = get_test_data()
 
@@ -27,18 +30,24 @@ class OrcaPerformanceTestCase(unittest.TestCase):
     num_test_iterations: int
     proc_performance_threshold_rtf: float
 
-    def test_performance_proc(self) -> None:
-        for model_path in get_model_paths():
+    @parameterized.expand([(t.language, t.models, t.text) for t in test_data.sentence_tests])
+    def test_performance_proc(
+            self,
+            language: str,
+            models: List[str],
+            text: str) -> None:
+
+        for model in models:
             orca = Orca(
                 access_key=self.access_key,
                 library_path=default_library_path('../..'),
-                model_path=model_path)
+                model_path=get_model_path(model))
 
             num_audio_seconds = 0
             num_proc_seconds = 0
             for i in range(self.num_test_iterations):
                 start = perf_counter()
-                pcm, _ = orca.synthesize(test_data.text)
+                pcm, _ = orca.synthesize(text)
                 if i > 0:
                     num_audio_seconds += len(pcm) / orca.sample_rate
                     num_proc_seconds += perf_counter() - start
@@ -46,7 +55,7 @@ class OrcaPerformanceTestCase(unittest.TestCase):
             orca.delete()
 
             real_time_factor = num_audio_seconds / num_proc_seconds
-            print("Average proc performance[model=%s]: RTF = %s " % (os.path.basename(model_path), real_time_factor))
+            print("Average proc performance[model=%s %s]: RTF = %s " % (model, language, real_time_factor))
             self.assertGreater(real_time_factor, self.proc_performance_threshold_rtf)
 
 
