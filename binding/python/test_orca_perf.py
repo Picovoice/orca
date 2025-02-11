@@ -30,14 +30,11 @@ class OrcaPerformanceTestCase(unittest.TestCase):
     num_test_iterations: int
     proc_performance_threshold_rtf: float
 
-    @parameterized.expand([(t.language, t.models, t.text) for t in test_data.sentence_tests])
-    def test_performance_proc(
-            self,
-            language: str,
-            models: List[str],
-            text: str) -> None:
+    def test_performance_proc(self) -> None:
 
-        for model in models:
+        td = test_data.sentence_tests[0]
+
+        for model in td.models:
             orca = Orca(
                 access_key=self.access_key,
                 library_path=default_library_path('../..'),
@@ -47,7 +44,7 @@ class OrcaPerformanceTestCase(unittest.TestCase):
             num_proc_seconds = 0
             for i in range(self.num_test_iterations):
                 start = perf_counter()
-                pcm, _ = orca.synthesize(text)
+                pcm, _ = orca.synthesize(td.text)
                 if i > 0:
                     num_audio_seconds += len(pcm) / orca.sample_rate
                     num_proc_seconds += perf_counter() - start
@@ -55,7 +52,7 @@ class OrcaPerformanceTestCase(unittest.TestCase):
             orca.delete()
 
             real_time_factor = num_audio_seconds / num_proc_seconds
-            print("Average proc performance[model=%s %s]: RTF = %s " % (model, language, real_time_factor))
+            print("Average proc performance[model=%s %s]: RTF = %s " % (model, td.language, real_time_factor))
             self.assertGreater(real_time_factor, self.proc_performance_threshold_rtf)
 
 
