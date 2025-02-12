@@ -1,6 +1,6 @@
 {
   "name": "@picovoice/orca-node-demo",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Picovoice Orca Node.js file-based and streaming demos",
   "scripts": {
     "file": "node file.js",
@@ -21,8 +21,8 @@
   "author": "Picovoice Inc.",
   "license": "Apache-2.0",
   "dependencies": {
-    "@picovoice/orca-node": "=1.0.1",
-    "@picovoice/pvspeaker-node": "^1.0.2",
+    "@picovoice/orca-node": "=1.0.2",
+    "@picovoice/pvspeaker-node": "^1.0.3",
     "commander": "^6.1.0",
     "prettier": "^2.6.2",
     "readline": "^1.3.0",
