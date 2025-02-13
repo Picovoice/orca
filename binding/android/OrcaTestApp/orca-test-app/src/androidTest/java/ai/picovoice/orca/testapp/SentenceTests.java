@@ -49,7 +49,7 @@ import ai.picovoice.orca.OrcaPhoneme;
 public class SentenceTests extends BaseTest {
 
     @Parameterized.Parameter(value = 0)
-    public String langauge;
+    public String language;
 
     @Parameterized.Parameter(value = 1)
     public String modelFilename;
