@@ -21,30 +21,7 @@ const ACCESS_KEY = process.argv
   .filter(x => x.startsWith('--access_key='))[0]
   .split('--access_key=')[1];
 
-// const EXACT_ALIGNMENT_TEST_MODEL = getModelPathFemale();
-
-// const models = [
-//   {
-//     modelFilePath: getModelPathFemale(),
-//     wavPathSingle: 'orca_params_female_single.wav',
-//     wavPathStream: 'orca_params_female_stream.wav',
-//   },
-//   {
-//     modelFilePath: getModelPathMale(),
-//     wavPathSingle: 'orca_params_male_single.wav',
-//     wavPathStream: 'orca_params_male_stream.wav',
-//   },
-// ];
-
 const testData = getTestData()
-
-// const testDataText = getTestData().test_sentences.text;
-// const testDataNoPunctuation = getTestData().test_sentences.text_no_punctuation;
-// const testDataCustomPronunciation = getTestData().test_sentences.text_custom_pronunciation;
-// const testDataAlignment = getTestData().test_sentences.text_alignment;
-// const testDataInvalid = getTestData().test_sentences.text_invalid;
-// const testDataRandomState = getTestData().random_state;
-// const testDataAlignments = getTestData().alignments;
 
 const getAudioFileName = (model: string, synthesis_type: string): string => {
   return model.replace(".pv", `_${synthesis_type}.wav`)

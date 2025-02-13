@@ -44,9 +44,11 @@ describe('Orca binding performance test', () => {
   for (const instance of [Orca, OrcaWorker]) {
     const instanceString = (instance === OrcaWorker) ? 'worker' : 'main';
 
-    for (const modelFileSuffix of ['male', 'female']) {
-      it(`should be lower than performance threshold [${modelFileSuffix}] (${instanceString})`, async () => {
-        await testPerformance(instance, `/test/orca_params_${modelFileSuffix}.pv`, testData.test_sentences.text);
+    const testCase = testData.tests.sentence_tests[0];
+
+    for (const model of testCase.models) {
+      it(`should be lower than performance threshold [${model}] (${instanceString})`, async () => {
+        await testPerformance(instance, `/test/${model}`, testCase.text);
       });
     }
   }
