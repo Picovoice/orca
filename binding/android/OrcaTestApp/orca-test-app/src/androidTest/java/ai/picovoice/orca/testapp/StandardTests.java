@@ -24,15 +24,30 @@ import ai.picovoice.orca.OrcaException;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @RunWith(AndroidJUnit4.class)
 public class StandardTests extends BaseTest {
 
-    String[] modelFiles;
+    String modelFile;
 
     @Before
     public void Setup() throws Exception {
         super.Setup();
-        modelFiles = getModelFiles();
+
+        String testDataJsonString = getTestDataString();
+
+        JsonParser parser = new JsonParser();
+        JsonObject testDataJson = parser.parse(testDataJsonString).getAsJsonObject();
+
+        final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("sentence_tests").getAsJsonArray();
+        modelFile = testCases.get(0).getAsJsonObject().get("models").getAsJsonArray().get(0).getAsString();
     }
 
     @Test
@@ -41,7 +56,7 @@ public class StandardTests extends BaseTest {
         try {
             new Orca.Builder()
                     .setAccessKey("invalid")
-                    .setModelPath(modelFiles[0])
+                    .setModelPath(modelFile)
                     .build(appContext);
         } catch (OrcaException e) {
             error = e.getMessageStack();
@@ -53,7 +68,7 @@ public class StandardTests extends BaseTest {
         try {
             new Orca.Builder()
                     .setAccessKey("invalid")
-                    .setModelPath(modelFiles[0])
+                    .setModelPath(modelFile)
                     .build(appContext);
         } catch (OrcaException e) {
             for (int i = 0; i < error.length; i++) {

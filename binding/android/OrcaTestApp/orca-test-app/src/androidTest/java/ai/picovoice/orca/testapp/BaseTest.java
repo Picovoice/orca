@@ -1,5 +1,5 @@
 /*
-    Copyright 2024 Picovoice Inc.
+    Copyright 2024-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -70,19 +70,37 @@ public class BaseTest {
         accessKey = appContext.getString(R.string.pvTestingAccessKey);
     }
 
-    public static String[] getModelFiles() {
+    public static String getTestDataString() throws IOException {
+        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        AssetManager assetManager = testContext.getAssets();
+
+        InputStream is = new BufferedInputStream(assetManager.open("test_resources/test_data.json"), 256);
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+
+        byte[] buffer = new byte[256];
+        int bytesRead;
+        while ((bytesRead = is.read(buffer)) != -1) {
+            result.write(buffer, 0, bytesRead);
+        }
+
+        return result.toString("UTF-8");
+    }
+
+    public static String getModelFilepath(String modelFilename) {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
-        return new String[]{
-                new File(
-                        resPath,
-                        "model_files/orca_params_female.pv").getAbsolutePath(),
-                new File(
-                        resPath,
-                        "model_files/orca_params_male.pv").getAbsolutePath()
-        };
+        return new File(resPath, String.format("model_files/%s", modelFilename)).getAbsolutePath();
+    }
+
+    public static String getAudioFilepath(String modelFilename, String synthesisType) {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        String resPath = new File(
+                context.getFilesDir(),
+                "test_resources").getAbsolutePath();
+        String audioFilename = modelFilename.replace(".pv", String.format("_%s.wav", synthesisType));
+        return new File(resPath, String.format("wav/%s", audioFilename)).getAbsolutePath();
     }
 
     protected static boolean compareArrays(short[] arr1, short[] arr2, int step) {

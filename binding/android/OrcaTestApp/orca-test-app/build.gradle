@@ -81,11 +81,13 @@ android {
             java {
                 if (System.getProperty("testBuildType", "debug") == "perf") {
                     exclude "**/StandardTests.java"
-                    exclude "**/ModelTests.java"
+                    exclude "**/AlignmentTests.java"
+                    exclude "**/SentenceTests.java"
                     exclude "**/IntegrationTest.java"
                 } else if (System.getProperty("testBuildType", "debug") == "integ") {
                     exclude "**/StandardTests.java"
-                    exclude "**/ModelTests.java"
+                    exclude "**/AlignmentTests.java"
+                    exclude "**/SentenceTests.java"
                     exclude "**/PerformanceTest.java"
                 } else {
                     exclude "**/IntegrationTest.java"

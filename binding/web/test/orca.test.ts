@@ -129,12 +129,11 @@ describe('Orca Binding', function() {
           });
         });
 
-        // TODO(Eric Mikulin): Figure out how to get base64 for all models - or limit to subset
-        // it(`should be able to init with base64 (${testCaseString})`, async () => {
-        //   await runInitTest(instance, {
-        //     model: { base64: base64Path, forceWrite: true },
-        //   });
-        // });
+        it(`should be able to init with base64 (${testCaseString})`, async () => {
+          await runInitTest(instance, {
+            model: { base64: orcaParamsMale, forceWrite: true },
+          });
+        });
 
         it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
           await runInitTest(instance, {
