@@ -115,7 +115,7 @@ namespace OrcaTest
 
             public string[] models { get; set; }
 
-            public string text_invalid { get; set; }
+            public string[] text_invalid { get; set; }
         }
 
         private static IEnumerable<object[]> SentenceTestParameters
