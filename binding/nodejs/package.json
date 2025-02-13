@@ -1,6 +1,6 @@
 {
   "name": "@picovoice/orca-node",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Picovoice Orca Node.js binding",
   "main": "dist/index.js",
   "types": "dist/types/index.d.ts",
@@ -49,7 +49,7 @@
     "wavefile": "^11.0.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "cpu": [
     "!ia32",
