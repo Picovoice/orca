@@ -31,9 +31,9 @@ class OrcaAppTestUITests: BaseTest {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
                     let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
-                    
+
                     try runTestSynthesize(orca: orca, model: model, testCase: testCase)
-                    
+
                     orca.delete()
                 }
             }
@@ -75,7 +75,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestStreaming(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                    
+                    orca.delete()
                 }
             }
         }
@@ -93,7 +93,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestMaxCharacterLimit(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -111,7 +111,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSampleRate(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -129,7 +129,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestValidCharacters(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -149,7 +149,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSynthesizeCustomPron(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -177,7 +177,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSynthesizeSpeechRate(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -203,7 +203,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSynthesizeRandomState(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -236,7 +236,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSynthesizeToFile(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -259,9 +259,9 @@ class OrcaAppTestUITests: BaseTest {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
                     let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
-                    
+
                     try runTestSynthesizeQuotes(orca: orca, model: model, testCase: testCase)
-                    
+
                     orca.delete()
                 }
             }
@@ -303,7 +303,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestStreamingQuotes(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                    
+                    orca.delete()
                 }
             }
         }
@@ -336,7 +336,7 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestSynthesizeToFileQuotes(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
@@ -362,14 +362,16 @@ class OrcaAppTestUITests: BaseTest {
 
                     try runTestInvalidText(orca: orca, model: model, testCase: testCase)
 
-                    orca.delete()                                        
+                    orca.delete()
                 }
             }
         }
     }
 
     func runTestAlignments(orca: Orca, model: String, testCase: AlignmentTests) throws {
-        let (pcm, wordArray) = try orca.synthesize(text: testCase.text_alignment, randomState: Int64(testCase.random_state))
+        let (pcm, wordArray) = try orca.synthesize(
+                                text: testCase.text_alignment,
+                                randomState: Int64(testCase.random_state))
         XCTAssertGreaterThan(pcm.count, 0)
         XCTAssertGreaterThan(wordArray.count, 0)
 
@@ -409,7 +411,7 @@ class OrcaAppTestUITests: BaseTest {
 
                 try runTestAlignments(orca: orca, model: testCase.model, testCase: testCase)
 
-                orca.delete()                                        
+                orca.delete()
             }
         }
     }

@@ -32,7 +32,7 @@ class PerformanceTest: BaseTest {
         let bundle = Bundle(for: type(of: self))
 
         let testCase = self.testData!.tests.sentence_tests[0]
-        
+
         for model in testCase.models {
             let modelPath = self.getModelPath(model: model)
             var results: [Double] = []
