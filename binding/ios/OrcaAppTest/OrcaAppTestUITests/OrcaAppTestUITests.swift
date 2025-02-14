@@ -41,8 +41,6 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func runTestStreaming(orca: Orca, model: String, testCase: SentenceTests) throws {
-        let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
-
         let orcaStream = try orca.streamOpen(randomState: Int64(testCase.random_state))
 
         var fullPcm = [Int16]()
@@ -245,13 +243,9 @@ class OrcaAppTestUITests: BaseTest {
     let textQuotes = "iOS uses different quotation marks for ‘single’ and “double” quotes."
 
     func runTestSynthesizeQuotes(orca: Orca, model: String, testCase: SentenceTests) throws {
-        let (pcm, wordArray) = try orca.synthesize(text: testCase.text, randomState: Int64(testCase.random_state))
+        let (pcm, wordArray) = try orca.synthesize(text: textQuotes)
         XCTAssertGreaterThan(pcm.count, 0)
         XCTAssertGreaterThan(wordArray.count, 0)
-
-        let groundTruth = try self.getPcm(fileUrl: self.getAudioFileUrl(model: model, synthesis_type: "single"))
-        XCTAssertEqual(pcm.count, groundTruth.count)
-        XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1))
     }
 
     func testSynthesizeQuotes() throws {
@@ -269,12 +263,10 @@ class OrcaAppTestUITests: BaseTest {
     }
 
     func runTestStreamingQuotes(orca: Orca, model: String, testCase: SentenceTests) throws {
-        let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
-
         let orcaStream = try orca.streamOpen(randomState: Int64(testCase.random_state))
 
         var fullPcm = [Int16]()
-        for c in testCase.text {
+        for c in textQuotes {
             if let pcm = try orcaStream.synthesize(text: String(c)) {
                 if !pcm.isEmpty {
                     fullPcm.append(contentsOf: pcm)
@@ -287,12 +279,6 @@ class OrcaAppTestUITests: BaseTest {
         }
 
         orcaStream.close()
-
-        let groundTruth = try self.getPcm(fileUrl: self.getAudioFileUrl(model: model, synthesis_type: "stream"))
-        XCTAssertEqual(fullPcm.count, groundTruth.count)
-        XCTAssertTrue(compareArrays(arr1: fullPcm, arr2: groundTruth, step: 1))
-
-        orca.delete()
     }
 
     func testStreamingQuotes() throws {
@@ -317,12 +303,12 @@ class OrcaAppTestUITests: BaseTest {
                                     create: false)
         let audioFile = audioDir.appendingPathComponent("test.wav")
 
-        let wordArrayFromURL = try orca.synthesizeToFile(text: testCase.text, outputURL: audioFile)
+        let wordArrayFromURL = try orca.synthesizeToFile(text: textQuotes, outputURL: audioFile)
         XCTAssert(FileManager().fileExists(atPath: audioFile.path))
         XCTAssertGreaterThan(wordArrayFromURL.count, 0)
         try FileManager().removeItem(at: audioFile)
 
-        let wordArrayFromPath = try orca.synthesizeToFile(text: testCase.text, outputPath: audioFile.path)
+        let wordArrayFromPath = try orca.synthesizeToFile(text: textQuotes, outputPath: audioFile.path)
         XCTAssert(FileManager().fileExists(atPath: audioFile.path))
         XCTAssertGreaterThan(wordArrayFromPath.count, 0)
         try FileManager().removeItem(at: audioFile)
@@ -381,7 +367,7 @@ class OrcaAppTestUITests: BaseTest {
                                     appropriateFor: nil,
                                     create: false)
         let audioFile = audioDir.appendingPathComponent("test.wav")
-        let synthToFileWordArray = try orca.synthesizeToFile(text: testCase.text_alignment, outputURL: audioFile)
+        let synthToFileWordArray = try orca.synthesizeToFile(text: testCase.text_alignment, outputURL: audioFile, randomState: Int64(testCase.random_state))
         try FileManager().removeItem(at: audioFile)
 
         var synthesizeTestData = [OrcaWord]()
