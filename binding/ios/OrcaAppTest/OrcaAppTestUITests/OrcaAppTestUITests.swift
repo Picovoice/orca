@@ -367,7 +367,10 @@ class OrcaAppTestUITests: BaseTest {
                                     appropriateFor: nil,
                                     create: false)
         let audioFile = audioDir.appendingPathComponent("test.wav")
-        let synthToFileWordArray = try orca.synthesizeToFile(text: testCase.text_alignment, outputURL: audioFile, randomState: Int64(testCase.random_state))
+        let synthToFileWordArray = try orca.synthesizeToFile(
+                                    text: testCase.text_alignment,
+                                    outputURL: audioFile,
+                                    randomState: Int64(testCase.random_state))
         try FileManager().removeItem(at: audioFile)
 
         var synthesizeTestData = [OrcaWord]()
