@@ -70,7 +70,7 @@ public class AlignmentTests extends BaseTest {
         JsonParser parser = new JsonParser();
         JsonObject testDataJson = parser.parse(testDataJsonString).getAsJsonObject();
 
-        final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("sentence_tests").getAsJsonArray();
+        final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("alignment_tests").getAsJsonArray();
 
         List<Object[]> parameters = new ArrayList<>();
         for (JsonElement testCaseElem : testCases) {

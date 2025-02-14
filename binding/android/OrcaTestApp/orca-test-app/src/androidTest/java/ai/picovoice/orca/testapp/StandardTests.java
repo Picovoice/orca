@@ -47,7 +47,8 @@ public class StandardTests extends BaseTest {
         JsonObject testDataJson = parser.parse(testDataJsonString).getAsJsonObject();
 
         final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("sentence_tests").getAsJsonArray();
-        modelFile = testCases.get(0).getAsJsonObject().get("models").getAsJsonArray().get(0).getAsString();
+        String modelFilename = testCases.get(0).getAsJsonObject().get("models").getAsJsonArray().get(0).getAsString();
+        modelFile = getModelFilepath(modelFilename);
     }
 
     @Test
