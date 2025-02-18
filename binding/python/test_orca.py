@@ -1,5 +1,5 @@
 #
-#    Copyright 2024 Picovoice Inc.
+#    Copyright 2024-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -13,11 +13,15 @@ import argparse
 import os
 import sys
 import unittest
+import dataclasses
+
+from parameterized import parameterized
 from typing import List, Sequence
 
 from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
-from test_util import get_model_paths, get_test_data, read_wav_file
+from test_util import get_model_path, get_test_data, read_wav_file
+
 
 test_data = get_test_data()
 
@@ -26,27 +30,6 @@ class OrcaTestCase(unittest.TestCase):
     access_key: str
     orcas: List[Orca]
     model_paths: List[str]
-
-    @classmethod
-    def setUpClass(cls):
-        cls.orcas = [
-            Orca(
-                access_key=cls.access_key,
-                model_path=model_path,
-                library_path=default_library_path('../..'))
-            for model_path in get_model_paths()]
-        cls.model_paths = get_model_paths()
-
-    @classmethod
-    def tearDownClass(cls):
-        for orca in cls.orcas:
-            orca.delete()
-
-    def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
-        pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
-        self.assertEqual(len(pcm), len(ground_truth))
-        for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=12000)
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
         self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
@@ -65,58 +48,106 @@ class OrcaTestCase(unittest.TestCase):
         for phoneme, phoneme_truth in zip(word.phonemes, word_truth.phonemes):
             self._test_phoneme_equal(phoneme, phoneme_truth)
 
+    def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
+        pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
+        self.assertEqual(len(pcm), len(ground_truth))
+        for i in range(len(pcm)):
+            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=12000)
+
     @staticmethod
-    def _get_pcm(model_path: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
+    def _get_pcm(model: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
         test_wav_folder = os.path.join(os.path.dirname(__file__), "../../", audio_data_folder)
-        model_name = os.path.basename(model_path)
         test_wav_path = \
-            os.path.join(f"{test_wav_folder}", model_name.replace(".pv", f"_{synthesis_type}.wav"))
+            os.path.join(f"{test_wav_folder}", model.replace(".pv", f"_{synthesis_type}.wav"))
         return read_wav_file(test_wav_path)
 
-    def test_valid_characters(self) -> None:
-        for orca in self.orcas:
-            characters = orca.valid_characters
-            self.assertGreaterEqual(len(characters), 0)
-            self.assertTrue(all(isinstance(x, str) for x in characters))
-            self.assertTrue("," in characters)
+    @classmethod
+    def _orca_iter(cls, models):
+        for model in models:
+            orca = None
+            try:
+                orca = Orca(
+                    access_key=cls.access_key,
+                    model_path=get_model_path(model),
+                    library_path=default_library_path('../..'))
+                yield orca, model
 
-    def test_max_character_limit(self) -> None:
-        for orca in self.orcas:
-            self.assertGreaterEqual(orca.max_character_limit, 0)
+            finally:
+                if orca is not None:
+                    orca.delete()
 
-    def test_sample_rate(self) -> None:
-        for orca in self.orcas:
-            self.assertGreater(orca.sample_rate, 0)
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
+    def test_synthesize(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            text: str):
 
-    def test_synthesize(self) -> None:
-        for i, orca in enumerate(self.orcas):
-            pcm, alignment = orca.synthesize(test_data.text, random_state=test_data.random_state)
+        for orca, model in OrcaTestCase._orca_iter(models):
+            pcm, alignment = orca.synthesize(text, random_state=random_state)
             self.assertGreater(len(pcm), 0)
 
             ground_truth = self._get_pcm(
-                model_path=self.model_paths[i],
+                model=model,
                 audio_data_folder=test_data.audio_data_folder,
                 synthesis_type="single")
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
-    def test_synthesize_alignment_exact(self) -> None:
-        orca = [
-            orca for i, orca in enumerate(self.orcas) if
-            test_data.exact_alignment_test_model_identifier in self.model_paths[i]].pop()
-        pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
-        self.assertGreater(len(pcm), 0)
+    @parameterized.expand([(t.language, t.models) for t in test_data.sentence_tests])
+    def test_valid_characters(
+            self,
+            language: str,
+            models: List[str]) -> None:
+        for orca, model in OrcaTestCase._orca_iter(models):
+            characters = orca.valid_characters
+            self.assertGreaterEqual(len(characters), 0)
+            self.assertTrue(all(isinstance(x, str) for x in characters))
+            self.assertTrue("," in characters)
 
-        self.assertTrue(len(alignments) == len(test_data.alignments))
-        for word, word_truth in zip(alignments, test_data.alignments):
-            self._test_word_equal(word, word_truth)
+    @parameterized.expand([(t.language, t.models) for t in test_data.sentence_tests])
+    def test_max_character_limit(
+            self,
+            language: str,
+            models: List[str]) -> None:
+        for orca, model in OrcaTestCase._orca_iter(models):
+            self.assertGreaterEqual(orca.max_character_limit, 0)
 
-    def test_synthesize_alignment(self) -> None:
-        for i, orca in enumerate(self.orcas):
-            if test_data.exact_alignment_test_model_identifier in self.model_paths[i]:
-                continue
+    @parameterized.expand([(t.language, t.models) for t in test_data.sentence_tests])
+    def test_sample_rate(
+            self,
+            language: str,
+            models: List[str]) -> None:
+        for orca, model in OrcaTestCase._orca_iter(models):
+            self.assertGreater(orca.sample_rate, 0)
 
-            pcm, alignments = orca.synthesize(test_data.text_alignment, random_state=test_data.random_state)
+    @parameterized.expand([dataclasses.astuple(t) for t in test_data.alignment_tests])
+    def test_synthesize_alignment_exact(
+            self,
+            language: str,
+            model: str,
+            random_state: int,
+            text_alignment: str,
+            expected_alignments: Sequence[Orca.WordAlignment]) -> None:
+        for orca, model in OrcaTestCase._orca_iter([model]):
+            pcm, alignments = orca.synthesize(text_alignment, random_state=random_state)
+            self.assertGreater(len(pcm), 0)
+
+            self.assertTrue(len(alignments) == len(expected_alignments))
+            for word, word_truth in zip(alignments, expected_alignments):
+                self._test_word_equal(word, word_truth)
+
+    @parameterized.expand([dataclasses.astuple(t) for t in test_data.alignment_tests])
+    def test_synthesize_alignment(
+            self,
+            language: str,
+            model: str,
+            random_state: int,
+            text_alignment: str,
+            expected_alignments: Sequence[Orca.WordAlignment]) -> None:
+        for orca, model in OrcaTestCase._orca_iter([model]):
+            pcm, alignments = orca.synthesize(text_alignment, random_state=random_state)
             self.assertGreater(len(pcm), 0)
 
             previous_word_end_sec = 0
@@ -133,11 +164,18 @@ class OrcaTestCase(unittest.TestCase):
                     self.assertTrue(phoneme.end_sec > phoneme.start_sec)
                     previous_phoneme_end_sec = phoneme.end_sec
 
-    def test_streaming_synthesis(self) -> None:
-        for i, orca in enumerate(self.orcas):
-            stream = orca.stream_open(random_state=test_data.random_state)
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
+    def test_streaming_synthesis(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            text: str):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
+            stream = orca.stream_open(random_state=random_state)
             pcm = []
-            for c in test_data.text:
+            for c in text:
                 pcm_chunk = stream.synthesize(c)
                 if pcm_chunk is not None:
                     pcm.extend(pcm_chunk)
@@ -147,43 +185,75 @@ class OrcaTestCase(unittest.TestCase):
             stream.close()
 
             ground_truth = self._get_pcm(
-                model_path=self.model_paths[i],
+                model=model,
                 audio_data_folder=test_data.audio_data_folder,
                 synthesis_type="stream")
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
-    def test_synthesize_custom_pron(self) -> None:
-        for orca in self.orcas:
-            pcm, _ = orca.synthesize(test_data.text_custom_pronunciation)
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text_custom_pronunciation) for t in test_data.sentence_tests])
+    def test_synthesize_custom_pron(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            text_custom_pronunciation: str):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
+            pcm, alignment = orca.synthesize(text_custom_pronunciation, random_state=random_state)
             self.assertGreater(len(pcm), 0)
 
-    def test_synthesize_speech_rate(self) -> None:
-        for orca in self.orcas:
-            pcm_fast, _ = orca.synthesize(test_data.text, speech_rate=1.3)
-            pcm_slow, _ = orca.synthesize(test_data.text, speech_rate=0.7)
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
+    def test_synthesize(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            text: str):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
+            pcm_fast, _ = orca.synthesize(text, speech_rate=1.3)
+            pcm_slow, _ = orca.synthesize(text, speech_rate=0.7)
 
             self.assertLess(len(pcm_fast), len(pcm_slow))
 
             with self.assertRaises(OrcaError):
-                _ = orca.synthesize(test_data.text, speech_rate=9999)
+                _ = orca.synthesize(text, speech_rate=9999)
 
-    def test_synthesize_to_file(self) -> None:
-        for orca in self.orcas:
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
+    def test_synthesize_to_file(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            text: str):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
             output_path = os.path.join(os.path.dirname(__file__), "output.wav")
-            orca.synthesize_to_file(test_data.text, output_path=output_path)
+            orca.synthesize_to_file(text, output_path=output_path)
             self.assertTrue(os.path.isfile(output_path))
             os.remove(output_path)
 
-    def test_version(self) -> None:
-        for orca in self.orcas:
+    @parameterized.expand([(t.language, t.models) for t in test_data.sentence_tests])
+    def test_version(
+            self,
+            language: str,
+            models: List[str]):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
             version = orca.version
             self.assertIsInstance(version, str)
             self.assertGreater(len(version), 0)
 
-    def test_invalid_input(self) -> None:
-        for orca in self.orcas:
-            for sentence in test_data.text_invalid:
+    @parameterized.expand([(t.language, t.models, t.text_invalid) for t in test_data.invalid_tests])
+    def test_invalid_input(
+            self,
+            language: str,
+            models: List[str],
+            text_invalid: List[str]):
+
+        for orca, model in OrcaTestCase._orca_iter(models):
+            for sentence in text_invalid:
                 with self.assertRaises(OrcaInvalidArgumentError):
                     orca.synthesize(sentence)
 
@@ -225,7 +295,7 @@ class OrcaTestCase(unittest.TestCase):
         orca._handle = None
 
         try:
-            res = orca.synthesize(test_data.text)
+            res = orca.synthesize("test text")
             self.assertEqual(len(res), 0)
         except OrcaError as e:
             self.assertGreater(len(e.message_stack), 0)

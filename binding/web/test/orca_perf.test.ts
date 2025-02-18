@@ -1,3 +1,15 @@
+/*
+    Copyright 2024-2025 Picovoice Inc.
+
+    You may not use this file except in compliance with the license. A copy of the license is
+    located in the "LICENSE" file accompanying this source.
+
+    Unless required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied. See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
 import { Orca, OrcaWorker } from '../';
 import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
@@ -44,9 +56,11 @@ describe('Orca binding performance test', () => {
   for (const instance of [Orca, OrcaWorker]) {
     const instanceString = (instance === OrcaWorker) ? 'worker' : 'main';
 
-    for (const modelFileSuffix of ['male', 'female']) {
-      it(`should be lower than performance threshold [${modelFileSuffix}] (${instanceString})`, async () => {
-        await testPerformance(instance, `/test/orca_params_${modelFileSuffix}.pv`, testData.test_sentences.text);
+    const testCase = testData.tests.sentence_tests[0];
+
+    for (const model of testCase.models) {
+      it(`should be lower than performance threshold [${model}] (${instanceString})`, async () => {
+        await testPerformance(instance, `/test/${model}`, testCase.text);
       });
     }
   }

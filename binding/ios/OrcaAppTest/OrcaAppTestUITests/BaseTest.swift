@@ -1,5 +1,5 @@
 //
-//  Copyright 2024 Picovoice Inc.
+//  Copyright 2024-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -13,20 +13,34 @@ import XCTest
 import Orca
 
 struct TestData: Decodable {
-    var test_sentences: TestSentences
-    var random_state: Int64
-    var alignments: [TestAlignments]
+    var tests: TestsData
+    var audio_data_folder: String
 }
 
-struct TestSentences: Decodable {
+struct TestsData: Decodable {
+    var sentence_tests: [SentenceTests]
+    var alignment_tests: [AlignmentTests]
+    var invalid_tests: [InvalidTests]
+}
+
+struct SentenceTests: Decodable {
+    var language: String
+    var models: [String]
+    var random_state: Int
     var text: String
     var text_no_punctuation: String
     var text_custom_pronunciation: String
-    var text_alignment: String
-    var text_invalid: [String]
 }
 
-struct TestAlignments: Decodable {
+struct AlignmentTests: Decodable {
+    var language: String
+    var model: String
+    var random_state: Int
+    var text_alignment: String
+    var alignments: [TestAlignment]
+}
+
+struct TestAlignment: Decodable {
     var word: String
     var start_sec: Float
     var end_sec: Float
@@ -39,6 +53,12 @@ struct TestPhonemes: Decodable {
     var end_sec: Float
 }
 
+struct InvalidTests: Decodable {
+    var language: String
+    var models: [String]
+    var text_invalid: [String]
+}
+
 extension String {
     subscript(index: Int) -> Character {
         return self[self.index(self.startIndex, offsetBy: index)]
@@ -46,46 +66,14 @@ extension String {
 }
 
 class BaseTest: XCTestCase {
-    let params: [String] = [
-        "male",
-        "female"
-    ]
 
     let accessKey = "{TESTING_ACCESS_KEY_HERE}"
-    var orcas: [Orca] = []
     var testData: TestData?
-
-    let testAudioMaleSingle = Bundle(for: BaseTest.self)
-        .url(forResource: "test_resources/wav/orca_params_male_single", withExtension: "wav")!
-    let testAudioMaleStream = Bundle(for: BaseTest.self)
-        .url(forResource: "test_resources/wav/orca_params_male_stream", withExtension: "wav")!
-    let testAudioFemaleSingle = Bundle(for: BaseTest.self)
-        .url(forResource: "test_resources/wav/orca_params_female_single", withExtension: "wav")!
-    let testAudioFemaleStream = Bundle(for: BaseTest.self)
-        .url(forResource: "test_resources/wav/orca_params_female_stream", withExtension: "wav")!
 
     override func setUp() async throws {
         try await super.setUp()
 
         testData = try getTestData()
-
-        let bundle = Bundle(for: type(of: self))
-        for param in params {
-            let modelPath: String = bundle.path(
-                    forResource: "orca_params_\(param)",
-                    ofType: "pv",
-                    inDirectory: "test_resources/model_files")!
-            orcas.append(
-                try Orca.init(accessKey: accessKey, modelPath: modelPath)
-            )
-        }
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        for orca in orcas {
-            orca.delete()
-        }
     }
 
     func getTestData() throws -> TestData {
@@ -99,6 +87,19 @@ class BaseTest: XCTestCase {
         let testData = try JSONDecoder().decode(TestData.self, from: testDataJsonData)
 
         return testData
+    }
+
+    func getAudioFileUrl(model: String, synthesis_type: String) -> URL {
+        let filename = model.replacingOccurrences(of: ".pv", with: "_\(synthesis_type)")
+        return Bundle(for: type(of: self)).url(forResource: "test_resources/wav/\(filename)", withExtension: "wav")!
+    }
+
+    func getModelPath(model: String) -> String {
+        let model_name = model.replacingOccurrences(of: ".pv", with: "")
+        return Bundle(for: type(of: self)).path(
+                forResource: model_name,
+                ofType: "pv",
+                inDirectory: "test_resources/model_files")!
     }
 
     func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {

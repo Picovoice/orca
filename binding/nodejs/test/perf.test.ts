@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -37,7 +37,7 @@ describe('Performance', () => {
     let perfResults: number[] = [];
     for (let i = 0; i < NUM_TEST_ITERATIONS; i++) {
       const before = performance.now();
-      orcaEngine.synthesize(getTestData().test_sentences.text);
+      orcaEngine.synthesize(getTestData().tests.sentence_tests[0].text);
       let synthTime = performance.now() - before;
 
       if (i > 0) {

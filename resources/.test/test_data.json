@@ -1,115 +1,139 @@
 {
-  "test_sentences": {
-    "text": "It doesn't matter how slowly you go, as long as you do not stop!",
-    "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
-    "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!",
-    "text_alignment": "Test alignment.",
-    "text_invalid": [
-      "Symbols *$",
-      "Escape characters \\",
-      "\"ی\", \"ء\"",
-      "ॐÁ hindi and spanish",
-      "Б russian",
-      "Some korean ㅘ",
-      "Not closed {custom|K AH S T AM pron",
-      "No separator in {custom K AH S T AM} pron",
-      "Wrong {{custom}|K AH S T AM} pron",
-      "Wrong {{custom||K AH S T AM}} pron",
-      "Wrong {custom|K AH S T AM}}| pron",
-      "Wrong }custom|K AH S T AM{ pron",
-      "Wrong {custom| K AH S T AM} pron",
-      "Wrong {custom|K AH S T AM } pron"
+  "tests": {
+    "sentence_tests": [
+      {
+        "language": "en",
+        "models": [
+          "orca_params_female.pv",
+          "orca_params_male.pv"
+        ],
+        "random_state": 42,
+        "text": "It doesn't matter how slowly you go, as long as you do not stop!",
+        "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
+        "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
+      }
+    ],
+    "alignment_tests": [
+      {
+        "language": "en",
+        "model": "orca_params_female.pv",
+        "random_state": 42,
+        "text_alignment": "Test alignment.",
+        "alignments": [
+          {
+            "word": "Test",
+            "start_sec": 0.000,
+            "end_sec": 0.348,
+            "phonemes": [
+              {
+                "phoneme": "T",
+                "start_sec": 0.000,
+                "end_sec": 0.104
+              },
+              {
+                "phoneme": "EH",
+                "start_sec": 0.104,
+                "end_sec": 0.197
+              },
+              {
+                "phoneme": "S",
+                "start_sec": 0.197,
+                "end_sec": 0.279
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.279,
+                "end_sec": 0.348
+              }
+            ]
+          },
+          {
+            "word": "alignment",
+            "start_sec": 0.348,
+            "end_sec": 0.848,
+            "phonemes": [
+              {
+                "phoneme": "AH",
+                "start_sec": 0.348,
+                "end_sec": 0.406
+              },
+              {
+                "phoneme": "L",
+                "start_sec": 0.406,
+                "end_sec": 0.488
+              },
+              {
+                "phoneme": "AY",
+                "start_sec": 0.488,
+                "end_sec": 0.557
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.557,
+                "end_sec": 0.639
+              },
+              {
+                "phoneme": "M",
+                "start_sec": 0.639,
+                "end_sec": 0.685
+              },
+              {
+                "phoneme": "AH",
+                "start_sec": 0.685,
+                "end_sec": 0.731
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.731,
+                "end_sec": 0.778
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.778,
+                "end_sec": 0.848
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 0.848,
+            "end_sec": 0.882,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 0.848,
+                "end_sec": 0.882
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "invalid_tests": [
+      {
+        "language": "en",
+        "models": [
+          "orca_params_female.pv",
+          "orca_params_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Not closed {custom|K AH S T AM pron",
+          "No separator in {custom K AH S T AM} pron",
+          "Wrong {{custom}|K AH S T AM} pron",
+          "Wrong {{custom||K AH S T AM}} pron",
+          "Wrong {custom|K AH S T AM}}| pron",
+          "Wrong }custom|K AH S T AM{ pron",
+          "Wrong {custom| K AH S T AM} pron",
+          "Wrong {custom|K AH S T AM } pron"
+        ]
+      }
     ]
   },
-  "random_state": 42,
-  "alignments": [
-    {
-      "word": "Test",
-      "start_sec": 0.000,
-      "end_sec": 0.348,
-      "phonemes": [
-        {
-          "phoneme": "T",
-          "start_sec": 0.000,
-          "end_sec": 0.104
-        },
-        {
-          "phoneme": "EH",
-          "start_sec": 0.104,
-          "end_sec": 0.197
-        },
-        {
-          "phoneme": "S",
-          "start_sec": 0.197,
-          "end_sec": 0.279
-        },
-        {
-          "phoneme": "T",
-          "start_sec": 0.279,
-          "end_sec": 0.348
-        }
-      ]
-    },
-    {
-      "word": "alignment",
-      "start_sec": 0.348,
-      "end_sec": 0.848,
-      "phonemes": [
-        {
-          "phoneme": "AH",
-          "start_sec": 0.348,
-          "end_sec": 0.406
-        },
-        {
-          "phoneme": "L",
-          "start_sec": 0.406,
-          "end_sec": 0.488
-        },
-        {
-          "phoneme": "AY",
-          "start_sec": 0.488,
-          "end_sec": 0.557
-        },
-        {
-          "phoneme": "N",
-          "start_sec": 0.557,
-          "end_sec": 0.639
-        },
-        {
-          "phoneme": "M",
-          "start_sec": 0.639,
-          "end_sec": 0.685
-        },
-        {
-          "phoneme": "AH",
-          "start_sec": 0.685,
-          "end_sec": 0.731
-        },
-        {
-          "phoneme": "N",
-          "start_sec": 0.731,
-          "end_sec": 0.778
-        },
-        {
-          "phoneme": "T",
-          "start_sec": 0.778,
-          "end_sec": 0.848
-        }
-      ]
-    },
-    {
-      "word": ".",
-      "start_sec": 0.848,
-      "end_sec": 0.882,
-      "phonemes": [
-        {
-          "phoneme": ".",
-          "start_sec": 0.848,
-          "end_sec": 0.882
-        }
-      ]
-    }
-  ],
-  "audio_data_folder": "resources/.test/wav/",
-  "exact_alignment_test_model_identifier": "orca_params_female"
+  "audio_data_folder": "resources/.test/wav/"
 }

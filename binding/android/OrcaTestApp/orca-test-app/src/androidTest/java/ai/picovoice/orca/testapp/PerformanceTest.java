@@ -1,5 +1,5 @@
 /*
-    Copyright 2024 Picovoice Inc.
+    Copyright 2024-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -14,12 +14,18 @@ package ai.picovoice.orca.testapp;
 
 import static org.junit.Assert.assertTrue;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -33,10 +39,19 @@ public class PerformanceTest extends BaseTest {
     public String modelFile;
 
     @Parameterized.Parameters(name = "{0}")
-    public static Collection<Object[]> initParameters() {
+    public static Collection<Object[]> initParameters() throws IOException {
+        String testDataJsonString = getTestDataString();
+
+        JsonParser parser = new JsonParser();
+        JsonObject testDataJson = parser.parse(testDataJsonString).getAsJsonObject();
+
+        final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("sentence_tests").getAsJsonArray();
+        JsonObject testCase = testCases.get(0).getAsJsonObject();
+
         List<Object[]> parameters = new ArrayList<>();
-        for (String modelFile : getModelFiles()) {
-            parameters.add(new Object[]{modelFile});
+        for (JsonElement modelJson : testCase.get("models").getAsJsonArray()) {
+            String model = modelJson.getAsString();
+            parameters.add(new Object[]{model});
         }
         return parameters;
     }

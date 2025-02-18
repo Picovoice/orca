@@ -1,5 +1,5 @@
 //
-//  Copyright 2024 Picovoice Inc.
+//  Copyright 2024-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -31,11 +31,10 @@ class PerformanceTest: BaseTest {
 
         let bundle = Bundle(for: type(of: self))
 
-        for param in params {
-            let modelPath: String = bundle.path(
-                    forResource: "orca_params_\(param)",
-                    ofType: "pv",
-                    inDirectory: "test_resources/model_files")!
+        let testCase = self.testData!.tests.sentence_tests[0]
+
+        for model in testCase.models {
+            let modelPath = self.getModelPath(model: model)
             var results: [Double] = []
 
             for i in 0...numTestIterations {
@@ -43,7 +42,7 @@ class PerformanceTest: BaseTest {
                 let orca = try Orca(accessKey: accessKey, modelPath: modelPath)
 
                 let before = CFAbsoluteTimeGetCurrent()
-                let (pcm, wordArray) = try orca.synthesize(text: self.testData!.test_sentences.text)
+                let (pcm, wordArray) = try orca.synthesize(text: testCase.text)
                 let after = CFAbsoluteTimeGetCurrent()
                 totalNSec += (after - before)
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -24,17 +24,10 @@ export function getTestData() {
   return TEST_DATA_JSON;
 }
 
-export function getModelPathFemale(): string {
+export function getModelPath(name: string): string {
   return path.join(
     ROOT_DIR,
-    'lib/common/orca_params_female.pv',
+    'lib/common/',
+    name,
   );
 }
-
-export function getModelPathMale(): string {
-  return path.join(
-    ROOT_DIR,
-    'lib/common/orca_params_male.pv',
-  );
-}
-

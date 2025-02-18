@@ -32,41 +32,58 @@ namespace OrcaTest
 
         private static string _accessKey;
 
-        private static TestJson _testJson;
-
         [ClassInitialize]
         public static void ClassInitialize(TestContext _)
         {
             _accessKey = Environment.GetEnvironmentVariable("ACCESS_KEY");
-            _testJson = LoadJsonTestData();
         }
 
         [Serializable]
-        private class TestJson
+        private class TestDataJson
         {
-            public TestSentencesJson test_sentences { get; set; }
+            public TestsJson tests { get; set; }
+
+            public string audio_data_folder { get; set; }
+        }
+
+        [Serializable]
+        private class TestsJson
+        {
+            public SentenceTestsJson[] sentence_tests { get; set; }
+
+            public AlignmentTestsJson[] alignment_tests { get; set; }
+
+            public InvalidTestsJson[] invalid_tests { get; set; }
+        }
+
+        [Serializable]
+        public class SentenceTestsJson
+        {
+            public string language { get; set; }
+
+            public string[] models { get; set; }
 
             public long random_state { get; set; }
 
-            public TestWordAlignmentsJson[] alignments { get; set; }
-
-            public string audio_data_folder { get; set; }
-
-            public string exact_alignment_test_model_identifier { get; set; }
-        }
-
-        [Serializable]
-        public class TestSentencesJson
-        {
             public string text { get; set; }
 
             public string text_no_punctuation { get; set; }
 
             public string text_custom_pronunciation { get; set; }
+        }
+
+        [Serializable]
+        public class AlignmentTestsJson
+        {
+            public string language { get; set; }
+
+            public string model { get; set; }
+
+            public long random_state { get; set; }
 
             public string text_alignment { get; set; }
 
-            public string[] text_invalid { get; set; }
+            public TestWordAlignmentsJson[] alignments { get; set; }
         }
 
         [Serializable]
@@ -91,17 +108,60 @@ namespace OrcaTest
             public float end_sec { get; set; }
         }
 
-        private static IEnumerable<object[]> ModelTestParameters
+        [Serializable]
+        public class InvalidTestsJson
+        {
+            public string language { get; set; }
+
+            public string[] models { get; set; }
+
+            public string[] text_invalid { get; set; }
+        }
+
+        private static IEnumerable<object[]> SentenceTestParameters
         {
             get
             {
-                string[] modelPaths = GetModelPaths();
-                object[][] modelTestParameters = new object[modelPaths.Length][];
-                for (int i = 0; i < modelPaths.Length; i++)
-                {
-                    modelTestParameters[i] = new object[] { modelPaths[i] };
-                }
-                return modelTestParameters;
+                TestDataJson testData = LoadJsonTestData();
+                return testData.tests.sentence_tests
+                    .SelectMany(x => x.models.Select(model => new object[] {
+                        x.language,
+                        model,
+                        x.random_state,
+                        x.text,
+                        x.text_no_punctuation,
+                        x.text_custom_pronunciation,
+                    }));
+            }
+        }
+
+        private static IEnumerable<object[]> AlignmentTestParameters
+        {
+            get
+            {
+                TestDataJson testData = LoadJsonTestData();
+                return testData.tests.alignment_tests
+                    .Select(x => new object[] {
+                        x.language,
+                        x.model,
+                        x.random_state,
+                        x.text_alignment,
+                        x.alignments,
+                    });
+            }
+        }
+
+        private static IEnumerable<object[]> InvalidTestParameters
+        {
+            get
+            {
+                TestDataJson testData = LoadJsonTestData();
+                return testData.tests.invalid_tests
+                    .SelectMany(x => x.models.Select(model => new object[] {
+                        x.language,
+                        model,
+                        x.text_invalid,
+                    }));
             }
         }
 
@@ -168,10 +228,16 @@ namespace OrcaTest
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestInit(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestInit(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 Assert.IsFalse(string.IsNullOrWhiteSpace(orca?.Version), "Orca did not return a valid version string.");
                 Assert.IsTrue(orca.SampleRate > 0, "Orca did not return a valid sample rate.");
@@ -182,60 +248,84 @@ namespace OrcaTest
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSynthesize(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestSynthesize(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 OrcaAudio res = orca.Synthesize(
-                    _testJson.test_sentences.text,
-                    randomState: _testJson.random_state);
-                List<short> expectedPcm = GetTestAudio(modelPath);
+                    text,
+                    randomState: random_state);
+                List<short> expectedPcm = GetTestAudio(model);
                 ValidateAudio(res.Pcm, expectedPcm.ToArray());
                 ValidateAlignments(res.Words);
             }
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSynthesizeNoPunctuation(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestSynthesizeNoPunctuation(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 OrcaAudio res = orca.Synthesize(
-                    _testJson.test_sentences.text_no_punctuation,
-                    randomState: _testJson.random_state);
+                    text_no_punctuation,
+                    randomState: random_state);
                 Assert.IsTrue(res.Pcm.Length > 0);
                 ValidateAlignments(res.Words);
             }
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSynthesizeWithCustomPronunciation(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestSynthesizeWithCustomPronunciation(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 OrcaAudio res = orca.Synthesize(
-                    _testJson.test_sentences.text_custom_pronunciation,
-                    randomState: _testJson.random_state);
+                    text_custom_pronunciation,
+                    randomState: random_state);
                 Assert.IsTrue(res.Pcm.Length > 0);
                 ValidateAlignments(res.Words);
             }
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSynthesizeToFile(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestSynthesizeToFile(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 string outputPath = "orca-temp.wav";
                 OrcaWord[] res = orca.SynthesizeToFile(
-                    _testJson.test_sentences.text,
+                    text,
                     outputPath,
-                    randomState: _testJson.random_state);
-                List<short> expectedPcm = GetTestAudio(modelPath);
+                    randomState: random_state);
+                List<short> expectedPcm = GetTestAudio(model);
                 List<short> synthesizedPcm = GetPcmFromFile(outputPath);
                 ValidateAudio(synthesizedPcm.ToArray(), expectedPcm.ToArray());
                 ValidateAlignments(res);
@@ -243,34 +333,40 @@ namespace OrcaTest
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSynthesizeAlignments(string modelPath)
+        [DynamicData(nameof(AlignmentTestParameters))]
+        public void TestSynthesizeAlignments(
+            string language,
+            string model,
+            long random_state,
+            string text_alignment,
+            TestWordAlignmentsJson[] alignments)
         {
-            if (Path.GetFileNameWithoutExtension(modelPath) != _testJson.exact_alignment_test_model_identifier)
-            {
-                return;
-            }
-
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 OrcaAudio res = orca.Synthesize(
-                    _testJson.test_sentences.text_alignment,
-                    randomState: _testJson.random_state);
+                    text_alignment,
+                    randomState: random_state);
                 Assert.IsTrue(res.Pcm.Length > 0);
-                ValidateAlignmentsExact(res.Words, _testJson.alignments);
+                ValidateAlignmentsExact(res.Words, alignments);
             }
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestStreamingSynthesize(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestStreamingSynthesize(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
             List<short> fullPcm = new List<short>();
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
-                using (Orca.OrcaStream orcaStream = orca.StreamOpen(randomState: _testJson.random_state))
+                using (Orca.OrcaStream orcaStream = orca.StreamOpen(randomState: random_state))
                 {
-                    foreach (char c in _testJson.test_sentences.text)
+                    foreach (char c in text)
                     {
                         short[] streamPcm = orcaStream.Synthesize(c.ToString());
                         if (streamPcm != null)
@@ -286,24 +382,30 @@ namespace OrcaTest
                 }
             }
             Assert.IsTrue(fullPcm.Count > 0);
-            List<short> expectedPcm = GetTestAudio(modelPath, "stream");
+            List<short> expectedPcm = GetTestAudio(model, "stream");
             ValidateAudio(fullPcm.ToArray(), expectedPcm.ToArray());
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestSpeechRate(string modelPath)
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestSpeechRate(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
                 OrcaAudio resSlow = orca.Synthesize(
-                    _testJson.test_sentences.text,
+                    text,
                     speechRate: 0.7f,
-                    randomState: _testJson.random_state);
+                    randomState: random_state);
                 OrcaAudio resFast = orca.Synthesize(
-                    _testJson.test_sentences.text,
+                    text,
                     speechRate: 1.3f,
-                    randomState: _testJson.random_state);
+                    randomState: random_state);
                 Assert.IsTrue(resSlow.Pcm.Length > 0);
                 Assert.IsTrue(resFast.Pcm.Length > 0);
                 Assert.IsTrue(resSlow.Pcm.Length > resFast.Pcm.Length);
@@ -311,16 +413,18 @@ namespace OrcaTest
         }
 
         [TestMethod]
-        [DynamicData(nameof(ModelTestParameters))]
-        public void TestInvalidInput(string modelPath)
+        [DynamicData(nameof(InvalidTestParameters))]
+        public void TestInvalidInput(
+            string language,
+            string model,
+            string[] text_invalid)
         {
-            using (Orca orca = Orca.Create(_accessKey, modelPath))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
             {
-                foreach (string invalidText in _testJson.test_sentences.text_invalid)
+                foreach (string invalidText in text_invalid)
                 {
                     Assert.ThrowsException<OrcaInvalidArgumentException>(() => orca.Synthesize(
-                        invalidText,
-                        randomState: _testJson.random_state));
+                        invalidText));
                 }
             }
         }
@@ -372,8 +476,8 @@ namespace OrcaTest
                 try
                 {
                     OrcaAudio res = o.Synthesize(
-                        _testJson.test_sentences.text,
-                        randomState: _testJson.random_state);
+                        "test text",
+                        randomState: 42);
                     Assert.IsTrue(res.Pcm.Length == -1);
                 }
                 catch (OrcaException e)
@@ -385,8 +489,8 @@ namespace OrcaTest
                 try
                 {
                     OrcaAudio res = o.Synthesize(
-                        _testJson.test_sentences.text,
-                        randomState: _testJson.random_state);
+                        "test text",
+                        randomState: 42);
                     Assert.IsTrue(res.Pcm.Length == -1);
                 }
                 catch (OrcaException e)
@@ -415,27 +519,25 @@ namespace OrcaTest
             return data;
         }
 
-        private static string[] GetModelPaths()
+        private static string GetModelPath(string model)
         {
-            return Directory.GetFiles(
-                Path.Combine(ROOT_DIR, "lib/common"),
-                "*.pv");
+            return Path.Combine(ROOT_DIR, "lib/common", model);
         }
 
-        private static List<short> GetTestAudio(string modelPath, string synthesisType = "single")
+        private static List<short> GetTestAudio(string model, string synthesisType = "single")
         {
-            string modelName = Path.GetFileName(modelPath);
+            TestDataJson testData = LoadJsonTestData();
             string testAudioPath = Path.Combine(
                 ROOT_DIR,
-                _testJson.audio_data_folder,
-                modelName.Replace(".pv", $"_{synthesisType}.wav"));
+                testData.audio_data_folder,
+                model.Replace(".pv", $"_{synthesisType}.wav"));
             return GetPcmFromFile(testAudioPath);
         }
 
-        private static TestJson LoadJsonTestData()
+        private static TestDataJson LoadJsonTestData()
         {
             string content = File.ReadAllText(Path.Combine(ROOT_DIR, "resources/.test/test_data.json"));
-            return JObject.Parse(content).ToObject<TestJson>();
+            return JObject.Parse(content).ToObject<TestDataJson>();
         }
     }
 }

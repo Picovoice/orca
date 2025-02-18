@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -15,34 +15,17 @@ import { WaveFile } from 'wavefile';
 
 import { getSystemLibraryPath } from '../src/platforms';
 import { Orca, OrcaAlignment, OrcaInvalidArgumentError, OrcaPhoneme, OrcaSynthesizeParams } from '../src';
-import { getAudioFile, getTestData, getModelPathFemale, getModelPathMale } from './test_utils';
+import { getAudioFile, getTestData, getModelPath } from './test_utils';
 
 const ACCESS_KEY = process.argv
   .filter(x => x.startsWith('--access_key='))[0]
   .split('--access_key=')[1];
 
-const EXACT_ALIGNMENT_TEST_MODEL = getModelPathFemale();
+const testData = getTestData()
 
-const models = [
-  {
-    modelFilePath: getModelPathFemale(),
-    wavPathSingle: 'orca_params_female_single.wav',
-    wavPathStream: 'orca_params_female_stream.wav',
-  },
-  {
-    modelFilePath: getModelPathMale(),
-    wavPathSingle: 'orca_params_male_single.wav',
-    wavPathStream: 'orca_params_male_stream.wav',
-  },
-];
-
-const testDataText = getTestData().test_sentences.text;
-const testDataNoPunctuation = getTestData().test_sentences.text_no_punctuation;
-const testDataCustomPronunciation = getTestData().test_sentences.text_custom_pronunciation;
-const testDataAlignment = getTestData().test_sentences.text_alignment;
-const testDataInvalid = getTestData().test_sentences.text_invalid;
-const testDataRandomState = getTestData().random_state;
-const testDataAlignments = getTestData().alignments;
+const getAudioFileName = (model: string, synthesis_type: string): string => {
+  return model.replace(".pv", `_${synthesis_type}.wav`)
+}
 
 const loadPcm = (audioFile: string): any => {
   const waveFilePath = getAudioFile(audioFile);
@@ -85,12 +68,12 @@ const validateAlignments = (alignments: OrcaAlignment[]) => {
   }
 };
 
-const validateAlignmentsExact = (alignments: OrcaAlignment[]) => {
+const validateAlignmentsExact = (alignments: OrcaAlignment[], expectedAlignments: any[]) => {
   alignments.forEach((alignment, i) => {
-    expect(alignment.word).toEqual(testDataAlignments[i].word);
-    expect(alignment.startSec).toBeCloseTo(testDataAlignments[i].start_sec, 2);
-    expect(alignment.endSec).toBeCloseTo(testDataAlignments[i].end_sec, 2);
-    const expectedPhonemes = testDataAlignments[i].phonemes;
+    expect(alignment.word).toEqual(expectedAlignments[i].word);
+    expect(alignment.startSec).toBeCloseTo(expectedAlignments[i].start_sec, 2);
+    expect(alignment.endSec).toBeCloseTo(expectedAlignments[i].end_sec, 2);
+    const expectedPhonemes = expectedAlignments[i].phonemes;
     alignment.phonemes.forEach((phoneme, j) => {
       expect(phoneme.phoneme).toEqual(expectedPhonemes[j].phoneme);
       expect(phoneme.startSec).toBeCloseTo(expectedPhonemes[j].start_sec, 2);
@@ -99,141 +82,154 @@ const validateAlignmentsExact = (alignments: OrcaAlignment[]) => {
   });
 };
 
-const testOrcaSynthesize = (
-  modelPath: string,
-  text: string,
-  synthesizeParams?: OrcaSynthesizeParams,
-) => {
-  const orcaEngine = new Orca(ACCESS_KEY, { modelPath });
-
-  try {
-    const { pcm, alignments } = orcaEngine.synthesize(text, synthesizeParams);
-    expect(pcm.length).toBeGreaterThan(0);
-    validateAlignments(alignments);
-  } catch (err) {
-    expect(err).toBeUndefined();
-  }
-
-  orcaEngine.release();
-};
-
 describe('properties', () => {
-  for (const model of models) {
-    it('version', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      expect(typeof orcaEngine.version).toEqual('string');
-      expect(orcaEngine.version.length).toBeGreaterThan(0);
-      orcaEngine.release();
-    });
-
-    it('sample rate', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      expect(orcaEngine.sampleRate).toBeGreaterThan(0);
-      orcaEngine.release();
-    });
-
-    it('valid characters', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      expect(orcaEngine.validCharacters.length).toBeGreaterThan(0);
-      expect(orcaEngine.validCharacters.every(x => typeof x === 'string')).toBeTruthy();
-      expect(orcaEngine.validCharacters.includes(',')).toBeTruthy();
-      orcaEngine.release();
-    });
-
-    it('max character limit', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      expect(orcaEngine.maxCharacterLimit).toBeGreaterThan(0);
-      orcaEngine.release();
-    });
-  }
-});
-
-describe('successful synthesis', () => {
-  for (const model of models) {
-    it('synthesize', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      const { pcm, alignments } = orcaEngine.synthesize(
-        testDataText,
-        { speechRate: 1, randomState: testDataRandomState },
-      );
-      const groundTruth = loadPcm(model.wavPathSingle);
-      validatePcm(pcm, groundTruth);
-      validateAlignments(alignments);
-      orcaEngine.release();
-    });
-
-    it('synthesize with no punctuation', () => {
-      testOrcaSynthesize(model.modelFilePath, testDataNoPunctuation);
-    });
-
-    it('synthesize with custom punctuation', () => {
-      testOrcaSynthesize(model.modelFilePath, testDataCustomPronunciation);
-    });
-
-    it('synthesize to file', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      const filePath = './orca-temp.wav';
-      const alignments = orcaEngine.synthesizeToFile(testDataText, filePath);
-      validateAlignments(alignments);
-      expect(fs.existsSync(filePath)).toBeTruthy();
-      orcaEngine.release();
-    });
-
-    it('synthesize alignment', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      const { pcm, alignments } = orcaEngine.synthesize(testDataAlignment, { randomState: testDataRandomState });
-      expect(pcm.length).toBeGreaterThan(0);
-      if (EXACT_ALIGNMENT_TEST_MODEL === model.modelFilePath) {
-        validateAlignmentsExact(alignments);
-      } else {
-        validateAlignments(alignments);
-      }
-      orcaEngine.release();
-    });
-
-    it('streaming synthesis', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      const orcaStream = orcaEngine.streamOpen({ randomState: testDataRandomState });
-      const fullPcm: number[] = [];
-      for (const char of testDataText) {
-        const streamPcm = orcaStream.synthesize(char);
-        if (streamPcm !== null) {
-          fullPcm.push(...streamPcm);
-        }
-      }
-      const flushedPcm = orcaStream.flush();
-      if (flushedPcm !== null) {
-        fullPcm.push(...flushedPcm);
-      }
-      orcaStream.close();
-      const pcm = new Int16Array(fullPcm);
-      const groundTruth = loadPcm(model.wavPathStream);
-      validatePcm(pcm, groundTruth);
-      orcaEngine.release();
-    });
-
-    it('speech rate', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-      const { pcm: pcmSlow } = orcaEngine.synthesize(testDataText, { speechRate: 0.7 });
-      const { pcm: pcmFast } = orcaEngine.synthesize(testDataText, { speechRate: 1.3 });
-      expect(pcmSlow.length).toBeGreaterThan(0);
-      expect(pcmFast.length).toBeGreaterThan(0);
-      expect(pcmSlow.length).toBeGreaterThan(pcmFast.length);
-      orcaEngine.release();
-    });
-
-    it('invalid input', () => {
-      testDataInvalid.forEach((sentence: string) => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: model.modelFilePath });
-        try {
-          orcaEngine.synthesize(sentence);
-        } catch (e) {
-          expect(e).toBeDefined();
-        }
+  describe.each<any>(testData.tests.sentence_tests)('$language', ({language, models}) => {
+    describe.each<any>(models)('%s', (model) => {
+      it('version', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        expect(typeof orcaEngine.version).toEqual('string');
+        expect(orcaEngine.version.length).toBeGreaterThan(0);
+        orcaEngine.release();
       });
-    });
-  }
+
+      it('sample rate', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        expect(orcaEngine.sampleRate).toBeGreaterThan(0);
+        orcaEngine.release();
+      });
+
+      it('valid characters', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        expect(orcaEngine.validCharacters.length).toBeGreaterThan(0);
+        expect(orcaEngine.validCharacters.every(x => typeof x === 'string')).toBeTruthy();
+        expect(orcaEngine.validCharacters.includes(',')).toBeTruthy();
+        orcaEngine.release();
+      });
+
+      it('max character limit', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        expect(orcaEngine.maxCharacterLimit).toBeGreaterThan(0);
+        orcaEngine.release();
+      });
+    })
+  })
 });
+
+describe('sentences', () => {
+  describe.each<any>(testData.tests.sentence_tests)('$language', ({language, models, random_state, text, text_no_punctuation, text_custom_pronunciation}) => {
+    describe.each<any>(models)('%s', (model) => {
+      it('synthesize', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const { pcm, alignments } = orcaEngine.synthesize(
+          text,
+          { speechRate: 1, randomState: random_state },
+        );
+        const groundTruth = loadPcm(getAudioFileName(model, "single"));
+        validatePcm(pcm, groundTruth);
+        validateAlignments(alignments);
+        orcaEngine.release();
+      });
+
+      it('synthesize with no punctuation', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+
+        try {
+          const { pcm, alignments } = orcaEngine.synthesize(text_no_punctuation);
+          expect(pcm.length).toBeGreaterThan(0);
+          validateAlignments(alignments);
+        } catch (err) {
+          expect(err).toBeUndefined();
+        }
+
+        orcaEngine.release();
+      });
+
+      it('synthesize with custom punctuation', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+
+        try {
+          const { pcm, alignments } = orcaEngine.synthesize(text_custom_pronunciation);
+          expect(pcm.length).toBeGreaterThan(0);
+          validateAlignments(alignments);
+        } catch (err) {
+          expect(err).toBeUndefined();
+        }
+
+        orcaEngine.release();
+      });
+
+      it('synthesize to file', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const filePath = './orca-temp.wav';
+        const alignments = orcaEngine.synthesizeToFile(text, filePath);
+        validateAlignments(alignments);
+        expect(fs.existsSync(filePath)).toBeTruthy();
+        orcaEngine.release();
+      });
+
+      it('streaming synthesis', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaStream = orcaEngine.streamOpen({ randomState: random_state });
+        const fullPcm: number[] = [];
+        for (const char of text) {
+          const streamPcm = orcaStream.synthesize(char);
+          if (streamPcm !== null) {
+            fullPcm.push(...streamPcm);
+          }
+        }
+        const flushedPcm = orcaStream.flush();
+        if (flushedPcm !== null) {
+          fullPcm.push(...flushedPcm);
+        }
+        orcaStream.close();
+        const pcm = new Int16Array(fullPcm);
+        const groundTruth = loadPcm(getAudioFileName(model, "stream"));
+        validatePcm(pcm, groundTruth);
+        orcaEngine.release();
+      });
+
+      it('speech rate', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const { pcm: pcmSlow } = orcaEngine.synthesize(text, { speechRate: 0.7 });
+        const { pcm: pcmFast } = orcaEngine.synthesize(text, { speechRate: 1.3 });
+        expect(pcmSlow.length).toBeGreaterThan(0);
+        expect(pcmFast.length).toBeGreaterThan(0);
+        expect(pcmSlow.length).toBeGreaterThan(pcmFast.length);
+        orcaEngine.release();
+      });
+    })
+  })
+});
+
+describe('alignments', () => {
+  describe.each<any>(testData.tests.alignment_tests)('$language $model', ({language, model, random_state, text_alignment, alignments: expectedAlignments}) => {
+    it('synthesize alignment', () => {
+      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+      const { pcm, alignments } = orcaEngine.synthesize(text_alignment, { randomState: random_state });
+      expect(pcm.length).toBeGreaterThan(0);
+      validateAlignmentsExact(alignments, expectedAlignments);
+      orcaEngine.release();
+    });
+  })
+});
+
+describe('invalids', () => {
+  describe.each<any>(testData.tests.invalid_tests)('$language', ({language, models, text_invalid}) => {
+    describe.each<any>(models)('%s', (model) => {
+      it('invalid input', () => {
+        text_invalid.forEach((sentence: string) => {
+          const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+          try {
+            orcaEngine.synthesize(sentence);
+          } catch (e) {
+            expect(e).toBeDefined();
+          }
+        });
+      });
+    })
+  })
+});
+
 
 describe('Defaults', () => {
   test('Empty AccessKey', () => {
@@ -253,8 +249,8 @@ describe('manual paths', () => {
     );
 
     let { pcm, alignments } = orcaEngine.synthesize(
-      testDataText,
-      { randomState: testDataRandomState },
+      "test text",
+      { randomState: 42 },
     );
 
     expect(pcm.length).toBeGreaterThan(0);
