@@ -23,6 +23,11 @@ extern "C" {
 #define PV_API __attribute__((visibility("default")))
 
 /**
+ * Audio sample rate accepted by Picovoice.
+ */
+PV_API int32_t pv_sample_rate(void);
+
+/**
  * Status codes.
  */
 typedef enum {
@@ -74,7 +79,12 @@ PV_API void pv_free_error_stack(char **message_stack);
 
 PV_API void pv_set_sdk(const char *sdk);
 
+PV_API const char *pv_get_sdk(void);
+
+PV_API void pv_free(void *p);
+
 #ifdef __cplusplus
+
 }
 
 #endif

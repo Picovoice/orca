@@ -70,14 +70,14 @@ PV_API void pv_orca_delete(pv_orca_t *object);
 PV_API pv_status_t pv_orca_valid_characters(
         const pv_orca_t *object,
         int32_t *num_characters,
-        const char ***characters);
+        const char *const **characters);
 
 /**
  * Deletes the characters previously created by `pv_orca_valid_characters()`.
  *
  * @param characters The characters returned from `pv_orca_valid_characters()`.
  */
-PV_API void pv_orca_valid_characters_delete(const char **characters);
+PV_API void pv_orca_valid_characters_delete(const char *const *characters);
 
 /**
  * Gets the sampling rate of the audio produced by Orca.
@@ -340,7 +340,6 @@ PV_API pv_status_t pv_orca_word_alignments_delete(
 PV_API const char *pv_orca_version(void);
 
 #ifdef __cplusplus
-
 }
 
 #endif
