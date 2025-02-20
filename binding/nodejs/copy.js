@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -18,24 +18,13 @@ console.log('Copying library files...');
 // Library & Model
 mkdirp.sync('./lib/common');
 ncp(
-  '../../lib/common/orca_params_female.pv',
-  './lib/common/orca_params_female.pv',
+  '../../lib/common/orca_params_en_female.pv',
+  './lib/common/orca_params_en_female.pv',
   function(err) {
     if (err) {
       return console.error(err);
     }
     console.log('../../lib/common female copied.');
-  },
-);
-
-ncp(
-  '../../lib/common/orca_params_male.pv',
-  './lib/common/orca_params_male.pv',
-  function(err) {
-    if (err) {
-      return console.error(err);
-    }
-    console.log('../../lib/common male copied.');
   },
 );
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -29,7 +29,7 @@ import {
 
 import { getSystemLibraryPath } from './platforms';
 
-const DEFAULT_MODEL_PATH = '../lib/common/orca_params_female.pv';
+const DEFAULT_MODEL_PATH = '../lib/common/orca_params_en_female.pv';
 
 type OrcaHandleAndStatus = { handle: any; status: PvStatus };
 type OrcaResult = OrcaSynthesizeResult & {

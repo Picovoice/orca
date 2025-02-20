@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "postinstall": "npx pvbase64 -i ../../lib/common/orca_params_male.pv -o ./orca_params_male.js && npx pvbase64 -i ../../lib/common/orca_params_female.pv -o ./orca_params_female.js",
+    "postinstall": "npx pvbase64 -i ../../lib/common/orca_params_en_male.pv -o ./orca_params_en_male.js && npx pvbase64 -i ../../lib/common/orca_params_en_female.pv -o ./orca_params_en_female.js",
     "start": "yarn run http-server -a localhost -p 5000"
   },
   "keywords": [

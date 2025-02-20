@@ -100,12 +100,12 @@
         </Content>
     </ItemGroup>
     <ItemGroup>
-        <Content Include="..\..\..\lib\common\orca_params_female.pv">
+        <Content Include="..\..\..\lib\common\orca_params_en_female.pv">
             <PackagePath>
-                buildTransitive/common/orca_params_female.pv;
+                buildTransitive/common/orca_params_en_female.pv;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>lib\common\orca_params_female.pv</Link>
+            <Link>lib\common\orca_params_en_female.pv</Link>
             <Visible>false</Visible>
         </Content>
     </ItemGroup>

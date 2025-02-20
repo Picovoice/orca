@@ -102,8 +102,8 @@ The following are the voices currently available:
 
 |                        Model name                         | Sample rate (Hz) |
 |:---------------------------------------------------------:|:----------------:|
-| [orca_params_female.pv](lib/common/orca_params_female.pv) |      22050       |
-|   [orca_params_male.pv](lib/common/orca_params_male.pv)   |      22050       |
+| [orca_params_en_female.pv](lib/common/orca_params_en_female.pv) |      22050       |
+|   [orca_params_en_male.pv](lib/common/orca_params_en_male.pv)   |      22050       |
 
 ### Speech control
 

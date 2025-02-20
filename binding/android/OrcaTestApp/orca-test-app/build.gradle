@@ -71,8 +71,8 @@ android {
 
     tasks.register('copyParams', Copy) {
         from("$projectDir/../../../../lib/common/")
-        include("orca_params_female.pv")
-        include("orca_params_male.pv")
+        include("orca_params_en_female.pv")
+        include("orca_params_en_male.pv")
         into("$projectDir/src/main/assets/models")
     }
 

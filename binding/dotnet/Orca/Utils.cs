@@ -136,7 +136,7 @@ namespace Pv
 
         public static string PvModelPath()
         {
-            return Path.Combine(AppContext.BaseDirectory, "lib/common/orca_params_female.pv");
+            return Path.Combine(AppContext.BaseDirectory, "lib/common/orca_params_en_female.pv");
         }
     }
 }

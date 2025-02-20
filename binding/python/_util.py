@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Picovoice Inc.
+# Copyright 2024-2025 Picovoice Inc.
 #
 # You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 # file accompanying this source.
@@ -78,7 +78,7 @@ def default_library_path(relative: str = "") -> str:
 
 
 def default_model_path(relative: str = "") -> str:
-    return os.path.join(os.path.dirname(__file__), relative, "lib", "common", "orca_params_female.pv")
+    return os.path.join(os.path.dirname(__file__), relative, "lib", "common", "orca_params_en_female.pv")
 
 
 __all__ = [

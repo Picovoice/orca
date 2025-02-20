@@ -15,10 +15,10 @@ import { OrcaError } from '../dist/types/orca_errors';
 import { PvModel } from '@picovoice/web-utils';
 
 // @ts-ignore
-import orcaParamsMale from './orca_params_male';
+import orcaParamsMale from './orca_params_en_male';
 
 // @ts-ignore
-import orcaParamsFemale from './orca_params_female';
+import orcaParamsFemale from './orca_params_en_female';
 
 /* eslint camelcase: 0 */
 
@@ -67,7 +67,7 @@ const runInitTest = async (
 ) => {
   const {
     accessKey = ACCESS_KEY,
-    model = { publicPath: `/test/orca_params_male.pv`, forceWrite: true },
+    model = { publicPath: `/test/orca_params_en_male.pv`, forceWrite: true },
     expectFailure = false,
   } = params;
 

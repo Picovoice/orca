@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Picovoice Inc.
+# Copyright 2024-2025 Picovoice Inc.
 #
 # You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 # file accompanying this source.
@@ -16,7 +16,7 @@ import setuptools
 
 INCLUDE_FILES = ('../../LICENSE', '__init__.py', '_factory.py', '_orca.py', '_util.py')
 INCLUDE_LIBS = ('linux', 'mac', 'raspberry-pi', 'windows')
-DEFAULT_MODEL_FILE = 'orca_params_female.pv'
+DEFAULT_MODEL_FILE = 'orca_params_en_female.pv'
 
 os.system('git clean -dfx')
 

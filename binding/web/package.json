@@ -28,7 +28,7 @@
     "watch": "rollup --config --watch",
     "format": "prettier --write \"**/*.{js,ts,json}\"",
     "copywasm": "node scripts/copy_wasm.js",
-    "setup-test": "node scripts/setup_test.js && npx pvbase64 -i ./test/orca_params_male.pv -o ./test/orca_params_male.js && npx pvbase64 -i ./test/orca_params_female.pv -o ./test/orca_params_female.js",
+    "setup-test": "node scripts/setup_test.js && npx pvbase64 -i ./test/orca_params_en_male.pv -o ./test/orca_params_en_male.js && npx pvbase64 -i ./test/orca_params_en_female.pv -o ./test/orca_params_en_female.js",
     "test": "cypress run --spec test/orca.test.ts",
     "test-perf": "cypress run --spec test/orca_perf.test.ts"
   },

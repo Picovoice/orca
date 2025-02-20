@@ -65,5 +65,5 @@ voice:
 
 ```html
 
-<script type="application/javascript" src="orca_params_male.js"></script>
+<script type="application/javascript" src="orca_params_en_male.js"></script>
 ```
