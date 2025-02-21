@@ -93,17 +93,11 @@ The following are examples of sentences using custom pronunciations:
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Voices
+### Language and Voice
 
-Orca can synthesize speech with various voices, each of which is characterized by a model file located
-in  [lib/common](./lib/common).
-To synthesize speech with a specific voice, provide the associated model file as an argument to the orca init function.
-The following are the voices currently available:
+Orca Streaming Text-to-Speech can synthesize speech in different languages and with a variety of voices, each of which is characterized by a model file (`.pv`) located in [lib/common](./lib/common). The language and gender of the speaker is indicated in the file name.
 
-|                        Model name                         | Sample rate (Hz) |
-|:---------------------------------------------------------:|:----------------:|
-| [orca_params_en_female.pv](lib/common/orca_params_en_female.pv) |      22050       |
-|   [orca_params_en_male.pv](lib/common/orca_params_en_male.pv)   |      22050       |
+To synthesize speech with a specific language and voice, provide the associated model file as an argument to the Orca init function.
 
 ### Speech control
 
