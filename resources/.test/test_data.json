@@ -34,86 +34,86 @@
           {
             "word": "Test",
             "start_sec": 0.000,
-            "end_sec": 0.348,
+            "end_sec": 0.430,
             "phonemes": [
               {
                 "phoneme": "T",
                 "start_sec": 0.000,
-                "end_sec": 0.104
+                "end_sec": 0.163
               },
               {
                 "phoneme": "EH",
-                "start_sec": 0.104,
-                "end_sec": 0.197
+                "start_sec": 0.163,
+                "end_sec": 0.244
               },
               {
                 "phoneme": "S",
-                "start_sec": 0.197,
-                "end_sec": 0.279
+                "start_sec": 0.244,
+                "end_sec": 0.348
               },
               {
                 "phoneme": "T",
-                "start_sec": 0.279,
-                "end_sec": 0.348
+                "start_sec": 0.348,
+                "end_sec": 0.430
               }
             ]
           },
           {
             "word": "alignment",
-            "start_sec": 0.348,
-            "end_sec": 0.848,
+            "start_sec": 0.430,
+            "end_sec": 1.126,
             "phonemes": [
               {
                 "phoneme": "AH",
-                "start_sec": 0.348,
-                "end_sec": 0.406
+                "start_sec": 0.430,
+                "end_sec": 0.511
               },
               {
                 "phoneme": "L",
-                "start_sec": 0.406,
-                "end_sec": 0.488
+                "start_sec": 0.511,
+                "end_sec": 0.592
               },
               {
                 "phoneme": "AY",
-                "start_sec": 0.488,
-                "end_sec": 0.557
+                "start_sec": 0.592,
+                "end_sec": 0.697
               },
               {
                 "phoneme": "N",
-                "start_sec": 0.557,
-                "end_sec": 0.639
-              },
-              {
-                "phoneme": "M",
-                "start_sec": 0.639,
-                "end_sec": 0.685
-              },
-              {
-                "phoneme": "AH",
-                "start_sec": 0.685,
-                "end_sec": 0.731
-              },
-              {
-                "phoneme": "N",
-                "start_sec": 0.731,
+                "start_sec": 0.697,
                 "end_sec": 0.778
               },
               {
-                "phoneme": "T",
+                "phoneme": "M",
                 "start_sec": 0.778,
-                "end_sec": 0.848
+                "end_sec": 0.824
+              },
+              {
+                "phoneme": "AH",
+                "start_sec": 0.824,
+                "end_sec": 0.906
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.906,
+                "end_sec": 0.998
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.998,
+                "end_sec": 1.126
               }
             ]
           },
           {
             "word": ".",
-            "start_sec": 0.848,
-            "end_sec": 0.882,
+            "start_sec": 1.126,
+            "end_sec": 1.300,
             "phonemes": [
               {
                 "phoneme": ".",
-                "start_sec": 0.848,
-                "end_sec": 0.882
+                "start_sec": 1.126,
+                "end_sec": 1.300
               }
             ]
           }
