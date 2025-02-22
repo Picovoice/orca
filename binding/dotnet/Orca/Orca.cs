@@ -404,6 +404,7 @@ namespace Pv
                     pv_orca_pcm_delete(cPcm);
 
                 }
+
                 return pcm;
             }
 
@@ -437,9 +438,14 @@ namespace Pv
                     HandlePvStatus(status, "Orca stream flush failed");
                 }
 
-                short[] pcm = new short[numSamples];
-                Marshal.Copy(cPcm, pcm, 0, numSamples);
-                pv_orca_pcm_delete(cPcm);
+                short[] pcm = null;
+                if (numSamples > 0)
+                {
+                    pcm = new short[numSamples];
+                    Marshal.Copy(cPcm, pcm, 0, numSamples);
+                    pv_orca_pcm_delete(cPcm);
+
+                }
 
                 return pcm;
             }
