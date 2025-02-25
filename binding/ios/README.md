@@ -130,11 +130,13 @@ The pronunciation is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABE
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Voices
+### Language and Voice
 
-Orca can synthesize speech with various voices, each of which is characterized by a model file located
-in [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common).
-To create an instance of the engine with a specific voice, use:
+Orca Streaming Text-to-Speech can synthesize speech in different languages and with a variety of voices, 
+each of which is characterized by a model file (`.pv`) located in [lib/common](../../lib/common). 
+The language and gender of the speaker is indicated in the file name.
+
+To create an instance of the engine with a specific language and voice, use:
 
 ```swift
 import Orca
@@ -146,7 +148,7 @@ do {
 } catch { }
 ```
 
-and replace `${MODEL_FILE_PATH}` or `${MODEL_FILE_URL}` with the path to the model file with the desired voice.
+and replace `${MODEL_FILE_PATH}` or `${MODEL_FILE_URL}` with the path to the model file with the desired language/voice.
 
 ### Speech control
 
