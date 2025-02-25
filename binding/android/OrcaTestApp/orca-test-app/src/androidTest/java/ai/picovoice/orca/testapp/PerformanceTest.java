@@ -38,6 +38,9 @@ public class PerformanceTest extends BaseTest {
     @Parameterized.Parameter(value = 0)
     public String modelFile;
 
+    @Parameterized.Parameter(value = 1)
+    public String procSentence;
+
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> initParameters() throws IOException {
         String testDataJsonString = getTestDataString();
@@ -48,10 +51,12 @@ public class PerformanceTest extends BaseTest {
         final JsonArray testCases = testDataJson.getAsJsonObject("tests").get("sentence_tests").getAsJsonArray();
         JsonObject testCase = testCases.get(0).getAsJsonObject();
 
+        String text = testCase.get("text").getAsString();
+
         List<Object[]> parameters = new ArrayList<>();
         for (JsonElement modelJson : testCase.get("models").getAsJsonArray()) {
             String model = modelJson.getAsString();
-            parameters.add(new Object[]{model});
+            parameters.add(new Object[]{model, text});
         }
         return parameters;
     }
@@ -76,10 +81,6 @@ public class PerformanceTest extends BaseTest {
         Assume.assumeFalse(procThresholdString.equals(""));
 
         final double procPerformanceThresholdSec = Double.parseDouble(procThresholdString);
-        final String procSentence = testJson
-                .getAsJsonObject("test_sentences")
-                .get("text")
-                .getAsString();
         final Orca orca = new Orca.Builder()
                 .setAccessKey(accessKey)
                 .setModelPath(modelFile)
