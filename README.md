@@ -32,7 +32,7 @@ voice assistants. Orca is:
         - [Orca streaming text synthesis](#orca-input-and-output-streaming-synthesis)
         - [Text input](#text-input)
         - [Custom pronunciations](#custom-pronunciations)
-        - [Voices](#voices)
+        - [Language and Voice](#language-and-voice)
         - [Speech control](#speech-control)
         - [Audio output](#audio-output)
     - [AccessKey](#accesskey)
