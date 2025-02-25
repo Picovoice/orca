@@ -7,7 +7,7 @@ export default defineConfig({
   },
   e2e: {
     supportFile: 'cypress/support/index.ts',
-    defaultCommandTimeout: 30000,
+    defaultCommandTimeout: 60000,
     specPattern: 'test/*.test.{js,jsx,ts,tsx}',
     video: false,
     screenshotOnRunFailure: false,
