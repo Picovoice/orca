@@ -105,7 +105,7 @@ orca.release()
 
 ### Text input
 
-Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks. 
+Orca supports a wide range of English characters, including letters, numbers, symbols, and punctuation marks.
 You can get a list of all supported characters by calling `validCharacters()`.
 Pronunciations of characters or words not supported by this list can be achieved with
 [custom pronunciations](#custom-pronunciations).
@@ -119,10 +119,12 @@ The pronunciation is expressed in [ARPAbet](https://en.wikipedia.org/wiki/ARPABE
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Voices
+### Language and Voice
 
-Orca can synthesize speech with various voices, each of which is characterized by a model file located
-in [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common).
+Orca Streaming Text-to-Speech can synthesize speech in different languages and with a variety of voices,
+each of which is characterized by a model file (`.pv`) located in [lib/common](../../lib/common).
+The language and gender of the speaker is indicated in the file name.
+
 To create an instance of the engine with a specific voice, use:
 
 ```typescript
