@@ -3,7 +3,7 @@
   "description": "Orca Text-to-Speech engine for web browsers (via WebAssembly)",
   "author": "Picovoice Inc",
   "license": "Apache-2.0",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "keywords": [
     "orca",
     "web",
@@ -33,7 +33,7 @@
     "test-perf": "cypress run --spec test/orca_perf.test.ts"
   },
   "dependencies": {
-    "@picovoice/web-utils": "=1.4.2"
+    "@picovoice/web-utils": "=1.4.3"
   },
   "devDependencies": {
     "@babel/core": "^7.21.3",
@@ -63,6 +63,6 @@
     "wasm-feature-detect": "^1.5.0"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   }
 }
