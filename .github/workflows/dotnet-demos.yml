@@ -38,19 +38,6 @@ jobs:
     - name: Package restore
       run: dotnet restore
 
-    # ************** REMOVE AFTER RELEASE ********************
-    - name: Build Local Packages
-      run: dotnet build
-      working-directory: binding/dotnet/Orca
-
-    - name: Pack Local Packages
-      run: dotnet pack -c Release
-      working-directory: binding/dotnet/Orca
-
-    - name: Install Local Packages
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
-    # ********************************************************
-
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
 
@@ -75,29 +62,6 @@ jobs:
 
     - name: Package restore
       run: dotnet restore
-
-    # ************** REMOVE AFTER RELEASE ********************
-    - name: Remove local package
-      if: ${{ matrix.machine != 'pv-windows-arm64' }}
-      run: rm -rf ~/.nuget/packages/orca
-      continue-on-error: true
-
-    - name: Remove local package
-      if: ${{ matrix.machine == 'pv-windows-arm64' }}
-      run: rm ~/.nuget/packages/orca -r -force -ErrorAction SilentlyContinue
-      continue-on-error: true
-
-    - name: Build Local Packages
-      run: dotnet build
-      working-directory: binding/dotnet/Orca
-
-    - name: Pack Local Packages
-      run: dotnet pack -c Release
-      working-directory: binding/dotnet/Orca
-
-    - name: Install Local Packages
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
-    # ********************************************************
 
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
