@@ -32,7 +32,7 @@ voice assistants. Orca is:
         - [Orca streaming text synthesis](#orca-input-and-output-streaming-synthesis)
         - [Text input](#text-input)
         - [Custom pronunciations](#custom-pronunciations)
-        - [Voices](#voices)
+        - [Language and Voice](#language-and-voice)
         - [Speech control](#speech-control)
         - [Audio output](#audio-output)
     - [AccessKey](#accesskey)
@@ -93,17 +93,11 @@ The following are examples of sentences using custom pronunciations:
 - "{read|R IY D} this as {read|R EH D}, please."
 - "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
 
-### Voices
+### Language and Voice
 
-Orca can synthesize speech with various voices, each of which is characterized by a model file located
-in  [lib/common](./lib/common).
-To synthesize speech with a specific voice, provide the associated model file as an argument to the orca init function.
-The following are the voices currently available:
+Orca Streaming Text-to-Speech can synthesize speech in different languages and with a variety of voices, each of which is characterized by a model file (`.pv`) located in [lib/common](./lib/common). The language and gender of the speaker is indicated in the file name.
 
-|                        Model name                         | Sample rate (Hz) |
-|:---------------------------------------------------------:|:----------------:|
-| [orca_params_female.pv](lib/common/orca_params_female.pv) |      22050       |
-|   [orca_params_male.pv](lib/common/orca_params_male.pv)   |      22050       |
+To synthesize speech with a specific language and voice, provide the associated model file as an argument to the Orca init function.
 
 ### Speech control
 
@@ -779,7 +773,14 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
-### v1.0.0 - Aug 20th, 2024
+### v1.1.0 - February 24th, 2025
+
+- Added support for Spanish voices
+- Improved English voices
+- Added .NET SDK
+- Improved text normalization
+
+### v1.0.0 - August 20th, 2024
 
 - Improved voice quality
 - Significantly reduced latency in streaming synthesis

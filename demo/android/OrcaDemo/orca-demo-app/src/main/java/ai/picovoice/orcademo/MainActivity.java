@@ -1,5 +1,5 @@
 /*
-    Copyright 2024 Picovoice Inc.
+    Copyright 2024-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -58,7 +58,7 @@ import ai.picovoice.orca.OrcaSynthesizeParams;
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
-    private static final String MODEL_FILE = "orca_params_female.pv";
+    private static final String MODEL_FILE = "orca_params_en_female.pv";
     private static final int STREAMING_NUM_AUDIO_WAIT_CHUNKS = 1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());

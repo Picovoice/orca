@@ -4,105 +4,247 @@
       {
         "language": "en",
         "models": [
-          "orca_params_female.pv",
-          "orca_params_male.pv"
+          "orca_params_en_female.pv",
+          "orca_params_en_male.pv"
         ],
         "random_state": 42,
         "text": "It doesn't matter how slowly you go, as long as you do not stop!",
         "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
         "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
+      },
+      {
+        "language": "es",
+        "models": [
+          "orca_params_es_female.pv",
+          "orca_params_es_male.pv"
+        ],
+        "random_state": 42,
+        "text": "No importa lo lento que vayas, ¡siempre que no te detengas!",
+        "text_no_punctuation": "No importa lo lento que vayas siempre que no te detengas",
+        "text_custom_pronunciation": "Pruebe la {alineación|a l i n e a θ j o n}."
       }
     ],
     "alignment_tests": [
       {
         "language": "en",
-        "model": "orca_params_female.pv",
+        "model": "orca_params_en_female.pv",
         "random_state": 42,
         "text_alignment": "Test alignment.",
         "alignments": [
           {
             "word": "Test",
             "start_sec": 0.000,
-            "end_sec": 0.348,
+            "end_sec": 0.430,
             "phonemes": [
               {
                 "phoneme": "T",
                 "start_sec": 0.000,
-                "end_sec": 0.104
+                "end_sec": 0.163
               },
               {
                 "phoneme": "EH",
-                "start_sec": 0.104,
-                "end_sec": 0.197
+                "start_sec": 0.163,
+                "end_sec": 0.244
               },
               {
                 "phoneme": "S",
-                "start_sec": 0.197,
-                "end_sec": 0.279
+                "start_sec": 0.244,
+                "end_sec": 0.348
               },
               {
                 "phoneme": "T",
-                "start_sec": 0.279,
-                "end_sec": 0.348
+                "start_sec": 0.348,
+                "end_sec": 0.430
               }
             ]
           },
           {
             "word": "alignment",
-            "start_sec": 0.348,
-            "end_sec": 0.848,
+            "start_sec": 0.430,
+            "end_sec": 1.126,
             "phonemes": [
               {
                 "phoneme": "AH",
-                "start_sec": 0.348,
-                "end_sec": 0.406
+                "start_sec": 0.430,
+                "end_sec": 0.511
               },
               {
                 "phoneme": "L",
-                "start_sec": 0.406,
-                "end_sec": 0.488
+                "start_sec": 0.511,
+                "end_sec": 0.592
               },
               {
                 "phoneme": "AY",
-                "start_sec": 0.488,
-                "end_sec": 0.557
+                "start_sec": 0.592,
+                "end_sec": 0.697
               },
               {
                 "phoneme": "N",
-                "start_sec": 0.557,
-                "end_sec": 0.639
-              },
-              {
-                "phoneme": "M",
-                "start_sec": 0.639,
-                "end_sec": 0.685
-              },
-              {
-                "phoneme": "AH",
-                "start_sec": 0.685,
-                "end_sec": 0.731
-              },
-              {
-                "phoneme": "N",
-                "start_sec": 0.731,
+                "start_sec": 0.697,
                 "end_sec": 0.778
               },
               {
-                "phoneme": "T",
+                "phoneme": "M",
                 "start_sec": 0.778,
-                "end_sec": 0.848
+                "end_sec": 0.824
+              },
+              {
+                "phoneme": "AH",
+                "start_sec": 0.824,
+                "end_sec": 0.906
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.906,
+                "end_sec": 0.998
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.998,
+                "end_sec": 1.126
               }
             ]
           },
           {
             "word": ".",
-            "start_sec": 0.848,
-            "end_sec": 0.882,
+            "start_sec": 1.126,
+            "end_sec": 1.300,
             "phonemes": [
               {
                 "phoneme": ".",
+                "start_sec": 1.126,
+                "end_sec": 1.300
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "model": "orca_params_es_female.pv",
+        "random_state": 42,
+        "text_alignment": "Pruebe la alineación.",
+        "alignments": [
+          {
+            "word": "Pruebe",
+            "start_sec": 0.000,
+            "end_sec": 0.406,
+            "phonemes": [
+              {
+                "phoneme": "p",
+                "start_sec": 0.000,
+                "end_sec": 0.104
+              },
+              {
+                "phoneme": "ɾ",
+                "start_sec": 0.104,
+                "end_sec": 0.174
+              },
+              {
+                "phoneme": "w",
+                "start_sec": 0.174,
+                "end_sec": 0.221
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.221,
+                "end_sec": 0.279
+              },
+              {
+                "phoneme": "β",
+                "start_sec": 0.279,
+                "end_sec": 0.337
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.337,
+                "end_sec": 0.406
+              }
+            ]
+          },
+          {
+            "word": "la",
+            "start_sec": 0.406,
+            "end_sec": 0.534,
+            "phonemes": [
+              {
+                "phoneme": "l",
+                "start_sec": 0.406,
+                "end_sec": 0.464
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.464,
+                "end_sec": 0.534
+              }
+            ]
+          },
+          {
+            "word": "alineación",
+            "start_sec": 0.534,
+            "end_sec": 1.300,
+            "phonemes": [
+              {
+                "phoneme": "a",
+                "start_sec": 0.534,
+                "end_sec": 0.592
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.592,
+                "end_sec": 0.639
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.639,
+                "end_sec": 0.720
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 0.720,
+                "end_sec": 0.766
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.766,
+                "end_sec": 0.848
+              },
+              {
+                "phoneme": "a",
                 "start_sec": 0.848,
-                "end_sec": 0.882
+                "end_sec": 0.929
+              },
+              {
+                "phoneme": "θ",
+                "start_sec": 0.929,
+                "end_sec": 1.022
+              },
+              {
+                "phoneme": "j",
+                "start_sec": 1.022,
+                "end_sec": 1.091
+              },
+              {
+                "phoneme": "o",
+                "start_sec": 1.091,
+                "end_sec": 1.161
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 1.161,
+                "end_sec": 1.300
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.300,
+            "end_sec": 1.440,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.300,
+                "end_sec": 1.440
               }
             ]
           }
@@ -113,8 +255,8 @@
       {
         "language": "en",
         "models": [
-          "orca_params_female.pv",
-          "orca_params_male.pv"
+          "orca_params_en_female.pv",
+          "orca_params_en_male.pv"
         ],
         "text_invalid": [
           "Symbols *$",
@@ -131,6 +273,22 @@
           "Wrong }custom|K AH S T AM{ pron",
           "Wrong {custom| K AH S T AM} pron",
           "Wrong {custom|K AH S T AM } pron"
+        ]
+      },
+      {
+        "language": "es",
+        "models": [
+          "orca_params_es_female.pv",
+          "orca_params_es_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Invalid {custom|K AH S T AM} pron phonemes"
         ]
       }
     ]

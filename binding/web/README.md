@@ -58,7 +58,7 @@ For the web packages, there are two methods to initialize Orca.
 server.
 
 This method fetches the [model file](https://github.com/Picovoice/orca/tree/main/lib/common) from the public directory
-and feeds it to Orca. Copy a model file for the desired voice (male or female) into the public
+and feeds it to Orca. Copy a model file for the desired language and voice into the public
 directory:
 
 ```console

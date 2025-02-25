@@ -15,10 +15,10 @@ import { OrcaError } from '../dist/types/orca_errors';
 import { PvModel } from '@picovoice/web-utils';
 
 // @ts-ignore
-import orcaParamsMale from './orca_params_male';
+import orcaParamsMale from './orca_params_en_male';
 
 // @ts-ignore
-import orcaParamsFemale from './orca_params_female';
+import orcaParamsFemale from './orca_params_en_female';
 
 /* eslint camelcase: 0 */
 
@@ -43,12 +43,13 @@ const EXPECTED_VALID_CHARACTERS = [
   '&', '\n', '_', '(', ')', '°', 'º',
   '²', '³', '$', '€', '¥', '₪', '£',
   '₩', '₺', '₱', '₽', '฿', '₴', '₹',
-  '¢', '+', '=',
+  '¢', '+', '=', '#', '−', '–', '‒',
+  '—', '―', '’'
 ];
 
 const getAudioFileName = (model: string, synthesis_type: string): string => {
-  return model.replace(".pv", `_${synthesis_type}.wav`)
-}
+  return model.replace(".pv", `_${synthesis_type}.wav`);
+};
 
 const compareArrays = (arr1: Int16Array, arr2: Int16Array, step: number) => {
   expect(arr1.length).eq(arr2.length);
@@ -67,7 +68,7 @@ const runInitTest = async (
 ) => {
   const {
     accessKey = ACCESS_KEY,
-    model = { publicPath: `/test/orca_params_male.pv`, forceWrite: true },
+    model = { publicPath: `/test/orca_params_en_male.pv`, forceWrite: true },
     expectFailure = false,
   } = params;
 
@@ -76,6 +77,7 @@ const runInitTest = async (
 
   try {
     orca = await instance.create(accessKey, model);
+    console.log(orca.validCharacters)
     expect(typeof orca.version).eq('string');
     expect(orca.version.length).gt(0);
     expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
@@ -106,122 +108,118 @@ const runInitTest = async (
 };
 
 describe('Orca Binding', function() {
-  for (const testCase of testData.tests.sentence_tests) {
-    for (const model of testCase.models) {
-      for (const instance of [Orca, OrcaWorker]) {
-        const instanceString = instance === Orca ? 'main' : 'worker';
-        const testCaseString = `${testCase.language} | ${model} | ${instanceString}`
+  for (const instance of [Orca, OrcaWorker]) {
+    const instanceString = instance === Orca ? 'main' : 'worker';
+    const testCaseString = `/test/orca_params_en_male.pv | ${instanceString}`;
 
-        const publicPath = `/test/${model}`
+    const publicPath = `/test/orca_params_en_male.pv`;
 
-        it(`should be able to handle invalid public path (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            model: { publicPath: 'invalid', forceWrite: true },
-            expectFailure: true,
-          });
-        });
+    it(`should be able to handle invalid public path (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        model: { publicPath: 'invalid', forceWrite: true },
+        expectFailure: true,
+      });
+    });
 
-        it(`should be able to handle invalid base64 (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            model: { base64: 'invalid', forceWrite: true },
-            expectFailure: true,
-          });
-        });
+    it(`should be able to handle invalid base64 (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        model: { base64: 'invalid', forceWrite: true },
+        expectFailure: true,
+      });
+    });
 
-        it(`should be able to handle invalid access key (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            accessKey: 'invalid',
-            expectFailure: true,
-          });
-        });
+    it(`should be able to handle invalid access key (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        accessKey: 'invalid',
+        expectFailure: true,
+      });
+    });
 
-        it(`should be able to init with public path (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            model: { publicPath, forceWrite: true },
-          });
-        });
+    it(`should be able to init with public path (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        model: { publicPath, forceWrite: true },
+      });
+    });
 
-        it(`should be able to init with base64 (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            model: { base64: orcaParamsMale, forceWrite: true },
-          });
-        });
+    it(`should be able to init with base64 (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        model: { base64: orcaParamsMale, forceWrite: true },
+      });
+    });
 
-        it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
-          await runInitTest(instance, {
-            model: { publicPath, forceWrite: true, customWritePath: '테스트' },
-          });
-        });
+    it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        model: { publicPath, forceWrite: true, customWritePath: '테스트' },
+      });
+    });
 
-        it(`should return process and flush error message stack (${testCaseString})`, async () => {
-          const orca = await Orca.create(
-            ACCESS_KEY,
-            { publicPath: publicPath, forceWrite: true },
-          );
+    it(`should return process and flush error message stack (${testCaseString})`, async () => {
+      const orca = await Orca.create(
+        ACCESS_KEY,
+        { publicPath: publicPath, forceWrite: true },
+      );
 
-          // @ts-ignore
-          const objectAddress = orca._objectAddress;
+      // @ts-ignore
+      const objectAddress = orca._objectAddress;
 
-          // @ts-ignore
-          orca._objectAddress = 0;
+      // @ts-ignore
+      orca._objectAddress = 0;
 
-          const errors: OrcaError[] = [];
-          try {
-            await orca.synthesize('test');
-          } catch (e: any) {
-            errors.push(e);
-          }
-
-          // @ts-ignore
-          orca._objectAddress = objectAddress;
-          await orca.release();
-
-          expect(errors.length).to.be.gte(0);
-
-          for (let i = 0; i < errors.length; i++) {
-            expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
-            expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
-          }
-        });
-
-        it(`should return correct error message stack (${testCaseString})`, async () => {
-          let messageStack = [];
-          try {
-            const orca = await instance.create('invalidAccessKey', {
-              publicPath,
-              forceWrite: true,
-            });
-            expect(orca).to.be.undefined;
-          } catch (e: any) {
-            messageStack = e.messageStack;
-          }
-
-          expect(messageStack.length).to.be.gt(0);
-          expect(messageStack.length).to.be.lte(8);
-
-          try {
-            const orca = await instance.create('invalidAccessKey', {
-              publicPath,
-              forceWrite: true,
-            });
-            expect(orca).to.be.undefined;
-          } catch (e: any) {
-            expect(messageStack.length).to.be.eq(e.messageStack.length);
-          }
-        });
+      const errors: OrcaError[] = [];
+      try {
+        await orca.synthesize('test');
+      } catch (e: any) {
+        errors.push(e);
       }
-    }
+
+      // @ts-ignore
+      orca._objectAddress = objectAddress;
+      await orca.release();
+
+      expect(errors.length).to.be.gte(0);
+
+      for (let i = 0; i < errors.length; i++) {
+        expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
+        expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
+      }
+    });
+
+    it(`should return correct error message stack (${testCaseString})`, async () => {
+      let messageStack = [];
+      try {
+        const orca = await instance.create('invalidAccessKey', {
+          publicPath,
+          forceWrite: true,
+        });
+        expect(orca).to.be.undefined;
+      } catch (e: any) {
+        messageStack = e.messageStack;
+      }
+
+      expect(messageStack.length).to.be.gt(0);
+      expect(messageStack.length).to.be.lte(8);
+
+      try {
+        const orca = await instance.create('invalidAccessKey', {
+          publicPath,
+          forceWrite: true,
+        });
+        expect(orca).to.be.undefined;
+      } catch (e: any) {
+        expect(messageStack.length).to.be.eq(e.messageStack.length);
+      }
+    });
   }
-})
+});
 
 describe('Sentence Tests', function() {
   for (const testCase of testData.tests.sentence_tests) {
     for (const model of testCase.models) {
       for (const instance of [Orca, OrcaWorker]) {
         const instanceString = instance === Orca ? 'main' : 'worker';
-        const testCaseString = `${testCase.language} | ${model} | ${instanceString}`
+        const testCaseString = `${testCase.language} | ${model} | ${instanceString}`;
 
-        const publicPath = `/test/${model}`
+        const publicPath = `/test/${model}`;
 
         it(`should be able to process text streaming (${testCaseString})`, () => {
           try {
@@ -377,16 +375,15 @@ describe('Sentence Tests', function() {
       }
     }
   }
-})
+});
 
-
-describe('Sentence Tests', function() {
+describe('Alignment Tests', function() {
   for (const testCase of testData.tests.alignment_tests) {
     for (const instance of [Orca, OrcaWorker]) {
       const instanceString = instance === Orca ? 'main' : 'worker';
-      const testCaseString = `${testCase.language} | ${testCase.model} | ${instanceString}`
+      const testCaseString = `${testCase.language} | ${testCase.model} | ${instanceString}`;
 
-      const publicPath = `/test/${testCase.model}`
+      const publicPath = `/test/${testCase.model}`;
 
       it(`should be able to process alignment exact (${testCaseString})`, async () => {
         try {
@@ -425,16 +422,16 @@ describe('Sentence Tests', function() {
       });
     }
   }
-})
+});
 
-describe('Sentence Tests', function() {
+describe('Invalid Tests', function() {
   for (const testCase of testData.tests.invalid_tests) {
     for (const model of testCase.models) {
       for (const instance of [Orca, OrcaWorker]) {
         const instanceString = instance === Orca ? 'main' : 'worker';
-        const testCaseString = `${testCase.language} | ${model} | ${instanceString}`
+        const testCaseString = `${testCase.language} | ${model} | ${instanceString}`;
 
-        const publicPath = `/test/${model}`
+        const publicPath = `/test/${model}`;
 
         it(`should handle invalid input (${testCaseString})`, async () => {
           const orca = await instance.create(
@@ -459,4 +456,4 @@ describe('Sentence Tests', function() {
       }
     }
   }
-})
+});

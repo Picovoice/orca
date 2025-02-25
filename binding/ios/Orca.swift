@@ -235,7 +235,7 @@ public class Orca {
         }
 
         var cNumCharacters: Int32 = 0
-        var cCharacters: UnsafeMutablePointer<UnsafePointer<Int8>?>?
+        var cCharacters: UnsafePointer<UnsafePointer<Int8>?>?
         let validCharactersStatus = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
         if validCharactersStatus != PV_STATUS_SUCCESS {
             let messageStack = try getMessageStack()

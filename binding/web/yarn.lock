@@ -1122,10 +1122,10 @@
   dependencies:
     commander "^9.2.0"
 
-"@picovoice/web-utils@=1.4.2":
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/@picovoice/web-utils/-/web-utils-1.4.2.tgz#2ddc44552d15fa1a4958e0c3384e58545255eea1"
-  integrity sha512-pF5Uw3Vm4mOWJ2H3Zc7E/nDr/O7OhbvgEK6W7cx9MNNK3qq51MqiGluPpZ8a2K61BuIzxcNMC1mXWpmIAWVolA==
+"@picovoice/web-utils@=1.4.3":
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/@picovoice/web-utils/-/web-utils-1.4.3.tgz#1de0b20d6080c18d295c6df37c09d88bf7c4f555"
+  integrity sha512-7JN3YYsSD9Gtce6YKG3XqpX49dkeu7jTdbox7rHQA/X/Q3zxopXA9zlCKSq6EIjFbiX2iuzDKUx1XrFa3d8c0w==
   dependencies:
     commander "^10.0.1"
 

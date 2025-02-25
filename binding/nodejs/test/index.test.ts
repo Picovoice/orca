@@ -21,11 +21,9 @@ const ACCESS_KEY = process.argv
   .filter(x => x.startsWith('--access_key='))[0]
   .split('--access_key=')[1];
 
-const testData = getTestData()
+const testData = getTestData();
 
-const getAudioFileName = (model: string, synthesis_type: string): string => {
-  return model.replace(".pv", `_${synthesis_type}.wav`)
-}
+const getAudioFileName = (model: string, synthesis_type: string): string => model.replace(".pv", `_${synthesis_type}.wav`);
 
 const loadPcm = (audioFile: string): any => {
   const waveFilePath = getAudioFile(audioFile);
@@ -83,8 +81,8 @@ const validateAlignmentsExact = (alignments: OrcaAlignment[], expectedAlignments
 };
 
 describe('properties', () => {
-  describe.each<any>(testData.tests.sentence_tests)('$language', ({language, models}) => {
-    describe.each<any>(models)('%s', (model) => {
+  describe.each<any>(testData.tests.sentence_tests)('$language', ({ language, models }) => {
+    describe.each<any>(models)('%s', model => {
       it('version', () => {
         const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
         expect(typeof orcaEngine.version).toEqual('string');
@@ -111,13 +109,13 @@ describe('properties', () => {
         expect(orcaEngine.maxCharacterLimit).toBeGreaterThan(0);
         orcaEngine.release();
       });
-    })
-  })
+    });
+  });
 });
 
 describe('sentences', () => {
-  describe.each<any>(testData.tests.sentence_tests)('$language', ({language, models, random_state, text, text_no_punctuation, text_custom_pronunciation}) => {
-    describe.each<any>(models)('%s', (model) => {
+  describe.each<any>(testData.tests.sentence_tests)('$language', ({ language, models, random_state, text, text_no_punctuation, text_custom_pronunciation }) => {
+    describe.each<any>(models)('%s', model => {
       it('synthesize', () => {
         const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
         const { pcm, alignments } = orcaEngine.synthesize(
@@ -197,12 +195,12 @@ describe('sentences', () => {
         expect(pcmSlow.length).toBeGreaterThan(pcmFast.length);
         orcaEngine.release();
       });
-    })
-  })
+    });
+  });
 });
 
 describe('alignments', () => {
-  describe.each<any>(testData.tests.alignment_tests)('$language $model', ({language, model, random_state, text_alignment, alignments: expectedAlignments}) => {
+  describe.each<any>(testData.tests.alignment_tests)('$language $model', ({ language, model, random_state, text_alignment, alignments: expectedAlignments }) => {
     it('synthesize alignment', () => {
       const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
       const { pcm, alignments } = orcaEngine.synthesize(text_alignment, { randomState: random_state });
@@ -210,12 +208,12 @@ describe('alignments', () => {
       validateAlignmentsExact(alignments, expectedAlignments);
       orcaEngine.release();
     });
-  })
+  });
 });
 
 describe('invalids', () => {
-  describe.each<any>(testData.tests.invalid_tests)('$language', ({language, models, text_invalid}) => {
-    describe.each<any>(models)('%s', (model) => {
+  describe.each<any>(testData.tests.invalid_tests)('$language', ({ language, models, text_invalid }) => {
+    describe.each<any>(models)('%s', model => {
       it('invalid input', () => {
         text_invalid.forEach((sentence: string) => {
           const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
@@ -226,8 +224,8 @@ describe('invalids', () => {
           }
         });
       });
-    })
-  })
+    });
+  });
 });
 
 
