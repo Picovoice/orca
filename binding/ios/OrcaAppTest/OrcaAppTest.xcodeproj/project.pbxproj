@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -236,7 +236,7 @@
 			);
 			mainGroup = 1E00643F27CEDF9B006FF6E9;
 			packageReferences = (
-				0751D6612D6D4404001EB29D /* XCLocalSwiftPackageReference "../../../../orca" */,
+				07F723562D6D57E90002D88F /* XCRemoteSwiftPackageReference "orca" */,
 			);
 			productRefGroup = 1E00644927CEDF9B006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -648,15 +648,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0751D6612D6D4404001EB29D /* XCLocalSwiftPackageReference "../../../../orca" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../orca;
-		};
 		E109D19B2CFE4DA30014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../../orca;
 		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		07F723562D6D57E90002D88F /* XCRemoteSwiftPackageReference "orca" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/orca";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		E109D19D2CFE4DBC0014F5AA /* Orca */ = {
