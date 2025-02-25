@@ -773,7 +773,14 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
-### v1.0.0 - Aug 20th, 2024
+### v1.1.0 - February 24th, 2025
+
+- Added support for Spanish voices
+- Improved English voices
+- Added .NET SDK
+- Improved text normalization
+
+### v1.0.0 - August 20th, 2024
 
 - Improved voice quality
 - Significantly reduced latency in streaming synthesis
