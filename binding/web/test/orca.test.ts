@@ -43,7 +43,8 @@ const EXPECTED_VALID_CHARACTERS = [
   '&', '\n', '_', '(', ')', '°', 'º',
   '²', '³', '$', '€', '¥', '₪', '£',
   '₩', '₺', '₱', '₽', '฿', '₴', '₹',
-  '¢', '+', '=', '#', '—', '―'
+  '¢', '+', '=', '#', '−', '–', '‒',
+  '—', '―', '’'
 ];
 
 const getAudioFileName = (model: string, synthesis_type: string): string => {
@@ -76,6 +77,7 @@ const runInitTest = async (
 
   try {
     orca = await instance.create(accessKey, model);
+    console.log(orca.validCharacters)
     expect(typeof orca.version).eq('string');
     expect(orca.version.length).gt(0);
     expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
