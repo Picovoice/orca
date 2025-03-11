@@ -63,4 +63,9 @@ jobs:
         run: yarn install
 
       - name: Test
+        run: NODE_OPTIONS=--max-old-space-size=2560 yarn test test/index.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}}
+        if: ${{ matrix.machine == 'rpi3-32' }}
+
+      - name: Test
         run: yarn test test/index.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}}
+        if: ${{ matrix.machine != 'rpi3-32' }}
