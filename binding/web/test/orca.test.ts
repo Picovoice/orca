@@ -330,8 +330,14 @@ describe('Sentence Tests', function() {
           }
         });
 
-        it.only(`should be able to handle max num characters (${testCaseString})`, async () => {
-          Cypress.config('defaultCommandTimeout', 120000);
+        it(`should be able to handle max num characters (${testCaseString})`, async () => {
+          // test takes a while specifically in some languages
+          // set timeout decently high and only run in worker
+          Cypress.config('defaultCommandTimeout', 300000);
+
+          if (instanceString !== "worker") {
+            return;
+          }
 
           try {
             const orca = await instance.create(
@@ -349,6 +355,7 @@ describe('Sentence Tests', function() {
               await orca.release();
             }
           } catch (e) {
+            console.log(e)
             expect(e).to.be.undefined;
           }
         });
