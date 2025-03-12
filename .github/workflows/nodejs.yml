@@ -62,7 +62,5 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # TODO: Skip rpi3-32 for now
       - name: Test
         run: yarn test test/index.test.ts --access_key=${{secrets.PV_VALID_ACCESS_KEY}}
-        if: ${{ matrix.machine != 'rpi3-32' }}
