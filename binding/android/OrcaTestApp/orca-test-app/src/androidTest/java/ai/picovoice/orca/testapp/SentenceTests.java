@@ -17,6 +17,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import android.os.SystemClock;
+import android.util.Log;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -91,13 +94,18 @@ public class SentenceTests extends BaseTest {
     }
 
     Orca orca;
+    long startTime;
 
     @Before
     public void Setup() throws Exception {
+        startTime = SystemClock.elapsedRealtime();
+
         orca = new Orca.Builder()
                 .setAccessKey(accessKey)
                 .setModelPath(getModelFilepath(modelFilename))
                 .build(appContext);
+
+        Log.d("Setup", "start");
     }
 
     @After
@@ -105,6 +113,10 @@ public class SentenceTests extends BaseTest {
         if (orca != null) {
             orca.delete();
         }
+
+        long endTime = SystemClock.elapsedRealtime();
+        double durationInSeconds = (endTime - startTime) / 1000.0;
+        Log.d("Setup", "end duration: " + durationInSeconds + " seconds");
     }
 
     @Test

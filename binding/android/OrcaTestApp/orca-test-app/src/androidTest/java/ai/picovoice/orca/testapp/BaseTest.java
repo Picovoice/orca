@@ -16,6 +16,8 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.SystemClock;
+import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -52,6 +54,8 @@ public class BaseTest {
 
     @BeforeClass
     public static void beforeAllTests() throws Exception {
+        long startTime = SystemClock.elapsedRealtime();
+
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
         appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assetManager = testContext.getAssets();
@@ -67,6 +71,10 @@ public class BaseTest {
         reader.close();
 
         accessKey = appContext.getString(R.string.pvTestingAccessKey);
+
+        long endTime = SystemClock.elapsedRealtime();
+        double durationInSeconds = (endTime - startTime) / 1000.0;
+        Log.d("BeforeAllTests", "Elapsed time: " + durationInSeconds + " seconds");
     }
 
     public static String getTestDataString() throws IOException {
@@ -186,6 +194,7 @@ public class BaseTest {
     }
 
     private static void extractTestFile(String filepath) throws IOException {
+
         InputStream is = new BufferedInputStream(
                 assetManager.open(filepath),
                 256);
