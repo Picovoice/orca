@@ -12,11 +12,6 @@
 
 package ai.picovoice.orca.testapp;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,21 +24,17 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaAudio;
 import ai.picovoice.orca.OrcaException;
-import ai.picovoice.orca.OrcaInvalidArgumentException;
+import ai.picovoice.orca.OrcaPhoneme;
 import ai.picovoice.orca.OrcaSynthesizeParams;
 import ai.picovoice.orca.OrcaWord;
-import ai.picovoice.orca.OrcaPhoneme;
 
 @RunWith(Parameterized.class)
 public class AlignmentTests extends BaseTest {
@@ -92,8 +83,6 @@ public class AlignmentTests extends BaseTest {
 
     @Before
     public void Setup() throws Exception {
-        super.Setup();
-
         orca = new Orca.Builder()
                 .setAccessKey(accessKey)
                 .setModelPath(getModelFilepath(modelFilename))

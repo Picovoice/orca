@@ -15,22 +15,18 @@ package ai.picovoice.orca.testapp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaException;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class StandardTests extends BaseTest {
@@ -39,8 +35,6 @@ public class StandardTests extends BaseTest {
 
     @Before
     public void Setup() throws Exception {
-        super.Setup();
-
         String testDataJsonString = getTestDataString();
 
         JsonParser parser = new JsonParser();

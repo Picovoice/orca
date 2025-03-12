@@ -12,6 +12,8 @@
 
 package ai.picovoice.orca.testapp;
 
+import static org.junit.Assert.assertEquals;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 
@@ -20,7 +22,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,27 +34,24 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import static org.junit.Assert.assertEquals;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import ai.picovoice.orca.OrcaWord;
 import ai.picovoice.orca.OrcaPhoneme;
+import ai.picovoice.orca.OrcaWord;
 
 public class BaseTest {
 
-    Context testContext;
-    Context appContext;
-    AssetManager assetManager;
-    String testResourcesPath;
-    JsonObject testJson;
-    String accessKey;
+    static Context testContext;
+    static Context appContext;
+    static AssetManager assetManager;
+    static String testResourcesPath;
+    static JsonObject testJson;
+    static String accessKey;
 
-    @Before
-    public void Setup() throws Exception {
+    @BeforeClass
+    public static void beforeAllTests() throws Exception {
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
         appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assetManager = testContext.getAssets();
@@ -163,7 +162,7 @@ public class BaseTest {
         }
     }
 
-    private void extractAssetsRecursively(String path) throws IOException {
+    private static void extractAssetsRecursively(String path) throws IOException {
         String[] dirList = assetManager.list(path);
         if (dirList != null && dirList.length > 0) {
             File outputFile = new File(appContext.getFilesDir(), path);
@@ -186,8 +185,7 @@ public class BaseTest {
         }
     }
 
-    private void extractTestFile(String filepath) throws IOException {
-
+    private static void extractTestFile(String filepath) throws IOException {
         InputStream is = new BufferedInputStream(
                 assetManager.open(filepath),
                 256);
