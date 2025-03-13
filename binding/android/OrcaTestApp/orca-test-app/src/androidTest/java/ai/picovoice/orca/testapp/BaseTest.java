@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -38,11 +37,14 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import ai.picovoice.orca.OrcaPhoneme;
 import ai.picovoice.orca.OrcaWord;
 
 public class BaseTest {
+    static Set<String> extractedFiles;
 
     static Context testContext;
     static Context appContext;
@@ -52,18 +54,17 @@ public class BaseTest {
     static String accessKey;
 
     @BeforeClass
-    public static void beforeAllTests() throws Exception {
-        File file = new File(testResourcesPath, "test_data.json");
-        Log.d("File check", "file exists: " + file.exists());
+    public static void setup() throws Exception {
+        extractedFiles = new HashSet<>();
 
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
         appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assetManager = testContext.getAssets();
-        extractAssetsRecursively("test_resources");
         testResourcesPath = new File(
                 appContext.getFilesDir(),
                 "test_resources").getAbsolutePath();
 
+        extractTestFile("test_resources/test_data.json");
         FileReader reader = new FileReader(
                 new File(testResourcesPath, "test_data.json").getAbsolutePath()
         );
@@ -89,20 +90,23 @@ public class BaseTest {
         return result.toString("UTF-8");
     }
 
-    public static String getModelFilepath(String modelFilename) {
+    public static String getModelFilepath(String modelFilename) throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
-        return new File(resPath, String.format("model_files/%s", modelFilename)).getAbsolutePath();
+        String modelPath = String.format("model_files/%s", modelFilename);
+        extractTestFile(String.format("test_resources/%s", modelPath));
+        return new File(resPath, modelPath).getAbsolutePath();
     }
 
-    public static String getAudioFilepath(String modelFilename, String synthesisType) {
+    public static String getAudioFilepath(String modelFilename, String synthesisType) throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
         String audioFilename = modelFilename.replace(".pv", String.format("_%s.wav", synthesisType));
+        extractTestFile(String.format("test_resources/wav/%s", audioFilename));
         return new File(resPath, String.format("wav/%s", audioFilename)).getAbsolutePath();
     }
 
@@ -190,13 +194,24 @@ public class BaseTest {
     }
 
     private static void extractTestFile(String filepath) throws IOException {
+        File absPath = new File(
+                appContext.getFilesDir(),
+                filepath);
+
+        if (extractedFiles.contains(filepath)) {
+            return;
+        }
+
+        if (!absPath.exists()) {
+            if (absPath.getParentFile() != null) {
+                absPath.getParentFile().mkdirs();
+            }
+            absPath.createNewFile();
+        }
 
         InputStream is = new BufferedInputStream(
                 assetManager.open(filepath),
                 256);
-        File absPath = new File(
-                appContext.getFilesDir(),
-                filepath);
         OutputStream os = new BufferedOutputStream(
                 new FileOutputStream(absPath),
                 256);
@@ -209,5 +224,7 @@ public class BaseTest {
 
         is.close();
         os.close();
+
+        extractedFiles.add(absPath.getAbsolutePath());
     }
 }
