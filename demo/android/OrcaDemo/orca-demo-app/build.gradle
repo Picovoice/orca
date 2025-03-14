@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
+    def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
     compileSdk defaultTargetSdkVersion
 
     defaultConfig {
@@ -19,14 +20,19 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig true
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    lint {
+    lintOptions {
         abortOnError false
     }
-    namespace 'ai.picovoice.orcademo'
+    if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
+        namespace 'ai.picovoice.orcademo'
+    }
 }
 
 dependencies {
