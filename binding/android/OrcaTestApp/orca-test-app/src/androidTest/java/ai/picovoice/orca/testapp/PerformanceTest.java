@@ -65,7 +65,6 @@ public class PerformanceTest extends BaseTest {
 
     @Before
     public void Setup() throws Exception {
-        super.Setup();
         String iterationString = appContext.getString(R.string.numTestIterations);
 
         try {
