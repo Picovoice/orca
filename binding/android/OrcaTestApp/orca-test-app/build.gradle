@@ -119,7 +119,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     androidTestImplementation('androidx.test.espresso:espresso-intents:3.5.1')
-    androidTestImplementation('ai.picovoice:orca-android:1.0.0')
+    androidTestImplementation('ai.picovoice:orca-android:1.1.1')
 }
 
 afterEvaluate {

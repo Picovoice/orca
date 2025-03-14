@@ -225,6 +225,6 @@ public class BaseTest {
         is.close();
         os.close();
 
-        extractedFiles.add(absPath.getAbsolutePath());
+        extractedFiles.add(filepath);
     }
 }
