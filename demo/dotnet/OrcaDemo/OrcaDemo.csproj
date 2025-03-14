@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Picovoice.Orca" Version="1.1.1" />
+        <PackageReference Include="Picovoice.Orca" Version="1.1.2" />
         <PackageReference Include="PvSpeaker" Version="1.0.2" />
         <PackageReference Include="Spectre.Console" Version="0.49.1" />
         <PackageReference Include="Tiktoken" Version="2.2.0" />
