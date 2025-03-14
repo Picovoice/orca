@@ -215,14 +215,17 @@ describe('invalids', () => {
   describe.each<any>(testData.tests.invalid_tests)('$language', ({ language, models, text_invalid }) => {
     describe.each<any>(models)('%s', model => {
       it('invalid input', () => {
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+
         text_invalid.forEach((sentence: string) => {
-          const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
           try {
             orcaEngine.synthesize(sentence);
           } catch (e) {
             expect(e).toBeDefined();
           }
         });
+
+        orcaEngine.release();
       });
     });
   });
