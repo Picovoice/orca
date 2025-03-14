@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/orca-web@~1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-1.1.0.tgz#9a544819a160fa2408792e2eaced59514ae60d43"
-  integrity sha512-+uDMV9+eVi0dKkSxvXy1j34ChIiITqJzDVLWbjjVHhQhLXsbdlyB/mumf0gGxpuh7zzCwLmQqj5QEgGh+fHXMQ==
+"@picovoice/orca-web@~1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-1.1.1.tgz#888ce8677a340287d3456a12274004da3c59851c"
+  integrity sha512-6xmUw/SG09LnclV+5c8osnfytqhg8rVAFWr5zpTxuwTGL5bJEs613HfWf4hWTzNpRHjZFrC1NPbCyT2cuc860Q==
   dependencies:
     "@picovoice/web-utils" "=1.4.3"
 
