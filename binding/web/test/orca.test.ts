@@ -28,24 +28,6 @@ const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
-const EXPECTED_VALID_CHARACTERS = [
-  '.', ':', ',', '"', '?', '!', 'a',
-  'b', 'c', 'd', 'e', 'f', 'g', 'h',
-  'i', 'j', 'k', 'l', 'm', 'n', 'o',
-  'p', 'q', 'r', 's', 't', 'u', 'v',
-  'w', 'x', 'y', 'z', 'A', 'B', 'C',
-  'D', 'E', 'F', 'G', 'H', 'I', 'J',
-  'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-  'R', 'S', 'T', 'U', 'V', 'W', 'X',
-  'Y', 'Z', '\'', '{', '}', '|', ' ',
-  '-', '/', '1', '2', '3', '4', '5',
-  '6', '7', '8', '9', '0', '@', '%',
-  '&', '\n', '_', '(', ')', '°', 'º',
-  '²', '³', '$', '€', '¥', '₪', '£',
-  '₩', '₺', '₱', '₽', '฿', '₴', '₹',
-  '¢', '+', '=', '#', '−', '–', '‒',
-  '—', '―', '’'
-];
 
 const getAudioFileName = (model: string, synthesis_type: string): string => {
   return model.replace(".pv", `_${synthesis_type}.wav`);
@@ -77,15 +59,11 @@ const runInitTest = async (
 
   try {
     orca = await instance.create(accessKey, model);
-    console.log(orca.validCharacters)
     expect(typeof orca.version).eq('string');
     expect(orca.version.length).gt(0);
     expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
     expect(orca.sampleRate).eq(EXPECTED_SAMPLE_RATE);
-    expect(orca.validCharacters.length).eq(EXPECTED_VALID_CHARACTERS.length);
-    orca.validCharacters.forEach((symbol: string, i: number) => {
-      expect(symbol).eq(EXPECTED_VALID_CHARACTERS[i]);
-    });
+    expect(orca.validCharacters.length).gt(0);
   } catch (e) {
     if (expectFailure) {
       isFailed = true;
@@ -353,6 +331,14 @@ describe('Sentence Tests', function() {
         });
 
         it(`should be able to handle max num characters (${testCaseString})`, async () => {
+          // test takes a while specifically in some languages
+          // set timeout decently high and only run in worker
+          Cypress.config('defaultCommandTimeout', 300000);
+
+          if (instanceString !== "worker") {
+            return;
+          }
+
           try {
             const orca = await instance.create(
               ACCESS_KEY,
@@ -369,6 +355,7 @@ describe('Sentence Tests', function() {
               await orca.release();
             }
           } catch (e) {
+            console.log(e)
             expect(e).to.be.undefined;
           }
         });

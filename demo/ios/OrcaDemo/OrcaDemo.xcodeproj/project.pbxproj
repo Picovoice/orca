@@ -15,6 +15,7 @@
 		07F723592D6D594B0002D88F /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 07F723582D6D594B0002D88F /* Orca */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
 		1E001B6A2B7D451200D8E72D /* orca_params_en_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_en_female.pv */; };
+		1E7C0A422D84DA0700A5350A /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7C0A412D84DA0700A5350A /* Orca */; };
 		E109D1A32CFE4F380014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D1A22CFE4F380014F5AA /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */; };
@@ -40,6 +41,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0751D6642D6D46AA001EB29D /* Orca in Frameworks */,
+				1E7C0A422D84DA0700A5350A /* Orca in Frameworks */,
 				07F723592D6D594B0002D88F /* Orca in Frameworks */,
 				E109D1A32CFE4F380014F5AA /* Orca in Frameworks */,
 				E1F353002D00ED5C0069B0E6 /* Orca in Frameworks */,
@@ -354,7 +356,7 @@
 			repositoryURL = "https://github.com/Picovoice/orca";
 			requirement = {
 				kind = exactVersion;
-				version = 1.1.0;
+				version = 1.1.1;
 			};
 		};
 		E1F352FE2D00ED5C0069B0E6 /* XCRemoteSwiftPackageReference "orca" */ = {
@@ -373,6 +375,11 @@
 			productName = Orca;
 		};
 		07F723582D6D594B0002D88F /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */;
+			productName = Orca;
+		};
+		1E7C0A412D84DA0700A5350A /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */;
 			productName = Orca;

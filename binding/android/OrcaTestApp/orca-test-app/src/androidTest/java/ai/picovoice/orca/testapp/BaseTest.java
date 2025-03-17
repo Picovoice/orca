@@ -12,6 +12,8 @@
 
 package ai.picovoice.orca.testapp;
 
+import static org.junit.Assert.assertEquals;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 
@@ -20,7 +22,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,35 +34,37 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import static org.junit.Assert.assertEquals;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import ai.picovoice.orca.OrcaWord;
 import ai.picovoice.orca.OrcaPhoneme;
+import ai.picovoice.orca.OrcaWord;
 
 public class BaseTest {
+    static Set<String> extractedFiles;
 
-    Context testContext;
-    Context appContext;
-    AssetManager assetManager;
-    String testResourcesPath;
-    JsonObject testJson;
-    String accessKey;
+    static Context testContext;
+    static Context appContext;
+    static AssetManager assetManager;
+    static String testResourcesPath;
+    static JsonObject testJson;
+    static String accessKey;
 
-    @Before
-    public void Setup() throws Exception {
+    @BeforeClass
+    public static void setup() throws Exception {
+        extractedFiles = new HashSet<>();
+
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
         appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assetManager = testContext.getAssets();
-        extractAssetsRecursively("test_resources");
         testResourcesPath = new File(
                 appContext.getFilesDir(),
                 "test_resources").getAbsolutePath();
 
+        extractTestFile("test_resources/test_data.json");
         FileReader reader = new FileReader(
                 new File(testResourcesPath, "test_data.json").getAbsolutePath()
         );
@@ -86,20 +90,23 @@ public class BaseTest {
         return result.toString("UTF-8");
     }
 
-    public static String getModelFilepath(String modelFilename) {
+    public static String getModelFilepath(String modelFilename) throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
-        return new File(resPath, String.format("model_files/%s", modelFilename)).getAbsolutePath();
+        String modelPath = String.format("model_files/%s", modelFilename);
+        extractTestFile(String.format("test_resources/%s", modelPath));
+        return new File(resPath, modelPath).getAbsolutePath();
     }
 
-    public static String getAudioFilepath(String modelFilename, String synthesisType) {
+    public static String getAudioFilepath(String modelFilename, String synthesisType) throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
         String audioFilename = modelFilename.replace(".pv", String.format("_%s.wav", synthesisType));
+        extractTestFile(String.format("test_resources/wav/%s", audioFilename));
         return new File(resPath, String.format("wav/%s", audioFilename)).getAbsolutePath();
     }
 
@@ -163,7 +170,7 @@ public class BaseTest {
         }
     }
 
-    private void extractAssetsRecursively(String path) throws IOException {
+    private static void extractAssetsRecursively(String path) throws IOException {
         String[] dirList = assetManager.list(path);
         if (dirList != null && dirList.length > 0) {
             File outputFile = new File(appContext.getFilesDir(), path);
@@ -186,14 +193,25 @@ public class BaseTest {
         }
     }
 
-    private void extractTestFile(String filepath) throws IOException {
+    private static void extractTestFile(String filepath) throws IOException {
+        File absPath = new File(
+                appContext.getFilesDir(),
+                filepath);
+
+        if (extractedFiles.contains(filepath)) {
+            return;
+        }
+
+        if (!absPath.exists()) {
+            if (absPath.getParentFile() != null) {
+                absPath.getParentFile().mkdirs();
+            }
+            absPath.createNewFile();
+        }
 
         InputStream is = new BufferedInputStream(
                 assetManager.open(filepath),
                 256);
-        File absPath = new File(
-                appContext.getFilesDir(),
-                filepath);
         OutputStream os = new BufferedOutputStream(
                 new FileOutputStream(absPath),
                 256);
@@ -206,5 +224,7 @@ public class BaseTest {
 
         is.close();
         os.close();
+
+        extractedFiles.add(filepath);
     }
 }
