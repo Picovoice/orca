@@ -57,7 +57,13 @@ voice assistants. Orca is:
 
 ## Language Support
 
-- Orca Streaming Text-to-Speech currently supports English only.
+- Orca Streaming Text-to-Speech currently supports the following languages:
+  - English
+  - French
+  - German
+  - Japanese
+  - Korean
+  - Spanish
 - Support for [additional languages is available for commercial customers](https://picovoice.ai/consulting/) on a
   case-by-case basis.
 
