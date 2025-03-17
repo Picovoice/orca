@@ -4,7 +4,7 @@ const path = require("path");
 const testData = require("../../../resources/.test/test_data.json");
 
 const availableLanguages = testData["tests"]["sentence_tests"].map(
-  (x) => x["language"]
+  (x) => x["language"],
 );
 
 const genders = ["male", "female"];
@@ -13,8 +13,8 @@ const language = process.argv.slice(2)[0];
 if (!language) {
   console.error(
     `Choose the language you would like to run the demo in with "yarn start [language] [gender]".\nAvailable languages are ${availableLanguages.join(
-      ", "
-    )}`
+      ", ",
+    )}`,
   );
   process.exit(1);
 }
@@ -22,8 +22,8 @@ if (!language) {
 if (!availableLanguages.includes(language)) {
   console.error(
     `'${language}' is not an available demo language.\nAvailable languages are ${availableLanguages.join(
-      ", "
-    )}`
+      ", ",
+    )}`,
   );
   process.exit(1);
 }
@@ -32,8 +32,8 @@ const gender = process.argv.slice(2)[1];
 if (!gender) {
   console.error(
     `Choose the gender you would like to run the demo in with "yarn start [language] [gender]".\nAvailable genders are ${genders.join(
-      ", "
-    )}`
+      ", ",
+    )}`,
   );
   process.exit(1);
 }
@@ -41,8 +41,8 @@ if (!gender) {
 if (!gender.includes(gender)) {
   console.error(
     `'${gender}' is not an available gender.\nAvailable genders are ${genders.join(
-      ", "
-    )}`
+      ", ",
+    )}`,
   );
   process.exit(1);
 }
@@ -64,7 +64,7 @@ if (fs.existsSync(outputDirectory)) {
 const modelName = `orca_params_${language}_${gender}.pv`;
 fs.copyFileSync(
   path.join(modelDir, modelName),
-  path.join(outputDirectory, modelName)
+  path.join(outputDirectory, modelName),
 );
 
 fs.writeFileSync(
@@ -77,12 +77,12 @@ fs.writeFileSync(
 (function () {
   if (typeof module !== "undefined" && typeof module.exports !== "undefined")
     module.exports = orcaModel;
-})();`
+})();`,
 );
 
-const command = (process.platform === "win32") ? "npx.cmd" : "npx";
+const command = process.platform === "win32" ? "npx.cmd" : "npx";
 
 child_process.execSync(`${command} http-server -a localhost -p 5000`, {
   shell: true,
-  stdio: 'inherit'
+  stdio: "inherit",
 });
