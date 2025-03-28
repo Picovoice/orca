@@ -64,6 +64,8 @@ voice assistants. Orca is:
   - Japanese
   - Korean
   - Spanish
+  - Italian
+  - Portuguese
 - Support for [additional languages is available for commercial customers](https://picovoice.ai/consulting/) on a
   case-by-case basis.
 
