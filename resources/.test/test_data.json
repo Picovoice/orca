@@ -712,127 +712,127 @@
         "alignments": [
           {
             "word": "Testare",
-            "start_sec": 0.000,
-            "end_sec": 0.697,
+            "start_sec": 0,
+            "end_sec": 0.604,
             "phonemes": [
               {
                 "phoneme": "t",
-                "start_sec": 0.000,
-                "end_sec": 0.128
+                "start_sec": 0,
+                "end_sec": 0.116
               },
               {
                 "phoneme": "e",
-                "start_sec": 0.128,
-                "end_sec": 0.232
+                "start_sec": 0.116,
+                "end_sec": 0.197
               },
               {
                 "phoneme": "s",
-                "start_sec": 0.232,
+                "start_sec": 0.197,
                 "end_sec": 0.279
               },
               {
                 "phoneme": "t",
                 "start_sec": 0.279,
-                "end_sec": 0.360
+                "end_sec": 0.372
               },
               {
                 "phoneme": "a",
-                "start_sec": 0.360,
-                "end_sec": 0.534
+                "start_sec": 0.372,
+                "end_sec": 0.441
               },
               {
                 "phoneme": "r",
-                "start_sec": 0.534,
-                "end_sec": 0.569
+                "start_sec": 0.441,
+                "end_sec": 0.511
               },
               {
                 "phoneme": "e",
-                "start_sec": 0.569,
-                "end_sec": 0.697
+                "start_sec": 0.511,
+                "end_sec": 0.604
               }
             ]
           },
           {
             "word": "l'allineamento",
-            "start_sec": 0.697,
-            "end_sec": 1.858,
+            "start_sec": 0.604,
+            "end_sec": 1.579,
             "phonemes": [
               {
                 "phoneme": "l",
-                "start_sec": 0.697,
-                "end_sec": 0.789
+                "start_sec": 0.604,
+                "end_sec": 0.662
               },
               {
                 "phoneme": "a",
-                "start_sec": 0.789,
-                "end_sec": 0.836
+                "start_sec": 0.662,
+                "end_sec": 0.72
               },
               {
                 "phoneme": "l",
-                "start_sec": 0.836,
-                "end_sec": 0.929
+                "start_sec": 0.72,
+                "end_sec": 0.778
               },
               {
                 "phoneme": "l",
-                "start_sec": 0.929,
-                "end_sec": 0.987
+                "start_sec": 0.778,
+                "end_sec": 0.848
               },
               {
                 "phoneme": "i",
-                "start_sec": 0.987,
-                "end_sec": 1.057
+                "start_sec": 0.848,
+                "end_sec": 0.894
               },
               {
                 "phoneme": "n",
-                "start_sec": 1.057,
-                "end_sec": 1.126
+                "start_sec": 0.894,
+                "end_sec": 0.964
               },
               {
                 "phoneme": "e",
-                "start_sec": 1.126,
-                "end_sec": 1.207
+                "start_sec": 0.964,
+                "end_sec": 1.01
               },
               {
                 "phoneme": "a",
-                "start_sec": 1.207,
-                "end_sec": 1.254
+                "start_sec": 1.01,
+                "end_sec": 1.033
               },
               {
                 "phoneme": "m",
-                "start_sec": 1.254,
-                "end_sec": 1.347
+                "start_sec": 1.033,
+                "end_sec": 1.115
               },
               {
                 "phoneme": "e",
-                "start_sec": 1.347,
-                "end_sec": 1.463
+                "start_sec": 1.115,
+                "end_sec": 1.184
               },
               {
                 "phoneme": "n",
-                "start_sec": 1.463,
-                "end_sec": 1.567
+                "start_sec": 1.184,
+                "end_sec": 1.335
               },
               {
                 "phoneme": "t",
-                "start_sec": 1.567,
-                "end_sec": 1.672
+                "start_sec": 1.335,
+                "end_sec": 1.44
               },
               {
                 "phoneme": "o",
-                "start_sec": 1.672,
-                "end_sec": 1.858
+                "start_sec": 1.44,
+                "end_sec": 1.579
               }
             ]
           },
           {
             "word": ".",
-            "start_sec": 1.858,
-            "end_sec": 1.962,
+            "start_sec": 1.579,
+            "end_sec": 1.741,
             "phonemes": [
               {
                 "phoneme": ".",
-                "start_sec": 1.858,
-                "end_sec": 1.962
+                "start_sec": 1.579,
+                "end_sec": 1.741
               }
             ]
           }
