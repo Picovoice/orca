@@ -1,14 +1,14 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<ItemGroup>
-		<Content Include="$(MSBuildThisFileDirectory)lib/**">
-			<Link>lib/%(RecursiveDir)%(Filename)%(Extension)</Link>
-            <PackagePath>content/picovoice/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+		<Content Include="$(MSBuildThisFileDirectory)lib\**">
+			<Link>lib\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <PackagePath>content\picovoice\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Visible>false</Visible>
 		</Content>
-		<Content Include="$(MSBuildThisFileDirectory)/../common/orca_params_en_female.pv">
-			<Link>lib/common/orca_params_en_female.pv</Link>
-            <PackagePath>content/picovoice/common/orca_params_en_female.pv</PackagePath>
+		<Content Include="$(MSBuildThisFileDirectory)\..\common\orca_params_en_female.pv">
+			<Link>lib\common\orca_params_en_female.pv</Link>
+            <PackagePath>content\picovoice\common\orca_params_en_female.pv</PackagePath>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Visible>false</Visible>
 		</Content>
