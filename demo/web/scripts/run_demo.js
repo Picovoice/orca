@@ -62,10 +62,26 @@ if (fs.existsSync(outputDirectory)) {
 }
 
 const modelName = `orca_params_${language}_${gender}.pv`;
-fs.copyFileSync(
-  path.join(modelDir, modelName),
-  path.join(outputDirectory, modelName),
-);
+const modelPath = path.join(modelDir, modelName);
+if (fs.existsSync(modelPath)) {
+  fs.copyFileSync(
+      path.join(modelDir, modelName),
+      path.join(outputDirectory, modelName),
+  );
+} else {
+  let availableGender;
+
+  fs.readdirSync(modelDir).forEach((filename) => {
+    if (
+        filename.startsWith(`orca_params_${language}_`) &&
+        fs.statSync(path.join(modelDir, filename)).isFile()
+    ) {
+      availableGender = filename.split('.')[0].split('_').pop();
+    }
+  });
+
+  throw new Error(`Gender '${gender}' is not available with language '${language}'. Please use gender '${availableGender}'`);
+}
 
 fs.writeFileSync(
   path.join(outputDirectory, "orcaModel.js"),
