@@ -16,15 +16,17 @@ Use `yarn` or `npm` to install the dependencies, and the `start` script to start
 
 ```console
 yarn
-yarn start
+yarn start ${LANGUAGE} ${GENDER}
 ```
 
 (or)
 
 ```console
 npm install
-npm run start
+npm run start ${LANGUAGE} ${GENDER}
 ```
+
+Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in. Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`.
 
 Open `localhost:5000` in your web browser, as hinted at in the output:
 
