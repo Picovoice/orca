@@ -49,6 +49,9 @@ def get_model_path(language: str, gender: str) -> str:
 
 
 def main() -> None:
+    available_languages = get_available_languages()
+    available_genders = get_available_genders()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--access_key',
@@ -72,13 +75,13 @@ def main() -> None:
     parser.add_argument(
         "--language",
         required=True,
-        help=f"Choose the language you would like to run the demo in. "
-             f"Available languages are {', '.join(get_available_languages())}")
+        help=f"The language you would like to run the demo in. "
+             f"Available languages are {', '.join(available_languages)}.")
     parser.add_argument(
         "--gender",
         required=True,
-        help=f"Choose the gender you would like to run the demo in. "
-             f"Available genders are {', '.join(get_available_genders())}")
+        help=f"The gender you would like to run the demo in. "
+             f"Available genders are {', '.join(available_genders)}.")
     args = parser.parse_args()
 
     access_key = args.access_key
@@ -88,13 +91,13 @@ def main() -> None:
     output_path = args.output_path
     text = args.text
 
-    if language not in get_available_languages():
+    if language not in available_languages:
         raise ValueError(f"Given argument --language `{language}` is not an available language. "
-                         f"Available languages are {', '.join(get_available_languages())}")
+                         f"Available languages are {', '.join(available_languages)}.")
 
-    if gender not in get_available_genders():
+    if gender not in available_genders:
         raise ValueError(f"Given argument --gender `{gender}` is not an available gender. "
-                         f"Available genders are {', '.join(get_available_genders())}")
+                         f"Available genders are {', '.join(available_genders)}.")
 
     model_path = get_model_path(language, gender)
 

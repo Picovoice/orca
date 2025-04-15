@@ -51,10 +51,10 @@ by Orca to your device's speakers.
 Execute the following:
 
 ```console
-orca-streaming-demo --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+orca-streaming-demo --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
 ```
 
-Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console and `${TEXT}` with your text to be
+Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console, `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`), and `${TEXT}` with your text to be
 streamed to Orca.
 
 ### Single synthesis demo
@@ -62,9 +62,7 @@ streamed to Orca.
 To synthesize speech in a single call to Orca and without audio playback, run the following:
 
 ```console
-orca-file-demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+orca-file-demo --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with your text to be synthesized,
-and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel,
-16-bit PCM `.wav` file.
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`), `${TEXT}` with your text to be synthesized, and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel, 16-bit PCM `.wav` file.
