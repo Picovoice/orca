@@ -44,7 +44,6 @@ dependencies {
 
 tasks.register('copyParams', Copy) {
     from("${rootDir}/../../../lib/common")
-    include('orca_params_en_female.pv')
     into("${rootDir}/orca-demo-app/src/main/assets")
 }
 

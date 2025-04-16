@@ -58,7 +58,7 @@ import ai.picovoice.orca.OrcaSynthesizeParams;
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
-    private static final String MODEL_FILE = "orca_params_en_female.pv";
+    private static final String MODEL_FILE = "${MODEL_FILE_HERE}";
     private static final int STREAMING_NUM_AUDIO_WAIT_CHUNKS = 1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
