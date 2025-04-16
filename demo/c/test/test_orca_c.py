@@ -15,7 +15,13 @@ import subprocess
 import sys
 import unittest
 
-from test_util import get_model_paths, get_test_data
+from collections import namedtuple
+from test_util import (
+    get_test_data,
+    get_available_languages,
+    get_available_genders,
+    get_model_path,
+)
 
 test_data = get_test_data()
 
@@ -53,13 +59,14 @@ class OrcaCTestCase(unittest.TestCase):
             "libpv_orca." + self._get_lib_ext(self._platform)
         )
 
-    def run_orca(self, model_path: str) -> None:
+    def run_orca(self, language: str, gender: str) -> None:
         output_path = os.path.join(os.path.dirname(__file__), "output.wav")
         args = [
             os.path.join(os.path.dirname(__file__), "../build/orca_demo"),
             "-a", self._access_key,
             "-l", self._get_library_file(),
-            "-m", model_path,
+            "-n", language,
+            "-g", gender,
             "-t", test_data.text,
             "-o", output_path,
         ]
@@ -78,13 +85,14 @@ class OrcaCTestCase(unittest.TestCase):
         self.assertTrue("Saved audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
-    def run_orca_streaming(self, model_path: str) -> None:
+    def run_orca_streaming(self, language: str, gender: str) -> None:
         output_path = os.path.join(os.path.dirname(__file__), "output.wav")
         args = [
             os.path.join(os.path.dirname(__file__), "../build/orca_demo_streaming"),
             "-a", self._access_key,
             "-l", self._get_library_file(),
-            "-m", model_path,
+            "-n", language,
+            "-g", gender,
             "-t", test_data.text,
             "-o", output_path,
         ]
@@ -98,8 +106,19 @@ class OrcaCTestCase(unittest.TestCase):
         os.remove(output_path)
 
     def test_orca(self) -> None:
-        for model_path in get_model_paths():
-            self.run_orca(model_path=model_path)
+        Model = namedtuple("Model", ["language", "gender"])
+        languages = get_available_languages()
+        genders = get_available_genders()
+
+        models = list()
+        for language in languages:
+            for gender in genders:
+                if get_model_path(language, gender) is not None:
+                    models.append(Model(language, gender))
+
+        for model in models:
+            self.run_orca(language=model.language, gender=model.gender)
+            self.run_orca_streaming(language=model.language, gender=model.gender)
 
 
 if __name__ == '__main__':
