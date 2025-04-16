@@ -45,10 +45,21 @@ jobs:
       run: dotnet build -c StreamingDemo.Release
 
     - name: Run .NET file demo
-      run: dotnet run -c FileDemo.Release -- --access_key ${{secrets.PV_VALID_ACCESS_KEY}} --text "Hello, I am Orca!" --output_path ./tmp.wav
+      run: |
+        dotnet run -c FileDemo.Release --
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --language en
+        --gender female
+        --text "Hello, I am Orca!"
+        --output_path ./tmp.wav
 
     - name: Run .NET streaming demo
-      run: dotnet run -c StreamingDemo.Release -- --access_key ${{secrets.PV_VALID_ACCESS_KEY}} --text_to_stream "Hello, I am Orca!"
+      run: |
+        dotnet run -c StreamingDemo.Release --
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --language en
+        --gender female
+        --text_to_stream "Hello, I am Orca!"
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
@@ -70,7 +81,18 @@ jobs:
       run: dotnet build -c StreamingDemo.Release
 
     - name: Run .NET file demo
-      run: dotnet run -c FileDemo.Release -- --access_key ${{secrets.PV_VALID_ACCESS_KEY}} --text "Hello, I am Orca!" --output_path ./tmp.wav
+      run: |
+        dotnet run -c FileDemo.Release --
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --language en
+        --gender female
+        --text "Hello, I am Orca!"
+        --output_path ./tmp.wav
 
     - name: Run .NET streaming demo
-      run: dotnet run -c StreamingDemo.Release -- --access_key ${{secrets.PV_VALID_ACCESS_KEY}} --text_to_stream "Hello, I am Orca!"
+      run: |
+        dotnet run -c StreamingDemo.Release --
+        --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+        --language en
+        --gender female
+        --text_to_stream "Hello, I am Orca!"
