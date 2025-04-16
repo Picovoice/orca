@@ -9,6 +9,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 ## Setup
 
 Copy your `AccessKey` into the `YOUR_ACCESS_KEY_HERE` variable inside [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift).
+Replace `MODEL_FILE_HERE` inside [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift) with the model file you would like to run the demo with. Available model files are in [lib/common](../../lib/common).
 
 Open [OrcaDemo.xcodeproj](./OrcaDemo/OrcaDemo.xcodeproj/) and run the demo.
 

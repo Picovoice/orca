@@ -24,6 +24,7 @@ enum UIState {
 
 class ViewModel: ObservableObject {
     private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    private let MODEL_PATH = "{MODEL_PATH_HERE}"
 
     private let NUM_AUDIO_WAIT_CHUNKS = 1
 
@@ -53,7 +54,7 @@ class ViewModel: ObservableObject {
     public func initialize() {
         state = UIState.INIT
         do {
-            try orca = Orca(accessKey: ACCESS_KEY, modelPath: "orca_params_en_female.pv")
+            try orca = Orca(accessKey: ACCESS_KEY, modelPath: MODEL_PATH)
             maxCharacterLimit = orca.maxCharacterLimit!
             sampleRate = orca.sampleRate!
             state = UIState.READY
