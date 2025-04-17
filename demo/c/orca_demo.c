@@ -18,10 +18,8 @@ the License.
 #endif
 
 #include <getopt.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -29,8 +27,6 @@ the License.
 #include <windows.h>
 
 #endif
-
-#include "utils/model_path.h"
 
 #include "pv_orca.h"
 
@@ -89,8 +85,7 @@ static void print_dl_error(const char *message) {
 static struct option long_options[] = {
         {"access_key",   required_argument, NULL, 'a'},
         {"library_path", required_argument, NULL, 'l'},
-        {"language",     required_argument, NULL, 'n'},
-        {"gender",       required_argument, NULL, 'g'},
+        {"model_path",   required_argument, NULL, 'm'},
         {"text",         required_argument, NULL, 't'},
         {"output_path",  required_argument, NULL, 'o'},
 };
@@ -98,16 +93,8 @@ static struct option long_options[] = {
 static void print_usage(const char *program_name) {
     fprintf(
             stdout,
-            "Usage: %s [-l LIBRARY_PATH -n LANGUAGE -g GENDER -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]\n",
+            "Usage: %s [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]\n",
             program_name);
-}
-
-static void print_usage_language(const char *language) {
-    fprintf(stdout, "Given argument `%s` is not an available language.\n", language);
-}
-
-static void print_usage_gender(const char *gender) {
-    fprintf(stdout, "Given argument `%s` is not an available gender.\n", gender);
 }
 
 void print_error_message(char **message_stack, int32_t message_stack_depth) {
@@ -118,23 +105,19 @@ void print_error_message(char **message_stack, int32_t message_stack_depth) {
 
 int picovoice_main(int argc, char **argv) {
     const char *library_path = NULL;
-    const char *language = NULL;
-    const char *gender = NULL;
+    const char *model_path = NULL;
     const char *access_key = NULL;
     const char *text = NULL;
     const char *output_path = NULL;
 
     int c;
-    while ((c = getopt_long(argc, argv, "l:n:g:a:t:o:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "l:m:a:t:o:", long_options, NULL)) != -1) {
         switch (c) {
             case 'l':
                 library_path = optarg;
                 break;
-            case 'n':
-                language = optarg;
-                break;
-            case 'g':
-                gender = optarg;
+            case 'm':
+                model_path = optarg;
                 break;
             case 'a':
                 access_key = optarg;
@@ -150,49 +133,8 @@ int picovoice_main(int argc, char **argv) {
         }
     }
 
-    if (!library_path || !language || !gender || !access_key || !text || !output_path) {
+    if (!library_path || !model_path || !access_key || !text || !output_path) {
         print_usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    bool is_valid_language = false;
-    int language_count = 0;
-    char **languages = get_available_languages(&language_count);
-    for (int i = 0; i < language_count; i++) {
-        if (strcmp(language, languages[i]) == 0) {
-            is_valid_language = true;
-        }
-        free(languages[i]);
-    }
-    free(languages);
-
-    if (is_valid_language == false) {
-        if (language_count > 0) {
-            print_usage_language(language);
-        }
-        exit(EXIT_FAILURE);
-    }
-
-    bool is_valid_gender = false;
-    int gender_count = 0;
-    char **genders = get_available_genders(&gender_count);
-    for (int i = 0; i < gender_count; i++) {
-        if (strcmp(gender, genders[i]) == 0) {
-            is_valid_gender = true;
-        }
-        free(genders[i]);
-    }
-    free(genders);
-
-    if (is_valid_gender == false) {
-        if (gender_count > 0) {
-            print_usage_gender(gender);
-        }
-        exit(EXIT_FAILURE);
-    }
-
-    char *model_path = get_model_path(language, gender);
-    if (!model_path) {
         exit(EXIT_FAILURE);
     }
 
@@ -291,7 +233,6 @@ int picovoice_main(int argc, char **argv) {
 
     pv_orca_t *orca = NULL;
     pv_status_t orca_status = pv_orca_init_func(access_key, model_path, &orca);
-    free(model_path);
     if (orca_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to create an instance of Orca with `%s`", pv_status_to_string_func(orca_status));
         error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);

@@ -40,16 +40,20 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_dem
 Running the executable without any command-line arguments prints the usage info to the console:
 
 ```console
-Usage: orca_demo_streaming [-l LIBRARY_PATH -n LANGUAGE -g GENDER -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]
+Usage: orca_demo_streaming [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]
 ```
 
 To run the Orca streaming demo:
 
 ```console
-./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -n ${LANGUAGE} -g ${GENDER} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
+./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
-Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`), `${ACCESS_KEY}` with AccessKey obtained from [Picovoice Console](https://console.picovoice.ai/), `${TEXT}` with the text to be synthesized, and `${WAV_OUTPUT_PATH}` with a path to an output audio file. The audio will be stored as a single-channel 16-bit PCM `.wav` file.
+Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${MODEL_PATH}` with
+a path to any of the model files available under [lib/common](../../lib/common), `${ACCESS_KEY}` with AccessKey
+obtained from [Picovoice Console](https://console.picovoice.ai/), `${TEXT}` with the text to be synthesized,
+and `${WAV_OUTPUT_PATH}` with a path to a output audio file.
+The audio will be stored as a single-channel 16-bit PCM `.wav` file.
 
 ## Single Synthesis Demo
 
@@ -66,7 +70,11 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_dem
 To run the Orca demo:
 
 ```console
-./demo/c/build/orca_demo -l ${LIBRARY_PATH} -n ${LANGUAGE} -g ${GENDER} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
+./demo/c/build/orca_demo -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
-Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`), `${ACCESS_KEY}` with AccessKey obtained from [Picovoice Console](https://console.picovoice.ai/), `${TEXT}` with the text to be synthesized, and `${WAV_OUTPUT_PATH}` with a path to an output audio file. The audio will be stored as a single-channel 16-bit PCM `.wav` file.
+Replace `${LIBRARY_PATH}` with the path to appropriate library available under [lib](../../lib), `${MODEL_PATH}` with
+a path to any of the model files available under [lib/common](../../lib/common), `${ACCESS_KEY}` with AccessKey
+obtained from [Picovoice Console](https://console.picovoice.ai/), `${TEXT}` with the text to be synthesized,
+and `${WAV_OUTPUT_PATH}` with a path to a output audio file.
+The audio will be stored as a single-channel 16-bit PCM `.wav` file.

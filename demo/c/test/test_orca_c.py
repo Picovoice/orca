@@ -15,13 +15,7 @@ import subprocess
 import sys
 import unittest
 
-from collections import namedtuple
-from test_util import (
-    get_test_data,
-    get_available_languages,
-    get_available_genders,
-    get_model_path,
-)
+from test_util import get_model_paths, get_test_data
 
 test_data = get_test_data()
 
@@ -59,14 +53,13 @@ class OrcaCTestCase(unittest.TestCase):
             "libpv_orca." + self._get_lib_ext(self._platform)
         )
 
-    def run_orca(self, language: str, gender: str) -> None:
+    def run_orca(self, model_path: str) -> None:
         output_path = os.path.join(os.path.dirname(__file__), "output.wav")
         args = [
             os.path.join(os.path.dirname(__file__), "../build/orca_demo"),
             "-a", self._access_key,
             "-l", self._get_library_file(),
-            "-n", language,
-            "-g", gender,
+            "-m", model_path,
             "-t", test_data.text,
             "-o", output_path,
         ]
@@ -85,14 +78,13 @@ class OrcaCTestCase(unittest.TestCase):
         self.assertTrue("Saved audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
-    def run_orca_streaming(self, language: str, gender: str) -> None:
+    def run_orca_streaming(self, model_path: str) -> None:
         output_path = os.path.join(os.path.dirname(__file__), "output.wav")
         args = [
             os.path.join(os.path.dirname(__file__), "../build/orca_demo_streaming"),
             "-a", self._access_key,
             "-l", self._get_library_file(),
-            "-n", language,
-            "-g", gender,
+            "-m", model_path,
             "-t", test_data.text,
             "-o", output_path,
         ]
@@ -100,31 +92,15 @@ class OrcaCTestCase(unittest.TestCase):
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
-        poll_result = process.poll()
-        if poll_result != 0:
-            print(stdout.decode('utf-8'))
-            print(stderr.decode('utf-8'))
-            raise RuntimeError("Error running demo. See details above")
-
-        self.assertEqual(poll_result, 0)
+        self.assertEqual(process.poll(), 0)
         self.assertEqual(stderr.decode('utf-8'), '')
         self.assertTrue("Saved final audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
     def test_orca(self) -> None:
-        Model = namedtuple("Model", ["language", "gender"])
-        languages = get_available_languages()
-        genders = get_available_genders()
-
-        models = list()
-        for language in languages:
-            for gender in genders:
-                if get_model_path(language, gender) is not None:
-                    models.append(Model(language, gender))
-
-        for model in models:
-            self.run_orca(language=model.language, gender=model.gender)
-            self.run_orca_streaming(language=model.language, gender=model.gender)
+        for model_path in get_model_paths():
+            self.run_orca(model_path=model_path)
+            self.run_orca_streaming(model_path=model_path)
 
 
 if __name__ == '__main__':

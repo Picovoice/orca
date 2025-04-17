@@ -26,40 +26,21 @@ class SentenceTestData:
     text_custom_pronunciation: str
 
 
-def _load_test_data() -> str:
+def get_test_data() -> SentenceTestData:
     data_file_path = os.path.join(os.path.dirname(__file__), "../../../resources/.test/test_data.json")
     with open(data_file_path, encoding="utf8") as data_file:
         test_data = json.loads(data_file.read())
-    return test_data
 
-
-def get_test_data() -> SentenceTestData:
-    test_data = _load_test_data()
     sentence_tests = [SentenceTestData(**data) for data in test_data['tests']['sentence_tests']]
     return sentence_tests[0]
 
 
-def get_available_languages() -> List[str]:
-    test_data = _load_test_data()
-    return [x["language"] for x in test_data["tests"]["sentence_tests"]]
-
-
-def get_available_genders() -> List[str]:
-    return ["male", "female"]
-
-
-def get_model_path(language: str, gender: str) -> str:
-    model_name = f'orca_params_{language}_{gender}.pv'
-    model_path = os.path.join(os.path.dirname(__file__), f"../../../lib/common/{model_name}")
-    if os.path.exists(model_path):
-        return model_path
-    else:
-        return None
+def get_model_paths() -> List[str]:
+    model_folder = os.path.join(os.path.dirname(__file__), "../../..", "lib/common")
+    return [os.path.join(model_folder, model_name) for model_name in os.listdir(model_folder)]
 
 
 __all__ = [
     "get_test_data",
-    "get_available_languages",
-    "get_available_genders",
-    "get_model_path",
+    "get_model_paths",
 ]

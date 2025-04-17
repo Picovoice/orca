@@ -214,7 +214,7 @@ cmake -S demo/c/ -B demo/c/build && cmake --build demo/c/build --target orca_dem
 Run the demo:
 
 ```console
-./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -n ${LANGUAGE} -g ${GENDER} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
+./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
 For more information about C demos go to [demo/c](demo/c).
@@ -240,7 +240,7 @@ Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and avai
 
 Open `http://localhost:5000` in your browser to try the demo.
 
-For more information about C demos go to [demo/web](demo/web).
+For more information about Web demos go to [demo/web](demo/web).
 
 ### Android Demo
 
