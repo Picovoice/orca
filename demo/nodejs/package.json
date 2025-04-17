@@ -1,6 +1,6 @@
 {
   "name": "@picovoice/orca-node-demo",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Picovoice Orca Node.js file-based and streaming demos",
   "scripts": {
     "file": "node file.js",
