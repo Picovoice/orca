@@ -45,7 +45,7 @@ jobs:
       run: dotnet build -c StreamingDemo.Release
 
     - name: Run .NET file demo
-      run: |
+      run: >
         dotnet run -c FileDemo.Release --
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --language en
@@ -54,7 +54,7 @@ jobs:
         --output_path ./tmp.wav
 
     - name: Run .NET streaming demo
-      run: |
+      run: >
         dotnet run -c StreamingDemo.Release --
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --language en
@@ -81,7 +81,7 @@ jobs:
       run: dotnet build -c StreamingDemo.Release
 
     - name: Run .NET file demo
-      run: |
+      run: >
         dotnet run -c FileDemo.Release --
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --language en
@@ -90,7 +90,7 @@ jobs:
         --output_path ./tmp.wav
 
     - name: Run .NET streaming demo
-      run: |
+      run: >
         dotnet run -c StreamingDemo.Release --
         --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
         --language en

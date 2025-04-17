@@ -49,12 +49,12 @@ jobs:
           yarn install
 
       - name: Test streaming
-        run: |
+        run: >
           yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}}
           --language en --gender female -t "Hello, I am Orca!"
 
       - name: Test file
-        run: |
+        run: >
           yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}}
           --language en --gender female -t "Hello, I am Orca!" -o "./tmp.wav"
 
@@ -72,11 +72,11 @@ jobs:
         run: yarn install
 
       - name: Test streaming
-        run: |
+        run: >
           yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}}
           --language en --gender female -t "Hello, I am Orca!"
 
       - name: Test file
-        run: |
+        run: >
           yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}}
           --language en --gender female -t "Hello, I am Orca!" -o "./tmp.wav"
