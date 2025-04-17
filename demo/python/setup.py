@@ -33,7 +33,7 @@ else:
 
 setuptools.setup(
     name="pvorcademo",
-    version="1.1.1",
+    version="1.1.2",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Orca Streaming Text-to-Speech Engine demos",
