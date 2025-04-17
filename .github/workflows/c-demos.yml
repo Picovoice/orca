@@ -3,7 +3,7 @@ name: C Demos
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ 'demos-multilingual' ]
     paths:
       - '.github/workflows/c-demos.yml'
       - 'demo/c/**'
@@ -14,7 +14,7 @@ on:
       - 'lib/windows/**'
       - '!demo/c/README.md'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    branches: [ 'demos-multilingual', 'v[0-9]+.[0-9]+' ]
     paths:
       - '.github/workflows/c-demos.yml'
       - 'demo/c/**'
