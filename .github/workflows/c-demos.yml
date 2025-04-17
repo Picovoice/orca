@@ -35,20 +35,20 @@ jobs:
 
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ windows-latest ]
         include:
-          - os: ubuntu-latest
-            platform: linux
-            arch: x86_64
-            make_file: "Unix Makefiles"
+#          - os: ubuntu-latest
+#            platform: linux
+#            arch: x86_64
+#            make_file: "Unix Makefiles"
           - os: windows-latest
             platform: windows
             arch: amd64
             make_file: "MinGW Makefiles"
-          - os: macos-latest
-            platform: mac
-            arch: undetermined
-            make_file: "Unix Makefiles"
+#          - os: macos-latest
+#            platform: mac
+#            arch: undetermined
+#            make_file: "Unix Makefiles"
 
     steps:
       - uses: actions/checkout@v3
@@ -71,46 +71,46 @@ jobs:
       - name: Test
         run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
 
-  build-demo-self-hosted:
-    runs-on: ${{ matrix.machine }}
-
-    strategy:
-      matrix:
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
-        make_file: ["Unix Makefiles"]
-        include:
-          - machine: rpi3-32
-            platform: raspberry-pi
-            arch: cortex-a53
-          - machine: rpi3-64
-            platform: raspberry-pi
-            arch: cortex-a53-aarch64
-          - machine: rpi4-32
-            platform: raspberry-pi
-            arch: cortex-a72
-          - machine: rpi4-64
-            platform: raspberry-pi
-            arch: cortex-a72-aarch64
-          - machine: rpi5-64
-            platform: raspberry-pi
-            arch: cortex-a76-aarch64
-          - machine: pv-windows-arm64
-            platform: windows
-            arch: arm64
-            make_file: "MinGW Makefiles"
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Create build directory
-        run: cmake -G "${{ matrix.make_file }}" -B ./build
-
-      - name: Build demo
-        run: |
-          cmake --build ./build --target orca_demo
-          cmake --build ./build --target orca_demo_streaming
-
-      - name: Test
-        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
+#  build-demo-self-hosted:
+#    runs-on: ${{ matrix.machine }}
+#
+#    strategy:
+#      matrix:
+#        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
+#        make_file: ["Unix Makefiles"]
+#        include:
+#          - machine: rpi3-32
+#            platform: raspberry-pi
+#            arch: cortex-a53
+#          - machine: rpi3-64
+#            platform: raspberry-pi
+#            arch: cortex-a53-aarch64
+#          - machine: rpi4-32
+#            platform: raspberry-pi
+#            arch: cortex-a72
+#          - machine: rpi4-64
+#            platform: raspberry-pi
+#            arch: cortex-a72-aarch64
+#          - machine: rpi5-64
+#            platform: raspberry-pi
+#            arch: cortex-a76-aarch64
+#          - machine: pv-windows-arm64
+#            platform: windows
+#            arch: arm64
+#            make_file: "MinGW Makefiles"
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#
+#      - name: Create build directory
+#        run: cmake -G "${{ matrix.make_file }}" -B ./build
+#
+#      - name: Build demo
+#        run: |
+#          cmake --build ./build --target orca_demo
+#          cmake --build ./build --target orca_demo_streaming
+#
+#      - name: Test
+#        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}

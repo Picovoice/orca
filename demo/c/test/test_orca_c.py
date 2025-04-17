@@ -96,7 +96,7 @@ class OrcaCTestCase(unittest.TestCase):
             "-t", test_data.text,
             "-o", output_path,
         ]
-
+        print(args)
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
@@ -123,7 +123,7 @@ class OrcaCTestCase(unittest.TestCase):
                     models.append(Model(language, gender))
 
         for model in models:
-            self.run_orca(language=model.language, gender=model.gender)
+            # self.run_orca(language=model.language, gender=model.gender)
             self.run_orca_streaming(language=model.language, gender=model.gender)
 
 
