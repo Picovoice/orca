@@ -100,7 +100,13 @@ class OrcaCTestCase(unittest.TestCase):
         process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
-        self.assertEqual(process.poll(), 0)
+        poll_result = process.poll()
+        if poll_result != 0:
+            print(stdout.decode('utf-8'))
+            print(stderr.decode('utf-8'))
+            raise RuntimeError("Error running demo. See details above")
+
+        self.assertEqual(poll_result, 0)
         self.assertEqual(stderr.decode('utf-8'), '')
         self.assertTrue("Saved final audio" in stdout.decode('utf-8'))
         os.remove(output_path)
