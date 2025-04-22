@@ -372,7 +372,7 @@ namespace OrcaDemo
             "\t--text_to_stream (required): Text to be streamed to Orca\n" +
             "\t--language (required): The language you would like to run the demo in. " +
                 $"Available languages are {string.Join(", ", languages)}\n" +
-            "\t--gender (required): The gender you would like to run the demo in. " +
+            "\t--gender (required): The gender of the synthesized voice. " +
                 $"Available genders are {string.Join(", ", genders)}\n" +
             "\t--tokens_per_second: Number of tokens per second to be streamed to Orca, simulating an LLM response\n" +
             "\t--audio_wait_chunks: Number of PCM chunks to wait before starting to play audio. Default: system-dependent\n" +

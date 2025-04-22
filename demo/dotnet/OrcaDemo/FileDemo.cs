@@ -261,7 +261,7 @@ namespace OrcaDemo
             $"\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
             $"\t--language (required): The language you would like to run the demo in. " +
                 $"Available languages are {string.Join(", ", languages)}\n" +
-            $"\t--gender (required): The gender you would like to run the demo in. " +
+            $"\t--gender (required): The gender of the synthesized voice. " +
                 $"Available genders are {string.Join(", ", genders)}\n" +
             $"\t--text (required): Text to be synthesized\n" +
             $"\t--output_path (required): Absolute path to .wav file where the generated audio will be stored\n";

@@ -80,7 +80,7 @@ def main() -> None:
     parser.add_argument(
         "--gender",
         required=True,
-        help=f"The gender you would like to run the demo in. "
+        help=f"The gender of the synthesized voice. "
              f"Available genders are {', '.join(available_genders)}.")
     args = parser.parse_args()
 

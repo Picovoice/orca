@@ -31,7 +31,7 @@ if (!availableLanguages.includes(language)) {
 const gender = process.argv.slice(2)[1];
 if (!gender) {
   console.error(
-    `Choose the gender you would like to run the demo in with "yarn start [language] [gender]".\nAvailable genders are ${genders.join(
+    `Choose the gender of the synthesized voice with "yarn start [language] [gender]".\nAvailable genders are ${genders.join(
       ", ",
     )}`,
   );

@@ -32,7 +32,7 @@ program
   )
   .requiredOption(
     '--gender <string>',
-    `The gender you would like to run the demo in. Available genders are ${availableGenders.join(", ")}.`,
+    `The gender of the synthesized voice. Available genders are ${availableGenders.join(", ")}.`,
   )
   .requiredOption(
     '-t, --text <string>',
