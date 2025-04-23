@@ -58,7 +58,6 @@ import ai.picovoice.orca.OrcaSynthesizeParams;
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
-    private static final String MODEL_FILE = "${MODEL_FILE_HERE}";
     private static final int STREAMING_NUM_AUDIO_WAIT_CHUNKS = 1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -104,13 +103,25 @@ public class MainActivity extends AppCompatActivity {
         streamTextView.setMovementMethod(new ScrollingMovementMethod());
 
         try {
+            String language = BuildConfig.FLAVOR.substring(0, 2);
+            String gender = BuildConfig.FLAVOR.substring(2);
+            String modelName = "orca_params_" + language + "_" + gender.toLowerCase() + ".pv";
+
             orca = new Orca.Builder()
                     .setAccessKey(ACCESS_KEY)
-                    .setModelPath(MODEL_FILE)
+                    .setModelPath("models/" + modelName)
                     .build(getApplicationContext());
-            validationRegex = Pattern.compile(String.format(
-                    "[^%s ]",
-                    String.join("", orca.getValidCharacters())));
+            StringBuilder validCharsEscaped = new StringBuilder();
+            for (String ch : orca.getValidCharacters()) {
+                switch (ch) {
+                    case "\\": case "]": case "^": case "-": case "[":
+                        validCharsEscaped.append("\\").append(ch);
+                        break;
+                    default:
+                        validCharsEscaped.append(ch);
+                }
+            }
+            validationRegex = Pattern.compile(String.format("[^%s ]", validCharsEscaped));
             numCharsTextView.setText(String.format("0/%d", orca.getMaxCharacterLimit()));
         } catch (OrcaException e) {
             onOrcaException(e);
@@ -256,6 +267,13 @@ public class MainActivity extends AppCompatActivity {
                 });
             } else {
                 Set<Character> invalidChars = new HashSet<>();
+
+                if (BuildConfig.FLAVOR.startsWith("ko")) {
+                    text = ValidateTextHelper.decomposeAndFilterStandardJamoKo(text);
+                } else if (BuildConfig.FLAVOR.startsWith("ja")) {
+                    text = ValidateTextHelper.filterValidCharsJa(text);
+                }
+
                 Matcher m = validationRegex.matcher(text);
                 while (m.find()) {
                     invalidChars.add(text.charAt(m.start()));

@@ -9,11 +9,10 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 ## Setup
 
-Replace `"${YOUR_ACCESS_KEY_HERE}"` inside [MainActivity.java](orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) with your AccessKey obtained from [Picovoice Console](https://console.picovoice.ai/).
-Replace `"${MODEL_FILE_HERE}"` inside [MainActivity.java](orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) with the model file you would like to run the demo with. Available model files are in [lib/common](../../../lib/common).
-
 1. Open the project in Android Studio
-2. Build and run on an installed simulator or a connected Android device
+2. Copy your `AccessKey` into the `ACCESS_KEY` variable in [MainActivity.java](./orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java).
+3. Go to `Build > Select Build Variant...` and select the language you would like to run the demo in (e.g. enDebug -> English, itRelease -> Italian)
+4. Build and run on an installed simulator or a connected Android device
 
 ## Usage
 

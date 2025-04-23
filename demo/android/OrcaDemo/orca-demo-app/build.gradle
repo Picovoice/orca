@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
 
 android {
@@ -17,6 +19,51 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    def testDataFile = file('../../../../resources/.test/test_data.json')
+    def parsedJson = new JsonSlurper().parseText(testDataFile.text)
+    def models = []
+    parsedJson.tests.sentence_tests.each { test ->
+        test.models.each { m ->
+            def (language, gender) = m.replace("orca_params_", "").replace(".pv", "").split("_")
+            def flavor = "${language}${gender.capitalize()}"
+            models.add(flavor)
+        }
+    }
+
+    flavorDimensions "model"
+    productFlavors {
+        if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
+            enFemale {
+                getIsDefault().set(true)
+            }
+        }
+
+        models.each { model ->
+            "$model" {
+                applicationIdSuffix ".$model"
+            }
+        }
+
+        all { flavor ->
+            delete fileTree("$projectDir/src/main/assets") {
+                exclude '**/.gitkeep'
+            }
+
+            def language = flavor.name.substring(0, 2)
+            def gender = flavor.name.substring(2)
+            def modelName = "orca_params_" + language + "_" + gender.toLowerCase() + ".pv"
+            def modelFile = file("$projectDir/../../../../lib/common/$modelName")
+
+            if (modelFile.exists()) {
+                task("${flavor.name}CopyParams", type: Copy) {
+                    from(modelFile.parent)
+                    include(modelName)
+                    into("$projectDir/src/${flavor.name}/assets/models")
+                }
+            }
         }
     }
 
@@ -42,9 +89,34 @@ dependencies {
     implementation 'ai.picovoice:orca-android:1.1.1'
 }
 
-tasks.register('copyParams', Copy) {
-    from("${rootDir}/../../../lib/common")
-    into("${rootDir}/orca-demo-app/src/main/assets")
-}
+afterEvaluate {
+    android.productFlavors.all {
+        flavor ->
+            tasks."merge${flavor.name.capitalize()}DebugAssets".dependsOn "${flavor.name}CopyParams"
+            tasks."merge${flavor.name.capitalize()}ReleaseAssets".dependsOn "${flavor.name}CopyParams"
 
-preBuild.dependsOn(copyParams)
+            def generateDebugLintReportModelTask = tasks.findByName(
+                    "generate${flavor.name.capitalize()}DebugLintReportModel")
+            if (generateDebugLintReportModelTask) {
+                generateDebugLintReportModelTask.dependsOn "${flavor.name}CopyParams"
+            }
+
+            def generateReleaseLintVitalReportModelTask = tasks.findByName(
+                    "generate${flavor.name.capitalize()}ReleaseLintVitalReportModel")
+            if (generateReleaseLintVitalReportModelTask) {
+                generateReleaseLintVitalReportModelTask.dependsOn "${flavor.name}CopyParams"
+            }
+
+            def lintAnalyzeDebugTask = tasks.findByName(
+                    "lintAnalyze${flavor.name.capitalize()}Debug")
+            if (lintAnalyzeDebugTask) {
+                lintAnalyzeDebugTask.dependsOn "${flavor.name}CopyParams"
+            }
+
+            def lintVitalAnalyzeReleaseTask = tasks.findByName(
+                    "lintVitalAnalyze${flavor.name.capitalize()}Release")
+            if (lintVitalAnalyzeReleaseTask) {
+                lintVitalAnalyzeReleaseTask.dependsOn "${flavor.name}CopyParams"
+            }
+    }
+}
