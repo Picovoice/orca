@@ -203,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case BUSY:
                     infoTextView.setVisibility(View.VISIBLE);
+                    errorText.setVisibility(View.INVISIBLE);
                     synthesizeButton.setVisibility(View.INVISIBLE);
                     streamSwitch.setEnabled(false);
                     synthesizeButton.setEnabled(false);
@@ -269,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
                 Set<Character> invalidChars = new HashSet<>();
 
                 if (BuildConfig.FLAVOR.startsWith("ko")) {
-                    text = ValidateTextHelper.decomposeAndFilterStandardJamoKo(text);
+                    text = ValidateTextHelper.decomposeHangul(text);
                 } else if (BuildConfig.FLAVOR.startsWith("ja")) {
                     text = ValidateTextHelper.filterValidCharsJa(text);
                 }
@@ -321,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             setUIState(UIState.BUSY);
             infoTextView.setText("Synthesizing...");
+            errorText.setText("");
         });
         executor.submit(() -> {
             try {
