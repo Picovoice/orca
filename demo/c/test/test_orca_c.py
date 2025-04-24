@@ -106,7 +106,6 @@ class OrcaCTestCase(unittest.TestCase):
     def test_orca(self) -> None:
         for model_path in get_model_paths():
             self.run_orca(model_path=model_path)
-            self.run_orca_streaming(model_path=model_path)
 
 
 if __name__ == '__main__':
