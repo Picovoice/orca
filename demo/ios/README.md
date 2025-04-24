@@ -6,16 +6,10 @@ Orca requires a valid Picovoice `AccessKey` at initialization. `AccessKey` acts 
 You can get your `AccessKey` for free. Make sure to keep your `AccessKey` secret.
 Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get your `AccessKey`.
 
-## Setup
+## Running the Demo
 
-Copy your `AccessKey` into the `YOUR_ACCESS_KEY_HERE` variable inside [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift).
-Replace `MODEL_FILE_HERE` inside [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift) with the model file you would like to run the demo with. Available model files are in [lib/common](../../lib/common).
-
-Open [OrcaDemo.xcodeproj](./OrcaDemo/OrcaDemo.xcodeproj/) and run the demo.
-
-## Usage
-
-Launch the demo on a simulator or a physical iOS device.
-
-1. Enter the text you wish to synthesize in the text box area.
-2. Press the `Synthesize` button to synthesize the text and play audio.
+1. Open [OrcaDemo.xcodeproj](./OrcaDemo/OrcaDemo.xcodeproj/) in XCode.
+2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift) with your `AccessKey`.
+3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Female Demo, `deMaleDemo` -> German Male Demo).
+4. Run the demo with a simulator or connected iOS device.
+5. Once the demo app has started, enter the text you wish to synthesize in the text box area, and press the `Synthesize` button to synthesize the text and play audio.

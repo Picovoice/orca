@@ -188,18 +188,11 @@ For more information about .NET demos go to [demo/dotnet](demo/dotnet).
 
 ### iOS Demo
 
-Run the following from [demo/ios](demo/ios) to install the Orca-iOS CocoaPod:
-
-```console
-pod install
-```
-
-Replace `{YOUR_ACCESS_KEY_HERE}` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with yours
-obtained from [Picovoice Console](https://console.picovoice.ai/).
-Replace `{MODEL_FILE_HERE}` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with the model file 
-you would like to run the demo with. Available model files are in [lib/common](lib/common).
-
-Then, using Xcode, open the generated OrcaDemo.xcworkspace and run the application.
+1. Open [OrcaDemo.xcodeproj](./OrcaDemo/OrcaDemo.xcodeproj/) in XCode.
+2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [`ViewModel.swift`](./OrcaDemo/OrcaDemo/ViewModel.swift) with your `AccessKey`.
+3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Female Demo, `deMaleDemo` -> German Male Demo).
+4. Run the demo with a simulator or connected iOS device.
+5. Once the demo app has started, enter the text you wish to synthesize in the text box area, and press the `Synthesize` button to synthesize the text and play audio.
 
 For more information about iOS demos go to [demo/ios](demo/ios).
 

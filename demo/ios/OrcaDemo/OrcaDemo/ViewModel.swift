@@ -23,8 +23,8 @@ enum UIState {
 }
 
 class ViewModel: ObservableObject {
-    private let ACCESS_KEY = "{YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
-    private let MODEL_PATH = "{MODEL_PATH_HERE}"
+    private let ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
+    private let model = ProcessInfo.processInfo.environment["MODEL"] ?? "en_female"
 
     private let NUM_AUDIO_WAIT_CHUNKS = 1
 
@@ -54,7 +54,7 @@ class ViewModel: ObservableObject {
     public func initialize() {
         state = UIState.INIT
         do {
-            try orca = Orca(accessKey: ACCESS_KEY, modelPath: MODEL_PATH)
+            try orca = Orca(accessKey: ACCESS_KEY, modelPath: "orca_params_\(model).pv")
             maxCharacterLimit = orca.maxCharacterLimit!
             sampleRate = orca.sampleRate!
             state = UIState.READY
@@ -340,9 +340,16 @@ class ViewModel: ObservableObject {
     }
 
     public func isValid(text: String) {
+        var textToValidate = text
+        if model.hasPrefix("ko") {
+            textToValidate = ValidateTextHelper.decomposeHangul(text)
+        } else if model.hasPrefix("ja") {
+            textToValidate = ValidateTextHelper.filterValidCharsJa(text)
+        }
+
         var nonAllowedCharacters = [Character]()
-        for i in 0..<text.count {
-            let char = text[text.index(text.startIndex, offsetBy: i)]
+        for i in 0..<textToValidate.count {
+            let char = textToValidate[textToValidate.index(textToValidate.startIndex, offsetBy: i)]
             if !orca.validCharacters!.contains(String(char)) && !nonAllowedCharacters.contains(char) {
                 nonAllowedCharacters.append(char)
             }

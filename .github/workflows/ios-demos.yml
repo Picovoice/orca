@@ -26,11 +26,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Build Demo
+      - name: Build English
         run: xcrun xcodebuild build
           -configuration Debug
           -project OrcaDemo.xcodeproj
           -sdk iphoneos
-          -scheme OrcaDemo
+          -scheme enFemaleDemo
+          -derivedDataPath ddp
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Other Language
+        run: xcrun xcodebuild build
+          -configuration Debug
+          -project OrcaDemo.xcodeproj
+          -sdk iphoneos
+          -scheme frMaleDemo
           -derivedDataPath ddp
           CODE_SIGNING_ALLOWED=NO
