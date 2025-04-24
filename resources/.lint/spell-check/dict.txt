@@ -19,7 +19,6 @@ drwav
 dtype
 dylib
 editdistance
-editdistance
 finalizer
 flac
 floatfmt
@@ -49,11 +48,9 @@ popleft
 pvbase
 pvcheetah
 pvleopard
-pvleopard
 pvorca
 pvorcademo
 pvrecorder
-pvspeaker
 pvspeaker
 Readables
 samplerate
@@ -61,6 +58,7 @@ Sevilla
 Sevilla
 signup
 sounddevice
+SRCROOT
 stdbool
 stdlib
 streamable
