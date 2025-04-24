@@ -442,7 +442,8 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     }
 
     char character[MAX_NUM_BYTES_PER_CHARACTER] = {0};
-    for (int32_t i = 0; i < (int32_t) strlen(text); i++) {
+    int32_t i = 0;
+    while (i < (int32_t) strlen(text)) {
         if (num_chunks > (MAX_NUM_CHUNKS - 1)) {
             fprintf(stderr, "Trying to synthesize too many chunks. Only `%d` chunks are supported.\n", MAX_NUM_CHUNKS);
             exit(EXIT_FAILURE);
@@ -454,6 +455,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             fprintf(stderr, "Error getting number of bytes for character: `%c`", text[i]);
             exit(EXIT_FAILURE);
         }
+        i += num_bytes;
 
         for (int32_t j = 0; j < num_bytes; j++) {
             character[j] = text[i + j];

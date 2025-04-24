@@ -79,7 +79,7 @@ class OrcaCTestCase(unittest.TestCase):
         os.remove(output_path)
 
     def run_orca_streaming(self, model_path: str) -> None:
-        output_path = os.path.join(os.path.dirname(__file__), "output_streaming.wav")
+        output_path = os.path.join(os.path.dirname(__file__), "output.wav")
         args = [
             os.path.join(os.path.dirname(__file__), "../build/orca_demo_streaming"),
             "-a", self._access_key,
@@ -105,7 +105,7 @@ class OrcaCTestCase(unittest.TestCase):
 
     def test_orca(self) -> None:
         for model_path in get_model_paths():
-            # self.run_orca(model_path=model_path)
+            self.run_orca(model_path=model_path)
             self.run_orca_streaming(model_path=model_path)
 
 
