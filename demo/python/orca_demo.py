@@ -73,33 +73,35 @@ def main() -> None:
         '-l',
         help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
     parser.add_argument(
+        "--model_path",
+        "-m",
+        help="Absolute path to Orca model")
+    parser.add_argument(
         "--language",
-        required=True,
         help=f"The language you would like to run the demo in. "
              f"Available languages are {', '.join(available_languages)}.")
     parser.add_argument(
         "--gender",
-        required=True,
         help=f"The gender of the synthesized voice. "
              f"Available genders are {', '.join(available_genders)}.")
     args = parser.parse_args()
 
     access_key = args.access_key
+    model_path = args.model_path
     language = args.language
     gender = args.gender
     library_path = args.library_path
     output_path = args.output_path
     text = args.text
 
-    if language not in available_languages:
-        raise ValueError(f"Given argument --language `{language}` is not an available language. "
-                         f"Available languages are {', '.join(available_languages)}.")
-
-    if gender not in available_genders:
-        raise ValueError(f"Given argument --gender `{gender}` is not an available gender. "
-                         f"Available genders are {', '.join(available_genders)}.")
-
-    model_path = get_model_path(language, gender)
+    if not model_path:
+        if language not in available_languages:
+            raise ValueError(f"Given argument --language `{language}` is not an available language. "
+                             f"Available languages are {', '.join(available_languages)}.")
+        if gender not in available_genders:
+            raise ValueError(f"Given argument --gender `{gender}` is not an available gender. "
+                             f"Available genders are {', '.join(available_genders)}.")
+        model_path = get_model_path(language, gender)
 
     if not output_path.lower().endswith('.wav'):
         raise ValueError('Given argument --output_path must have WAV file extension')

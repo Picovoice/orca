@@ -33,24 +33,16 @@ namespace OrcaDemo
             string language,
             string gender,
             string text,
+            string modelPath,
             int tokensPerSecond,
             int? audioWaitChunks,
             int bufferSizeSecs,
             int audioDeviceIndex)
         {
-            if (!languages.Contains(language))
+            if (string.IsNullOrEmpty(modelPath))
             {
-                throw new ArgumentException($"Given argument '{language}' is not an available language. " +
-                                            $"Available languages are '{string.Join(", ", languages)}'.");
+                modelPath = ModelUtils.GetModelPath(language, gender);
             }
-
-            if (!genders.Contains(gender))
-            {
-                throw new ArgumentException($"Given argument '{gender}' is not an available gender. " +
-                                            $"Available genders are '{string.Join(", ", genders)}'.");
-            }
-
-            string modelPath = ModelUtils.GetModelPath(language, gender);
 
             Orca orca = Orca.Create(accessKey, modelPath);
 
@@ -239,6 +231,7 @@ namespace OrcaDemo
             string language = null;
             string gender = null;
             string text = null;
+            string modelPath = null;
             int tokensPerSecond = 15;
             int? audioWaitChunks = null;
             int bufferSizeSecs = 20;
@@ -273,6 +266,13 @@ namespace OrcaDemo
                     if (++argIndex < args.Length)
                     {
                         text = args[argIndex++];
+                    }
+                }
+                else if (args[argIndex] == "--model_path")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        modelPath = args[argIndex++];
                     }
                 }
                 else if (args[argIndex] == "--tokens_per_second")
@@ -327,23 +327,26 @@ namespace OrcaDemo
             {
                 throw new ArgumentNullException("access_key");
             }
-            if (string.IsNullOrEmpty(language))
+            if (string.IsNullOrEmpty(modelPath))
             {
-                throw new ArgumentNullException("language");
-            }
-            if (!languages.Contains(language))
-            {
-                throw new ArgumentException($"Given argument '{language}' is not an available language. " +
-                                            $"Available languages are '{string.Join(", ", languages)}'.");
-            }
-            if (string.IsNullOrEmpty(gender))
-            {
-                throw new ArgumentNullException("gender");
-            }
-            if (!genders.Contains(gender))
-            {
-                throw new ArgumentException($"Given argument '{gender}' is not an available gender. " +
-                                            $"Available genders are '{string.Join(", ", genders)}'.");
+                if (string.IsNullOrEmpty(language))
+                {
+                    throw new ArgumentNullException("language");
+                }
+                if (!languages.Contains(language))
+                {
+                    throw new ArgumentException($"Given argument '{language}' is not an available language. " +
+                                                $"Available languages are '{string.Join(", ", languages)}'.");
+                }
+                if (string.IsNullOrEmpty(gender))
+                {
+                    throw new ArgumentNullException("gender");
+                }
+                if (!genders.Contains(gender))
+                {
+                    throw new ArgumentException($"Given argument '{gender}' is not an available gender. " +
+                                                $"Available genders are '{string.Join(", ", genders)}'.");
+                }
             }
             if (string.IsNullOrEmpty(text))
             {
@@ -355,6 +358,7 @@ namespace OrcaDemo
                 language,
                 gender,
                 text,
+                modelPath,
                 tokensPerSecond,
                 audioWaitChunks,
                 bufferSizeSecs,
@@ -370,10 +374,11 @@ namespace OrcaDemo
         private static readonly string HELP_STR = "Available options: \n " +
             "\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
             "\t--text_to_stream (required): Text to be streamed to Orca\n" +
-            "\t--language (required): The language you would like to run the demo in. " +
+            "\t--language: The language you would like to run the demo in. " +
                 $"Available languages are {string.Join(", ", languages)}\n" +
-            "\t--gender (required): The gender of the synthesized voice. " +
+            "\t--gender: The gender of the synthesized voice. " +
                 $"Available genders are {string.Join(", ", genders)}\n" +
+            "\t--model_path: Absolute path to Orca voice model (`.pv`).\n" +
             "\t--tokens_per_second: Number of tokens per second to be streamed to Orca, simulating an LLM response\n" +
             "\t--audio_wait_chunks: Number of PCM chunks to wait before starting to play audio. Default: system-dependent\n" +
             "\t--buffer_size_secs: The size in seconds of the internal buffer used by pvspeaker to play audio\n" +
