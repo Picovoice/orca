@@ -94,7 +94,7 @@ class OrcaCTestCase(unittest.TestCase):
 
         self.assertEqual(process.poll(), 0)
         self.assertEqual(stderr.decode('utf-8'), '')
-        self.assertTrue("Saved audio" in stdout.decode('utf-8'))
+        self.assertTrue("Saved final audio" in stdout.decode('utf-8'))
         os.remove(output_path)
 
     def test_orca(self) -> None:
