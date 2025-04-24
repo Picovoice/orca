@@ -455,7 +455,6 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             fprintf(stderr, "Error getting number of bytes for character: `%c`", text[i]);
             exit(EXIT_FAILURE);
         }
-        i += num_bytes;
 
         for (int32_t j = 0; j < num_bytes; j++) {
             character[j] = text[i + j];
@@ -490,6 +489,8 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             end_chunks[num_chunks++] = timestamp;
             start_chunks[num_chunks] = timestamp;
         }
+
+        i += num_bytes;
     }
 
     int32_t num_samples_chunk = 0;
