@@ -79,14 +79,21 @@ window.onload = function () {
   const streamCloseBtnEl = document.getElementById("stream-close-btn");
 
   function validateInput(input, validChars) {
+    let textToValidate = input;
+    if (orcaModel.publicPath.includes("ko")) {
+      textToValidate = decomposeHangul(input);
+    } else if (orcaModel.publicPath.includes("ja")) {
+      textToValidate = filterValidCharsJa(input);
+    }
+
     let nonAllowedCharacters = [];
 
-    for (let i = 0; i < input.length; i++) {
+    for (let i = 0; i < textToValidate.length; i++) {
       if (
-        !validChars.includes(input[i]) &&
-        !nonAllowedCharacters.includes(input[i])
+        !validChars.includes(textToValidate[i]) &&
+        !nonAllowedCharacters.includes(textToValidate[i])
       ) {
-        nonAllowedCharacters.push(input[i]);
+        nonAllowedCharacters.push(textToValidate[i]);
       }
     }
 
@@ -398,4 +405,71 @@ function downloadDumpAudio() {
   a.download = "orca_speech_audio.pcm";
   a.href = window.URL.createObjectURL(blob);
   a.click();
+}
+
+function decomposeHangul(input) {
+  const HANGUL_UNICODE_BASE = 0xAC00;
+  const HANGUL_DECOMPOSED_ARRAY = [
+    // Initial consonants
+    "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ",
+    // Medial vowels
+    "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ",
+    // Final consonants
+    "", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
+  ];
+
+  let decomposed = "";
+
+  for (let i = 0; i < input.length; ) {
+    const codePoint = input.codePointAt(i);
+    const charLen = codePoint > 0xFFFF ? 2 : 1;
+    i += charLen;
+
+    if (codePoint < HANGUL_UNICODE_BASE) {
+      decomposed += String.fromCodePoint(codePoint);
+      continue;
+    }
+
+    let curr = codePoint - HANGUL_UNICODE_BASE;
+    const initial = Math.floor(curr / 588);
+
+    curr %= 588;
+    const medial = Math.floor(curr / 28) + 19;
+
+    curr %= 28;
+    const finalConsonant = curr + 19 + 21;
+
+    if (initial > 18) {
+      decomposed += String.fromCodePoint(codePoint);
+      continue;
+    }
+
+    decomposed += HANGUL_DECOMPOSED_ARRAY[initial];
+    decomposed += HANGUL_DECOMPOSED_ARRAY[medial];
+    decomposed += HANGUL_DECOMPOSED_ARRAY[finalConsonant];
+  }
+
+  return decomposed;
+}
+
+function filterValidCharsJa(input) {
+  let invalidChars = "";
+
+  for (let i = 0; i < input.length; ) {
+    const codePoint = input.codePointAt(i);
+    const charLen = codePoint > 0xFFFF ? 2 : 1;
+    i += charLen;
+
+    const isJapanese =
+        (codePoint >= 0x3001 && codePoint <= 0x301F) || // punctuation
+        (codePoint >= 0x3040 && codePoint <= 0x309F) || // hiragana
+        (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // katakana
+        (codePoint >= 0x4E00 && codePoint <= 0x9FFF);   // kanji
+
+    if (!isJapanese) {
+      invalidChars += String.fromCodePoint(codePoint);
+    }
+  }
+
+  return invalidChars;
 }
