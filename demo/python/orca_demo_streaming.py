@@ -175,25 +175,29 @@ class OrcaThread:
         return self._time_first_audio_available
 
 
-def tokenize_text(text: str) -> Sequence[str]:
+def tokenize_text(text: str, language: str) -> Sequence[str]:
     text = re.sub(CUSTOM_PRON_PATTERN_NO_WHITESPACE, r'{\1} ', text)
 
     custom_pronunciations = re.findall(CUSTOM_PRON_PATTERN, text)
     custom_pronunciations = set(["{" + pron + "}" for pron in custom_pronunciations])
 
-    # TODO: Remove once tiktoken supports windows-arm64
-    try:
-        encoder = tiktoken.encoding_for_model("gpt-4")
-        tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
-    except:
-        ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
-        PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
-        tokens_raw = [text[0]]
-        for ch in text[1:]:
-            if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
-                tokens_raw.append(ch)
-            else:
-                tokens_raw[-1] += ch
+    # TODO: Update once Orca supports passing in partial bytes
+    if language == "ko" or language == "ja":
+        tokens_raw = text.split(" ")
+    else:
+        # TODO: Remove once tiktoken supports windows-arm64
+        try:
+            encoder = tiktoken.encoding_for_model("gpt-4")
+            tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
+        except:
+            ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+            PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+            tokens_raw = [text[0]]
+            for ch in text[1:]:
+                if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
+                    tokens_raw.append(ch)
+                else:
+                    tokens_raw[-1] += ch
 
     custom_pron = ""
     tokens_with_custom_pronunciations = []
@@ -341,7 +345,7 @@ def main() -> None:
     try:
         print(f"Orca version: {orca.version}\n")
 
-        tokens = tokenize_text(text=text)
+        tokens = tokenize_text(text=text, language=language)
 
         print(f"Simulated text stream:")
         time_start_text_stream = time.time()

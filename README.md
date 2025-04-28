@@ -172,13 +172,13 @@ dotnet build -c StreamingDemo.Release
 Run the streaming demo:
 
 ```console
-dotnet build -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+dotnet build -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
 ```
 
 Run the single synthesis demo:
 
 ```console
-dotnet build -c FileDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+dotnet build -c FileDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and

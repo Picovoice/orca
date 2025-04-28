@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -106,7 +107,7 @@ namespace OrcaDemo
             {
                 Console.WriteLine($"Orca version: {orca.Version}\n");
 
-                IEnumerable<string> tokens = TokenizeText(text);
+                IEnumerable<string> tokens = TokenizeText(text, language);
 
                 Console.WriteLine("Simulated text stream:");
                 long timeStartTextStream = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -151,7 +152,7 @@ namespace OrcaDemo
         private static readonly string CustomPronPattern = @"\{(.*?\|.*?)\}";
         private static readonly string CustomPronPatternNoWhitespace = @"\{(.*?\|.*?)\}(?!\s)";
 
-        static IEnumerable<string> TokenizeText(string text)
+        static IEnumerable<string> TokenizeText(string text, string language)
         {
             text = Regex.Replace(text, CustomPronPatternNoWhitespace, @"{\1} ");
 
@@ -161,13 +162,21 @@ namespace OrcaDemo
                 customPronunciations.Add("{" + m.Groups[1].Value + "}");
             };
 
-            Encoder encoder = ModelToEncoder.For("gpt-4");
-            IReadOnlyCollection<int> encodedTokens = encoder.Encode(text);
-
             List<string> tokensRaw = new List<string>();
-            foreach (int t in encodedTokens)
+
+            if (language == "ko" || language == "ja")
             {
-                tokensRaw.Add(encoder.Decode(new[] { t }));
+                tokensRaw = text.Split(' ').ToList();
+            }
+            else
+            {
+                Encoder encoder = ModelToEncoder.For("gpt-4");
+                IReadOnlyCollection<int> encodedTokens = encoder.Encode(text);
+
+                foreach (int t in encodedTokens)
+                {
+                    tokensRaw.Add(encoder.Decode(new[] { t }));
+                }
             }
 
             string customPron = string.Empty;

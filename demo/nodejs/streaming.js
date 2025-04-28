@@ -78,12 +78,12 @@ if (process.argv.length < 3) {
 }
 program.parse(process.argv);
  
-function splitText(text) {
+function splitText(text, language) {
   // TODO: Remove once tiktoken supports windows-arm64
   if (os.platform() === 'win32' && os.arch() === 'arm64') {
     const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
     const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
-    const tokensRaw = [ text[0] ]
+    const tokensRaw = [text[0]]
     for (let i = 1; i < text.length; i++) {
       let ch = text[i];
       let token = tokensRaw[tokensRaw.length - 1];
@@ -94,6 +94,9 @@ function splitText(text) {
       }
     }
     return tokensRaw;
+    // TODO: Update once Orca supports passing in partial bytes
+  } else if (language === "ko" || language === "ja") {
+    return text.split(" ");
   } else {
     const textDecoder = new TextDecoder();
     const encoder = tiktoken.encoding_for_model('gpt-4');
@@ -103,7 +106,7 @@ function splitText(text) {
   }
 }
 
-function tokenizeText(text) {
+function tokenizeText(text, language) {
   const CUSTOM_PRON_PATTERN = /\{(.*?\|.*?)}/g;
   const CUSTOM_PRON_PATTERN_NO_WHITESPACE = /\{(.*?\|.*?)}(?!\s)/g;
 
@@ -111,7 +114,7 @@ function tokenizeText(text) {
   let customPronunciations = text.match(CUSTOM_PRON_PATTERN) || [];
   customPronunciations = new Set(customPronunciations);
 
-  const tokensRaw = splitText(text);
+  const tokensRaw = splitText(text, language);
 
   let customPron = '';
   const tokensWithCustomPronunciations = [];
@@ -254,7 +257,7 @@ async function streamingDemo() {
     process.stdout.write('\nSimulated text stream: ');
 
     let timeFirstAudioAvailable = null;
-    const tokens = tokenizeText(text);
+    const tokens = tokenizeText(text, language);
 
     const startTime = performance.now();
     for (const token of tokens) {

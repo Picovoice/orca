@@ -60,10 +60,3 @@ Click on either "Streaming Synthesis" or "Single Synthesis" to continue.
 2. Change the speech rate (or keep the default)
 3. Click "Synthesize"
 4. Click "Play" and listen for the generated speech.
-
-**Optional**: If you wish, you may replace the model file in the `index.html` with the male model file for a male
-voice:
-
-```html
-<script type="application/javascript" src="orca_params_en_male.js"></script>
-```
