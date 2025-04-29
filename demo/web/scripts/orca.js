@@ -364,7 +364,10 @@ window.onload = function () {
       streamSecondsDisplayEl.innerText = "0";
 
       const text = streamTextToSynthesizeEl.value;
-      const language = "ja";
+      
+      const languagePrefix = "orca_params_";
+      const languageIdx = orcaModel.publicPath.indexOf(languagePrefix) + languagePrefix.length;
+      const language = orcaModel.publicPath.substring(languageIdx, languageIdx + 2);
       const words = tokenizeText(text, language);
       let numIterations = 0;
 
@@ -478,10 +481,8 @@ function decomposeHangul(input) {
 
   let decomposed = "";
 
-  for (let i = 0; i < input.length; ) {
-    const codePoint = input.codePointAt(i);
-    const charLen = codePoint > 0xFFFF ? 2 : 1;
-    i += charLen;
+  for (const char of input) {
+    const codePoint = char.codePointAt(0);
 
     if (codePoint < HANGUL_UNICODE_BASE) {
       decomposed += String.fromCodePoint(codePoint);
@@ -513,10 +514,8 @@ function decomposeHangul(input) {
 function filterValidCharsJa(input) {
   let invalidChars = "";
 
-  for (let i = 0; i < input.length; ) {
-    const codePoint = input.codePointAt(i);
-    const charLen = codePoint > 0xFFFF ? 2 : 1;
-    i += charLen;
+  for (const char of input) {
+    const codePoint = char.codePointAt(0);
 
     const isJapanese =
         (codePoint >= 0x3001 && codePoint <= 0x301F) || // punctuation

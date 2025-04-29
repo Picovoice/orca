@@ -237,17 +237,15 @@ For more information about Web demos go to [demo/web](demo/web).
 
 ### Android Demo
 
-Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project and then run the
-application.
+Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project.
 
-Replace `"${YOUR_ACCESS_KEY_HERE}"` inside 
-[MainActivity.java](demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) 
-with your AccessKey obtained from [Picovoice Console](https://console.picovoice.ai/).
-Replace `"${MODEL_FILE_HERE}"` inside 
-[MainActivity.java](demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) 
-with the model file you would like to run the demo with. Available model files are in [lib/common](lib/common).
+Replace `"${YOUR_ACCESS_KEY_HERE}"` in the
+file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java)
+with your `AccessKey`.
 
-Open the project in Android Studio, build and run on an installed simulator or a connected Android device.
+Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Female Demo, `deMaleRelease` -> German Male Demo).
+
+Build and run on an installed simulator or a connected Android device.
 
 For more information about Android demos go to [demo/android](demo/android).
 

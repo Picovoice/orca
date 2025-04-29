@@ -28,8 +28,10 @@ class ValidateTextHelper {
 
             var curr = codePoint - HANGUL_UNICODE_BASE
             let initial = curr / 588
+
             curr %= 588
             let medial = (curr / 28) + 19
+
             curr %= 28
             let finalConsonant = curr + 19 + 21
 
