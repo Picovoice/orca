@@ -81,7 +81,7 @@ window.onload = function () {
   function validateInput(input, validChars) {
     let textToValidate = input;
     if (orcaModel.publicPath.includes("ko")) {
-      textToValidate = decomposeHangul(input);
+      textToValidate = filterValidCharsKo(input);
     } else if (orcaModel.publicPath.includes("ja")) {
       textToValidate = filterValidCharsJa(input);
     }
@@ -468,47 +468,25 @@ function downloadDumpAudio() {
   a.click();
 }
 
-function decomposeHangul(input) {
-  const HANGUL_UNICODE_BASE = 0xAC00;
-  const HANGUL_DECOMPOSED_ARRAY = [
-    // Initial consonants
-    "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ",
-    // Medial vowels
-    "ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ",
-    // Final consonants
-    "", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
-  ];
-
-  let decomposed = "";
+function filterValidCharsKo(input) {
+  let invalidChars = "";
 
   for (const char of input) {
     const codePoint = char.codePointAt(0);
 
-    if (codePoint < HANGUL_UNICODE_BASE) {
-      decomposed += String.fromCodePoint(codePoint);
-      continue;
+    const isStandardJamo =
+      (codePoint >= 0x1100 && codePoint <= 0x11FF) || // Hangul Jamo
+      (codePoint >= 0x3130 && codePoint <= 0x318F) || // Hangul Compatibility Jamo
+      (codePoint >= 0xAC00 && codePoint <= 0xD7AF) || // Hangul Syllables
+      (codePoint >= 0xA960 && codePoint <= 0xA97F) || // Hangul Jamo Extended-A
+      (codePoint >= 0xD7B0 && codePoint <= 0xD7FF);   // Hangul Jamo Extended-B
+
+    if (!isStandardJamo) {
+      invalidChars += String.fromCodePoint(codePoint);
     }
-
-    let curr = codePoint - HANGUL_UNICODE_BASE;
-    const initial = Math.floor(curr / 588);
-
-    curr %= 588;
-    const medial = Math.floor(curr / 28) + 19;
-
-    curr %= 28;
-    const finalConsonant = curr + 19 + 21;
-
-    if (initial > 18) {
-      decomposed += String.fromCodePoint(codePoint);
-      continue;
-    }
-
-    decomposed += HANGUL_DECOMPOSED_ARRAY[initial];
-    decomposed += HANGUL_DECOMPOSED_ARRAY[medial];
-    decomposed += HANGUL_DECOMPOSED_ARRAY[finalConsonant];
   }
 
-  return decomposed;
+  return invalidChars;
 }
 
 function filterValidCharsJa(input) {

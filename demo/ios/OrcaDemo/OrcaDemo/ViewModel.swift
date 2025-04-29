@@ -342,7 +342,7 @@ class ViewModel: ObservableObject {
     public func isValid(text: String) {
         var textToValidate = text
         if model.hasPrefix("ko") {
-            textToValidate = ValidateTextHelper.decomposeHangul(text)
+            textToValidate = ValidateTextHelper.filterValidCharsKo(text)
         } else if model.hasPrefix("ja") {
             textToValidate = ValidateTextHelper.filterValidCharsJa(text)
         }

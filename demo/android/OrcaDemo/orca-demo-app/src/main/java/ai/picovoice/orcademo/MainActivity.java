@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
                 Set<Character> invalidChars = new HashSet<>();
 
                 if (BuildConfig.FLAVOR.startsWith("ko")) {
-                    text = ValidateTextHelper.decomposeHangul(text);
+                    text = ValidateTextHelper.filterValidCharsKo(text);
                 } else if (BuildConfig.FLAVOR.startsWith("ja")) {
                     text = ValidateTextHelper.filterValidCharsJa(text);
                 }
