@@ -196,7 +196,9 @@ class ViewModel: ObservableObject {
             isTextStreamQueueActive.set(true)
 
             var isPcmStreamQueueStarted = false
-            let words = text.split(separator: " ")
+            let words: [String] = (self.model.hasPrefix("ko") || self.model.hasPrefix("ja"))
+                ? text.map { String($0) }
+                : text.split(separator: " ").map { String($0) }
             for word in words {
                 let wordWithSpace = String(word) + " "
                 addToTextStream(word: wordWithSpace)

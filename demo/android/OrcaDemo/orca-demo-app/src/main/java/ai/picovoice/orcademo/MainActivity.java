@@ -58,6 +58,8 @@ import ai.picovoice.orca.OrcaSynthesizeParams;
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
 
+    private static final String language = BuildConfig.FLAVOR.substring(0, 2);
+    private static final String gender = BuildConfig.FLAVOR.substring(2);
     private static final int STREAMING_NUM_AUDIO_WAIT_CHUNKS = 1;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -103,8 +105,6 @@ public class MainActivity extends AppCompatActivity {
         streamTextView.setMovementMethod(new ScrollingMovementMethod());
 
         try {
-            String language = BuildConfig.FLAVOR.substring(0, 2);
-            String gender = BuildConfig.FLAVOR.substring(2);
             String modelName = "orca_params_" + language + "_" + gender.toLowerCase() + ".pv";
 
             orca = new Orca.Builder()

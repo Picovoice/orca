@@ -79,8 +79,11 @@ if (process.argv.length < 3) {
 program.parse(process.argv);
  
 function splitText(text, language) {
+  // TODO: Update once Orca supports passing in partial bytes
+  if (language === "ko" || language === "ja") {
+    return text.split("");
   // TODO: Remove once tiktoken supports windows-arm64
-  if (os.platform() === 'win32' && os.arch() === 'arm64') {
+  } else if (os.platform() === 'win32' && os.arch() === 'arm64') {
     const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
     const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
     const tokensRaw = [text[0]]
@@ -94,9 +97,6 @@ function splitText(text, language) {
       }
     }
     return tokensRaw;
-    // TODO: Update once Orca supports passing in partial bytes
-  } else if (language === "ko" || language === "ja") {
-    return text.split(" ");
   } else {
     const textDecoder = new TextDecoder();
     const encoder = tiktoken.encoding_for_model('gpt-4');

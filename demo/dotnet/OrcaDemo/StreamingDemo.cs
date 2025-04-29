@@ -12,7 +12,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -166,7 +165,10 @@ namespace OrcaDemo
 
             if (language == "ko" || language == "ja")
             {
-                tokensRaw = text.Split(' ').ToList();
+                foreach (char c in text)
+                {
+                    tokensRaw.Add(c.ToString());
+                }
             }
             else
             {

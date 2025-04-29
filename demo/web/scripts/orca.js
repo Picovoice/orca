@@ -299,6 +299,63 @@ window.onload = function () {
     }
   }
 
+  function splitText(text, language) {
+    // TODO: Update once Orca supports passing in partial bytes
+    if (language === "ko" || language === "ja") {
+      return text.split("");
+    } else {
+      const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+      const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+      const tokensRaw = [text[0]]
+      for (let i = 1; i < text.length; i++) {
+        let ch = text[i];
+        let token = tokensRaw[tokensRaw.length - 1];
+        if ((ALPHA_NUMERIC.includes(ch) && !ALPHA_NUMERIC.includes(token[token.length - 1])) || PUNCTUATION.includes(ch)) {
+          tokensRaw.push(ch);
+        } else {
+          tokensRaw[tokensRaw.length - 1] += ch;
+        }
+      }
+      return tokensRaw;
+    }
+  }
+
+  function tokenizeText(text, language) {
+    const CUSTOM_PRON_PATTERN = /\{(.*?\|.*?)}/g;
+    const CUSTOM_PRON_PATTERN_NO_WHITESPACE = /\{(.*?\|.*?)}(?!\s)/g;
+
+    text = text.replace(CUSTOM_PRON_PATTERN_NO_WHITESPACE, '{$1} ');
+    let customPronunciations = text.match(CUSTOM_PRON_PATTERN) || [];
+    customPronunciations = new Set(customPronunciations);
+
+    const tokensRaw = splitText(text, language);
+
+    let customPron = '';
+    const tokensWithCustomPronunciations = [];
+
+    tokensRaw.forEach((token, i) => {
+      let inCustomPron = false;
+      customPronunciations.forEach(pron => {
+        const inCustomPronGlobal = customPron.length > 0;
+        const currentMatch = !inCustomPronGlobal ? token.trim() : customPron + token;
+        if (pron.startsWith(currentMatch)) {
+          customPron += !inCustomPronGlobal ? token.trim() : token;
+          inCustomPron = true;
+        }
+      });
+
+      if (!inCustomPron) {
+        if (customPron !== '') {
+          tokensWithCustomPronunciations.push(i !== 0 ? ` ${customPron}` : customPron);
+          customPron = '';
+        }
+        tokensWithCustomPronunciations.push(token);
+      }
+    });
+
+    return tokensWithCustomPronunciations;
+  }
+
   async function streamPlay() {
     writeMessage("Synthesizing and playing speech! Please listen for audio.");
     try {
@@ -307,7 +364,8 @@ window.onload = function () {
       streamSecondsDisplayEl.innerText = "0";
 
       const text = streamTextToSynthesizeEl.value;
-      const words = text.split(" ").map((str) => `${str} `);
+      const language = "ja";
+      const words = tokenizeText(text, language);
       let numIterations = 0;
 
       for (const word of words) {

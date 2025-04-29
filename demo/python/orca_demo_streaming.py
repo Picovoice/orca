@@ -183,7 +183,7 @@ def tokenize_text(text: str, language: str) -> Sequence[str]:
 
     # TODO: Update once Orca supports passing in partial bytes
     if language == "ko" or language == "ja":
-        tokens_raw = text.split(" ")
+        tokens_raw = text.split("")
     else:
         # TODO: Remove once tiktoken supports windows-arm64
         try:
