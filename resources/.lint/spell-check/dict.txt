@@ -28,6 +28,7 @@ Gson
 holo
 iife
 itok
+Jamo
 jetson
 libasound
 libpv
