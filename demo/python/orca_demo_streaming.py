@@ -25,12 +25,6 @@ from typing import (
     Sequence,
 )
 
-from orca_demo import (
-    get_available_languages,
-    get_available_genders,
-    get_model_path,
-)
-
 import pvorca
 from pvorca import (
     Orca,
@@ -220,9 +214,6 @@ def tokenize_text(text: str, language: str) -> Sequence[str]:
 
 
 def main() -> None:
-    available_languages = get_available_languages()
-    available_genders = get_available_genders()
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--access_key",
@@ -230,21 +221,14 @@ def main() -> None:
         required=True,
         help="AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)")
     parser.add_argument(
+        "--model_path",
+        "-m",
+        required=True,
+        help="Absolute path to Orca model")
+    parser.add_argument(
         "--library_path",
         "-l",
         help="Absolute path to dynamic library. Default: using the library provided by `pvorca`")
-    parser.add_argument(
-        "--model_path",
-        "-m",
-        help="Absolute path to Orca model")
-    parser.add_argument(
-        "--language",
-        help=f"The language you would like to run the demo in. "
-             f"Available languages are {', '.join(get_available_languages())}.")
-    parser.add_argument(
-        "--gender",
-        help=f"The gender of the synthesized voice. "
-             f"Available genders are {', '.join(get_available_genders())}.")
     parser.add_argument(
         "--text_to_stream",
         "-t",
@@ -284,8 +268,6 @@ def main() -> None:
 
     access_key = args.access_key
     model_path = args.model_path
-    language = args.language
-    gender = args.gender
     library_path = args.library_path
     text = args.text_to_stream
     tokens_per_second = args.tokens_per_second
@@ -293,14 +275,9 @@ def main() -> None:
     buffer_size_secs = args.buffer_size_secs
     audio_device_index = args.audio_device_index
 
-    if not model_path:
-        if language not in available_languages:
-            raise ValueError(f"Given argument --language `{language}` is not an available language. "
-                             f"Available languages are {', '.join(available_languages)}.")
-        if gender not in available_genders:
-            raise ValueError(f"Given argument --gender `{gender}` is not an available gender. "
-                             f"Available genders are {', '.join(available_genders)}.")
-        model_path = get_model_path(language, gender)
+    model_file_prefix = "orca_params_"
+    lang_code_idx = model_path.find(model_file_prefix) + len(model_file_prefix)
+    language = model_path[lang_code_idx:lang_code_idx + 2]
 
     orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
 

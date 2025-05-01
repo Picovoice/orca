@@ -145,18 +145,16 @@ pip3 install pvorcademo
 Run the streaming demo:
 
 ```console
-orca_demo_streaming --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
+orca_demo_streaming --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text_to_stream ${TEXT}
 ```
 
 Run the single synthesis demo:
 
 ```console
-orca_demo --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+orca_demo --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${LANGUAGE}` and `${GENDER}` with the language and 
-gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and 
-available genders are `male` and `female`), `${TEXT}` with the text to be synthesized, and
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_PATH}` with a path to any of the model files available under [lib/common](lib/common), `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
 For more information about Python demos go to [demo/python](demo/python).
