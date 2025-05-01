@@ -11,7 +11,7 @@ Signup or Login to [Picovoice Console](https://console.picovoice.ai/) to get you
 
 1. Open the project in Android Studio
 2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [MainActivity.java](./orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java) with your `AccessKey`.
-3. Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Female Demo, `deMaleRelease` -> German Male Demo)
+3. Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Demo with a female voice, `deMaleRelease` -> German Demo with a male voice)
 4. Build and run on an installed simulator or a connected Android device
 
 ## Usage

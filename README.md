@@ -190,7 +190,7 @@ For more information about .NET demos go to [demo/dotnet](demo/dotnet).
 
 1. Open [OrcaDemo.xcodeproj](demo/ios/OrcaDemo/OrcaDemo.xcodeproj) in XCode.
 2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [`ViewModel.swift`](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with your `AccessKey`.
-3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Female Demo, `deMaleDemo` -> German Male Demo).
+3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Demo with a female voice, `deMaleDemo` -> German demo with a male voice).
 4. Run the demo with a simulator or connected iOS device.
 5. Once the demo app has started, enter the text you wish to synthesize in the text box area, and press the `Synthesize` button to synthesize the text and play audio.
 
@@ -243,7 +243,7 @@ Replace `"${YOUR_ACCESS_KEY_HERE}"` in the
 file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java)
 with your `AccessKey`.
 
-Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Female Demo, `deMaleRelease` -> German Male Demo).
+Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Demo with a female voice, `deMaleRelease` -> German Demo with a male voice).
 
 Build and run on an installed simulator or a connected Android device.
 
