@@ -16,15 +16,17 @@ Use `yarn` or `npm` to install the dependencies, and the `start` script to start
 
 ```console
 yarn
-yarn start
+yarn start ${LANGUAGE} ${GENDER}
 ```
 
 (or)
 
 ```console
 npm install
-npm run start
+npm run start ${LANGUAGE} ${GENDER}
 ```
+
+Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in. Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`.
 
 Open `localhost:5000` in your web browser, as hinted at in the output:
 
@@ -58,10 +60,3 @@ Click on either "Streaming Synthesis" or "Single Synthesis" to continue.
 2. Change the speech rate (or keep the default)
 3. Click "Synthesize"
 4. Click "Play" and listen for the generated speech.
-
-**Optional**: If you wish, you may replace the model file in the `index.html` with the male model file for a male
-voice:
-
-```html
-<script type="application/javascript" src="orca_params_en_male.js"></script>
-```

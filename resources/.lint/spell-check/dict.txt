@@ -19,7 +19,6 @@ drwav
 dtype
 dylib
 editdistance
-editdistance
 finalizer
 flac
 floatfmt
@@ -29,6 +28,7 @@ Gson
 holo
 iife
 itok
+Jamo
 jetson
 libasound
 libpv
@@ -49,11 +49,9 @@ popleft
 pvbase
 pvcheetah
 pvleopard
-pvleopard
 pvorca
 pvorcademo
 pvrecorder
-pvspeaker
 pvspeaker
 Readables
 samplerate
@@ -61,6 +59,7 @@ Sevilla
 Sevilla
 signup
 sounddevice
+SRCROOT
 stdbool
 stdlib
 streamable

@@ -18,7 +18,23 @@
 		1E7C0A422D84DA0700A5350A /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7C0A412D84DA0700A5350A /* Orca */; };
 		E109D1A32CFE4F380014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D1A22CFE4F380014F5AA /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
+		E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */; };
+		E18C9CC72DB071CA000157A3 /* orca_params_fr_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBA2DB071CA000157A3 /* orca_params_fr_female.pv */; };
+		E18C9CC82DB071CA000157A3 /* orca_params_en_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBB2DB071CA000157A3 /* orca_params_en_male.pv */; };
+		E18C9CC92DB071CA000157A3 /* orca_params_de_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBC2DB071CA000157A3 /* orca_params_de_male.pv */; };
+		E18C9CCA2DB071CA000157A3 /* orca_params_it_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBD2DB071CA000157A3 /* orca_params_it_female.pv */; };
+		E18C9CCB2DB071CA000157A3 /* orca_params_pt_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBE2DB071CA000157A3 /* orca_params_pt_female.pv */; };
+		E18C9CCC2DB071CA000157A3 /* orca_params_ja_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CBF2DB071CA000157A3 /* orca_params_ja_male.pv */; };
+		E18C9CCD2DB071CA000157A3 /* orca_params_es_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC02DB071CA000157A3 /* orca_params_es_male.pv */; };
+		E18C9CCE2DB071CA000157A3 /* orca_params_ja_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC12DB071CA000157A3 /* orca_params_ja_female.pv */; };
+		E18C9CCF2DB071CA000157A3 /* orca_params_it_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC22DB071CA000157A3 /* orca_params_it_male.pv */; };
+		E18C9CD02DB071CA000157A3 /* orca_params_ko_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC32DB071CA000157A3 /* orca_params_ko_female.pv */; };
+		E18C9CD12DB071CA000157A3 /* orca_params_pt_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC42DB071CA000157A3 /* orca_params_pt_male.pv */; };
+		E18C9CD22DB071CA000157A3 /* orca_params_es_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC52DB071CA000157A3 /* orca_params_es_female.pv */; };
+		E18C9CD32DB071CA000157A3 /* orca_params_fr_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CC62DB071CA000157A3 /* orca_params_fr_male.pv */; };
 		E1C5A45F2BE587A2002C0C40 /* AudioPlayerStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */; };
+		E1DDE9B12DB9BFB50068F88C /* pre-build.sh in Resources */ = {isa = PBXBuildFile; fileRef = E1DDE9B02DB9BFB50068F88C /* pre-build.sh */; };
+		E1F1202C2DBACE5800E1F112 /* ValidateTextHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F1202B2DBACE5800E1F112 /* ValidateTextHelper.swift */; };
 		E1F353002D00ED5C0069B0E6 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E1F352FF2D00ED5C0069B0E6 /* Orca */; };
 /* End PBXBuildFile section */
 
@@ -30,9 +46,25 @@
 		02A11951268D39AB00A2AC99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
-		1E001B692B7D451200D8E72D /* orca_params_en_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_female.pv; path = ../../../../lib/common/orca_params_en_female.pv; sourceTree = "<group>"; };
+		1E001B692B7D451200D8E72D /* orca_params_en_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_female.pv; path = ../../../../../lib/common/orca_params_en_female.pv; sourceTree = "<group>"; };
 		E125E1882BE99DCA008B6D56 /* AtomicBool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicBool.swift; sourceTree = "<group>"; };
+		E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_de_female.pv; path = ../../../../../lib/common/orca_params_de_female.pv; sourceTree = "<group>"; };
+		E18C9CBA2DB071CA000157A3 /* orca_params_fr_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_fr_female.pv; path = ../../../../../lib/common/orca_params_fr_female.pv; sourceTree = "<group>"; };
+		E18C9CBB2DB071CA000157A3 /* orca_params_en_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_male.pv; path = ../../../../../lib/common/orca_params_en_male.pv; sourceTree = "<group>"; };
+		E18C9CBC2DB071CA000157A3 /* orca_params_de_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_de_male.pv; path = ../../../../../lib/common/orca_params_de_male.pv; sourceTree = "<group>"; };
+		E18C9CBD2DB071CA000157A3 /* orca_params_it_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_it_female.pv; path = ../../../../../lib/common/orca_params_it_female.pv; sourceTree = "<group>"; };
+		E18C9CBE2DB071CA000157A3 /* orca_params_pt_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_pt_female.pv; path = ../../../../../lib/common/orca_params_pt_female.pv; sourceTree = "<group>"; };
+		E18C9CBF2DB071CA000157A3 /* orca_params_ja_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_ja_male.pv; path = ../../../../../lib/common/orca_params_ja_male.pv; sourceTree = "<group>"; };
+		E18C9CC02DB071CA000157A3 /* orca_params_es_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_es_male.pv; path = ../../../../../lib/common/orca_params_es_male.pv; sourceTree = "<group>"; };
+		E18C9CC12DB071CA000157A3 /* orca_params_ja_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_ja_female.pv; path = ../../../../../lib/common/orca_params_ja_female.pv; sourceTree = "<group>"; };
+		E18C9CC22DB071CA000157A3 /* orca_params_it_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_it_male.pv; path = ../../../../../lib/common/orca_params_it_male.pv; sourceTree = "<group>"; };
+		E18C9CC32DB071CA000157A3 /* orca_params_ko_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_ko_female.pv; path = ../../../../../lib/common/orca_params_ko_female.pv; sourceTree = "<group>"; };
+		E18C9CC42DB071CA000157A3 /* orca_params_pt_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_pt_male.pv; path = ../../../../../lib/common/orca_params_pt_male.pv; sourceTree = "<group>"; };
+		E18C9CC52DB071CA000157A3 /* orca_params_es_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_es_female.pv; path = ../../../../../lib/common/orca_params_es_female.pv; sourceTree = "<group>"; };
+		E18C9CC62DB071CA000157A3 /* orca_params_fr_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_fr_male.pv; path = ../../../../../lib/common/orca_params_fr_male.pv; sourceTree = "<group>"; };
 		E1C5A45E2BE587A2002C0C40 /* AudioPlayerStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerStream.swift; sourceTree = "<group>"; };
+		E1DDE9B02DB9BFB50068F88C /* pre-build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "pre-build.sh"; sourceTree = "<group>"; };
+		E1F1202B2DBACE5800E1F112 /* ValidateTextHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidateTextHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +88,7 @@
 			children = (
 				02A11947268D39A700A2AC99 /* OrcaDemo */,
 				02A11946268D39A700A2AC99 /* Products */,
+				E1DDE9B02DB9BFB50068F88C /* pre-build.sh */,
 			);
 			sourceTree = "<group>";
 		};
@@ -70,8 +103,9 @@
 		02A11947268D39A700A2AC99 /* OrcaDemo */ = {
 			isa = PBXGroup;
 			children = (
-				1E001B692B7D451200D8E72D /* orca_params_en_female.pv */,
+				E18C9CD42DB071E2000157A3 /* models */,
 				02A11948268D39A700A2AC99 /* OrcaDemoApp.swift */,
+				E1F1202B2DBACE5800E1F112 /* ValidateTextHelper.swift */,
 				02A1194A268D39A700A2AC99 /* ContentView.swift */,
 				02A1194C268D39AB00A2AC99 /* Assets.xcassets */,
 				02A11951268D39AB00A2AC99 /* Info.plist */,
@@ -81,6 +115,28 @@
 				E125E1882BE99DCA008B6D56 /* AtomicBool.swift */,
 			);
 			path = OrcaDemo;
+			sourceTree = "<group>";
+		};
+		E18C9CD42DB071E2000157A3 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */,
+				E18C9CBC2DB071CA000157A3 /* orca_params_de_male.pv */,
+				1E001B692B7D451200D8E72D /* orca_params_en_female.pv */,
+				E18C9CBB2DB071CA000157A3 /* orca_params_en_male.pv */,
+				E18C9CC52DB071CA000157A3 /* orca_params_es_female.pv */,
+				E18C9CC02DB071CA000157A3 /* orca_params_es_male.pv */,
+				E18C9CBA2DB071CA000157A3 /* orca_params_fr_female.pv */,
+				E18C9CC62DB071CA000157A3 /* orca_params_fr_male.pv */,
+				E18C9CBD2DB071CA000157A3 /* orca_params_it_female.pv */,
+				E18C9CC22DB071CA000157A3 /* orca_params_it_male.pv */,
+				E18C9CC12DB071CA000157A3 /* orca_params_ja_female.pv */,
+				E18C9CBF2DB071CA000157A3 /* orca_params_ja_male.pv */,
+				E18C9CC32DB071CA000157A3 /* orca_params_ko_female.pv */,
+				E18C9CBE2DB071CA000157A3 /* orca_params_pt_female.pv */,
+				E18C9CC42DB071CA000157A3 /* orca_params_pt_male.pv */,
+			);
+			path = models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -143,6 +199,21 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1DDE9B12DB9BFB50068F88C /* pre-build.sh in Resources */,
+				E18C9CC72DB071CA000157A3 /* orca_params_fr_female.pv in Resources */,
+				E18C9CC82DB071CA000157A3 /* orca_params_en_male.pv in Resources */,
+				E18C9CC92DB071CA000157A3 /* orca_params_de_male.pv in Resources */,
+				E18C9CCA2DB071CA000157A3 /* orca_params_it_female.pv in Resources */,
+				E18C9CCB2DB071CA000157A3 /* orca_params_pt_female.pv in Resources */,
+				E18C9CCC2DB071CA000157A3 /* orca_params_ja_male.pv in Resources */,
+				E18C9CCD2DB071CA000157A3 /* orca_params_es_male.pv in Resources */,
+				E18C9CCE2DB071CA000157A3 /* orca_params_ja_female.pv in Resources */,
+				E18C9CCF2DB071CA000157A3 /* orca_params_it_male.pv in Resources */,
+				E18C9CD02DB071CA000157A3 /* orca_params_ko_female.pv in Resources */,
+				E18C9CD12DB071CA000157A3 /* orca_params_pt_male.pv in Resources */,
+				E18C9CD22DB071CA000157A3 /* orca_params_es_female.pv in Resources */,
+				E18C9CD32DB071CA000157A3 /* orca_params_fr_male.pv in Resources */,
+				E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */,
 				1E001B6A2B7D451200D8E72D /* orca_params_en_female.pv in Resources */,
 				02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */,
 			);
@@ -161,6 +232,7 @@
 				02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */,
 				02A11949268D39A700A2AC99 /* OrcaDemoApp.swift in Sources */,
 				1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */,
+				E1F1202C2DBACE5800E1F112 /* ValidateTextHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

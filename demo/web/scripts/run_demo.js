@@ -31,7 +31,7 @@ if (!availableLanguages.includes(language)) {
 const gender = process.argv.slice(2)[1];
 if (!gender) {
   console.error(
-    `Choose the gender you would like to run the demo in with "yarn start [language] [gender]".\nAvailable genders are ${genders.join(
+    `Choose the gender of the synthesized voice with "yarn start [language] [gender]".\nAvailable genders are ${genders.join(
       ", ",
     )}`,
   );
@@ -62,10 +62,26 @@ if (fs.existsSync(outputDirectory)) {
 }
 
 const modelName = `orca_params_${language}_${gender}.pv`;
-fs.copyFileSync(
-  path.join(modelDir, modelName),
-  path.join(outputDirectory, modelName),
-);
+const modelPath = path.join(modelDir, modelName);
+if (fs.existsSync(modelPath)) {
+  fs.copyFileSync(
+      path.join(modelDir, modelName),
+      path.join(outputDirectory, modelName),
+  );
+} else {
+  let availableGender;
+
+  fs.readdirSync(modelDir).forEach((filename) => {
+    if (
+        filename.startsWith(`orca_params_${language}_`) &&
+        fs.statSync(path.join(modelDir, filename)).isFile()
+    ) {
+      availableGender = filename.split('.')[0].split('_').pop();
+    }
+  });
+
+  throw new Error(`Gender '${gender}' is not available with language '${language}'. Please use gender '${availableGender}'`);
+}
 
 fs.writeFileSync(
   path.join(outputDirectory, "orcaModel.js"),
@@ -82,7 +98,7 @@ fs.writeFileSync(
 
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
 
-child_process.execSync(`${command} http-server -a localhost -p 5000`, {
+child_process.execSync(`${command} http-server -c-1 -a localhost -p 5000`, {
   shell: true,
   stdio: "inherit",
 });

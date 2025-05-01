@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Picovoice Inc.
+Copyright 2024-2025 Picovoice Inc.
 
 You may not use this file except in compliance with the license. A copy of
 the license is located in the "LICENSE" file accompanying this source.
@@ -442,7 +442,8 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     }
 
     char character[MAX_NUM_BYTES_PER_CHARACTER] = {0};
-    for (int32_t i = 0; i < (int32_t) strlen(text); i++) {
+    int32_t i = 0;
+    while (i < (int32_t) strlen(text)) {
         if (num_chunks > (MAX_NUM_CHUNKS - 1)) {
             fprintf(stderr, "Trying to synthesize too many chunks. Only `%d` chunks are supported.\n", MAX_NUM_CHUNKS);
             exit(EXIT_FAILURE);
@@ -488,6 +489,8 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             end_chunks[num_chunks++] = timestamp;
             start_chunks[num_chunks] = timestamp;
         }
+
+        i += num_bytes;
     }
 
     int32_t num_samples_chunk = 0;

@@ -1,5 +1,5 @@
 #
-#    Copyright 2024 Picovoice Inc.
+#    Copyright 2024-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -10,11 +10,14 @@
 #
 
 import argparse
+import json
+import os
 import struct
 import time
 import wave
 
 from pvorca import create, OrcaActivationLimitError
+from typing import List
 
 
 def main() -> None:
@@ -35,13 +38,14 @@ def main() -> None:
         required=True,
         help='Absolute path to .wav file where the generated audio will be stored')
     parser.add_argument(
+        "--model_path",
+        "-m",
+        required=True,
+        help="Absolute path to Orca model")
+    parser.add_argument(
         '--library_path',
         '-l',
         help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
-    parser.add_argument(
-        '--model_path',
-        '-m',
-        help='Absolute path to Orca model. Default: using the model provided by `pvorca`')
     args = parser.parse_args()
 
     access_key = args.access_key

@@ -54,6 +54,7 @@ jobs:
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text_to_stream "Hello, I am Orca!"
+          --model_path ../../lib/common/orca_params_en_female.pv
 
       - name: Test single
         run: >
@@ -61,6 +62,7 @@ jobs:
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text "Hello, I am Orca!"
           --output_path ./tmp.wav
+          --model_path ../../lib/common/orca_params_en_female.pv
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
@@ -80,6 +82,7 @@ jobs:
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text_to_stream "Hello, I am Orca!"
+          --model_path ../../lib/common/orca_params_en_female.pv
 
       - name: Test single
         run: >
@@ -87,3 +90,4 @@ jobs:
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text "Hello, I am Orca!"
           --output_path ./tmp.wav
+          --model_path ../../lib/common/orca_params_en_female.pv

@@ -63,7 +63,7 @@ We stream that text to Orca and play the synthesized audio as soon as it gets ge
 To run it, execute the following:
 
 ```console
-dotnet run -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+dotnet run -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
 ```
 
 Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console and `${TEXT}` with your text to be
@@ -74,7 +74,7 @@ streamed to Orca.
 To synthesize speech in a single call to Orca and without audio playback, run the following:
 
 ```console
-dotnet run -c FileDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+dotnet run -c FileDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with your text to be synthesized,

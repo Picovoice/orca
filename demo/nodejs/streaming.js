@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -29,13 +29,13 @@ program
     '-t, --text_to_stream <string>',
     'Text to be streamed to Orca',
   )
+  .requiredOption(
+    '-m, --model_file_path <string>',
+    'Absolute path to Orca model',
+  )
   .option(
     '-l, --library_file_path <string>',
     'Absolute path to dynamic library',
-  )
-  .option(
-    '-m, --model_file_path <string>',
-    'Absolute path to orca model',
   )
   .option(
     '--tokens_per_second <number>',
@@ -61,17 +61,20 @@ program
     'Only list available audio output devices and exit',
   );
 
-if (process.argv.length < 2) {
+if (process.argv.length < 3) {
   program.help();
 }
 program.parse(process.argv);
  
-function splitText(text) {
+function splitText(text, language) {
+  // TODO: Update once Orca supports passing in partial bytes
+  if (language === "ko" || language === "ja") {
+    return text.split("");
   // TODO: Remove once tiktoken supports windows-arm64
-  if (os.platform() === 'win32' && os.arch() === 'arm64') {
+  } else if (os.platform() === 'win32' && os.arch() === 'arm64') {
     const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
     const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
-    const tokensRaw = [ text[0] ]
+    const tokensRaw = [text[0]]
     for (let i = 1; i < text.length; i++) {
       let ch = text[i];
       let token = tokensRaw[tokensRaw.length - 1];
@@ -91,7 +94,7 @@ function splitText(text) {
   }
 }
 
-function tokenizeText(text) {
+function tokenizeText(text, language) {
   const CUSTOM_PRON_PATTERN = /\{(.*?\|.*?)}/g;
   const CUSTOM_PRON_PATTERN_NO_WHITESPACE = /\{(.*?\|.*?)}(?!\s)/g;
 
@@ -99,7 +102,7 @@ function tokenizeText(text) {
   let customPronunciations = text.match(CUSTOM_PRON_PATTERN) || [];
   customPronunciations = new Set(customPronunciations);
 
-  const tokensRaw = splitText(text);
+  const tokensRaw = splitText(text, language);
 
   let customPron = '';
   const tokensWithCustomPronunciations = [];
@@ -168,14 +171,18 @@ function sleepSecs(ms) {
 
 async function streamingDemo() {
   let accessKey = program['access_key'];
-  let libraryFilePath = program['library_file_path'];
   let modelFilePath = program['model_file_path'];
+  let libraryFilePath = program['library_file_path'];
   let text = program['text_to_stream'];
   let tokensPerSeconds = program['tokens_per_second'];
   let audioWaitChunks = program['audio_wait_chunks'];
   let bufferSizeSecs = Number(program['buffer_size_secs']);
   let deviceIndex = Number(program['audio_device_index']);
   let showAudioDevices = program['show_audio_devices'];
+
+  const modelFilePrefix = "orca_params_";
+  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
+  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
 
   if (showAudioDevices) {
     const devices = PvSpeaker.getAvailableDevices();
@@ -224,7 +231,7 @@ async function streamingDemo() {
     process.stdout.write('\nSimulated text stream: ');
 
     let timeFirstAudioAvailable = null;
-    const tokens = tokenizeText(text);
+    const tokens = tokenizeText(text, language);
 
     const startTime = performance.now();
     for (const token of tokens) {

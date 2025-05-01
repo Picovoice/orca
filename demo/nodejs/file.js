@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -30,20 +30,20 @@ program
     '-o, --output_path <string>',
     'Absolute path to .wav file where the generated audio will be stored',
   )
+  .requiredOption(
+    '-m, --model_file_path <string>',
+    'Absolute path to Orca model',
+  )
   .option(
     '-l, --library_file_path <string>',
     'Absolute path to dynamic library',
-  )
-  .option(
-    '-m, --model_file_path <string>',
-    'Absolute path to Orca model',
   )
   .option(
     '-v, --verbose',
     'Verbose mode, prints metadata',
   );
 
-if (process.argv.length < 3) {
+if (process.argv.length < 4) {
   program.help();
 }
 program.parse(process.argv);

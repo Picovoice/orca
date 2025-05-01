@@ -145,16 +145,16 @@ pip3 install pvorcademo
 Run the streaming demo:
 
 ```console
-orca_demo_streaming --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+orca_demo_streaming --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text_to_stream ${TEXT}
 ```
 
 Run the single synthesis demo:
 
 ```console
-orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+orca_demo --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_PATH}` with a path to any of the model files available under [lib/common](lib/common), `${TEXT}` with the text to be synthesized, and
 `${WAV_OUTPUT_PATH}` with a path to an output WAV file.
 
 For more information about Python demos go to [demo/python](demo/python).
@@ -170,13 +170,13 @@ dotnet build -c StreamingDemo.Release
 Run the streaming demo:
 
 ```console
-dotnet build -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+dotnet build -c StreamingDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
 ```
 
 Run the single synthesis demo:
 
 ```console
-dotnet build -c FileDemo.Release -- --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+dotnet build -c FileDemo.Release -- --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
 Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
@@ -186,16 +186,11 @@ For more information about .NET demos go to [demo/dotnet](demo/dotnet).
 
 ### iOS Demo
 
-Run the following from [demo/ios](demo/ios) to install the Orca-iOS CocoaPod:
-
-```console
-pod install
-```
-
-Replace `let ACCESS_KEY = "..."` inside [ViewModel.swift](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with yours
-obtained from [Picovoice Console](https://console.picovoice.ai/).
-
-Then, using Xcode, open the generated OrcaDemo.xcworkspace and run the application.
+1. Open [OrcaDemo.xcodeproj](demo/ios/OrcaDemo/OrcaDemo.xcodeproj) in XCode.
+2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [`ViewModel.swift`](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with your `AccessKey`.
+3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Demo with a female voice, `deMaleDemo` -> German demo with a male voice).
+4. Run the demo with a simulator or connected iOS device.
+5. Once the demo app has started, enter the text you wish to synthesize in the text box area, and press the `Synthesize` button to synthesize the text and play audio.
 
 For more information about iOS demos go to [demo/ios](demo/ios).
 
@@ -213,32 +208,44 @@ Run the demo:
 ./demo/c/build/orca_demo_streaming -l ${LIBRARY_PATH} -m ${MODEL_PATH} -a ${ACCESS_KEY} -t ${TEXT} -o ${OUTPUT_PATH}
 ```
 
+For more information about C demos go to [demo/c](demo/c).
+
 ### Web Demos
 
 From [demo/web](./demo/web) run the following in the terminal:
 
 ```console
 yarn
-yarn start
+yarn start ${LANGUAGE} ${GENDER}
 ```
 
 (or)
 
 ```console
 npm install
-npm run start
+npm run start ${LANGUAGE} ${GENDER}
 ```
+
+Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in. 
+Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`.
 
 Open `http://localhost:5000` in your browser to try the demo.
 
+For more information about Web demos go to [demo/web](demo/web).
+
 ### Android Demo
 
-Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project and then run the
-application.
+Using Android Studio, open [demo/android/OrcaDemo](./demo/android/OrcaDemo) as an Android project.
 
 Replace `"${YOUR_ACCESS_KEY_HERE}"` in the
 file [MainActivity.java](./demo/android/OrcaDemo/orca-demo-app/src/main/java/ai/picovoice/orcademo/MainActivity.java)
 with your `AccessKey`.
+
+Go to `Build > Select Build Variant...` and select the language and gender you would like to run the demo in (e.g. `enFemaleDebug` -> English Demo with a female voice, `deMaleRelease` -> German Demo with a male voice).
+
+Build and run on an installed simulator or a connected Android device.
+
+For more information about Android demos go to [demo/android](demo/android).
 
 ### Node.js Demos
 
@@ -251,19 +258,18 @@ yarn global add @picovoice/orca-node-demo
 Run the streaming demo:
 
 ```console
-orca-streaming-demo --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+orca-streaming-demo --access_key ${ACCESS_KEY} --model_file_path ${MODEL_FILE_PATH} --text_to_stream ${TEXT}
 ```
 
 Run the file demo:
 
 ```console
-orca-file-demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${AUDIO_PATH}
+orca-file-demo --access_key ${ACCESS_KEY} --model_file_path ${MODEL_FILE_PATH} --text ${TEXT} --output_path ${AUDIO_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with the text to be synthesized, and
-`${AUDIO_PATH}` with a path to an output WAV file.
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with a path to any of the model files available under [lib/common](lib/common), `${TEXT}` with your text to be synthesized, and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel, 16-bit PCM `.wav` file.
 
-For more information about Node.js demos go to [demo/nodejs](./demo/nodejs).
+For more information about Node.js demos go to [demo/nodejs](demo/nodejs).
 
 ## SDKs
 

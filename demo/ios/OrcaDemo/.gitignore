@@ -20,3 +20,5 @@ project.xcworkspace
 contents.xcworkspacedata
 xcuserdata
 Pods
+
+*.pv

@@ -79,14 +79,21 @@ window.onload = function () {
   const streamCloseBtnEl = document.getElementById("stream-close-btn");
 
   function validateInput(input, validChars) {
+    let textToValidate = input;
+    if (orcaModel.publicPath.includes("ko")) {
+      textToValidate = filterValidCharsKo(input);
+    } else if (orcaModel.publicPath.includes("ja")) {
+      textToValidate = filterValidCharsJa(input);
+    }
+
     let nonAllowedCharacters = [];
 
-    for (let i = 0; i < input.length; i++) {
+    for (let i = 0; i < textToValidate.length; i++) {
       if (
-        !validChars.includes(input[i]) &&
-        !nonAllowedCharacters.includes(input[i])
+        !validChars.includes(textToValidate[i]) &&
+        !nonAllowedCharacters.includes(textToValidate[i])
       ) {
-        nonAllowedCharacters.push(input[i]);
+        nonAllowedCharacters.push(textToValidate[i]);
       }
     }
 
@@ -292,6 +299,63 @@ window.onload = function () {
     }
   }
 
+  function splitText(text, language) {
+    // TODO: Update once Orca supports passing in partial bytes
+    if (language === "ko" || language === "ja") {
+      return text.split("");
+    } else {
+      const ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+      const PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+      const tokensRaw = [text[0]]
+      for (let i = 1; i < text.length; i++) {
+        let ch = text[i];
+        let token = tokensRaw[tokensRaw.length - 1];
+        if ((ALPHA_NUMERIC.includes(ch) && !ALPHA_NUMERIC.includes(token[token.length - 1])) || PUNCTUATION.includes(ch)) {
+          tokensRaw.push(ch);
+        } else {
+          tokensRaw[tokensRaw.length - 1] += ch;
+        }
+      }
+      return tokensRaw;
+    }
+  }
+
+  function tokenizeText(text, language) {
+    const CUSTOM_PRON_PATTERN = /\{(.*?\|.*?)}/g;
+    const CUSTOM_PRON_PATTERN_NO_WHITESPACE = /\{(.*?\|.*?)}(?!\s)/g;
+
+    text = text.replace(CUSTOM_PRON_PATTERN_NO_WHITESPACE, '{$1} ');
+    let customPronunciations = text.match(CUSTOM_PRON_PATTERN) || [];
+    customPronunciations = new Set(customPronunciations);
+
+    const tokensRaw = splitText(text, language);
+
+    let customPron = '';
+    const tokensWithCustomPronunciations = [];
+
+    tokensRaw.forEach((token, i) => {
+      let inCustomPron = false;
+      customPronunciations.forEach(pron => {
+        const inCustomPronGlobal = customPron.length > 0;
+        const currentMatch = !inCustomPronGlobal ? token.trim() : customPron + token;
+        if (pron.startsWith(currentMatch)) {
+          customPron += !inCustomPronGlobal ? token.trim() : token;
+          inCustomPron = true;
+        }
+      });
+
+      if (!inCustomPron) {
+        if (customPron !== '') {
+          tokensWithCustomPronunciations.push(i !== 0 ? ` ${customPron}` : customPron);
+          customPron = '';
+        }
+        tokensWithCustomPronunciations.push(token);
+      }
+    });
+
+    return tokensWithCustomPronunciations;
+  }
+
   async function streamPlay() {
     writeMessage("Synthesizing and playing speech! Please listen for audio.");
     try {
@@ -300,7 +364,11 @@ window.onload = function () {
       streamSecondsDisplayEl.innerText = "0";
 
       const text = streamTextToSynthesizeEl.value;
-      const words = text.split(" ").map((str) => `${str} `);
+      
+      const languagePrefix = "orca_params_";
+      const languageIdx = orcaModel.publicPath.indexOf(languagePrefix) + languagePrefix.length;
+      const language = orcaModel.publicPath.substring(languageIdx, languageIdx + 2);
+      const words = tokenizeText(text, language);
       let numIterations = 0;
 
       for (const word of words) {
@@ -398,4 +466,45 @@ function downloadDumpAudio() {
   a.download = "orca_speech_audio.pcm";
   a.href = window.URL.createObjectURL(blob);
   a.click();
+}
+
+function filterValidCharsKo(input) {
+  let invalidChars = "";
+
+  for (const char of input) {
+    const codePoint = char.codePointAt(0);
+
+    const isStandardJamo =
+      (codePoint >= 0x1100 && codePoint <= 0x11FF) || // Hangul Jamo
+      (codePoint >= 0x3130 && codePoint <= 0x318F) || // Hangul Compatibility Jamo
+      (codePoint >= 0xAC00 && codePoint <= 0xD7AF) || // Hangul Syllables
+      (codePoint >= 0xA960 && codePoint <= 0xA97F) || // Hangul Jamo Extended-A
+      (codePoint >= 0xD7B0 && codePoint <= 0xD7FF);   // Hangul Jamo Extended-B
+
+    if (!isStandardJamo) {
+      invalidChars += String.fromCodePoint(codePoint);
+    }
+  }
+
+  return invalidChars;
+}
+
+function filterValidCharsJa(input) {
+  let invalidChars = "";
+
+  for (const char of input) {
+    const codePoint = char.codePointAt(0);
+
+    const isJapanese =
+        (codePoint >= 0x3001 && codePoint <= 0x301F) || // punctuation
+        (codePoint >= 0x3040 && codePoint <= 0x309F) || // hiragana
+        (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // katakana
+        (codePoint >= 0x4E00 && codePoint <= 0x9FFF);   // kanji
+
+    if (!isJapanese) {
+      invalidChars += String.fromCodePoint(codePoint);
+    }
+  }
+
+  return invalidChars;
 }

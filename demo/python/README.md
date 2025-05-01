@@ -48,20 +48,18 @@ We stream that text to Orca and play the synthesized audio as soon as it gets ge
 To run it, execute the following:
 
 ```console
-orca_demo_streaming --access_key ${ACCESS_KEY} --text_to_stream ${TEXT}
+orca_demo_streaming --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text_to_stream ${TEXT}
 ```
 
-Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console and `${TEXT}` with your text to be
-streamed to Orca. Please note that this demo was not tested on macOS.
+Replace `${ACCESS_KEY}` with your `AccessKey` obtained from Picovoice Console, `${MODEL_PATH}` with a path to any of the model files available under [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common), and `${TEXT}` with your text to be streamed to Orca. Please note that this demo was not tested on macOS.
 
 ### Single synthesis demo
 
 To synthesize speech in a single call to Orca and without audio playback, run the following:
 
 ```console
-orca_demo --access_key ${ACCESS_KEY} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
+orca_demo --access_key ${ACCESS_KEY} --model_path ${MODEL_PATH} --text ${TEXT} --output_path ${WAV_OUTPUT_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${TEXT}` with your text to be synthesized,
-and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel,
-16-bit PCM `.wav` file.
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_PATH}` with a path to any of the model files available under [lib/common](https://github.com/Picovoice/orca/tree/main/lib/common), `${TEXT}` with your text to be synthesized,
+and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel, 16-bit PCM `.wav` file.

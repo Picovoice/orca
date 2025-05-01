@@ -25,15 +25,25 @@ namespace OrcaDemo
 {
     public class StreamingDemo
     {
+        private static readonly List<string> languages = ModelUtils.GetAvailableLanguages();
+        private static readonly List<string> genders = ModelUtils.GetAvailableGenders();
+
         public static void RunDemo(
             string accessKey,
-            string modelPath,
+            string language,
+            string gender,
             string text,
+            string modelPath,
             int tokensPerSecond,
             int? audioWaitChunks,
             int bufferSizeSecs,
             int audioDeviceIndex)
         {
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                modelPath = ModelUtils.GetModelPath(language, gender);
+            }
+
             Orca orca = Orca.Create(accessKey, modelPath);
 
             PvSpeaker speaker = null;
@@ -96,7 +106,7 @@ namespace OrcaDemo
             {
                 Console.WriteLine($"Orca version: {orca.Version}\n");
 
-                IEnumerable<string> tokens = TokenizeText(text);
+                IEnumerable<string> tokens = TokenizeText(text, language);
 
                 Console.WriteLine("Simulated text stream:");
                 long timeStartTextStream = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -141,7 +151,7 @@ namespace OrcaDemo
         private static readonly string CustomPronPattern = @"\{(.*?\|.*?)\}";
         private static readonly string CustomPronPatternNoWhitespace = @"\{(.*?\|.*?)\}(?!\s)";
 
-        static IEnumerable<string> TokenizeText(string text)
+        static IEnumerable<string> TokenizeText(string text, string language)
         {
             text = Regex.Replace(text, CustomPronPatternNoWhitespace, @"{\1} ");
 
@@ -151,13 +161,24 @@ namespace OrcaDemo
                 customPronunciations.Add("{" + m.Groups[1].Value + "}");
             };
 
-            Encoder encoder = ModelToEncoder.For("gpt-4");
-            IReadOnlyCollection<int> encodedTokens = encoder.Encode(text);
-
             List<string> tokensRaw = new List<string>();
-            foreach (int t in encodedTokens)
+
+            if (language == "ko" || language == "ja")
             {
-                tokensRaw.Add(encoder.Decode(new[] { t }));
+                foreach (char c in text)
+                {
+                    tokensRaw.Add(c.ToString());
+                }
+            }
+            else
+            {
+                Encoder encoder = ModelToEncoder.For("gpt-4");
+                IReadOnlyCollection<int> encodedTokens = encoder.Encode(text);
+
+                foreach (int t in encodedTokens)
+                {
+                    tokensRaw.Add(encoder.Decode(new[] { t }));
+                }
             }
 
             string customPron = string.Empty;
@@ -218,8 +239,10 @@ namespace OrcaDemo
             }
 
             string accessKey = null;
-            string modelPath = null;
+            string language = null;
+            string gender = null;
             string text = null;
+            string modelPath = null;
             int tokensPerSecond = 15;
             int? audioWaitChunks = null;
             int bufferSizeSecs = 20;
@@ -235,11 +258,18 @@ namespace OrcaDemo
                         accessKey = args[argIndex++];
                     }
                 }
-                else if (args[argIndex] == "--model_path")
+                else if (args[argIndex] == "--language")
                 {
                     if (++argIndex < args.Length)
                     {
-                        modelPath = args[argIndex++];
+                        language = args[argIndex++];
+                    }
+                }
+                else if (args[argIndex] == "--gender")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        gender = args[argIndex++];
                     }
                 }
                 else if (args[argIndex] == "--text_to_stream")
@@ -247,6 +277,13 @@ namespace OrcaDemo
                     if (++argIndex < args.Length)
                     {
                         text = args[argIndex++];
+                    }
+                }
+                else if (args[argIndex] == "--model_path")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        modelPath = args[argIndex++];
                     }
                 }
                 else if (args[argIndex] == "--tokens_per_second")
@@ -301,11 +338,38 @@ namespace OrcaDemo
             {
                 throw new ArgumentNullException("access_key");
             }
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                if (string.IsNullOrEmpty(language))
+                {
+                    throw new ArgumentNullException("language");
+                }
+                if (!languages.Contains(language))
+                {
+                    throw new ArgumentException($"Given argument '{language}' is not an available language. " +
+                                                $"Available languages are '{string.Join(", ", languages)}'.");
+                }
+                if (string.IsNullOrEmpty(gender))
+                {
+                    throw new ArgumentNullException("gender");
+                }
+                if (!genders.Contains(gender))
+                {
+                    throw new ArgumentException($"Given argument '{gender}' is not an available gender. " +
+                                                $"Available genders are '{string.Join(", ", genders)}'.");
+                }
+            }
+            if (string.IsNullOrEmpty(text))
+            {
+                throw new ArgumentNullException("text_to_stream");
+            }
 
             RunDemo(
                 accessKey,
-                modelPath,
+                language,
+                gender,
                 text,
+                modelPath,
                 tokensPerSecond,
                 audioWaitChunks,
                 bufferSizeSecs,
@@ -321,7 +385,11 @@ namespace OrcaDemo
         private static readonly string HELP_STR = "Available options: \n " +
             "\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
             "\t--text_to_stream (required): Text to be streamed to Orca\n" +
-            "\t--model_path: Absolute path to Orca model. Default: using the model provided in the package\n" +
+            "\t--language: The language you would like to run the demo in. " +
+                $"Available languages are {string.Join(", ", languages)}\n" +
+            "\t--gender: The gender of the synthesized voice. " +
+                $"Available genders are {string.Join(", ", genders)}\n" +
+            "\t--model_path: Absolute path to Orca voice model (`.pv`).\n" +
             "\t--tokens_per_second: Number of tokens per second to be streamed to Orca, simulating an LLM response\n" +
             "\t--audio_wait_chunks: Number of PCM chunks to wait before starting to play audio. Default: system-dependent\n" +
             "\t--buffer_size_secs: The size in seconds of the internal buffer used by pvspeaker to play audio\n" +

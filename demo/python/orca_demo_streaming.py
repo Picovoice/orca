@@ -1,5 +1,5 @@
 #
-#    Copyright 2024 Picovoice Inc.
+#    Copyright 2024-2025 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -169,25 +169,29 @@ class OrcaThread:
         return self._time_first_audio_available
 
 
-def tokenize_text(text: str) -> Sequence[str]:
+def tokenize_text(text: str, language: str) -> Sequence[str]:
     text = re.sub(CUSTOM_PRON_PATTERN_NO_WHITESPACE, r'{\1} ', text)
 
     custom_pronunciations = re.findall(CUSTOM_PRON_PATTERN, text)
     custom_pronunciations = set(["{" + pron + "}" for pron in custom_pronunciations])
 
-    # TODO: Remove once tiktoken supports windows-arm64
-    try:
-        encoder = tiktoken.encoding_for_model("gpt-4")
-        tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
-    except:
-        ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
-        PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
-        tokens_raw = [text[0]]
-        for ch in text[1:]:
-            if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
-                tokens_raw.append(ch)
-            else:
-                tokens_raw[-1] += ch
+    # TODO: Update once Orca supports passing in partial bytes
+    if language == "ko" or language == "ja":
+        tokens_raw = list(text)
+    else:
+        # TODO: Remove once tiktoken supports windows-arm64
+        try:
+            encoder = tiktoken.encoding_for_model("gpt-4")
+            tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
+        except:
+            ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+            PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+            tokens_raw = [text[0]]
+            for ch in text[1:]:
+                if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
+                    tokens_raw.append(ch)
+                else:
+                    tokens_raw[-1] += ch
 
     custom_pron = ""
     tokens_with_custom_pronunciations = []
@@ -217,13 +221,14 @@ def main() -> None:
         required=True,
         help="AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)")
     parser.add_argument(
+        "--model_path",
+        "-m",
+        required=True,
+        help="Absolute path to Orca model")
+    parser.add_argument(
         "--library_path",
         "-l",
         help="Absolute path to dynamic library. Default: using the library provided by `pvorca`")
-    parser.add_argument(
-        "--model_path",
-        "-m",
-        help="Absolute path to Orca model. Default: using the model provided by `pvorca`")
     parser.add_argument(
         "--text_to_stream",
         "-t",
@@ -270,6 +275,10 @@ def main() -> None:
     buffer_size_secs = args.buffer_size_secs
     audio_device_index = args.audio_device_index
 
+    model_file_prefix = "orca_params_"
+    lang_code_idx = model_path.find(model_file_prefix) + len(model_file_prefix)
+    language = model_path[lang_code_idx:lang_code_idx + 2]
+
     orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
 
     speaker = None
@@ -313,7 +322,7 @@ def main() -> None:
     try:
         print(f"Orca version: {orca.version}\n")
 
-        tokens = tokenize_text(text=text)
+        tokens = tokenize_text(text=text, language=language)
 
         print(f"Simulated text stream:")
         time_start_text_stream = time.time()

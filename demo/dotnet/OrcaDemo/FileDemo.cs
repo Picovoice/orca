@@ -24,13 +24,23 @@ namespace OrcaDemo
 {
     public class FileDemo
     {
+        private static readonly List<string> languages = ModelUtils.GetAvailableLanguages();
+        private static readonly List<string> genders = ModelUtils.GetAvailableGenders();
+
         public static void RunDemo(
             string accessKey,
-            string outputPath,
+            string language,
+            string gender,
             string text,
+            string outputPath,
             string modelPath,
             bool verbose)
         {
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                modelPath = ModelUtils.GetModelPath(language, gender);
+            }
+
             using (Orca orca = Orca.Create(accessKey, modelPath))
             {
                 Console.WriteLine($"Orca version: {orca.Version}\n");
@@ -141,6 +151,8 @@ namespace OrcaDemo
             }
 
             string accessKey = null;
+            string language = null;
+            string gender = null;
             string text = null;
             string outputPath = null;
             string modelPath = null;
@@ -156,6 +168,20 @@ namespace OrcaDemo
                         accessKey = args[argIndex++];
                     }
                 }
+                else if (args[argIndex] == "--language")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        language = args[argIndex++];
+                    }
+                }
+                else if (args[argIndex] == "--gender")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        gender = args[argIndex++];
+                    }
+                }
                 else if (args[argIndex] == "--text")
                 {
                     if (++argIndex < args.Length)
@@ -163,18 +189,18 @@ namespace OrcaDemo
                         text = args[argIndex++];
                     }
                 }
-                else if (args[argIndex] == "--output_path")
-                {
-                    if (++argIndex < args.Length)
-                    {
-                        outputPath = args[argIndex++];
-                    }
-                }
                 else if (args[argIndex] == "--model_path")
                 {
                     if (++argIndex < args.Length)
                     {
                         modelPath = args[argIndex++];
+                    }
+                }
+                else if (args[argIndex] == "--output_path")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        outputPath = args[argIndex++];
                     }
                 }
                 else if (args[argIndex] == "--verbose")
@@ -197,7 +223,27 @@ namespace OrcaDemo
             {
                 throw new ArgumentNullException("access_key");
             }
-
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                if (string.IsNullOrEmpty(language))
+                {
+                    throw new ArgumentNullException("language");
+                }
+                if (!languages.Contains(language))
+                {
+                    throw new ArgumentException($"Given argument '{language}' is not an available language. " +
+                                                $"Available languages are '{string.Join(", ", languages)}'.");
+                }
+                if (string.IsNullOrEmpty(gender))
+                {
+                    throw new ArgumentNullException("gender");
+                }
+                if (!genders.Contains(gender))
+                {
+                    throw new ArgumentException($"Given argument '{gender}' is not an available gender. " +
+                                                $"Available genders are '{string.Join(", ", genders)}'.");
+                }
+            }
             if (string.IsNullOrEmpty(outputPath))
             {
                 throw new ArgumentNullException("output_path");
@@ -206,16 +252,17 @@ namespace OrcaDemo
             {
                 throw new ArgumentException($"Output path must have WAV file extension (.wav)");
             }
-
             if (string.IsNullOrEmpty(text))
             {
-                throw new ArgumentNullException("output_path");
+                throw new ArgumentNullException("text");
             }
 
             RunDemo(
                 accessKey,
-                outputPath,
+                language,
+                gender,
                 text,
+                outputPath,
                 modelPath,
                 verbose);
         }
@@ -230,6 +277,10 @@ namespace OrcaDemo
             $"\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
             $"\t--text (required): Text to be synthesized\n" +
             $"\t--output_path (required): Absolute path to .wav file where the generated audio will be stored\n" +
-            $"\t--model_path: Absolute path to Orca voice model (`.pv`). Default: using the model provided by the package\n";
+            $"\t--language: The language you would like to run the demo in. " +
+                $"Available languages are {string.Join(", ", languages)}\n" +
+            $"\t--gender: The gender of the synthesized voice. " +
+                $"Available genders are {string.Join(", ", genders)}\n" +
+            $"\t--model_path: Absolute path to Orca voice model (`.pv`).\n";
     }
 }
