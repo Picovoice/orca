@@ -49,14 +49,10 @@ jobs:
           yarn install
 
       - name: Test streaming
-        run: >
-          yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}}
-          --language en --gender female -t "Hello, I am Orca!"
+        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!"
 
       - name: Test file
-        run: >
-          yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}}
-          --language en --gender female -t "Hello, I am Orca!" -o "./tmp.wav"
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!" -o "./tmp.wav"
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
@@ -72,11 +68,7 @@ jobs:
         run: yarn install
 
       - name: Test streaming
-        run: >
-          yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}}
-          --language en --gender female -t "Hello, I am Orca!"
+        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!"
 
       - name: Test file
-        run: >
-          yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}}
-          --language en --gender female -t "Hello, I am Orca!" -o "./tmp.wav"
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!" -o "./tmp.wav"
