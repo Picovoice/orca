@@ -16,10 +16,6 @@ const fs = require('fs');
 const { WaveFile } = require('wavefile');
 
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
-const { getAvailableLanguages, getAvailableGenders, getModelPath } = require('./utils');
-
-const availableLanguages = getAvailableLanguages()
-const availableGenders = getAvailableGenders()
 
 program
   .requiredOption(
@@ -34,21 +30,13 @@ program
     '-o, --output_path <string>',
     'Absolute path to .wav file where the generated audio will be stored',
   )
-  .option(
-    '-l, --library_file_path <string>',
-    'Absolute path to dynamic library',
-  )
-  .option(
+  .requiredOption(
     '-m, --model_file_path <string>',
     'Absolute path to Orca model',
   )
   .option(
-    '--language <string>',
-    `The language you would like to run the demo in. Available languages are ${availableLanguages.join(", ")}.`,
-  )
-  .option(
-    '--gender <string>',
-    `The gender of the synthesized voice. Available genders are ${availableGenders.join(", ")}.`,
+    '-l, --library_file_path <string>',
+    'Absolute path to dynamic library',
   )
   .option(
     '-v, --verbose',
@@ -62,29 +50,11 @@ program.parse(process.argv);
 
 function fileDemo() {
   let accessKey = program['access_key'];
-  let language = program['language'];
-  let gender = program['gender'];
   let text = program['text'];
   let outputPath = program['output_path'];
   let libraryFilePath = program['library_file_path'];
   let modelFilePath = program['model_file_path'];
   let verbose = program['verbose'];
-
-  if (!modelFilePath) {
-    if (!availableLanguages.includes(language)) {
-      throw new Error(
-        `Given argument --language '${language}' is not an available language. ` +
-        `Available languages are ${availableLanguages.join(", ")}.`)
-    }
-
-    if (!availableGenders.includes(gender)) {
-      throw new Error(
-        `Given argument --gender '${gender}' is not an available gender. ` +
-        `Available genders are ${availableGenders.join(", ")}.`)
-    }
-
-    modelFilePath = getModelPath(language, gender);
-  }
 
   let orca = new Orca(
     accessKey,

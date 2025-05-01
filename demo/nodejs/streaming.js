@@ -19,10 +19,6 @@ const tiktoken = require('tiktoken');
 
 const { PvSpeaker } = require('@picovoice/pvspeaker-node');
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
-const { getAvailableLanguages, getAvailableGenders, getModelPath } = require('./utils');
-
-const availableLanguages = getAvailableLanguages()
-const availableGenders = getAvailableGenders()
 
 program
   .requiredOption(
@@ -33,21 +29,13 @@ program
     '-t, --text_to_stream <string>',
     'Text to be streamed to Orca',
   )
-  .option(
-    '-l, --library_file_path <string>',
-    'Absolute path to dynamic library',
-  )
-  .option(
+  .requiredOption(
     '-m, --model_file_path <string>',
     'Absolute path to Orca model',
   )
   .option(
-    '--language <string>',
-    `The language you would like to run the demo in. Available languages are ${availableLanguages.join(", ")}.`,
-  )
-  .option(
-    '--gender <string>',
-    `The gender of the synthesized voice. Available genders are ${availableGenders.join(", ")}.`,
+    '-l, --library_file_path <string>',
+    'Absolute path to dynamic library',
   )
   .option(
     '--tokens_per_second <number>',
@@ -183,16 +171,18 @@ function sleepSecs(ms) {
 
 async function streamingDemo() {
   let accessKey = program['access_key'];
-  let language = program['language'];
-  let gender = program['gender'];
-  let libraryFilePath = program['library_file_path'];
   let modelFilePath = program['model_file_path'];
+  let libraryFilePath = program['library_file_path'];
   let text = program['text_to_stream'];
   let tokensPerSeconds = program['tokens_per_second'];
   let audioWaitChunks = program['audio_wait_chunks'];
   let bufferSizeSecs = Number(program['buffer_size_secs']);
   let deviceIndex = Number(program['audio_device_index']);
   let showAudioDevices = program['show_audio_devices'];
+
+  const modelFilePrefix = "orca_params_";
+  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
+  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
 
   if (showAudioDevices) {
     const devices = PvSpeaker.getAvailableDevices();
@@ -210,22 +200,6 @@ async function streamingDemo() {
         audioWaitChunks = 1;
       }
     }
-  }
-
-  if (!modelFilePath) {
-    if (!availableLanguages.includes(language)) {
-      throw new Error(
-          `Given argument --language '${language}' is not an available language. ` +
-          `Available languages are ${availableLanguages.join(", ")}.`)
-    }
-
-    if (!availableGenders.includes(gender)) {
-      throw new Error(
-          `Given argument --gender '${gender}' is not an available gender. ` +
-          `Available genders are ${availableGenders.join(", ")}.`)
-    }
-
-    modelFilePath = getModelPath(language, gender);
   }
 
   try {

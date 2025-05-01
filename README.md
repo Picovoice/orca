@@ -260,19 +260,16 @@ yarn global add @picovoice/orca-node-demo
 Run the streaming demo:
 
 ```console
-orca-streaming-demo --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text_to_stream ${TEXT}
+orca-streaming-demo --access_key ${ACCESS_KEY} --model_file_path ${MODEL_FILE_PATH} --text_to_stream ${TEXT}
 ```
 
 Run the file demo:
 
 ```console
-orca-file-demo --access_key ${ACCESS_KEY} --language ${LANGUAGE} --gender ${GENDER} --text ${TEXT} --output_path ${AUDIO_PATH}
+orca-file-demo --access_key ${ACCESS_KEY} --model_file_path ${MODEL_FILE_PATH} --text ${TEXT} --output_path ${AUDIO_PATH}
 ```
 
-Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${LANGUAGE}` and `${GENDER}` with the language and 
-gender you would like to run the demo in (available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, 
-and available genders are `male` and `female`), `${TEXT}` with your text to be synthesized, and `${WAV_OUTPUT_PATH}` 
-with a path to a `.wav` file where the generated audio will be stored as a single-channel, 16-bit PCM `.wav` file.
+Replace `${ACCESS_KEY}` with yours obtained from Picovoice Console, `${MODEL_FILE_PATH}` with a path to any of the model files available under [lib/common](lib/common), `${TEXT}` with your text to be synthesized, and `${WAV_OUTPUT_PATH}` with a path to a `.wav` file where the generated audio will be stored as a single-channel, 16-bit PCM `.wav` file.
 
 For more information about Node.js demos go to [demo/nodejs](demo/nodejs).
 
