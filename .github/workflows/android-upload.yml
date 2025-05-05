@@ -36,7 +36,7 @@ jobs:
       run: |
         VC=`fastlane run google_play_track_version_codes \
           json_key:"./service-account.json" \
-          package_name:"ai.picovoice.orcademo" \
+          package_name:"ai.picovoice.orcademo.enFemale" \
           track:"internal" \
         | grep -oP '(?<=Result: \[)\d+(?=\])' \
         | awk '{print $1+1}'`
@@ -53,8 +53,5 @@ jobs:
     - name: Build
       run: ./gradlew bundleRelease
 
-    - name: test
-      run: ls -lR orca-demo-app/build
-
     - name: Upload to Google Play
-      run: fastlane supply --json_key ./service-account.json --package_name ai.picovoice.orcademo --aab orca-demo-app/build/outputs/bundle/release/orca-demo-app-release.aab --track internal --skip_upload_metadata --skip_upload_images --skip_upload_screenshots --release_status draft
+      run: fastlane supply --json_key ./service-account.json --package_name ai.picovoice.orcademo.enFemale --aab orca-demo-app/build/outputs/bundle/enFemaleRelease/orca-demo-app-enFemale-release.aab --track internal --skip_upload_metadata --skip_upload_images --skip_upload_screenshots --release_status draft
