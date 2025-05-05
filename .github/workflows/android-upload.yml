@@ -53,5 +53,8 @@ jobs:
     - name: Build
       run: ./gradlew bundleRelease
 
+    - name: test
+      run: ls orca-demo-app/build/outputs/bundle/release/
+
     - name: Upload to Google Play
       run: fastlane supply --json_key ./service-account.json --package_name ai.picovoice.orcademo --aab orca-demo-app/build/outputs/bundle/release/orca-demo-app-release.aab --track internal --skip_upload_metadata --skip_upload_images --skip_upload_screenshots --release_status draft
