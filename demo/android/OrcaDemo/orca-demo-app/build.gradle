@@ -113,7 +113,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation files("../../../../binding/android/Orca/orca/build/outputs/aar/orca-release.aar")
+    implementation 'ai.picovoice:orca-android:1.1.2'
 }
 
 afterEvaluate {
