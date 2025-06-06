@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
     s.name = 'Orca-iOS'
     s.module_name = 'Orca'
-    s.version = '1.1.1'
+    s.version = '1.2.0'
     s.license = {:type => 'Apache 2.0'}
     s.summary = 'iOS binding for Picovoice\'s Orca Text-to-Speech Engine.'
     s.description =

@@ -11,6 +11,7 @@
 		02A1194B268D39A700A2AC99 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1194A268D39A700A2AC99 /* ContentView.swift */; };
 		02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02A1194C268D39AB00A2AC99 /* Assets.xcassets */; };
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
+		02B588C72DF397A5007E7026 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 02B588C62DF397A5007E7026 /* Orca */; };
 		0751D6642D6D46AA001EB29D /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 0751D6632D6D46AA001EB29D /* Orca */; };
 		07F723592D6D594B0002D88F /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 07F723582D6D594B0002D88F /* Orca */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
@@ -75,6 +76,7 @@
 				0751D6642D6D46AA001EB29D /* Orca in Frameworks */,
 				1E7C0A422D84DA0700A5350A /* Orca in Frameworks */,
 				07F723592D6D594B0002D88F /* Orca in Frameworks */,
+				02B588C72DF397A5007E7026 /* Orca in Frameworks */,
 				E109D1A32CFE4F380014F5AA /* Orca in Frameworks */,
 				E1F353002D00ED5C0069B0E6 /* Orca in Frameworks */,
 			);
@@ -183,7 +185,7 @@
 			);
 			mainGroup = 02A1193C268D39A700A2AC99;
 			packageReferences = (
-				07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */,
+				02B588C52DF397A5007E7026 /* XCLocalSwiftPackageReference "../../../../orca" */,
 			);
 			productRefGroup = 02A11946268D39A700A2AC99 /* Products */;
 			projectDirPath = "";
@@ -422,6 +424,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		02B588C52DF397A5007E7026 /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../orca;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -442,6 +451,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		02B588C62DF397A5007E7026 /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Orca;
+		};
 		0751D6632D6D46AA001EB29D /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Orca;
