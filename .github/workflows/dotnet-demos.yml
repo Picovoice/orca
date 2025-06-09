@@ -38,6 +38,19 @@ jobs:
     - name: Package restore
       run: dotnet restore
 
+    # ************** REMOVE AFTER RELEASE ********************
+    - name: Build Local Packages
+      run: dotnet build
+      working-directory: binding/dotnet/Orca
+
+    - name: Pack Local Packages
+      run: dotnet pack -c Release
+      working-directory: binding/dotnet/Orca
+
+    - name: Install Local Packages
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
+    # ********************************************************
+
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
 
@@ -73,6 +86,19 @@ jobs:
 
     - name: Package restore
       run: dotnet restore
+
+    # ************** REMOVE AFTER RELEASE ********************
+    - name: Build Local Packages
+      run: dotnet build
+      working-directory: binding/dotnet/Orca
+
+    - name: Pack Local Packages
+      run: dotnet pack -c Release
+      working-directory: binding/dotnet/Orca
+
+    - name: Install Local Packages
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
+    # ********************************************************
 
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
