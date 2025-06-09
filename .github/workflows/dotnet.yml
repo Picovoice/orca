@@ -39,16 +39,13 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        dotnet-version: [2.1.x, 3.0.x, 3.1.x, 5.0.x, 6.0.x, 8.0.x]
+        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+        dotnet-version: [2.1.x, 3.x, 5.0.x, 6.0.x, 8.0.x]
         include:
           - dotnet-version: 2.1.x
             binding-framework: netstandard2.0
             test-framework: netcoreapp2.1
-          - dotnet-version: 3.0.x
-            binding-framework: netcoreapp3.0
-            test-framework: netcoreapp3.0
-          - dotnet-version: 3.1.x
+          - dotnet-version: 3.x
             binding-framework: netcoreapp3.0
             test-framework: netcoreapp3.1
           - dotnet-version: 5.0.x
@@ -64,35 +61,31 @@ jobs:
           - os: ubuntu-latest
             dotnet-version: 2.1.x
           - os: ubuntu-latest
-            dotnet-version: 3.0.x
-          - os: ubuntu-latest
-            dotnet-version: 3.1.x
+            dotnet-version: 3.x
           - os: ubuntu-latest
             dotnet-version: 5.0.x
-          # - os: macos-latest
-          #   dotnet-version: 2.1.x
-          # - os: macos-latest
-          #   dotnet-version: 3.0.x
-          # - os: macos-latest
-          #   dotnet-version: 3.1.x
-          # - os: macos-latest
-          #   dotnet-version: 5.0.x
-          # - os: macos-latest
-          #   dotnet-version: 6.0.x
-          # - os: macos-13
-          #   dotnet-version: 8.0.x
+          - os: macos-latest
+            dotnet-version: 2.1.x
+          - os: macos-latest
+            dotnet-version: 3.x
+          - os: macos-latest
+            dotnet-version: 5.0.x
+          - os: macos-latest
+            dotnet-version: 6.0.x
+          - os: macos-13
+            dotnet-version: 8.0.x
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
 
     - name: Set up .NET (8)
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.dotnet-version == '6.0.x' }}
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
 
