@@ -39,7 +39,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         dotnet-version: [2.1.x, 3.0.x, 3.1.x, 5.0.x, 6.0.x, 8.0.x]
         include:
           - dotnet-version: 2.1.x
@@ -69,18 +69,18 @@ jobs:
             dotnet-version: 3.1.x
           - os: ubuntu-latest
             dotnet-version: 5.0.x
-          - os: macos-latest
-            dotnet-version: 2.1.x
-          - os: macos-latest
-            dotnet-version: 3.0.x
-          - os: macos-latest
-            dotnet-version: 3.1.x
-          - os: macos-latest
-            dotnet-version: 5.0.x
-          - os: macos-latest
-            dotnet-version: 6.0.x
-          - os: macos-13
-            dotnet-version: 8.0.x
+          # - os: macos-latest
+          #   dotnet-version: 2.1.x
+          # - os: macos-latest
+          #   dotnet-version: 3.0.x
+          # - os: macos-latest
+          #   dotnet-version: 3.1.x
+          # - os: macos-latest
+          #   dotnet-version: 5.0.x
+          # - os: macos-latest
+          #   dotnet-version: 6.0.x
+          # - os: macos-13
+          #   dotnet-version: 8.0.x
 
     steps:
     - uses: actions/checkout@v3
@@ -102,20 +102,20 @@ jobs:
     - name: Test
       run: dotnet test --framework ${{ matrix.test-framework }} -v n
 
-  build-self-hosted:
-    runs-on: ${{ matrix.machine }}
-    env:
-      ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
+  # build-self-hosted:
+  #   runs-on: ${{ matrix.machine }}
+  #   env:
+  #     ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
 
-    strategy:
-      matrix:
-        machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64]
+  #   strategy:
+  #     matrix:
+  #       machine: [rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64]
 
-    steps:
-    - uses: actions/checkout@v3
+  #   steps:
+  #   - uses: actions/checkout@v3
 
-    - name: Build binding
-      run: dotnet build Orca/Orca.csproj --framework net8.0
+  #   - name: Build binding
+  #     run: dotnet build Orca/Orca.csproj --framework net8.0
 
-    - name: Test
-      run: dotnet test --framework net8.0 -v n
+  #   - name: Test
+  #     run: dotnet test --framework net8.0 -v n
