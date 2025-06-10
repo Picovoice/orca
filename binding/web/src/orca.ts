@@ -17,6 +17,7 @@ import { simd } from 'wasm-feature-detect';
 
 import {
   arrayBufferToStringAtIndex,
+  base64ToUint8Array,
   isAccessKeyValid,
   loadModel,
 } from '@picovoice/web-utils';
@@ -113,52 +114,27 @@ type OrcaWasmOutput = {
  */
 class Stream {
   private readonly _module: OrcaModule;
-  private readonly _alignedAlloc: CallableFunction;
-  private readonly _pvFree: pv_free_type;
-  private readonly _pvGetErrorStack: pv_get_error_stack_type;
-  private readonly _pvFreeErrorStack: pv_free_error_stack_type;
   private readonly _messageStackAddressAddressAddress: number;
   private readonly _messageStackDepthAddress: number;
-
   private readonly _functionMutex: Mutex;
   private readonly _streamPcmAddressAddress: number;
-  private readonly _pvOrcaPcmDelete: pv_orca_pcm_delete_type;
-  private readonly _pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type;
-  private readonly _pvOrcaStreamFlush: pv_orca_stream_flush_type;
-  private readonly _pvOrcaStreamClose: pv_orca_stream_close_type;
   private readonly _streamAddress: number;
   private readonly _getMessageStack: any;
 
   constructor(
-    wasmMemory: WebAssembly.Memory,
-    alignedAlloc: CallableFunction,
-    pvFree: pv_free_type,
-    pvGetErrorStack: pv_get_error_stack_type,
-    pvFreeErrorStack: pv_free_error_stack_type,
+    module: OrcaModule,
     messageStackAddressAddressAddress: number,
     messageStackDepthAddress: number,
     functionMutex: Mutex,
     streamPcmAddressAddress: number,
-    pvOrcaPcmDelete: pv_orca_pcm_delete_type,
-    pvOrcaStreamSynthesize: pv_orca_stream_synthesize_type,
-    pvOrcaStreamFlush: pv_orca_stream_flush_type,
-    pvOrcaStreamClose: pv_orca_stream_close_type,
     streamAddress: number,
     getMessageStack: any,
   ) {
-    this._wasmMemory = wasmMemory;
-    this._alignedAlloc = alignedAlloc;
-    this._pvFree = pvFree;
-    this._pvGetErrorStack = pvGetErrorStack;
-    this._pvFreeErrorStack = pvFreeErrorStack;
+    this._module = module;
     this._messageStackAddressAddressAddress = messageStackAddressAddressAddress;
     this._messageStackDepthAddress = messageStackDepthAddress;
     this._functionMutex = functionMutex;
     this._streamPcmAddressAddress = streamPcmAddressAddress;
-    this._pvOrcaPcmDelete = pvOrcaPcmDelete;
-    this._pvOrcaStreamSynthesize = pvOrcaStreamSynthesize;
-    this._pvOrcaStreamFlush = pvOrcaStreamFlush;
-    this._pvOrcaStreamClose = pvOrcaStreamClose;
     this._streamAddress = streamAddress;
     this._getMessageStack = getMessageStack;
   }
@@ -188,75 +164,56 @@ class Stream {
     return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
-          if (this._wasmMemory === undefined) {
+          if (this._module === undefined) {
             throw new OrcaErrors.OrcaInvalidStateError(
               'Attempted to call Orca stream synthesize after release.',
             );
           }
 
-          const memoryBufferText = new Uint8Array(this._wasmMemory.buffer);
           const encodedText = new TextEncoder().encode(text);
-          const textAddress = await this._alignedAlloc(
-            Uint8Array.BYTES_PER_ELEMENT,
-            (encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-          );
+          const textAddress = this._module._malloc((encodedText.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
           if (textAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError(
               'malloc failed: Cannot allocate memory',
             );
           }
-          memoryBufferText.set(encodedText, textAddress);
-          memoryBufferText[textAddress + encodedText.length] = 0;
+          this._module.HEAPU8.set(encodedText, textAddress);
+          this._module.HEAPU8[textAddress + encodedText.length] = 0;
 
-          const numSamplesAddress = await this._alignedAlloc(
-            Int32Array.BYTES_PER_ELEMENT,
-            Int32Array.BYTES_PER_ELEMENT,
-          );
+          const numSamplesAddress = this._module._malloc(Int32Array.BYTES_PER_ELEMENT);
           if (numSamplesAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const streamSynthesizeStatus = await this._pvOrcaStreamSynthesize(
+          const streamSynthesizeStatus = this._module._pv_orca_stream_synthesize(
             this._streamAddress,
             textAddress,
             numSamplesAddress,
             this._streamPcmAddressAddress,
           );
           this._module._pv_free(textAddress);
-
-          const memoryBufferView = new DataView(this._wasmMemory.buffer);
-          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-
           if (streamSynthesizeStatus !== PvStatus.SUCCESS) {
-            const messageStack = await this._getMessageStack(
-              this._pvGetErrorStack,
-              this._pvFreeErrorStack,
+            const messageStack = this._getMessageStack(
+              this._module._pv_get_error_stack,
+              this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
               this._messageStackDepthAddress,
-              memoryBufferView,
-              memoryBufferUint8,
+              this._module.HEAP32,
+              this._module.HEAPU8
             );
 
             throw pvStatusToException(streamSynthesizeStatus, 'Stream synthesize failed', messageStack);
           }
 
-          const pcmAddress = this._module.HEAP32[
-            this._streamPcmAddressAddress,
-            true,
-          );
+          const pcmAddress = this._module.HEAP32[this._streamPcmAddressAddress / Int32Array.BYTES_PER_ELEMENT];
 
-          const numSamples = this._module.HEAP32[
-            numSamplesAddress,
-            true,
-          );
+          const numSamples = this._module.HEAP32[numSamplesAddress / Int32Array.BYTES_PER_ELEMENT];
           this._module._pv_free(numSamplesAddress);
 
-          const outputMemoryBuffer = new Int16Array(this._wasmMemory.buffer);
-          const pcm = outputMemoryBuffer.slice(
+          const pcm = this._module.HEAP16.slice(
             pcmAddress / Int16Array.BYTES_PER_ELEMENT,
-            (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
-          );
-          await this._pvOrcaPcmDelete(pcmAddress);
+            (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples);
+          this._module._pv_orca_pcm_delete(pcmAddress);
 
           return pcm.length > 0 ? pcm : null;
         })
@@ -280,66 +237,49 @@ class Stream {
     return new Promise<OrcaStreamSynthesizeResult>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
-          if (this._wasmMemory === undefined) {
+          if (this._module === undefined) {
             throw new OrcaErrors.OrcaInvalidStateError('Attempted to call OrcaStream flush after release.');
           }
 
-          const numSamplesAddress = await this._alignedAlloc(
-            Int32Array.BYTES_PER_ELEMENT,
-            Int32Array.BYTES_PER_ELEMENT,
-          );
+          const numSamplesAddress = this._module._malloc(Int32Array.BYTES_PER_ELEMENT);
           if (numSamplesAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const pcmAddressAddress = await this._alignedAlloc(
-            Int32Array.BYTES_PER_ELEMENT,
-            Int32Array.BYTES_PER_ELEMENT,
-          );
+          const pcmAddressAddress = this._module._malloc(Int32Array.BYTES_PER_ELEMENT);
           if (pcmAddressAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const streamFlushStatus = await this._pvOrcaStreamFlush(
+          const streamFlushStatus = this._module._pv_orca_stream_flush(
             this._streamAddress,
             numSamplesAddress,
             pcmAddressAddress,
           );
-
-          const memoryBufferView = new DataView(this._wasmMemory.buffer);
-          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-
           if (streamFlushStatus !== PvStatus.SUCCESS) {
             const messageStack = await this._getMessageStack(
-              this._pvGetErrorStack,
-              this._pvFreeErrorStack,
+              this._module._pv_get_error_stack,
+              this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
               this._messageStackDepthAddress,
-              memoryBufferView,
-              memoryBufferUint8,
+              this._module.HEAP32,
+              this._module.HEAPU8
             );
 
             throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
           }
 
-          const pcmAddress = this._module.HEAP32[
-            pcmAddressAddress,
-            true,
-          );
+          const pcmAddress = this._module.HEAP32[pcmAddressAddress];
           this._module._pv_free(pcmAddressAddress);
 
-          const numSamples = this._module.HEAP32[
-            numSamplesAddress,
-            true,
-          );
+          const numSamples = this._module.HEAP32[numSamplesAddress];
           this._module._pv_free(numSamplesAddress);
 
-          const outputMemoryBuffer = new Int16Array(this._wasmMemory.buffer);
-          const pcm = outputMemoryBuffer.slice(
+          const pcm = this._module.HEAP16.slice(
             pcmAddress / Int16Array.BYTES_PER_ELEMENT,
             (pcmAddress / Int16Array.BYTES_PER_ELEMENT) + numSamples,
           );
-          await this._pvOrcaPcmDelete(pcmAddress);
+          this._module._pv_orca_pcm_delete(pcmAddress);
 
           return pcm.length > 0 ? pcm : null;
         })
@@ -356,7 +296,7 @@ class Stream {
    * Releases the resources acquired by the OrcaStream object.
    */
   public async close(): Promise<void> {
-    await this._pvOrcaStreamClose(this._streamAddress);
+    this._module._pv_orca_stream_close(this._streamAddress);
   }
 }
 
@@ -368,10 +308,10 @@ export type OrcaStream = Stream
 export class Orca {
   private readonly _module: OrcaModule;
 
-  private static _version: string;
-  private static _sampleRate: number;
-  private static _validCharacters: string[];
-  private static _maxCharacterLimit: number;
+  private readonly _version: string;
+  private readonly _sampleRate: number;
+  private readonly _validCharacters: string[];
+  private readonly _maxCharacterLimit: number;
 
   private readonly _functionMutex: Mutex;
 
@@ -391,10 +331,10 @@ export class Orca {
   private constructor(handleWasm: OrcaWasmOutput) {
     this._module = handleWasm.module;
 
-    Orca._version = handleWasm.version;
-    Orca._sampleRate = handleWasm.sampleRate;
-    Orca._validCharacters = handleWasm.validCharacters;
-    Orca._maxCharacterLimit = handleWasm.maxCharacterLimit;
+    this._version = handleWasm.version;
+    this._sampleRate = handleWasm.sampleRate;
+    this._validCharacters = handleWasm.validCharacters;
+    this._maxCharacterLimit = handleWasm.maxCharacterLimit;
 
     this._objectAddress = handleWasm.objectAddress;
     this._messageStackAddressAddressAddress = handleWasm.messageStackAddressAddressAddress;
@@ -408,28 +348,28 @@ export class Orca {
    * Get Orca engine version.
    */
   get version(): string {
-    return Orca._version;
+    return this._version;
   }
 
   /**
    * Get sample rate.
    */
   get sampleRate(): number {
-    return Orca._sampleRate;
+    return this._sampleRate;
   }
 
   /**
    * Get valid characters.
    */
   get validCharacters(): string[] {
-    return Orca._validCharacters;
+    return this._validCharacters;
   }
 
   /**
    * Get maximum character limit.
    */
   get maxCharacterLimit(): number {
-    return Orca._maxCharacterLimit;
+    return this._maxCharacterLimit;
   }
 
   /**
@@ -502,7 +442,7 @@ export class Orca {
     return Orca._init(accessKey, modelPath);
   }
 
-  public static _init(
+  public static async _init(
     accessKey: string,
     modelPath: string,
   ): Promise<Orca> {
@@ -517,7 +457,9 @@ export class Orca {
           const wasmOutput = await Orca.initWasm(
             accessKey.trim(),
             modelPath,
-            (isSimd) ? this._wasmSimd : this._wasm);
+            (isSimd) ? this._wasmSimd : this._wasm,
+            (isSimd) ? this._wasmSimdLib : this._wasmLib,
+            (isSimd) ? createModuleSimd : createModule);
           return new Orca(wasmOutput);
         })
         .then((result: Orca) => {
@@ -558,9 +500,9 @@ export class Orca {
       );
     }
 
-    if (text.trim().length > Orca._maxCharacterLimit) {
+    if (text.trim().length > this._maxCharacterLimit) {
       throw new OrcaErrors.OrcaInvalidArgumentError(`
-        'text' length must be smaller than ${Orca._maxCharacterLimit}
+        'text' length must be smaller than ${this._maxCharacterLimit}
       `);
     }
 
@@ -594,7 +536,7 @@ export class Orca {
 
           const initStatus = this._module._pv_orca_synthesize_params_init(synthesizeParamsAddressAddress);
           if (initStatus !== PvStatus.SUCCESS) {
-            const messageStack = await Orca.getMessageStack(
+            const messageStack = Orca.getMessageStack(
               this._module._pv_get_error_stack,
               this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
@@ -616,7 +558,7 @@ export class Orca {
               synthesizeParams.speechRate,
             );
             if (setSpeechRateStatus !== PvStatus.SUCCESS) {
-              const messageStack = await Orca.getMessageStack(
+              const messageStack = Orca.getMessageStack(
                 this._module._pv_get_error_stack,
                 this._module._pv_free_error_stack,
                 this._messageStackAddressAddressAddress,
@@ -635,7 +577,7 @@ export class Orca {
               BigInt(synthesizeParams.randomState),
             );
             if (setRandomStateStatus !== PvStatus.SUCCESS) {
-              const messageStack = await Orca.getMessageStack(
+              const messageStack = Orca.getMessageStack(
                 this._module._pv_get_error_stack,
                 this._module._pv_free_error_stack,
                 this._messageStackAddressAddressAddress,
@@ -684,7 +626,7 @@ export class Orca {
           this._module._pv_orca_synthesize_params_delete(synthesizeParamsAddress);
 
           if (synthesizeStatus !== PvStatus.SUCCESS) {
-            const messageStack = await Orca.getMessageStack(
+            const messageStack = Orca.getMessageStack(
               this._module._pv_get_error_stack,
               this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
@@ -728,9 +670,7 @@ export class Orca {
             const numPhonemes = this._module.HEAP32[ptr / Int32Array.BYTES_PER_ELEMENT];
             ptr += Uint32Array.BYTES_PER_ELEMENT;
             const phonemesAddress = this._module.HEAP32[ptr / Int32Array.BYTES_PER_ELEMENT];
-            ptr = this._module.HEAP32[
-              (alignmentsAddressAddress + (i * Uint32Array.BYTES_PER_ELEMENT)) / Int32Array.BYTES_PER_ELEMENT
-            ];
+            ptr = this._module.HEAP32[alignmentsAddressAddress + i];
 
             let phonemesPtr = this._module.HEAP32[phonemesAddress / Int32Array.BYTES_PER_ELEMENT];
             const phonemes: OrcaPhoneme[] = [];
@@ -744,9 +684,7 @@ export class Orca {
               const pStartSec = this._module.HEAPF32[phonemesPtr / Float32Array.BYTES_PER_ELEMENT];
               phonemesPtr += Float32Array.BYTES_PER_ELEMENT;
               const pEndSec = this._module.HEAPF32[phonemesPtr / Float32Array.BYTES_PER_ELEMENT];
-              phonemesPtr = this._module.HEAP32[
-                (phonemesAddress + (j * Uint32Array.BYTES_PER_ELEMENT)) / Int32Array.BYTES_PER_ELEMENT
-              ];
+              phonemesPtr = this._module.HEAP32[phonemesAddress + j];
               phonemes.push({ phoneme, startSec: pStartSec, endSec: pEndSec });
             }
             alignments.push({ word, startSec, endSec, phonemes });
@@ -784,48 +722,46 @@ export class Orca {
     return new Promise<OrcaStream>((resolve, reject) => {
       this._functionMutex
         .runExclusive(async () => {
-          if (this._wasmMemory === undefined) {
+          if (this._module === undefined) {
             throw new OrcaErrors.OrcaInvalidStateError('Attempted to call Orca stream open after release.');
           }
 
-          const synthesizeParamsAddressAddress = await this._alignedAlloc(
-            Int32Array.BYTES_PER_ELEMENT,
-            Int32Array.BYTES_PER_ELEMENT,
-          );
+          const synthesizeParamsAddressAddress = this._module._malloc(Int32Array.BYTES_PER_ELEMENT);
           if (synthesizeParamsAddressAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const memoryBufferView = new DataView(this._wasmMemory.buffer);
-          const memoryBufferUint8 = new Uint8Array(this._wasmMemory.buffer);
-
-          const initStatus = await this._pvOrcaSynthesizeParamsInit(synthesizeParamsAddressAddress);
+          const initStatus = this._module._pv_orca_synthesize_params_init(synthesizeParamsAddressAddress);
           if (initStatus !== PvStatus.SUCCESS) {
-            const messageStack = await Orca.getMessageStack(
-              this._pvGetErrorStack,
-              this._pvFreeErrorStack,
-              this._messageStackAddressAddressAddress,
-              this._messageStackDepthAddress,
-              memoryBufferView,
-              memoryBufferUint8,
-            );
-
-            throw pvStatusToException(initStatus, 'Stream open failed', messageStack);
-          }
-
-          const synthesizeParamsAddress = this._module.HEAP32[synthesizeParamsAddressAddress, true);
-          this._module._pv_free(synthesizeParamsAddressAddress);
-
-          if (synthesizeParams.speechRate !== null && synthesizeParams.speechRate !== undefined) {
-            const setSpeechRateStatus = await this._pvOrcaSynthesizeParamsSetSpeechRate(synthesizeParamsAddress, synthesizeParams.speechRate);
-            if (setSpeechRateStatus !== PvStatus.SUCCESS) {
-              const messageStack = await Orca.getMessageStack(
-                this._module._pv_get_error_stack,
+            const messageStack = Orca.getMessageStack(
+              this._module._pv_get_error_stack,
               this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
               this._messageStackDepthAddress,
               this._module.HEAP32,
               this._module.HEAPU8
+            );
+
+            throw pvStatusToException(initStatus, 'Stream open failed', messageStack);
+          }
+
+          const synthesizeParamsAddress = this._module.HEAP32[
+            synthesizeParamsAddressAddress / Int32Array.BYTES_PER_ELEMENT
+          ];
+          this._module._pv_free(synthesizeParamsAddressAddress);
+
+          if (synthesizeParams.speechRate !== null && synthesizeParams.speechRate !== undefined) {
+            const setSpeechRateStatus = this._module._pv_orca_synthesize_params_set_speech_rate(
+              synthesizeParamsAddress,
+              synthesizeParams.speechRate);
+            if (setSpeechRateStatus !== PvStatus.SUCCESS) {
+              const messageStack = Orca.getMessageStack(
+                this._module._pv_get_error_stack,
+                this._module._pv_free_error_stack,
+                this._messageStackAddressAddressAddress,
+                this._messageStackDepthAddress,
+                this._module.HEAP32,
+                this._module.HEAPU8
               );
 
               throw pvStatusToException(setSpeechRateStatus, 'Stream open failed', messageStack);
@@ -833,65 +769,56 @@ export class Orca {
           }
 
           if (synthesizeParams.randomState !== null && synthesizeParams.randomState !== undefined) {
-            const setRandomStateStatus = await this._pvOrcaSynthesizeParamsSetRandomState(synthesizeParamsAddress, BigInt(synthesizeParams.randomState));
+            const setRandomStateStatus = this._module._pv_orca_synthesize_params_set_random_state(
+              synthesizeParamsAddress,
+              BigInt(synthesizeParams.randomState));
             if (setRandomStateStatus !== PvStatus.SUCCESS) {
-              const messageStack = await Orca.getMessageStack(
+              const messageStack = Orca.getMessageStack(
                 this._module._pv_get_error_stack,
-              this._module._pv_free_error_stack,
-              this._messageStackAddressAddressAddress,
-              this._messageStackDepthAddress,
-              this._module.HEAP32,
-              this._module.HEAPU8
+                this._module._pv_free_error_stack,
+                this._messageStackAddressAddressAddress,
+                this._messageStackDepthAddress,
+                this._module.HEAP32,
+                this._module.HEAPU8
               );
 
               throw pvStatusToException(setRandomStateStatus, 'Stream open failed', messageStack);
             }
           }
 
-          const streamAddressAddress = await this._alignedAlloc(
-            Int32Array.BYTES_PER_ELEMENT,
-            Int32Array.BYTES_PER_ELEMENT,
-          );
+          const streamAddressAddress = this._module._malloc(Int32Array.BYTES_PER_ELEMENT);
           if (streamAddressAddress === 0) {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const streamOpenStatus = await this._pvOrcaStreamOpen(
+          const streamOpenStatus = this._module._pv_orca_stream_open(
             this._objectAddress,
             synthesizeParamsAddress,
             streamAddressAddress,
           );
-          await this._pvOrcaSynthesizeParamsDelete(synthesizeParamsAddress);
+          this._module._pv_orca_synthesize_params_delete(synthesizeParamsAddress);
 
           if (streamOpenStatus !== PvStatus.SUCCESS) {
-            const messageStack = await Orca.getMessageStack(
-              this._pvGetErrorStack,
-              this._pvFreeErrorStack,
+            const messageStack = Orca.getMessageStack(
+              this._module._pv_get_error_stack,
+              this._module._pv_free_error_stack,
               this._messageStackAddressAddressAddress,
               this._messageStackDepthAddress,
-              memoryBufferView,
-              memoryBufferUint8,
+              this._module.HEAP32,
+              this._module.HEAPU8
             );
 
             throw pvStatusToException(streamOpenStatus, 'Stream open failed', messageStack);
           }
-          const streamAddress = this._module.HEAP32[streamAddressAddress, true);
+          const streamAddress = this._module.HEAP32[streamAddressAddress / Int32Array.BYTES_PER_ELEMENT];
           this._module._pv_free(streamAddressAddress);
 
           return new Stream(
-            this._wasmMemory,
-            this._alignedAlloc,
-            this._pvFree,
-            this._pvGetErrorStack,
-            this._pvFreeErrorStack,
+            this._module,
             this._messageStackAddressAddressAddress,
             this._messageStackDepthAddress,
             this._functionMutex,
             this._streamPcmAddressAddress,
-            this._pvOrcaPcmDelete,
-            this._pvOrcaStreamSynthesize,
-            this._pvOrcaStreamFlush,
-            this._pvOrcaStreamClose,
             streamAddress,
             Orca.getMessageStack,
           );
@@ -909,284 +836,221 @@ export class Orca {
    * Releases resources acquired by WebAssembly module.
    */
   public async release(): Promise<void> {
-    await this._pvOrcaDelete(this._objectAddress);
+    if (!this._module) {
+      return;
+    }
+    this._module._pv_orca_delete(this._objectAddress);
     this._module._pv_free(this._messageStackAddressAddressAddress);
     this._module._pv_free(this._messageStackDepthAddress);
     this._module._pv_free(this._streamPcmAddressAddress);
-    delete this._wasmMemory;
-    this._wasmMemory = undefined;
   }
 
-  private static async initWasm(accessKey: string, modelPath: string, wasmBase64: string): Promise<OrcaWasmOutput> {
+  private static async initWasm(
+    accessKey: string,
+    modelPath: string,
+    wasmBase64: string,
+    wasmLibBase64: string,
+    createModuleFunc: any
+  ): Promise<OrcaWasmOutput> {
     // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
-    const memory = new WebAssembly.Memory({ initial: 1600 });
-    let memoryBufferUint8 = new Uint8Array(memory.buffer);
-    const pvError = new PvError();
-    const exports = await buildWasm(memory, wasmBase64, pvError);
-
-    const aligned_alloc = exports.aligned_alloc as aligned_alloc_type;
-    const pv_free = exports.pv_free as pv_free_type;
-    const pv_orca_init = exports.pv_orca_init as pv_orca_init_type;
-    const pv_orca_delete = exports.pv_orca_delete as pv_orca_delete_type;
-    const pv_orca_valid_characters = exports.pv_orca_valid_characters as pv_orca_valid_characters_type;
-    const pv_orca_valid_characters_delete = exports.pv_orca_valid_characters_delete as pv_orca_valid_characters_delete_type;
-    const pv_orca_sample_rate = exports.pv_orca_sample_rate as pv_orca_sample_rate_type;
-    const pv_orca_max_character_limit = exports.pv_orca_max_character_limit as pv_orca_max_character_limit_type;
-    const pv_orca_synthesize_params_init = exports.pv_orca_synthesize_params_init as pv_orca_synthesize_params_init_type;
-    const pv_orca_synthesize_params_delete = exports.pv_orca_synthesize_params_delete as pv_orca_synthesize_params_delete_type;
-    const pv_orca_synthesize_params_set_speech_rate = exports.pv_orca_synthesize_params_set_speech_rate as pv_orca_synthesize_params_set_speech_rate_type;
-    const pv_orca_synthesize_params_set_random_state = exports.pv_orca_synthesize_params_set_random_state as pv_orca_synthesize_params_set_random_state_type;
-    const pv_orca_synthesize = exports.pv_orca_synthesize as pv_orca_synthesize_type;
-    const pv_orca_pcm_delete = exports.pv_orca_pcm_delete as pv_orca_pcm_delete_type;
-    const pv_orca_word_alignments_delete = exports.pv_orca_word_alignments_delete as pv_orca_word_alignments_delete_type;
-    const pv_orca_stream_open = exports.pv_orca_stream_open as pv_orca_stream_open_type;
-    const pv_orca_stream_synthesize = exports.pv_orca_stream_synthesize as pv_orca_stream_synthesize_type;
-    const pv_orca_stream_flush = exports.pv_orca_stream_flush as pv_orca_stream_flush_type;
-    const pv_orca_stream_close = exports.pv_orca_stream_close as pv_orca_stream_close_type;
-    const pv_orca_version = exports.pv_orca_version as pv_orca_version_type;
-    const pv_set_sdk = exports.pv_set_sdk as pv_set_sdk_type;
-    const pv_get_error_stack = exports.pv_get_error_stack as pv_get_error_stack_type;
-    const pv_free_error_stack = exports.pv_free_error_stack as pv_free_error_stack_type;
-
-    const objectAddressAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
+    const blob = new Blob(
+      [base64ToUint8Array(wasmLibBase64)],
+      { type: 'application/javascript' }
     );
+    const module: OrcaModule = await createModuleFunc({
+      mainScriptUrlOrBlob: blob,
+      wasmBinary: base64ToUint8Array(wasmBase64),
+    });
+
+    const objectAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (objectAddressAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const accessKeyAddress = await aligned_alloc(
-      Uint8Array.BYTES_PER_ELEMENT,
-      (accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-    );
+    const accessKeyAddress = module._malloc((accessKey.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
     if (accessKeyAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
     for (let i = 0; i < accessKey.length; i++) {
-      memoryBufferUint8[accessKeyAddress + i] = accessKey.charCodeAt(i);
+      module.HEAPU8[accessKeyAddress + i] = accessKey.charCodeAt(i);
     }
-    memoryBufferUint8[accessKeyAddress + accessKey.length] = 0;
+    module.HEAPU8[accessKeyAddress + accessKey.length] = 0;
 
     const modelPathEncoded = new TextEncoder().encode(modelPath);
-    const modelPathAddress = await aligned_alloc(
-      Uint8Array.BYTES_PER_ELEMENT,
-      (modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-    );
+    const modelPathAddress = module._malloc((modelPathEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
     if (modelPathAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
-    memoryBufferUint8.set(modelPathEncoded, modelPathAddress);
-    memoryBufferUint8[modelPathAddress + modelPathEncoded.length] = 0;
+    module.HEAPU8.set(modelPathEncoded, modelPathAddress);
+    module.HEAPU8[modelPathAddress + modelPathEncoded.length] = 0;
 
     const sdkEncoded = new TextEncoder().encode(this._sdk);
-    const sdkAddress = await aligned_alloc(
-      Uint8Array.BYTES_PER_ELEMENT,
-      (sdkEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT,
-    );
+    const sdkAddress = module._malloc((sdkEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
     if (!sdkAddress) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
-    memoryBufferUint8.set(sdkEncoded, sdkAddress);
-    memoryBufferUint8[sdkAddress + sdkEncoded.length] = 0;
-    await pv_set_sdk(sdkAddress);
-    await pv_free(sdkAddress);
+    module.HEAPU8.set(sdkEncoded, sdkAddress);
+    module.HEAPU8[sdkAddress + sdkEncoded.length] = 0;
+    module._pv_set_sdk(sdkAddress);
+    module._pv_free(sdkAddress);
 
-    const messageStackDepthAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const messageStackDepthAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (!messageStackDepthAddress) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const messageStackAddressAddressAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const messageStackAddressAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (!messageStackAddressAddressAddress) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const initStatus = await pv_orca_init(
+    const initStatus = module._pv_orca_init(
       accessKeyAddress,
       modelPathAddress,
       objectAddressAddress);
-    await pv_free(accessKeyAddress);
-    await pv_free(modelPathAddress);
-
-    const memoryBufferView = new DataView(memory.buffer);
-    memoryBufferUint8 = new Uint8Array(memory.buffer);
+    module._pv_free(accessKeyAddress);
+    module._pv_free(modelPathAddress);
 
     if (initStatus !== PvStatus.SUCCESS) {
-      const messageStack = await Orca.getMessageStack(
-        pv_get_error_stack,
-        pv_free_error_stack,
+      const messageStack = Orca.getMessageStack(
+        module._pv_get_error_stack,
+        module._pv_free_error_stack,
         messageStackAddressAddressAddress,
         messageStackDepthAddress,
-        memoryBufferView,
-        memoryBufferUint8,
+        module.HEAP32,
+        module.HEAPU8,
       );
 
-      throw pvStatusToException(initStatus, 'Initialization failed', messageStack, pvError);
+      throw pvStatusToException(initStatus, 'Initialization failed', messageStack);
     }
 
-    const objectAddress = this._module.HEAP32[objectAddressAddress, true);
-    await pv_free(objectAddressAddress);
+    const objectAddress = module.HEAP32[objectAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+    module._pv_free(objectAddressAddress);
 
-    const sampleRateAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const sampleRateAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (sampleRateAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
-    const sampleRateStatus = await pv_orca_sample_rate(objectAddress, sampleRateAddress);
+    const sampleRateStatus = module._pv_orca_sample_rate(objectAddress, sampleRateAddress);
     if (sampleRateStatus !== PvStatus.SUCCESS) {
-      const messageStack = await Orca.getMessageStack(
-        pv_get_error_stack,
-        pv_free_error_stack,
+      const messageStack = Orca.getMessageStack(
+        module._pv_get_error_stack,
+        module._pv_free_error_stack,
         messageStackAddressAddressAddress,
         messageStackDepthAddress,
-        memoryBufferView,
-        memoryBufferUint8,
+        module.HEAP32,
+        module.HEAPU8,
       );
 
-      throw pvStatusToException(sampleRateStatus, 'Get sample rate failed', messageStack, pvError);
+      throw pvStatusToException(sampleRateStatus, 'Get sample rate failed', messageStack);
     }
 
-    const sampleRate = this._module.HEAP32[sampleRateAddress, true);
-    await pv_free(sampleRateAddress);
+    const sampleRate = module.HEAP32[sampleRateAddress / Int32Array.BYTES_PER_ELEMENT];
+    module._pv_free(sampleRateAddress);
 
-    const maxCharacterLimitAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const maxCharacterLimitAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (maxCharacterLimitAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
-    const maxCharacterLimitStatus = await pv_orca_max_character_limit(objectAddress, maxCharacterLimitAddress);
+    const maxCharacterLimitStatus = module._pv_orca_max_character_limit(objectAddress, maxCharacterLimitAddress);
     if (maxCharacterLimitStatus !== PvStatus.SUCCESS) {
-      const messageStack = await Orca.getMessageStack(
-        pv_get_error_stack,
-        pv_free_error_stack,
+      const messageStack = Orca.getMessageStack(
+        module._pv_get_error_stack,
+        module._pv_free_error_stack,
         messageStackAddressAddressAddress,
         messageStackDepthAddress,
-        memoryBufferView,
-        memoryBufferUint8,
+        module.HEAP32,
+        module.HEAPU8,
       );
 
-      throw pvStatusToException(maxCharacterLimitStatus, 'Get max character limit failed', messageStack, pvError);
+      throw pvStatusToException(maxCharacterLimitStatus, 'Get max character limit failed', messageStack);
     }
 
-    const maxCharacterLimit = this._module.HEAP32[maxCharacterLimitAddress, true);
-    await pv_free(maxCharacterLimitAddress);
+    const maxCharacterLimit = module.HEAP32[maxCharacterLimitAddress / Int32Array.BYTES_PER_ELEMENT];
+    module._pv_free(maxCharacterLimitAddress);
 
-    const numCharactersAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const numCharactersAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (numCharactersAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const validCharactersAddressAddressAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const validCharactersAddressAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (validCharactersAddressAddressAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const validCharactersStatus = await pv_orca_valid_characters(
+    const validCharactersStatus = module._pv_orca_valid_characters(
       objectAddress,
       numCharactersAddress,
       validCharactersAddressAddressAddress,
     );
     if (validCharactersStatus !== PvStatus.SUCCESS) {
-      const messageStack = await Orca.getMessageStack(
-        pv_get_error_stack,
-        pv_free_error_stack,
+      const messageStack = Orca.getMessageStack(
+        module._pv_get_error_stack,
+        module._pv_free_error_stack,
         messageStackAddressAddressAddress,
         messageStackDepthAddress,
-        memoryBufferView,
-        memoryBufferUint8,
+        module.HEAP32,
+        module.HEAPU8,
       );
 
-      throw pvStatusToException(validCharactersStatus, 'Get valid characters failed', messageStack, pvError);
+      throw pvStatusToException(validCharactersStatus, 'Get valid characters failed', messageStack);
     }
 
-    const numCharacters = this._module.HEAP32[numCharactersAddress, true);
-    const validCharactersAddressAddress = this._module.HEAP32[validCharactersAddressAddressAddress, true);
+    const numCharacters = module.HEAP32[numCharactersAddress / Int32Array.BYTES_PER_ELEMENT];
+    const validCharactersAddressAddress = module.HEAP32[
+      validCharactersAddressAddressAddress / Int32Array.BYTES_PER_ELEMENT
+    ];
 
     const validCharacters: string[] = [];
     for (let i = 0; i < numCharacters; i++) {
-      const charIndex = this._module.HEAP32[validCharactersAddressAddress + i * Int32Array.BYTES_PER_ELEMENT, true);
+      const charIndex = module.HEAP32[validCharactersAddressAddress + i];
       validCharacters.push(
         arrayBufferToStringAtIndex(
-          memoryBufferUint8,
+          module.HEAPU8,
           charIndex,
         ),
       );
     }
 
-    await pv_free(numCharactersAddress);
-    await pv_free(validCharactersAddressAddressAddress);
-    await pv_orca_valid_characters_delete(validCharactersAddressAddress);
+    module._pv_free(numCharactersAddress);
+    module._pv_free(validCharactersAddressAddressAddress);
+    module._pv_orca_valid_characters_delete(validCharactersAddressAddress);
 
-    const versionAddress = await pv_orca_version();
+    const versionAddress = module._pv_orca_version();
     const version = arrayBufferToStringAtIndex(
-      memoryBufferUint8,
+      module.HEAPU8,
       versionAddress,
     );
 
-    const streamPcmAddressAddress = await aligned_alloc(
-      Int32Array.BYTES_PER_ELEMENT,
-      Int32Array.BYTES_PER_ELEMENT,
-    );
+    const streamPcmAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (streamPcmAddressAddress === 0) {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
     return {
-      memory: memory,
-      pvFree: pv_free,
-      alignedAlloc: aligned_alloc,
+      module: module,
 
-      objectAddress: objectAddress,
       version: version,
       sampleRate: sampleRate,
       maxCharacterLimit: maxCharacterLimit,
       validCharacters: validCharacters,
+
+      objectAddress: objectAddress,
       streamPcmAddressAddress: streamPcmAddressAddress,
       messageStackAddressAddressAddress: messageStackAddressAddressAddress,
       messageStackDepthAddress: messageStackDepthAddress,
-
-      pvOrcaDelete: pv_orca_delete,
-      pvOrcaSynthesizeParamsInit: pv_orca_synthesize_params_init,
-      pvOrcaSynthesizeParamsDelete: pv_orca_synthesize_params_delete,
-      pvOrcaSynthesizeParamsSetSpeechRate: pv_orca_synthesize_params_set_speech_rate,
-      pvOrcaSynthesizeParamsSetRandomState: pv_orca_synthesize_params_set_random_state,
-      pvOrcaSynthesize: pv_orca_synthesize,
-      pvOrcaPcmDelete: pv_orca_pcm_delete,
-      pvOrcaWordAlignmentsDelete: pv_orca_word_alignments_delete,
-      pvOrcaStreamOpen: pv_orca_stream_open,
-      pvOrcaStreamSynthesize: pv_orca_stream_synthesize,
-      pvOrcaStreamFlush: pv_orca_stream_flush,
-      pvOrcaStreamClose: pv_orca_stream_close,
-      pvGetErrorStack: pv_get_error_stack,
-      pvFreeErrorStack: pv_free_error_stack,
     };
   }
 
-  private static async getMessageStack(
+  private static getMessageStack(
     pv_get_error_stack: pv_get_error_stack_type,
     pv_free_error_stack: pv_free_error_stack_type,
     messageStackAddressAddressAddress: number,
     messageStackDepthAddress: number,
     memoryBufferInt32: Int32Array,
     memoryBufferUint8: Uint8Array,
-  ): Promise<string[]> {
+  ): string[] {
     const status = pv_get_error_stack(messageStackAddressAddressAddress, messageStackDepthAddress);
     if (status !== PvStatus.SUCCESS) {
       throw new Error(`Unable to get error state: ${status}`);
@@ -1198,7 +1062,8 @@ export class Orca {
     const messageStack: string[] = [];
     for (let i = 0; i < messageStackDepth; i++) {
       const messageStackAddress = memoryBufferInt32[
-      (messageStackAddressAddress / Int32Array.BYTES_PER_ELEMENT) + i];
+        (messageStackAddressAddress / Int32Array.BYTES_PER_ELEMENT) + i
+      ];
       const message = arrayBufferToStringAtIndex(memoryBufferUint8, messageStackAddress);
       messageStack.push(message);
     }
