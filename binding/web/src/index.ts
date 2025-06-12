@@ -20,13 +20,19 @@ import {
 
 import * as OrcaErrors from './orca_errors';
 
-import orcaWasm from '../lib/pv_orca.wasm';
-import orcaWasmSimd from '../lib/pv_orca_simd.wasm';
+import orcaWasm from './lib/pv_orca.wasm';
+import orcaWasmLib from './lib/pv_orca.txt';
+import orcaWasmSimd from './lib/pv_orca_simd.wasm';
+import orcaWasmSimdLib from './lib/pv_orca_simd.txt';
 
 Orca.setWasm(orcaWasm);
+Orca.setWasmLib(orcaWasmLib);
 Orca.setWasmSimd(orcaWasmSimd);
+Orca.setWasmSimdLib(orcaWasmSimdLib);
 OrcaWorker.setWasm(orcaWasm);
+OrcaWorker.setWasmLib(orcaWasmLib);
 OrcaWorker.setWasmSimd(orcaWasmSimd);
+OrcaWorker.setWasmSimdLib(orcaWasmSimdLib);
 
 export {
   Orca,
