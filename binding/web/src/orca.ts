@@ -41,32 +41,60 @@ import { pvStatusToException } from './orca_errors';
 /**
  * WebAssembly function types
  */
-type pv_orca_init_type = (accessKey: number, modelPath: number, object: number) => number
-type pv_orca_delete_type = (object: number) => void
-type pv_orca_valid_characters_type = (object: number, numCharacters: number, validCharacters: number) => number
-type pv_orca_valid_characters_delete_type = (validCharacters: number) => void
-type pv_orca_sample_rate_type = (object: number, sampleRate: number) => number
-type pv_orca_max_character_limit_type = (object: number, maxCharacterLimit: number) => number
-type pv_orca_synthesize_params_init_type = (object: number) => number
-type pv_orca_synthesize_params_delete_type = (object: number) => void
-type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => number
-type pv_orca_synthesize_params_set_random_state_type = (object: number, randomState: bigint) => number
-type pv_orca_synthesize_type = (object: number, text: number, synthesizeParams: number, numSamples: number, pcm: number, numAlignments: number, alignments: number) => number
-type pv_orca_pcm_delete_type = (object: number) => void
-type pv_orca_word_alignments_delete_type = (numAlignments: number, alignments: number) => void
-type pv_orca_stream_open_type = (object: number, synthesizeParams: number, stream: number) => number
-type pv_orca_stream_synthesize_type = (object: number, text: number, numSamples: number, pcm: number) => number
-type pv_orca_stream_flush_type = (object: number, numSamples: number, pcm: number) => number
-type pv_orca_stream_close_type = (object: number) => void
-type pv_orca_version_type = () => number
-type pv_set_sdk_type = (sdk: number) => void
-type pv_get_error_stack_type = (messageStack: number, messageStackDepth: number) => number
-type pv_free_error_stack_type = (messageStack: number) => void
+type pv_orca_init_type = (
+  accessKey: number,
+  modelPath: number,
+  object: number
+) => Promise<number>;
+type pv_orca_delete_type = (object: number) => void;
+type pv_orca_valid_characters_type = (
+  object: number,
+  numCharacters: number,
+  validCharacters: number
+) => number;
+type pv_orca_valid_characters_delete_type = (validCharacters: number) => void;
+type pv_orca_sample_rate_type = (object: number, sampleRate: number) => number;
+type pv_orca_max_character_limit_type = (object: number, maxCharacterLimit: number) => number;
+type pv_orca_synthesize_params_init_type = (object: number) => number;
+type pv_orca_synthesize_params_delete_type = (object: number) => void;
+type pv_orca_synthesize_params_set_speech_rate_type = (object: number, speechRate: number) => number;
+type pv_orca_synthesize_params_set_random_state_type = (object: number, randomState: bigint) => number;
+type pv_orca_synthesize_type = (
+  object: number,
+  text: number,
+  synthesizeParams: number,
+  numSamples: number,
+  pcm: number,
+  numAlignments: number,
+  alignments: number
+) => Promise<number>;
+type pv_orca_pcm_delete_type = (object: number) => void;
+type pv_orca_word_alignments_delete_type = (numAlignments: number, alignments: number) => void;
+type pv_orca_stream_open_type = (
+  object: number,
+  synthesizeParams: number,
+  stream: number
+) => number;
+type pv_orca_stream_synthesize_type = (
+  object: number,
+  text: number,
+  numSamples: number,
+  pcm: number
+) => Promise<number>;
+type pv_orca_stream_flush_type = (
+  object: number,
+  numSamples: number,
+  pcm: number
+) => Promise<number>;
+type pv_orca_stream_close_type = (object: number) => void;
+type pv_orca_version_type = () => number;
+type pv_set_sdk_type = (sdk: number) => void;
+type pv_get_error_stack_type = (messageStack: number, messageStackDepth: number) => number;
+type pv_free_error_stack_type = (messageStack: number) => void;
 
 type OrcaModule = EmscriptenModule & {
   _pv_free: (address: number) => void;
 
-  _pv_orca_init: pv_orca_init_type;
   _pv_orca_delete: pv_orca_delete_type
   _pv_orca_valid_characters: pv_orca_valid_characters_type
   _pv_orca_valid_characters_delete: pv_orca_valid_characters_delete_type
@@ -76,12 +104,9 @@ type OrcaModule = EmscriptenModule & {
   _pv_orca_synthesize_params_delete: pv_orca_synthesize_params_delete_type
   _pv_orca_synthesize_params_set_speech_rate: pv_orca_synthesize_params_set_speech_rate_type
   _pv_orca_synthesize_params_set_random_state: pv_orca_synthesize_params_set_random_state_type
-  _pv_orca_synthesize: pv_orca_synthesize_type
   _pv_orca_pcm_delete: pv_orca_pcm_delete_type
   _pv_orca_word_alignments_delete: pv_orca_word_alignments_delete_type
   _pv_orca_stream_open: pv_orca_stream_open_type
-  _pv_orca_stream_synthesize: pv_orca_stream_synthesize_type
-  _pv_orca_stream_flush: pv_orca_stream_flush_type
   _pv_orca_stream_close: pv_orca_stream_close_type
   _pv_orca_version: pv_orca_version_type
 
@@ -97,6 +122,10 @@ type OrcaModule = EmscriptenModule & {
 
 type OrcaWasmOutput = {
   module: OrcaModule;
+
+  pv_orca_synthesize: pv_orca_synthesize_type;
+  pv_orca_stream_synthesize: pv_orca_stream_synthesize_type;
+  pv_orca_stream_flush: pv_orca_stream_flush_type;
 
   version: string;
   sampleRate: number;
@@ -114,6 +143,8 @@ type OrcaWasmOutput = {
  */
 class Stream {
   private readonly _module: OrcaModule;
+  private readonly _pv_orca_stream_synthesize: pv_orca_stream_synthesize_type;
+  private readonly _pv_orca_stream_flush: pv_orca_stream_flush_type;
   private readonly _messageStackAddressAddressAddress: number;
   private readonly _messageStackDepthAddress: number;
   private readonly _functionMutex: Mutex;
@@ -123,6 +154,8 @@ class Stream {
 
   constructor(
     module: OrcaModule,
+    pv_orca_stream_synthesize: pv_orca_stream_synthesize_type,
+    pv_orca_stream_flush: pv_orca_stream_flush_type,
     messageStackAddressAddressAddress: number,
     messageStackDepthAddress: number,
     functionMutex: Mutex,
@@ -131,6 +164,8 @@ class Stream {
     getMessageStack: any,
   ) {
     this._module = module;
+    this._pv_orca_stream_synthesize = pv_orca_stream_synthesize;
+    this._pv_orca_stream_flush = pv_orca_stream_flush;
     this._messageStackAddressAddressAddress = messageStackAddressAddressAddress;
     this._messageStackDepthAddress = messageStackDepthAddress;
     this._functionMutex = functionMutex;
@@ -185,7 +220,7 @@ class Stream {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const streamSynthesizeStatus = this._module._pv_orca_stream_synthesize(
+          const streamSynthesizeStatus = await this._pv_orca_stream_synthesize(
             this._streamAddress,
             textAddress,
             numSamplesAddress,
@@ -251,7 +286,7 @@ class Stream {
             throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
           }
 
-          const streamFlushStatus = this._module._pv_orca_stream_flush(
+          const streamFlushStatus = await this._pv_orca_stream_flush(
             this._streamAddress,
             numSamplesAddress,
             pcmAddressAddress,
@@ -269,10 +304,10 @@ class Stream {
             throw pvStatusToException(streamFlushStatus, 'Flush failed', messageStack);
           }
 
-          const pcmAddress = this._module.HEAP32[pcmAddressAddress];
+          const pcmAddress = this._module.HEAP32[pcmAddressAddress / Int32Array.BYTES_PER_ELEMENT];
           this._module._pv_free(pcmAddressAddress);
 
-          const numSamples = this._module.HEAP32[numSamplesAddress];
+          const numSamples = this._module.HEAP32[numSamplesAddress / Int32Array.BYTES_PER_ELEMENT];
           this._module._pv_free(numSamplesAddress);
 
           const pcm = this._module.HEAP16.slice(
@@ -308,6 +343,10 @@ export type OrcaStream = Stream
 export class Orca {
   private readonly _module: OrcaModule;
 
+  private readonly _pv_orca_synthesize: pv_orca_synthesize_type;
+  private readonly _pv_orca_stream_synthesize: pv_orca_stream_synthesize_type;
+  private readonly _pv_orca_stream_flush: pv_orca_stream_flush_type;
+
   private readonly _version: string;
   private readonly _sampleRate: number;
   private readonly _validCharacters: string[];
@@ -330,6 +369,10 @@ export class Orca {
 
   private constructor(handleWasm: OrcaWasmOutput) {
     this._module = handleWasm.module;
+
+    this._pv_orca_synthesize = handleWasm.pv_orca_synthesize;
+    this._pv_orca_stream_synthesize = handleWasm.pv_orca_stream_synthesize;
+    this._pv_orca_stream_flush = handleWasm.pv_orca_stream_flush;
 
     this._version = handleWasm.version;
     this._sampleRate = handleWasm.sampleRate;
@@ -456,7 +499,7 @@ export class Orca {
           const isSimd = await simd();
           const wasmOutput = await Orca.initWasm(
             accessKey.trim(),
-            modelPath,
+            modelPath.trim(),
             (isSimd) ? this._wasmSimd : this._wasm,
             (isSimd) ? this._wasmSimdLib : this._wasmLib,
             (isSimd) ? createModuleSimd : createModule);
@@ -613,7 +656,7 @@ export class Orca {
             );
           }
 
-          const synthesizeStatus = this._module._pv_orca_synthesize(
+          const synthesizeStatus = await this._pv_orca_synthesize(
             this._objectAddress,
             textAddress,
             synthesizeParamsAddress,
@@ -670,7 +713,7 @@ export class Orca {
             const numPhonemes = this._module.HEAP32[ptr / Int32Array.BYTES_PER_ELEMENT];
             ptr += Uint32Array.BYTES_PER_ELEMENT;
             const phonemesAddress = this._module.HEAP32[ptr / Int32Array.BYTES_PER_ELEMENT];
-            ptr = this._module.HEAP32[alignmentsAddressAddress + i];
+            ptr = this._module.HEAP32[(alignmentsAddressAddress / Int32Array.BYTES_PER_ELEMENT) + i];
 
             let phonemesPtr = this._module.HEAP32[phonemesAddress / Int32Array.BYTES_PER_ELEMENT];
             const phonemes: OrcaPhoneme[] = [];
@@ -684,7 +727,7 @@ export class Orca {
               const pStartSec = this._module.HEAPF32[phonemesPtr / Float32Array.BYTES_PER_ELEMENT];
               phonemesPtr += Float32Array.BYTES_PER_ELEMENT;
               const pEndSec = this._module.HEAPF32[phonemesPtr / Float32Array.BYTES_PER_ELEMENT];
-              phonemesPtr = this._module.HEAP32[phonemesAddress + j];
+              phonemesPtr = this._module.HEAP32[(phonemesAddress / Int32Array.BYTES_PER_ELEMENT) + j];
               phonemes.push({ phoneme, startSec: pStartSec, endSec: pEndSec });
             }
             alignments.push({ word, startSec, endSec, phonemes });
@@ -815,6 +858,8 @@ export class Orca {
 
           return new Stream(
             this._module,
+            this._pv_orca_stream_synthesize,
+            this._pv_orca_stream_flush,
             this._messageStackAddressAddressAddress,
             this._messageStackDepthAddress,
             this._functionMutex,
@@ -852,7 +897,6 @@ export class Orca {
     wasmLibBase64: string,
     createModuleFunc: any
   ): Promise<OrcaWasmOutput> {
-    // A WebAssembly page has a constant size of 64KiB. -> 1MiB ~= 16 pages
     const blob = new Blob(
       [base64ToUint8Array(wasmLibBase64)],
       { type: 'application/javascript' }
@@ -861,6 +905,23 @@ export class Orca {
       mainScriptUrlOrBlob: blob,
       wasmBinary: base64ToUint8Array(wasmBase64),
     });
+
+    const pv_orca_init: pv_orca_init_type = this.wrapAsyncFunction(
+      module,
+      "pv_orca_init",
+      3);
+    const pv_orca_synthesize: pv_orca_synthesize_type = this.wrapAsyncFunction(
+      module,
+      "pv_orca_synthesize",
+      7);
+    const pv_orca_stream_synthesize: pv_orca_stream_synthesize_type = this.wrapAsyncFunction(
+      module,
+      "pv_orca_stream_synthesize",
+      4);
+    const pv_orca_stream_flush: pv_orca_stream_flush_type = this.wrapAsyncFunction(
+      module,
+      "pv_orca_stream_flush",
+      3);
 
     const objectAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
     if (objectAddressAddress === 0) {
@@ -904,7 +965,7 @@ export class Orca {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    const initStatus = module._pv_orca_init(
+    const initStatus = await pv_orca_init(
       accessKeyAddress,
       modelPathAddress,
       objectAddressAddress);
@@ -1004,7 +1065,7 @@ export class Orca {
 
     const validCharacters: string[] = [];
     for (let i = 0; i < numCharacters; i++) {
-      const charIndex = module.HEAP32[validCharactersAddressAddress + i];
+      const charIndex = module.HEAP32[(validCharactersAddressAddress / Int32Array.BYTES_PER_ELEMENT) + i];
       validCharacters.push(
         arrayBufferToStringAtIndex(
           module.HEAPU8,
@@ -1030,6 +1091,10 @@ export class Orca {
 
     return {
       module: module,
+
+      pv_orca_synthesize: pv_orca_synthesize,
+      pv_orca_stream_synthesize: pv_orca_stream_synthesize,
+      pv_orca_stream_flush: pv_orca_stream_flush,
 
       version: version,
       sampleRate: sampleRate,
@@ -1071,5 +1136,15 @@ export class Orca {
     pv_free_error_stack(messageStackAddressAddress);
 
     return messageStack;
+  }
+
+  private static wrapAsyncFunction(module: OrcaModule, functionName: string, numArgs: number): (...args: any[]) => any {
+    // @ts-ignore
+    return module.cwrap(
+      functionName,
+      "number",
+      Array(numArgs).fill("number"),
+      { async: true }
+    );
   }
 }

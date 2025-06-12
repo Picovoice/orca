@@ -62,7 +62,9 @@ export type OrcaWorkerInitRequest = {
   accessKey: string;
   modelPath: string;
   wasm: string;
+  wasmLib: string;
   wasmSimd: string;
+  wasmSimdLib: string;
   sdk: string;
 };
 
