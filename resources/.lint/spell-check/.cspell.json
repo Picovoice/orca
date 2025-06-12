@@ -47,7 +47,7 @@
 
     // android
     "**/AndroidManifest.xml",
-    "**/orca_demo.xml"
+    "**/orca_demo.xml",
 
     // wasm
     "**/lib/wasm/**/*.js"
