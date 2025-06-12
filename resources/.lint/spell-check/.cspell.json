@@ -21,8 +21,10 @@
     "**/*.pv",
     "**/*.so",
     "**/*.wasm",
+    "**/wasm/**",
+    "**/dist/**",
+    "**/lib/ios/**/*",
     "**/*.wav",
-    "../../../lib/ios/**/*",
 
     // ios
     "**/*.xcconfig",
@@ -34,7 +36,6 @@
     "**/*.pbxproj",
     "**/*.xcscheme",
     "**/*.m",
-    "../../../lib/ios/**/*",
 
     // java
     "**/build.gradle",
@@ -47,5 +48,8 @@
     // android
     "**/AndroidManifest.xml",
     "**/orca_demo.xml"
+
+    // wasm
+    "**/lib/wasm/**/*.js"
   ]
 }
