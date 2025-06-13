@@ -1,5 +1,5 @@
 /*
-  Copyright 2024 Picovoice Inc.
+  Copyright 2024-2025 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -38,6 +38,8 @@ self.onmessage = async function(
       try {
         Orca.setWasm(event.data.wasm);
         Orca.setWasmSimd(event.data.wasmSimd);
+        Orca.setWasmLib(event.data.wasmLib);
+        Orca.setWasmSimdLib(event.data.wasmSimdLib);
         orca = await Orca._init(
           event.data.accessKey,
           event.data.modelPath,

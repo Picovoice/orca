@@ -41,7 +41,7 @@ jobs:
 
       - name: Override gradle settings
         run: sed -i "s/com.android.tools.build:gradle:[0-9]*\.[0-9]*\.[0-9]*/com.android.tools.build:gradle:${{ matrix.agp-version }}/g" build.gradle
-          
+
       - name: set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:

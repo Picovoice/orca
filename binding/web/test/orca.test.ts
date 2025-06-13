@@ -29,9 +29,7 @@ const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 
-const getAudioFileName = (model: string, synthesis_type: string): string => {
-  return model.replace(".pv", `_${synthesis_type}.wav`);
-};
+const getAudioFileName = (model: string, synthesis_type: string): string => model.replace(".pv", `_${synthesis_type}.wav`);
 
 const compareArrays = (arr1: Int16Array, arr2: Int16Array, step: number) => {
   expect(arr1.length).eq(arr2.length);
@@ -330,6 +328,7 @@ describe('Sentence Tests', function() {
           }
         });
 
+        /* eslint-disable-next-line cypress/no-async-tests */
         it(`should be able to handle max num characters (${testCaseString})`, async () => {
           // test takes a while specifically in some languages
           // set timeout decently high and only run in worker
@@ -355,7 +354,6 @@ describe('Sentence Tests', function() {
               await orca.release();
             }
           } catch (e) {
-            console.log(e)
             expect(e).to.be.undefined;
           }
         });
