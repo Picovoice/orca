@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/orca-node@=1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@picovoice/orca-node/-/orca-node-1.1.1.tgz#eaa9d7eca4a99de1f1c52ce4a148a62311469e56"
-  integrity sha512-XRWTCJ9sg4b40pgEIOZ8rQIVaoWgE9JsDjPJBdUyAxltzEM2Kj2mK2Ymgakh07hXGgb4EzcYOzW09Z9CsJVVZA==
+"@picovoice/orca-node@=1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-node/-/orca-node-1.2.0.tgz#0307ff2e5fab6659fa8bdf89ccd7d7088de3bae3"
+  integrity sha512-KQOAgMhy7XTjgYyyPsB2X+BlaMUrVCh/M8Rt9uEwuYoAx5gkj1kc8e2yhLqsBHM9XPPO8Spn+f7X5EAtP7Le4w==
 
 "@picovoice/pvspeaker-node@^1.0.3":
   version "1.0.3"
