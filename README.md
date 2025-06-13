@@ -787,6 +787,12 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
+### v1.2.0 - June 13th, 2025
+
+- Improved handling of heteronyms
+- Improved stability and performance
+- Reduced model size
+
 ### v1.1.0 - February 24th, 2025
 
 - Added support for Spanish voices

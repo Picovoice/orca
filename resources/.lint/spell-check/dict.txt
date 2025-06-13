@@ -30,6 +30,7 @@ frombuffer
 Gson
 HEAPF
 HEAPU
+heteronyms
 holo
 iife
 itok
