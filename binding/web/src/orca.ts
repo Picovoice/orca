@@ -141,7 +141,7 @@ type OrcaWasmOutput = {
 /**
  * OrcaStream object that converts a stream of text to a stream of audio.
  */
-class Stream {
+class Stream implements OrcaStream {
   private readonly _module: OrcaModule;
   private readonly _pv_orca_stream_synthesize: pv_orca_stream_synthesize_type;
   private readonly _pv_orca_stream_flush: pv_orca_stream_flush_type;
@@ -335,7 +335,11 @@ class Stream {
   }
 }
 
-export type OrcaStream = Stream
+export interface OrcaStream {
+  synthesize(text: string): Promise<OrcaStreamSynthesizeResult>
+  flush(): Promise<OrcaStreamSynthesizeResult>;
+  close(): Promise<void>
+}
 
 /**
  * JavaScript/WebAssembly Binding for Orca
