@@ -86,7 +86,7 @@ if (fs.existsSync(modelPath)) {
 fs.writeFileSync(
   path.join(outputDirectory, "orcaModel.js"),
   `const orcaModel = {
-  publicPath: "models/${modelName}",  
+  publicPath: "models/${modelName}",
   customWritePath: "${version}_${modelName}",
 };
 
