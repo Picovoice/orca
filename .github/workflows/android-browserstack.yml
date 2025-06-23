@@ -8,12 +8,14 @@ on:
       - '.github/workflows/android-browserstack.yml'
       - 'binding/android/OrcaTestApp/**'
       - 'resources/.test/**'
+      - 'script/automation/browserstack.py'
   pull_request:
     branches: [ main, 'v[0-9]+.[0-9]+' ]
     paths:
       - '.github/workflows/android-browserstack.yml'
       - 'binding/android/OrcaTestApp/**'
       - 'resources/.test/**'
+      - 'script/automation/browserstack.py'
 
 defaults:
   run:
