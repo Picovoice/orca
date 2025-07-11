@@ -1,0 +1,23 @@
+{
+  "name": "picovoice-napi",
+  "version": "0.0.0",
+  "description": "Picovoice n-api libraries.",
+  "private": true,
+  "dependencies": {
+    "bindings": "~1.2.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.4.1",
+    "@types/node": "^17.0.21",
+    "electron": "^33.2.1",
+    "fastest-levenshtein": "^1.0.16",
+    "jest": "^27.5.1",
+    "ts-jest": "^27.1.3",
+    "typescript": "^4.6.2",
+    "wavefile": "^11.0.0"
+  },
+  "scripts": {
+    "test": "jest --no-cache --detectOpenHandles",
+    "test-electron": "./node_modules/.bin/electron ./node_modules/jest/bin/jest.js --no-cache --detectOpenHandles"
+  }
+}

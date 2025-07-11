@@ -1,0 +1,769 @@
+.build-test-beta-props:
+  cache:
+    key: zoo-dev
+    paths:
+      - ${PV_PEER_MODULE_DIR}/zoo-dev
+  rules:
+    - if: $CI_OPEN_MERGE_REQUESTS && $CI_MERGE_REQUEST_TITLE =~ /^(\[Draft\]|\(Draft\)|Draft:)/
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+.build-test-beta-coverage-rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_OPEN_MERGE_REQUESTS && $CI_MERGE_REQUEST_TITLE =~ /^(\[Draft\]|\(Draft\)|Draft:)/
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.build-beta:
+  script-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --build
+      --test
+  script-no-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+
+.build-beta-remote-runner:
+  before_script:
+    - pip3 install paramiko
+  script-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --builder_name ${CI_RUNNER_ID}
+      --remote_runner_ip ${REMOTE_RUNNER_IP}
+      --remote_runner_user ${REMOTE_RUNNER_USER}
+      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
+      --build
+      --test
+  script-no-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --builder_name ${CI_RUNNER_ID}
+      --remote_runner_ip ${REMOTE_RUNNER_IP}
+      --remote_runner_user ${REMOTE_RUNNER_USER}
+      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
+      --build
+      --test
+
+build-beta-linux-debug:
+  stage: build-beta
+  interruptible: true
+  coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: debug
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+    - gcovr --txt -s --gcov-ignore-errors=no_working_dir_found
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+beta-coverage-linux:
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  needs:
+    - build-beta-linux-debug
+  variables:
+    JOB_NAME: build-beta-linux-debug
+    TARGET_BRANCH: main
+  before_script:
+    - pip3 install requests
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
+      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --target_branch_name ${TARGET_BRANCH}
+      --job_name ${JOB_NAME}
+      --project_id ${CI_PROJECT_ID}
+      --branch_pipeline_id ${CI_PIPELINE_ID}
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - !reference [.build-test-beta-coverage-rules, rules]
+
+build-beta-linux-asan:
+  allow_failure: true  # TODO: Remove once memory leaks / crashes are fixed
+  stage: build-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.1.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: debug
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --build
+      --test
+      --enable_asan
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-linux-release:
+  stage: build-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: release
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+    - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-mac-m1-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: mac
+    BUILD_TYPE: debug
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-no-toolchain]
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-mac-m1-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: mac
+    BUILD_TYPE: release
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-no-toolchain]
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-windows-x86-debug:
+  stage: build-beta
+  interruptible: true
+  coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: debug
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+    - >
+      python -m gcovr --txt -s
+      --gcov-ignore-errors=no_working_dir_found
+      --gcov-object-directory=build/debug/amd64/CMakeFiles/pv_orca_real_pv_orca_mock_tree.dir/src/
+  tags:
+    - pv-cicd-windows-x86
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+beta-coverage-windows:
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  needs:
+    - build-beta-windows-x86-debug
+  variables:
+    JOB_NAME: build-beta-windows-x86-debug
+    TARGET_BRANCH: main
+  before_script:
+    - python -m pip install requests
+  script:
+    - >
+      python ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
+      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --target_branch_name ${TARGET_BRANCH}
+      --job_name ${JOB_NAME}
+      --project_id ${CI_PROJECT_ID}
+      --branch_pipeline_id ${CI_PIPELINE_ID}
+  tags:
+    - pv-cicd-windows-x86
+  rules:
+    - !reference [.build-test-beta-coverage-rules, rules]
+
+build-beta-windows-x86-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: release
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-windows-x86
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-windows-arm64-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: debug
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-windows-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-windows-arm64-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: release
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-windows-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi4-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi4
+    BUILD_TYPE: debug
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi4-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi4
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi4-64-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi4-64
+    BUILD_TYPE: debug
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi4-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi4-64-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi4-64
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi4-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi5-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi5
+    BUILD_TYPE: debug
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi5-armv7
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi5-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi5
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi5-armv7
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi5-64-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi5-64
+    BUILD_TYPE: debug
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi5-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi5-64-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi5-64
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi5-arm64
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-wasm-browser-debug:
+  stage: build-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    PLATFORM_NAME: wasm
+    BUILD_TYPE: debug
+  before_script:
+    - export EMSDK_HOME=~/.emsdk
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - cd ${PV_PEER_MODULE_DIR}/zoo-dev/wasm/utils && yarn && yarn build && cd ${CI_PROJECT_DIR}
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-wasm-browser-release:
+  stage: build-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    PLATFORM_NAME: wasm
+    BUILD_TYPE: release
+  before_script:
+    - export EMSDK_HOME=~/.emsdk
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - cd ${PV_PEER_MODULE_DIR}/zoo-dev/wasm/utils && yarn && yarn build && cd ${CI_PROJECT_DIR}
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-wasm-linux-debug:
+  stage: build-beta
+  interruptible: true
+  coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: wasm-linux
+    BUILD_TYPE: debug
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+    - gcovr --txt -s --gcov-ignore-errors=no_working_dir_found
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+beta-coverage-wasm:
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  needs:
+    - build-beta-wasm-linux-debug
+  variables:
+    JOB_NAME: build-beta-wasm-linux-debug
+    TARGET_BRANCH: main
+  before_script:
+    - pip3 install requests
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
+      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --target_branch_name ${TARGET_BRANCH}
+      --job_name ${JOB_NAME}
+      --project_id ${CI_PROJECT_ID}
+      --branch_pipeline_id ${CI_PIPELINE_ID}
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - !reference [.build-test-beta-coverage-rules, rules]
+
+build-beta-wasm-linux-release:
+  stage: build-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: wasm-linux
+    BUILD_TYPE: release
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-linux-x86-docker
+  cache:
+    - !reference [.build-test-beta-props, cache]
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-android-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: android
+    BUILD_TYPE: debug
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+    - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-linux-x86
+    - pv-cicd-android
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-android-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: android
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+    - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+  tags:
+    - pv-cicd-linux-x86
+    - pv-cicd-android
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-ios-debug:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: ios
+    BUILD_TYPE: debug
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunnerUITests.xctrunner
+    - export LC_CTYPE="en_US.UTF-8"
+  script:
+    - >
+      set -o pipefail &&
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      --build
+      2>&1 | xcpretty
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      --test
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-ios
+  rules:
+    - !reference [.build-test-beta-props, rules]
+  retry: 2
+
+build-beta-ios-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    PLATFORM_NAME: ios
+    BUILD_TYPE: release
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunnerUITests.xctrunner
+    - export LC_CTYPE="en_US.UTF-8"
+  script:
+    - >
+      set -o pipefail &&
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      --build
+      2>&1 | xcpretty
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      --test
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-ios
+  rules:
+    - !reference [.build-test-beta-props, rules]
+  retry: 2
