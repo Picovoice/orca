@@ -1,0 +1,42 @@
+include:
+  - local: 'gitlab-ci/stage-build-test-prod.yml'
+
+.collect-artifacts-rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && $CI_COMMIT_BRANCH =~ $TAGGED_BRANCH
+
+collect-artifacts:
+  stage: collect-artifacts
+  interruptible: true
+  allow_failure: true
+  rules:
+    - !reference [.collect-artifacts-rules, rules]
+  script:
+    - python3 ${PV_PEER_MODULE_DIR}/script/automation/check_version.py --engine orca --repo_folder .
+  artifacts:
+    when: always
+    paths:
+      - build/release/artifacts/orca
+  needs:
+    - build-prod-linux
+    - build-prod-mac
+    - build-prod-windows-x86
+    - build-prod-windows-arm64
+    - build-prod-rpi3
+    - build-prod-rpi3-64
+    - build-prod-rpi4
+    - build-prod-rpi4-64
+    - build-prod-rpi5
+    - build-prod-rpi5-64
+    - build-prod-wasm
+    - build-prod-android
+    - build-prod-ios
+  tags:
+    - pv-cicd-linux-x86
+
+collect-tagged-artifacts:
+  extends: collect-artifacts
+  rules:
+    - !reference [.collect-artifacts-rules, rules]
+  artifacts:
+    expire_in: 30 days

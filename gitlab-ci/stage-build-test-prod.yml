@@ -1,0 +1,378 @@
+include:
+  - local: 'gitlab-ci/utils.yml'
+
+.build-prod:
+  script-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      -k PROD
+      --platform ${PLATFORM_NAME}
+      --builds release
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --build
+      --test
+    - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
+  script-no-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      -k PROD
+      --platform ${PLATFORM_NAME}
+      --builds release
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --test
+    - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
+
+.build-prod-remote-runner:
+  before_script:
+    - pip3 install paramiko
+  script-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      -k PROD
+      --platform ${PLATFORM_NAME}
+      --builds release
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --builder_name ${CI_RUNNER_ID}
+      --remote_runner_ip ${REMOTE_RUNNER_IP}
+      --remote_runner_user ${REMOTE_RUNNER_USER}
+      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
+      --build
+      --test
+  script-no-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      -k PROD
+      --platform ${PLATFORM_NAME}
+      --builds release
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --builder_name ${CI_RUNNER_ID}
+      --remote_runner_ip ${REMOTE_RUNNER_IP}
+      --remote_runner_user ${REMOTE_RUNNER_USER}
+      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
+      --build
+      --test
+
+build-prod-linux:
+  stage: build-prod
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
+  when: manual
+
+build-prod-mac:
+  stage: build-prod
+  interruptible: true
+  variables:
+    PLATFORM_NAME: mac
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-no-toolchain]
+  after_script:
+    - rm -rf ~/.pv
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-c
+  when: manual
+
+build-prod-windows-x86:
+  stage: build-prod
+  interruptible: true
+  variables:
+    PLATFORM_NAME: windows
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-no-toolchain]
+  after_script:
+    - Get-ChildItem ~/.pv -Recurse | Remove-Item
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-windows-x86
+    - pv-cicd-c
+    - pv-cicd-gpu
+  when: manual
+
+build-prod-windows-arm64:
+  stage: build-prod
+  interruptible: true
+  variables:
+    PLATFORM_NAME: windows
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-no-toolchain]
+  after_script:
+    - Get-ChildItem ~/.pv -Recurse | Remove-Item
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-windows-arm64
+    - pv-cicd-c
+    - pv-cicd-gpu-non-nvidia
+  when: manual
+
+build-prod-rpi:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi
+    REMOTE_RUNNER_IP: 192.168.1.230
+    REMOTE_RUNNER_USER: picovoice
+    REMOTE_RUNNER_PWD: $PV_REMOTE_RUNNER_PWD_RPI0
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - !reference [.build-prod-remote-runner, before_script]
+  script:
+    - !reference [.build-prod-remote-runner, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi3:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi3
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi3-64:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi3-64
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi4-arm64
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi4:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi4
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi4-64:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi4-64
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi4-arm64
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi5:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi5
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi5-armv7
+    - pv-cicd-c
+  when: manual
+
+build-prod-rpi5-64:
+  stage: build-prod
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi5-64
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-rpi5-arm64
+    - pv-cicd-c
+  when: manual
+
+build-prod-wasm:
+  stage: build-prod
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  variables:
+    PLATFORM_NAME: wasm
+  before_script:
+    - export EMSDK_HOME=~/.emsdk
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - cd ${PV_PEER_MODULE_DIR}/zoo-dev/wasm/utils && yarn && yarn build && cd ${CI_PROJECT_DIR}
+  script:
+    - !reference [.build-prod, script-no-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
+  when: manual
+
+build-prod-android:
+  stage: build-prod
+  interruptible: true
+  variables:
+    PLATFORM_NAME: android
+  before_script:
+    - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-prod, script-no-toolchain]
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-linux-x86
+    - pv-cicd-android
+  when: manual
+
+build-prod-ios:
+  stage: build-prod
+  interruptible: true
+  variables:
+    PLATFORM_NAME: ios
+    BUILD_TYPE: release
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunnerUITests.xctrunner
+    - export LC_CTYPE="en_US.UTF-8"
+  script:
+    - >
+      set -o pipefail &&
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k PROD
+      --build
+      2>&1 | xcpretty
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k PROD
+      --test
+    - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
+  artifacts:
+    paths:
+      - build/release/artifacts/
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-ios
+  when: manual

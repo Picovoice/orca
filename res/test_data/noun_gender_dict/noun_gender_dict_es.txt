@@ -1,0 +1,4 @@
+HORA	f
+PARTE	f
+PERSONA	f
+PERSONAS	f

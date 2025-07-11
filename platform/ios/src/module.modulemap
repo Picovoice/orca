@@ -1,0 +1,7 @@
+framework module PvOrca {
+  umbrella header "PvOrca.h"
+  header "pv_orca.h"
+  header "picovoice.h"
+  export *
+  module * {export *}
+}

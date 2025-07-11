@@ -1,0 +1,10 @@
+.dependencies-setup:
+  before_script:
+    - python3 -m pip install -r script/requirements.txt
+
+.build-toolchain-setup:
+  before-script-toolchain:
+    - 'wget --header="JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/12791705/packages/generic/toolchain-native-${TOOLCHAIN_NAME}/${TOOLCHAIN_VER}/${TOOLCHAIN_NAME}.tar.gz'
+    - tar -xz -f ${TOOLCHAIN_NAME}.tar.gz
+  before-script-setup-token:
+    - cmake -DCI_JOB_TOKEN="${CI_JOB_TOKEN}" -DPV_PEER_MODULE_DIR="${PV_PEER_MODULE_DIR}" -P setup.cmake
