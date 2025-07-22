@@ -220,24 +220,48 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
 
     pv_status_t status = pv_orca_text_encoder_init(o->param->text_encoder_param, &(o->text_encoder));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "text_encoder",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_orca_duration_predictor_init(o->param->duration_predictor_param, &(o->duration_predictor));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "duration_predictor",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_orca_flow_init(o->param->flow_param, &(o->flow));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "flow",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_orca_vocoder_init(o->param->vocoder_param, &(o->vocoder));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "vocoder",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
@@ -246,6 +270,12 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
 
     status = pv_buffer_init(hidden_channels, &(o->buffer_encoded_tokens));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_encoded_tokens",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
@@ -254,36 +284,72 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_means_enc));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_means_enc",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_logs_enc));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_logs_enc",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_means));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_means",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_logs));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_logs",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_z_prior));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_z_prior",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }
 
     status = pv_buffer_init(text_encoder_output_channels, &(o->buffer_z));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_module_init_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE(
+                    "buffer_z",
+                    pv_status_to_string(status)));
         pv_orca_synthesizer_delete(o);
         return status;
     }

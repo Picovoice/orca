@@ -47,7 +47,7 @@ static pv_language_info_t *language_info_object = NULL;
 static pv_noun_gender_dict_t *noun_gender_dict_object = NULL;
 
 static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normalizer_it.json";
-static const char NOUN_GENDER_DICT_PATH[] = "test_data/noun_gender_dict/noun_gender_dict_it.txt";
+static const char NOUN_GENDER_DICT_PATH[] = "orca/test_data/noun_gender_dict/noun_gender_dict_it.txt";
 
 static pv_status_t test_pv_normalizer_tagger_setup(void) {
     char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
@@ -1894,8 +1894,13 @@ static void test_pv_normalizer_tagger_init_failure(void) {
             noun_gender_dict_object,
             &tagger);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with `PV_STATUS_OUT_OF_MEMORY`, got status `%s`", pv_status_to_string(status));
+    
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_tagger_it_init` failed with status `OUT_OF_MEMORY`\\.",
+            true,
+            "error message mismatch");
 }
-
 
 static void test_pv_normalizer_tagger_tag_cardinal_helper_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_util_check_token_is_before_character, PV_STATUS_INVALID_ARGUMENT);
@@ -1928,10 +1933,15 @@ static void test_pv_normalizer_tagger_tag_cardinal_helper_failure(void) {
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
 
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_check_token_is_before_character` failed with status `INVALID_ARGUMENT`\\.",
+            false,
+            "error message mismatch");
+
     pv_normalizer_tagger_delete(tagger);
     pv_normalizer_token_list_delete(token_list);
 }
-
 
 static void test_pv_normalizer_tagger_tag_currency_helper_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_util_check_token_is_before_character, PV_STATUS_INVALID_ARGUMENT);
@@ -1963,6 +1973,12 @@ static void test_pv_normalizer_tagger_tag_currency_helper_failure(void) {
             "mock error, expected status `%s`, got status `%s`",
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
+    
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_check_token_is_before_character` failed with status `INVALID_ARGUMENT`\\.",
+            false,
+            "error message mismatch");
 
     pv_normalizer_tagger_delete(tagger);
     pv_normalizer_token_list_delete(token_list);

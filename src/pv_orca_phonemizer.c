@@ -1492,7 +1492,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
     int32_t *num_phonemes_buffer_with_pronunciation = (int32_t *) calloc(num_text_tokens, sizeof(int32_t *));
     if (!num_phonemes_buffer_with_pronunciation) {
         PV_ERROR_REPORT(
-                &pv_error_msg_alloc_array_index,
+                &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("num_phonemes_buffer_with_pronunciation"));
         for (int32_t j = 0; j < num_text_tokens; j++) {
@@ -1505,7 +1505,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
     int32_t **phonemes_buffer_with_pronunciation = (int32_t **) calloc(num_text_tokens, sizeof(int32_t *));
     if (!phonemes_buffer_with_pronunciation) {
         PV_ERROR_REPORT(
-                &pv_error_msg_alloc_array_index,
+                &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("phonemes_buffer_with_pronunciation"));
         for (int32_t j = 0; j < num_text_tokens; j++) {
@@ -1584,7 +1584,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
     int32_t *text_tokens_num_encoded_phonemes_final = (int32_t *) calloc(num_text_tokens, sizeof(int32_t));
     if (!text_tokens_num_encoded_phonemes_final) {
         PV_ERROR_REPORT(
-                &pv_error_msg_alloc_array_index,
+                &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("text_tokens_num_encoded_phonemes_final"));
         for (int32_t j = 0; j < num_text_tokens; j++) {

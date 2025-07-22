@@ -1145,7 +1145,10 @@ static void test_pv_normalizer_verbalizer_verbalize_name(void) {
 
 #ifdef __PV_MOCKS__
 
-static void test_pv_normalizer_verbalizer_init_failure_helper(pv_status_t expected) {
+static void test_pv_normalizer_verbalizer_init_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     pv_normalizer_verbalizer_t *normalizer_verbalizer = NULL;
     pv_status_t status = pv_normalizer_verbalizer_init(
             PV_NORMALIZER_LANGUAGE_JA,
@@ -1153,11 +1156,30 @@ static void test_pv_normalizer_verbalizer_init_failure_helper(pv_status_t expect
             (int32_t *) ALL_TEST_USE_CASES,
             NULL,
             &normalizer_verbalizer);
+    reset_mocks();
     pv_test_true(
-            status == expected,
+            status == expected_status,
             "init internal error, expected `%s` got `%s`",
-            pv_status_to_string(expected),
+            pv_status_to_string(expected_status),
             pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                false,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_normalizer_verbalizer_input_setup_helper(
@@ -1186,14 +1208,35 @@ static void test_pv_normalizer_verbalizer_input_setup_helper(
 
 static void test_pv_normalizer_verbalizer_verbalize_helper(
         pv_normalizer_token_list_t *token_list,
-        pv_status_t expected) {
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
 
     pv_status_t status = pv_normalizer_verbalizer_verbalize(normalizer_verbalizer_object, token_list, 0);
+    reset_mocks();
     pv_test_true(
-            status == expected,
+            status == expected_status,
             "verbalize error, expected '%s' got '%s'",
-            pv_status_to_string(expected),
+            pv_status_to_string(expected_status),
             pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                false,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 
     pv_normalizer_token_list_delete(token_list);
 }
@@ -1204,13 +1247,13 @@ static void test_pv_normalizer_verbalizer_init_calloc_failure(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
 
-    test_pv_normalizer_verbalizer_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_init_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_normalizer_verbalizer_init_internal_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_verbalizer_ja_init, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_normalizer_verbalizer_init_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_normalizer_verbalizer_init_failure_helper(PV_STATUS_INVALID_ARGUMENT, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_ja_init` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_punctuation_fail_calloc(void) {
@@ -1222,7 +1265,7 @@ static void test_pv_normalizer_verbalizer_verbalize_punctuation_fail_calloc(void
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize_punctuation` failed with status `OUT_OF_MEMORY`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_cardinal_fail_calloc(void) {
@@ -1234,7 +1277,7 @@ static void test_pv_normalizer_verbalizer_verbalize_cardinal_fail_calloc(void) {
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize_cardinal` failed with status `OUT_OF_MEMORY`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_negative_cardinal_fail_calloc(void) {
@@ -1246,7 +1289,7 @@ static void test_pv_normalizer_verbalizer_verbalize_negative_cardinal_fail_callo
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize_negative_cardinal` failed with status `OUT_OF_MEMORY`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_negative_cardinal_fail_calloc_2(void) {
@@ -1259,7 +1302,7 @@ static void test_pv_normalizer_verbalizer_verbalize_negative_cardinal_fail_callo
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize_negative_cardinal` failed with status `OUT_OF_MEMORY`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_number_range_fail_calloc_1(void) {
@@ -1271,7 +1314,7 @@ static void test_pv_normalizer_verbalizer_verbalize_number_range_fail_calloc_1(v
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize_number_range` failed with status `OUT_OF_MEMORY`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_currency_fail_calloc_1(void) {
@@ -1283,7 +1326,7 @@ static void test_pv_normalizer_verbalizer_verbalize_currency_fail_calloc_1(void)
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `number_string`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_currency_fail_calloc_2(void) {
@@ -1296,7 +1339,7 @@ static void test_pv_normalizer_verbalizer_verbalize_currency_fail_calloc_2(void)
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `result`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_negative_currency_fail_calloc_1(void) {
@@ -1308,7 +1351,7 @@ static void test_pv_normalizer_verbalizer_verbalize_negative_currency_fail_callo
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `number_string`.");
 }
 
 static void test_pv_normalizer_verbalizer_verbalize_negative_currency_fail_calloc_2(void) {
@@ -1321,7 +1364,7 @@ static void test_pv_normalizer_verbalizer_verbalize_negative_currency_fail_callo
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_verbalizer_verbalize_helper(token_list, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `result`.");
 }
 
 #endif

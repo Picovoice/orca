@@ -413,6 +413,10 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
     }
 
     if (fclose(f) != 0) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_fclose_failure,
+                PV_ERROR_ARGS_PUBLIC(model_path),
+                PV_ERROR_ARGS_PRIVATE_EMPTY());
         return PV_STATUS_IO_ERROR;
     }
     const void *shadow = buffer;

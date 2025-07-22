@@ -2731,6 +2731,12 @@ static void test_pv_normalizer_tagger_tag_cardinal_helper_failure(void) {
             "mock error, expected status `%s`, got status `%s`",
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_check_token_is_before_character` failed with status `INVALID_ARGUMENT`.",
+            false,
+            "error message mismatch"
+    );
 
     pv_normalizer_tagger_delete(tagger);
     pv_normalizer_token_list_delete(token_list);
@@ -2767,6 +2773,12 @@ static void test_pv_normalizer_tagger_tag_currency_helper_failure(void) {
             "mock error, expected status `%s`, got status `%s`",
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_check_token_is_before_character` failed with status `INVALID_ARGUMENT`.",
+            false,
+            "error message mismatch"
+    );
 
     pv_normalizer_tagger_delete(tagger);
     pv_normalizer_token_list_delete(token_list);
