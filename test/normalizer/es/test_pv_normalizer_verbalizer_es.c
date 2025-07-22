@@ -49,7 +49,7 @@ static pv_language_info_t *language_info_object = NULL;
 static pv_noun_gender_dict_t *noun_gender_dict_object = NULL;
 
 static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normalizer_es.json";
-static const char NOUN_GENDER_DICT_PATH[] = "orca/test_data/noun_gender_dict/noun_gender_dict_es.txt";
+static const char NOUN_GENDER_DICT_PATH[] = "test_data/noun_gender_dict/noun_gender_dict_es.txt";
 
 static const char VERBALIZER_TEST_SENTENCE[] = "¡mañana tomaré vitamina b-12, c, y 15 más!";
 static const char *VERBALIZER_TEST_SENTENCE_VERBALIZED[] = {

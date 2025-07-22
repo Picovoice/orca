@@ -47,7 +47,7 @@ static pv_language_info_t *language_info_object = NULL;
 static pv_noun_gender_dict_t *noun_gender_dict_object = NULL;
 
 static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normalizer_it.json";
-static const char NOUN_GENDER_DICT_PATH[] = "orca/test_data/noun_gender_dict/noun_gender_dict_it.txt";
+static const char NOUN_GENDER_DICT_PATH[] = "test_data/noun_gender_dict/noun_gender_dict_it.txt";
 
 static pv_status_t test_pv_normalizer_tagger_setup(void) {
     char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);

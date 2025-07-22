@@ -140,6 +140,7 @@ static void test_pv_orca_synthesizer_teardown(void) {
     pv_orca_synthesize_params_delete(synthesize_params_object);
 }
 
+#ifdef __PV_MOCKS__
 
 static void test_pv_orca_synthesizer_forward_helper(
         struct forward_args *args,
@@ -209,8 +210,6 @@ __attribute__((unused)) static void test_pv_orca_synthesizer_forward_performance
             num_calls,
             duration);
 }
-
-#ifdef __PV_MOCKS__
 
 static float *pv_buffer_get_return_null(pv_buffer_t *arg0, int32_t arg1, bool arg2) {
     (void) arg0;
@@ -713,14 +712,13 @@ static const pv_test_case_t PV_ORCA_SYNTHESIZER_TEST_CASES[] = {
 
         {"forward success", test_pv_orca_synthesizer_forward_success},
 
-#endif
-
         /*
             Commented out because it slows down pipeline and is only useful in release mode.
             Kept in to be able to test locally for different platforms.
         */
         //         {"forward performance", test_pv_orca_synthesizer_forward_performance},
 
+        #endif
 };
 
 const pv_test_suite_t PV_ORCA_SYNTHESIZER_TEST_SUITE = {

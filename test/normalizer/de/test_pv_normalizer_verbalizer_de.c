@@ -48,7 +48,7 @@ static pv_language_info_t *language_info_object = NULL;
 static pv_noun_gender_dict_t *noun_gender_dict_object = NULL;
 
 static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normalizer_de.json";
-static const char NOUN_GENDER_DICT_PATH[] = "orca/test_data/noun_gender_dict/noun_gender_dict_de.txt";
+static const char NOUN_GENDER_DICT_PATH[] = "test_data/noun_gender_dict/noun_gender_dict_de.txt";
 
 static void *calloc_return_null(size_t arg0, size_t arg1) {
     (void) arg0;

@@ -2015,7 +2015,7 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_synthesize_params_set_random_state)(
                 &pv_error_msg_invalid_argument_min,
                 PV_ERROR_ARGS_PUBLIC(
                         "random_state",
-                        random_state,
+                        (int32_t) random_state,
                         0),
                 PV_ERROR_ARGS_PRIVATE_EMPTY());
         return PV_STATUS_INVALID_ARGUMENT;
