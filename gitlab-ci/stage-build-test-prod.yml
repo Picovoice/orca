@@ -1,6 +1,12 @@
 include:
   - local: 'gitlab-ci/utils.yml'
 
+.build-prod-props:
+  cache:
+    key: zoo-dev
+    paths:
+      - ${PV_PEER_MODULE_DIR}/zoo-dev
+
 .build-prod:
   script-toolchain:
     - >
@@ -29,42 +35,6 @@ include:
       --test
     - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
 
-.build-prod-remote-runner:
-  before_script:
-    - pip3 install paramiko
-  script-toolchain:
-    - >
-      python3 -m script.cicd
-      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
-      -k PROD
-      --platform ${PLATFORM_NAME}
-      --builds release
-      --repo_folder ${CI_PROJECT_DIR}
-      --build_folder ${CI_PROJECT_DIR}/build
-      --toolchain_prefix=${TOOLCHAIN_NAME}-
-      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
-      --builder_name ${CI_RUNNER_ID}
-      --remote_runner_ip ${REMOTE_RUNNER_IP}
-      --remote_runner_user ${REMOTE_RUNNER_USER}
-      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
-      --build
-      --test
-  script-no-toolchain:
-    - >
-      python3 -m script.cicd
-      -a $PV_GROUP_VALID_ACCESS_KEY_PROD
-      -k PROD
-      --platform ${PLATFORM_NAME}
-      --builds release
-      --repo_folder ${CI_PROJECT_DIR}
-      --build_folder ${CI_PROJECT_DIR}/build
-      --builder_name ${CI_RUNNER_ID}
-      --remote_runner_ip ${REMOTE_RUNNER_IP}
-      --remote_runner_user ${REMOTE_RUNNER_USER}
-      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
-      --build
-      --test
-
 build-prod-linux:
   stage: build-prod
   interruptible: true
@@ -83,7 +53,8 @@ build-prod-linux:
       - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86-docker
-    - pv-cicd-gpu
+  cache:
+    - !reference [.build-test-beta-props, cache]
   when: manual
 
 build-prod-mac:
@@ -123,7 +94,6 @@ build-prod-windows-x86:
   tags:
     - pv-cicd-windows-x86
     - pv-cicd-c
-    - pv-cicd-gpu
   when: manual
 
 build-prod-windows-arm64:
@@ -143,32 +113,6 @@ build-prod-windows-arm64:
       - build/release/artifacts/
   tags:
     - pv-cicd-windows-arm64
-    - pv-cicd-c
-    - pv-cicd-gpu-non-nvidia
-  when: manual
-
-build-prod-rpi:
-  stage: build-prod
-  interruptible: true
-  variables:
-    TOOLCHAIN_VER: 2.0.0
-    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
-    PLATFORM_NAME: raspberry-pi
-    REMOTE_RUNNER_IP: 192.168.1.230
-    REMOTE_RUNNER_USER: picovoice
-    REMOTE_RUNNER_PWD: $PV_REMOTE_RUNNER_PWD_RPI0
-  before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
-    - !reference [.build-toolchain-setup, before-script-toolchain]
-    - !reference [.build-toolchain-setup, before-script-setup-token]
-    - !reference [.build-prod-remote-runner, before_script]
-  script:
-    - !reference [.build-prod-remote-runner, script-toolchain]
-  artifacts:
-    paths:
-      - build/release/artifacts/
-  tags:
-    - pv-cicd-rpi4-armv7
     - pv-cicd-c
   when: manual
 
@@ -315,7 +259,8 @@ build-prod-wasm:
       - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86-docker
-    - pv-cicd-gpu
+  cache:
+    - !reference [.build-test-beta-props, cache]
   when: manual
 
 build-prod-android:
@@ -324,8 +269,11 @@ build-prod-android:
   variables:
     PLATFORM_NAME: android
   before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
     - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
     - !reference [.build-toolchain-setup, before-script-setup-token]
+    - sudo systemctl --system restart pv-android-sim.service
+    - adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]] ; do sleep 1; done'
   script:
     - !reference [.build-prod, script-no-toolchain]
   artifacts:
