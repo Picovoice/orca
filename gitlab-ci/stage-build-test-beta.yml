@@ -43,42 +43,6 @@
       --build
       --test
 
-.build-beta-remote-runner:
-  before_script:
-    - pip3 install paramiko
-  script-toolchain:
-    - >
-      python3 -m script.cicd
-      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
-      -k BETA
-      --platform ${PLATFORM_NAME}
-      --builds ${BUILD_TYPE}
-      --repo_folder ${CI_PROJECT_DIR}
-      --build_folder ${CI_PROJECT_DIR}/build
-      --toolchain_prefix=${TOOLCHAIN_NAME}-
-      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
-      --builder_name ${CI_RUNNER_ID}
-      --remote_runner_ip ${REMOTE_RUNNER_IP}
-      --remote_runner_user ${REMOTE_RUNNER_USER}
-      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
-      --build
-      --test
-  script-no-toolchain:
-    - >
-      python3 -m script.cicd
-      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
-      -k BETA
-      --platform ${PLATFORM_NAME}
-      --builds ${BUILD_TYPE}
-      --repo_folder ${CI_PROJECT_DIR}
-      --build_folder ${CI_PROJECT_DIR}/build
-      --builder_name ${CI_RUNNER_ID}
-      --remote_runner_ip ${REMOTE_RUNNER_IP}
-      --remote_runner_user ${REMOTE_RUNNER_USER}
-      --remote_runner_pwd ${REMOTE_RUNNER_PWD}
-      --build
-      --test
-
 build-beta-linux-debug:
   stage: build-beta
   interruptible: true
@@ -116,7 +80,7 @@ beta-coverage-linux:
   script:
     - >
       python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
-      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --gitlab_api_token ${PV_GROUP_PRIVATE_API_TOKEN}
       --target_branch_name ${TARGET_BRANCH}
       --job_name ${JOB_NAME}
       --project_id ${CI_PROJECT_ID}
@@ -126,10 +90,12 @@ beta-coverage-linux:
   rules:
     - !reference [.build-test-beta-coverage-rules, rules]
 
-build-beta-linux-asan:
+beta-asan-linux:
   allow_failure: true  # TODO: Remove once memory leaks / crashes are fixed
-  stage: build-beta
+  stage: test-beta
   interruptible: true
+  needs:
+    - build-beta-linux-debug
   image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
   variables:
     TOOLCHAIN_VER: 1.1.0
@@ -262,7 +228,7 @@ beta-coverage-windows:
   script:
     - >
       python ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
-      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --gitlab_api_token ${PV_GROUP_PRIVATE_API_TOKEN}
       --target_branch_name ${TARGET_BRANCH}
       --job_name ${JOB_NAME}
       --project_id ${CI_PROJECT_ID}
@@ -350,14 +316,14 @@ build-beta-windows-arm64-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-rpi4-debug:
+build-beta-rpi3-release:
   stage: build-beta
   interruptible: true
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
-    PLATFORM_NAME: raspberry-pi4
-    BUILD_TYPE: debug
+    PLATFORM_NAME: raspberry-pi3
+    BUILD_TYPE: release
   before_script:
     - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
@@ -366,6 +332,26 @@ build-beta-rpi4-debug:
     - !reference [.build-beta, script-toolchain]
   tags:
     - pv-cicd-rpi4-armv7
+    - pv-cicd-c
+  rules:
+    - !reference [.build-test-beta-props, rules]
+
+build-beta-rpi3-64-release:
+  stage: build-beta
+  interruptible: true
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi3-64
+    BUILD_TYPE: release
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-toolchain]
+  tags:
+    - pv-cicd-rpi4-arm64
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -386,26 +372,6 @@ build-beta-rpi4-release:
     - !reference [.build-beta, script-toolchain]
   tags:
     - pv-cicd-rpi4-armv7
-    - pv-cicd-c
-  rules:
-    - !reference [.build-test-beta-props, rules]
-
-build-beta-rpi4-64-debug:
-  stage: build-beta
-  interruptible: true
-  variables:
-    TOOLCHAIN_VER: 2.1.0
-    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
-    PLATFORM_NAME: raspberry-pi4-64
-    BUILD_TYPE: debug
-  before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
-    - !reference [.build-toolchain-setup, before-script-toolchain]
-    - !reference [.build-toolchain-setup, before-script-setup-token]
-  script:
-    - !reference [.build-beta, script-toolchain]
-  tags:
-    - pv-cicd-rpi4-arm64
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -605,7 +571,7 @@ beta-coverage-wasm:
   script:
     - >
       python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/coverage/check_coverage.py
-      --gitlab_api_token ${PRIVATE_API_TOKEN}
+      --gitlab_api_token ${PV_GROUP_PRIVATE_API_TOKEN}
       --target_branch_name ${TARGET_BRANCH}
       --job_name ${JOB_NAME}
       --project_id ${CI_PROJECT_ID}
@@ -646,6 +612,8 @@ build-beta-android-debug:
     - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
     - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
     - !reference [.build-toolchain-setup, before-script-setup-token]
+    - sudo systemctl --system restart pv-android-sim.service
+    - adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]] ; do sleep 1; done'
   script:
     - >
       python3 -m script.cicd
@@ -673,6 +641,8 @@ build-beta-android-release:
     - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
     - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
     - !reference [.build-toolchain-setup, before-script-setup-token]
+    - sudo systemctl --system restart pv-android-sim.service
+    - adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]] ; do sleep 1; done'
   script:
     - >
       python3 -m script.cicd
