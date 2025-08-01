@@ -105,7 +105,6 @@ def test_unittest_orca(
 
             shutil.copy(os.path.join(build_dir, 'libpv_orca_test_collections.so'), dst_path)
             shutil.copy(os.path.join(build_dir, 'libpv_orca_mock_tree_shared.so'), dst_path)
-            shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_mock_mock_tree.so'), dst_path)
             shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_orca_mock_tree.so'), dst_path)
             shutil.copy(os.path.join(build_dir, 'libpv_normalizer_real_pv_orca_mock_tree.so'), dst_path)
 
@@ -118,10 +117,13 @@ def test_unittest_orca(
                 for src_path in glob.glob(os.path.join(zoo_dev_build_dir, module, "*_real.so")):
                     shutil.copy(src_path, dst_path)
 
-        setup_command = ("grep -q '^testCollectionsLib=' local.properties && "
-                         "sed -i 's/^testCollectionsLib=.*/testCollectionsLib=pv_orca_test_collections/' local.properties || "
-                         "echo 'testCollectionsLib=pv_orca_test_collections' >> local.properties")
-        res = run_command(f"cd android && {setup_command}")
+        setup_command_1 = ("grep -q '^testCollectionsLib=' local.properties && "
+                           "sed -i 's/^testCollectionsLib=.*/testCollectionsLib=pv_orca_test_collections/' local.properties || "
+                           "echo 'testCollectionsLib=pv_orca_test_collections' >> local.properties")
+        setup_command_2 = ("grep -q '^gatekeeperRealLib=' local.properties && "
+                           "sed -i 's/^gatekeeperRealLib=.*/gatekeeperRealLib=pv_gatekeeper_device_based_real_pv_orca_mock_tree/' local.properties || "
+                           "echo 'gatekeeperRealLib=pv_gatekeeper_device_based_real_pv_orca_mock_tree' >> local.properties")
+        res = run_command(f"cd android && {setup_command_1} && {setup_command_2}")
         if res != 0:
             return res
 
@@ -231,12 +233,14 @@ def test_unittest_orca(
             f"{root_dir}/build/{build_mode}/{platform.machine()}/"
             f"pv_orca_test_app.exe res integration dump_{build_mode}", platform_name)
 
+        absolute_peer_module_dir = os.path.join(os.path.dirname(__file__), '..', PEER_MODULE_DIR)
         build_dir = os.path.join(root_dir, 'build', build_mode)
         res_ucrt_test = run_windows_ucrt_test(
             root_dir,
             os.path.join(root_dir, build_dir, platform.machine().lower()),
             build_mode,
-            ["orca"])
+            ["orca"],
+            peer_module_dir=absolute_peer_module_dir)
 
         res = 1 if any([res_unit_test, res_integration_test, res_ucrt_test]) else 0
 
