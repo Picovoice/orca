@@ -119,12 +119,13 @@ build-prod-windows-arm64:
 build-prod-rpi3:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
     PLATFORM_NAME: raspberry-pi3
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
@@ -133,19 +134,20 @@ build-prod-rpi3:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-armv7
+    - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
   when: manual
 
 build-prod-rpi3-64:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
     PLATFORM_NAME: raspberry-pi3-64
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
@@ -154,19 +156,20 @@ build-prod-rpi3-64:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-arm64
+    - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
   when: manual
 
 build-prod-rpi4:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
     PLATFORM_NAME: raspberry-pi4
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
@@ -175,19 +178,20 @@ build-prod-rpi4:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-armv7
+    - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
   when: manual
 
 build-prod-rpi4-64:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
     PLATFORM_NAME: raspberry-pi4-64
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
@@ -196,13 +200,14 @@ build-prod-rpi4-64:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-arm64
+    - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
   when: manual
 
 build-prod-rpi5:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -217,13 +222,14 @@ build-prod-rpi5:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi5-armv7
+    - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
   when: manual
 
 build-prod-rpi5-64:
   stage: build-prod
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -238,7 +244,7 @@ build-prod-rpi5-64:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi5-arm64
+    - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
   when: manual
 
