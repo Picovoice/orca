@@ -447,7 +447,7 @@ pv_module_register_tests(
     src/pv_orca.c
     src/model/pv_orca_synthesizer_param_en_female.c
   PV_DEPENDENCIES
-    pv_picollm_tokenizer
+    pv_tokenizer
   TEST_RESOURCES
     ${zoo-dev_SOURCE_DIR}/res/ref/shut_off_lights.c
 )
