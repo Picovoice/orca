@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "picollm/pv_picollm_tokenizer.h"
 #include "orca/normalizer/pv_normalizer.h"
+#include "tokenizer/pv_tokenizer.h"
 
 typedef struct pv_normalizer_cases_helper pv_normalizer_cases_helper_t;
 
@@ -33,7 +33,7 @@ pv_status_t pv_normalizer_cases_normalize_batch(
         char **output);
 
 pv_status_t pv_normalizer_cases_normalize_stream(
-        pv_picollm_tokenizer_t *stream_tokenizer,
+        pv_tokenizer_t *stream_tokenizer,
         pv_normalizer_t *normalizer_object,
         bool add_spaces,
         const char *input,

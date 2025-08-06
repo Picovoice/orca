@@ -8,7 +8,7 @@
 
 #include "core/mock/pv_core_runtime_mock.h"
 #include "orca/mock/pv_normalizer_mock.h"
-#include "picollm/mock/pv_picollm_tokenizer_mock.h"
+#include "tokenizer/mock/pv_tokenizer_mock.h"
 
 #endif
 

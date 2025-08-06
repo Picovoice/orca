@@ -393,7 +393,7 @@ pv_module_register_tests(
     test/normalizer/test_pv_normalizer_cases_helper.c
     test/normalizer/test_pv_normalizer_stream_helper.c
   PV_DEPENDENCIES
-    pv_picollm_tokenizer
+    pv_tokenizer
 )
 pv_module_build_tests(MODULE_NAME pv_normalizer)
 
@@ -543,6 +543,6 @@ pv_module_build_app(
   PV_DEPENDENCIES
     pv_core
     pv_language_json
-    pv_picollm_tokenizer
+    pv_tokenizer
     pv_lm
 )
