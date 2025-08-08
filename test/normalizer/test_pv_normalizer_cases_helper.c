@@ -9,7 +9,7 @@
 
 #include "core/mock/pv_core_runtime_mock.h"
 #include "orca/mock/pv_normalizer_mock.h"
-#include "picollm/mock/pv_picollm_tokenizer_mock.h"
+#include "tokenizer/mock/pv_tokenizer_mock.h"
 
 #endif
 
@@ -625,7 +625,7 @@ pv_status_t pv_normalizer_cases_normalize_batch(
 }
 
 pv_status_t pv_normalizer_cases_normalize_stream(
-        pv_picollm_tokenizer_t *stream_tokenizer,
+        pv_tokenizer_t *stream_tokenizer,
         pv_normalizer_t *normalizer_object,
         bool add_spaces,
         const char *input,
@@ -638,7 +638,7 @@ pv_status_t pv_normalizer_cases_normalize_stream(
     int32_t num_tokens = 0;
     int32_t *tokens = NULL;
 
-    pv_status_t status = pv_picollm_tokenizer_encode(
+    pv_status_t status = pv_tokenizer_encode(
             stream_tokenizer,
             input,
             false,
@@ -663,7 +663,7 @@ pv_status_t pv_normalizer_cases_normalize_stream(
         char *decoded_token = NULL;
         bool is_partial = false;
 
-        status = pv_picollm_tokenizer_decode(
+        status = pv_tokenizer_decode(
                 stream_tokenizer,
                 tokens + i - num_partial,
                 1 + num_partial,

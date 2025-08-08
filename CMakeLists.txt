@@ -447,7 +447,7 @@ pv_module_register_tests(
     src/pv_orca.c
     src/model/pv_orca_synthesizer_param_en_female.c
   PV_DEPENDENCIES
-    pv_picollm_tokenizer
+    pv_tokenizer
   TEST_RESOURCES
     ${zoo-dev_SOURCE_DIR}/res/ref/shut_off_lights.c
 )
@@ -456,7 +456,7 @@ pv_module_build_tests(MODULE_NAME pv_orca)
 pv_module_build_test_app(
   MODULE_NAME pv_orca
   SUB_MODULES pv_normalizer
-  PV_DEPENDENCIES pv_picollm)
+)
 
 set(ORCA_TEST_RESOURCES "${PROJECT_SOURCE_DIR}/res")
 pv_module_copy_test_resource_dirs(

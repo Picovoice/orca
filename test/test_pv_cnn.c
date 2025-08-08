@@ -335,6 +335,13 @@ static void test_pv_cnn_init_1st_calloc_failure(void) {
     pv_cnn_t *cnn = NULL;
     pv_status_t status = pv_cnn_init(&TEST_CNN_K3_PARAM, &cnn);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "cnn init should fail with `PV_STATUS_OUT_OF_MEMORY`");
+    
+    reset_mocks();
+    pv_test_error_message(
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.",
+            true,
+            "cnn init 1st calloc failure error message mismatch");
 }
 
 static void test_pv_cnn_init_2nd_calloc_failure(void) {
@@ -347,6 +354,13 @@ static void test_pv_cnn_init_2nd_calloc_failure(void) {
     pv_cnn_t *cnn = NULL;
     pv_status_t status = pv_cnn_init(&TEST_CNN_K3_PARAM, &cnn);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "cnn init should fail with `PV_STATUS_OUT_OF_MEMORY`");
+    
+    reset_mocks();
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_cnn_transpose_weight` failed with status `OUT_OF_MEMORY`\\.",
+            true,
+            "cnn init 2nd calloc failure error message mismatch");
 }
 
 static void test_pv_cnn_depthwise_init_1st_calloc_failure(void) {
@@ -355,6 +369,13 @@ static void test_pv_cnn_depthwise_init_1st_calloc_failure(void) {
     pv_cnn_depthwise_t *cnn = NULL;
     pv_status_t status = pv_cnn_depthwise_init(&TEST_CNN_DEPTHWISE_PARAM, &cnn);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "cnn init should fail with `PV_STATUS_OUT_OF_MEMORY`");
+    
+    reset_mocks();
+    pv_test_error_message(
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.",
+            true,
+            "cnn depthwise init 1st calloc failure error message mismatch");
 }
 
 static void test_pv_cnn_depthwise_init_2nd_calloc_failure(void) {
@@ -367,6 +388,13 @@ static void test_pv_cnn_depthwise_init_2nd_calloc_failure(void) {
     pv_cnn_depthwise_t *cnn = NULL;
     pv_status_t status = pv_cnn_depthwise_init(&TEST_CNN_DEPTHWISE_PARAM, &cnn);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "cnn init should fail with `PV_STATUS_OUT_OF_MEMORY`");
+    
+    reset_mocks();
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_cnn_depthwise_transpose_weight` failed with status `OUT_OF_MEMORY`\\.",
+            true,
+            "cnn depthwise init 2nd calloc failure error message mismatch");
 }
 
 #endif

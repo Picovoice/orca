@@ -16,12 +16,12 @@
 
 #include "core/mock/pv_core_runtime_mock.h"
 #include "orca/mock/pv_normalizer_mock.h"
-#include "picollm/mock/pv_picollm_tokenizer_mock.h"
+#include "tokenizer/mock/pv_tokenizer_mock.h"
 #include "util/mock/pv_file_mock.h"
 
 #endif
 
-const char *PICOLLM_TOKENIZER_PATHS[] = {
+const char *TOKENIZER_PATHS[] = {
         "normalizer/tokenizers/tokenizer-gemma-2b-372.bin",
         "normalizer/tokenizers/tokenizer-llama-2-13b-267.bin",
         "normalizer/tokenizers/tokenizer-mistral-7b-instruct-v0.1-225.bin",
@@ -233,9 +233,9 @@ static void test_pv_normalizer_cases_normalize_stream_helper(
         return;
     }
 
-    for (int32_t i = 0; i < PV_ARRAY_LEN(PICOLLM_TOKENIZER_PATHS); i++) {
-        const char *tokenizer_bin_filename = PICOLLM_TOKENIZER_PATHS[i];
-        LOG_INFO("    -> testing with picollm tokenizer: `%s`", tokenizer_bin_filename);
+    for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATHS); i++) {
+        const char *tokenizer_bin_filename = TOKENIZER_PATHS[i];
+        LOG_INFO("    -> testing with tokenizer: `%s`", tokenizer_bin_filename);
 
         pv_normalizer_cases_helper_reindex(text_cases_helper);
 
@@ -260,10 +260,10 @@ static void test_pv_normalizer_cases_normalize_stream_helper(
             return;
         }
 
-        pv_picollm_tokenizer_t *picollm_tokenizer = NULL;
-        status = pv_picollm_tokenizer_init(f_tokenizer, &picollm_tokenizer);
+        pv_tokenizer_t *tokenizer = NULL;
+        status = pv_tokenizer_init(f_tokenizer, &tokenizer);
         (void) fclose(f_tokenizer);
-        pv_test_true(status == PV_STATUS_SUCCESS, "Failed to load picollm tokenizer: `%s`", pv_status_to_string(status));
+        pv_test_true(status == PV_STATUS_SUCCESS, "Failed to load tokenizer: `%s`", pv_status_to_string(status));
         if (status != PV_STATUS_SUCCESS) {
             pv_normalizer_cases_helper_delete(text_cases_helper);
             pv_normalizer_delete(normalizer);
@@ -302,7 +302,7 @@ static void test_pv_normalizer_cases_normalize_stream_helper(
             char *text_normalized_stream = NULL;
 
             status = pv_normalizer_cases_normalize_stream(
-                    picollm_tokenizer,
+                    tokenizer,
                     normalizer,
                     add_spaces,
                     text_raw,
@@ -324,7 +324,7 @@ static void test_pv_normalizer_cases_normalize_stream_helper(
 
         const float pass_ratio = (float) total_passes / (float) total_cases;
         pv_test_true(pass_ratio >= threshold, "Did not pass enough test cases (got `%f` expected >= `%f`", pass_ratio, threshold);
-        pv_picollm_tokenizer_delete(picollm_tokenizer);
+        pv_tokenizer_delete(tokenizer);
     }
 
     pv_normalizer_cases_helper_delete(text_cases_helper);

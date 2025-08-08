@@ -11,13 +11,13 @@
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_metric_internal.h"
 #include "orca/pv_orca_stream_state.h"
-#include "picollm/pv_picollm_tokenizer.h"
+#include "tokenizer/pv_tokenizer.h"
 #include "test/pv_test.h"
 
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
-#include "picollm/mock/pv_picollm_tokenizer_mock.h"
+#include "tokenizer/mock/pv_tokenizer_mock.h"
 
 #endif
 
@@ -25,9 +25,9 @@
 
 static const float ORCA_INTELLIGIBILITY_THRESHOLD = 0.65f;
 
-pv_picollm_tokenizer_t *TOKENIZERS[NUM_TOKENIZERS] = {NULL};
+pv_tokenizer_t *TOKENIZERS[NUM_TOKENIZERS] = {NULL};
 
-const char *PICOLLM_TOKENIZER_PATH_ARRAY[NUM_TOKENIZERS] = {
+const char *TOKENIZER_PATH_ARRAY[NUM_TOKENIZERS] = {
         "normalizer/tokenizers/tokenizer-gemma-2b-372.bin",
         "normalizer/tokenizers/tokenizer-llama-2-13b-267.bin",
         "normalizer/tokenizers/tokenizer-mistral-7b-instruct-v0.1-225.bin",
@@ -162,8 +162,8 @@ static pv_status_t test_pv_orca_metric_classifier_setup_helper(
 }
 
 static pv_status_t test_pv_orca_integration_setup(void) {
-    for (int32_t i = 0; i < PV_ARRAY_LEN(PICOLLM_TOKENIZER_PATH_ARRAY); ++i) {
-        const char *tokenizer_bin_filename = PICOLLM_TOKENIZER_PATH_ARRAY[i];
+    for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
+        const char *tokenizer_bin_filename = TOKENIZER_PATH_ARRAY[i];
 
         char *tokenizer_bin_path = pv_test_resource_path(tokenizer_bin_filename);
 
@@ -174,9 +174,9 @@ static pv_status_t test_pv_orca_integration_setup(void) {
             return PV_STATUS_IO_ERROR;
         }
 
-        pv_status_t status = pv_picollm_tokenizer_init(f_tokenizer, &(TOKENIZERS[i]));
+        pv_status_t status = pv_tokenizer_init(f_tokenizer, &(TOKENIZERS[i]));
         (void) fclose(f_tokenizer);
-        pv_test_true(status == PV_STATUS_SUCCESS, "Failed to load picollm tokenizer: `%s`",
+        pv_test_true(status == PV_STATUS_SUCCESS, "Failed to load tokenizer: `%s`",
                      pv_status_to_string(status));
         if (status != PV_STATUS_SUCCESS) {
             return status;
@@ -187,8 +187,8 @@ static pv_status_t test_pv_orca_integration_setup(void) {
 }
 
 static void test_pv_orca_integration_teardown(void) {
-    for (int32_t i = 0; i < PV_ARRAY_LEN(PICOLLM_TOKENIZER_PATH_ARRAY); ++i) {
-        pv_picollm_tokenizer_delete(TOKENIZERS[i]);
+    for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
+        pv_tokenizer_delete(TOKENIZERS[i]);
     }
 }
 
@@ -466,9 +466,9 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
     PV_ASSERT(alignments);
 
     LOG_INFO("        %s", "`test_pv_orca_integration_batch_stream_pcm_match_helper`");
-    for (int32_t tokenizer_index = 0; tokenizer_index < PV_ARRAY_LEN(PICOLLM_TOKENIZER_PATH_ARRAY); ++tokenizer_index) {
-        pv_picollm_tokenizer_t *picollm_tokenizer_object = TOKENIZERS[tokenizer_index];
-        LOG_INFO("            -> testing with picollm tokenizer: `%s`", PICOLLM_TOKENIZER_PATH_ARRAY[tokenizer_index]);
+    for (int32_t tokenizer_index = 0; tokenizer_index < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++tokenizer_index) {
+        pv_tokenizer_t *tokenizer_object = TOKENIZERS[tokenizer_index];
+        LOG_INFO("            -> testing with tokenizer: `%s`", TOKENIZER_PATH_ARRAY[tokenizer_index]);
 
         // Sanity checks for word alignments and phoneme alignments:
         for (int32_t i = 0; i < num_alignments; ++i) {
@@ -491,9 +491,9 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
         int32_t num_streaming_tokens_encoded = 0;
         int32_t *streaming_tokens_encoded = NULL;
 
-        // PicoLLM tokenizer preprocess for streaming synthesize:
-        pv_status_t status = pv_picollm_tokenizer_encode(
-                picollm_tokenizer_object,
+        // tokenizer preprocess for streaming synthesize:
+        pv_status_t status = pv_tokenizer_encode(
+                tokenizer_object,
                 text_raw,
                 false,
                 false,
@@ -501,7 +501,7 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
                 &streaming_tokens_encoded);
         pv_test_true(
                 status == PV_STATUS_SUCCESS,
-                "failed to encode `text_raw` with PicoLLM tokenizer; expected `%s` got `%s`",
+                "failed to encode `text_raw` with tokenizer; expected `%s` got `%s`",
                 pv_status_to_string(PV_STATUS_SUCCESS),
                 pv_status_to_string(status));
         if (status != PV_STATUS_SUCCESS) {
@@ -524,8 +524,8 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
         for (int32_t i = 0; i < num_streaming_tokens_encoded; ++i) {
             char *decoded_token = NULL;
             bool is_partial = false;
-            status = pv_picollm_tokenizer_decode(
-                    picollm_tokenizer_object,
+            status = pv_tokenizer_decode(
+                    tokenizer_object,
                     streaming_tokens_encoded + i - num_partial,
                     1 + num_partial,
                     0,
@@ -542,7 +542,7 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
 
             pv_test_true(
                     status == PV_STATUS_SUCCESS,
-                    "failed to decode `streaming_tokens_encoded + i` with PicoLLM tokenizer; expected `%s` got `%s`",
+                    "failed to decode `streaming_tokens_encoded + i` with tokenizer; expected `%s` got `%s`",
                     pv_status_to_string(PV_STATUS_SUCCESS),
                     pv_status_to_string(status));
             if (status != PV_STATUS_SUCCESS) {

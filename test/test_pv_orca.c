@@ -1265,7 +1265,11 @@ static void test_pv_orca_synthesize_to_file_failure(void) {
 
 #ifdef __PV_MOCKS__
 
-static void test_pv_orca_init_internal_helper(struct init_args *args, pv_status_t expected) {
+static void test_pv_orca_init_internal_helper(
+        struct init_args *args,
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_log_disable();
     pv_status_t status = pv_orca_internal_init(
             args->access_key,
@@ -1273,17 +1277,40 @@ static void test_pv_orca_init_internal_helper(struct init_args *args, pv_status_
             args->model_path,
             args->object);
     pv_log_enable();
+    reset_mocks();
     pv_test_true(
             status == expected,
             "init internal error, expected '%s' got '%s'",
             pv_status_to_string(expected),
             pv_status_to_string(status));
+    
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "init internal error message mismatch, expected '%s'",
+                expected_message);
+    }
+    
     if (status == PV_STATUS_SUCCESS) {
         pv_orca_delete(*args->object);
     }
 }
 
-static void test_pv_orca_synthesize_helper(struct synthesize_args *args, pv_status_t expected) {
+static void test_pv_orca_synthesize_helper(
+        struct synthesize_args *args,
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_log_disable();
     pv_status_t status = pv_orca_synthesize(
             args->object,
@@ -1294,11 +1321,30 @@ static void test_pv_orca_synthesize_helper(struct synthesize_args *args, pv_stat
             args->num_alignments,
             args->alignments);
     pv_log_enable();
+    reset_mocks();
     pv_test_true(
             status == expected,
             "synthesize error, expected '%s' got '%s'",
             pv_status_to_string(expected),
             pv_status_to_string(status));
+    
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "synthesize error message mismatch, expected '%s'",
+                expected_message);
+    }
+    
     if (status == PV_STATUS_SUCCESS) {
         pv_orca_delete(args->object);
     }
@@ -1343,6 +1389,12 @@ static void test_pv_orca_init_internal_init_failure(void) {
             "expected '%s' but got '%s'",
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
+
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_orca_internal_init` failed with status `INVALID_ARGUMENT`\\.",
+            true,
+            "init internal init failure error message mismatch");
 }
 
 static void test_pv_orca_init_https_client_factory_failure(void) {
@@ -1350,11 +1402,18 @@ static void test_pv_orca_init_https_client_factory_failure(void) {
 
     pv_orca_t *pv_orca = NULL;
     const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "", &pv_orca);
+    reset_mocks();
     pv_test_true(
             status == PV_STATUS_OUT_OF_MEMORY,
             "expected '%s' but got '%s'",
             pv_status_to_string(PV_STATUS_OUT_OF_MEMORY),
             pv_status_to_string(status));
+
+    pv_test_error_message(
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `https_client_factory`\\.",
+            true,
+            "init https client factory failure error message mismatch");
 }
 
 static void test_pv_orca_init_internal_invalid_args(void) {
@@ -1362,86 +1421,88 @@ static void test_pv_orca_init_internal_invalid_args(void) {
 
     args = default_init_args;
     args.access_key = NULL;
-    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `access_key` is NULL\\.", NULL);
 
     args = default_init_args;
     args.model_path = NULL;
-    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `model_path` is NULL\\.", NULL);
 
     args = default_init_args;
     args.object = NULL;
-    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `object` is NULL\\.", NULL);
 }
 
 static void test_pv_orca_init_internal_calloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_orca_init_internal_fopen_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(pv_fopen, pv_fopen_return_null)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, "Failed to open file `.*`\\.", NULL);
 }
 
 static void test_pv_orca_init_internal_synthesizer_param_load_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_synthesizer_param_load, PV_STATUS_IO_ERROR)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, pv_test_function_hash_regex(), "`pv_orca_internal_param_load` failed with status `IO_ERROR`\\.");
 }
 
 static void test_pv_orca_init_internal_serialized_section_unpack_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_serialized_section_unpack, PV_STATUS_IO_ERROR)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, pv_test_function_hash_regex(), "`pv_serialized_section_unpack` failed with status `IO_ERROR`\\.");
 }
 
 static void test_pv_orca_init_internal_hippo_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_hippo_init2, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_hippo` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_init_internal_fclose_failure(void) {
     PV_SET_MOCK_RETURN_VAL(fclose, 1)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, "Failed to close file `.*`\\.", NULL);
 }
 
 static void test_pv_orca_init_internal_normalizer_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_normalizer_init` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_init_internal_phonemizer_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_orca_phonemizer_init` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_init_internal_stream_state_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_init, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_INVALID_ARGUMENT, "Picovoice Error", "`pv_orca_stream_state_init` failed to init with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_orca_init_internal_synthesizer_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_synthesizer_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_orca_synthesizer` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_init_internal_pv_gatekeeper_usage_animal_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_gatekeeper_usage_animal_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_gatekeeper_usage_animal` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_stream_state_update_z_prior_failure_helper(
         pv_status_t expected,
-        bool is_first_chunk) {
+        bool is_first_chunk,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     int32_t length = 100;
     float *buffer_z_prior = calloc(length, sizeof(float));
     pv_test_true(buffer_z_prior != NULL, "failed to allocate buffer_z_prior");
@@ -1457,11 +1518,29 @@ static void test_pv_orca_stream_state_update_z_prior_failure_helper(
             length,
             buffer_z_prior,
             &num_frames_to_flow);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to update z prior, expected '%s' got '%s'",
             pv_status_to_string(expected),
             pv_status_to_string(status));
+
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "stream state update z prior error message mismatch, expected '%s'",
+                expected_message);
+    }
 
     free(buffer_z_prior);
 }
@@ -1469,18 +1548,20 @@ static void test_pv_orca_stream_state_update_z_prior_failure_helper(
 static void test_pv_orca_stream_state_update_z_prior_1st_buffer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
 
-    test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, true);
+    test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, true, pv_test_function_hash_regex(), "`cache_z_prior` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_stream_state_update_z_prior_2nd_buffer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
 
-    test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, false);
+    test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, false, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_buffer_get`\\.");
 }
 
 static void test_pv_orca_stream_state_update_z_failure_helper(
         pv_status_t expected,
-        bool is_first_chunk) {
+        bool is_first_chunk,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     int32_t length = 10;
     float *buffer_z_prior = calloc(length, sizeof(float));
     pv_test_true(buffer_z_prior != NULL, "failed to allocate buffer_z_prior");
@@ -1496,23 +1577,44 @@ static void test_pv_orca_stream_state_update_z_failure_helper(
             length,
             buffer_z_prior,
             &num_frames_to_flow);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to update z prior, expected '%s' got '%s'",
             pv_status_to_string(expected),
             pv_status_to_string(status));
+
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "stream state update z error message mismatch, expected '%s'",
+                expected_message);
+    }
+
+    free(buffer_z_prior);
 }
 
 static void test_pv_orca_stream_state_update_z_1st_buffer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
 
-    test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, true);
+    test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, true, pv_test_function_hash_regex(), "`cache_z` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_stream_state_update_z_2nd_buffer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
 
-    test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, false);
+    test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, false, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_buffer_get`\\.");
 }
 
 static void test_pv_orca_synthesize_invalid_args(void) {
@@ -1520,15 +1622,15 @@ static void test_pv_orca_synthesize_invalid_args(void) {
 
     args = default_synthesize_args;
     args.object = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `object` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.text = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `text` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.text = "";
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `text` is invalid\\.", NULL);
 
     args = default_synthesize_args;
     char *long_text = calloc(MAX_CHARACTER_LIMIT + 2, sizeof(char));
@@ -1540,50 +1642,53 @@ static void test_pv_orca_synthesize_invalid_args(void) {
     }
     long_text[MAX_CHARACTER_LIMIT + 1] = '\0';
     args.text = long_text;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Maximum character limit of `2000` exceeded\\.", NULL);
     free(long_text);
 
     args = default_synthesize_args;
     args.params = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `synthesize_params` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.num_samples = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `num_samples` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.num_alignments = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `num_alignments` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.alignments = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `alignments` is NULL\\.", NULL);
 
     args = default_synthesize_args;
     args.pcm = NULL;
-    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_synthesize_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `pcm` is NULL\\.", NULL);
 }
 
 static void test_pv_orca_synthesize_normalizer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_normalize, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_phonemize_text` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesize_phonemizer_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_phonemize, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_phonemize_text` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_forward_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_phonemize, PV_STATUS_SUCCESS)
     PV_SET_MOCK_RETURN_VAL(pv_orca_synthesizer_forward, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_synthesize_helper(&default_synthesize_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_synthesizer_forward` failed with status `OUT_OF_MEMORY`\\.");
 }
 
-static void test_pv_orca_create_alignments_failure_helper(pv_status_t expected) {
+static void test_pv_orca_create_alignments_failure_helper(
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_normalizer_token_t text_token_one = {
             .string = "FIVE",
             .original_string = "5%",
@@ -1620,36 +1725,46 @@ static void test_pv_orca_create_alignments_failure_helper(pv_status_t expected) 
             encoded_phonemes,
             &num_alignments,
             &alignments);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to fail. Got '%s' expected '%s'",
             pv_status_to_string(status),
             pv_status_to_string(expected));
+
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                false,
+                "create alignments error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_orca_create_alignments_1st_calloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `aligns`\\.");
 }
 
 static void test_pv_orca_create_alignments_2nd_calloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
             calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `indices_merged`\\.");
 }
 
 static void test_pv_orca_create_alignments_3rd_calloc_failure(void) {
@@ -1669,43 +1784,43 @@ static void test_pv_orca_create_alignments_3rd_calloc_failure(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `phonemes`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_1(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_sample_rate, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_INVALID_ARGUMENT, pv_test_function_hash_regex(), "`pv_orca_sample_rate` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_2(void) {
     PV_SET_MOCK_RETURN_VAL(pv_language_info_phoneme_index_to_string, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_INVALID_ARGUMENT, pv_test_function_hash_regex(), "`pv_language_info_phoneme_index_to_string` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_3(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phoneme_alignment_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_phoneme_alignment_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_4(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_word_alignment_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_word_alignment_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_5(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_merge_word_alignments, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_merge_word_alignments` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_create_alignments_failure_path_6(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phoneme_alignment_copy, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_phoneme_alignment_copy` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static pv_status_t pv_orca_word_alignment_init_return_oom(
@@ -1739,7 +1854,7 @@ static void test_pv_orca_create_alignments_failure_path_7(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_orca_word_alignment_init, custom_funcs)
 
-    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_word_alignment_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_valid_characters_invalid_inputs(void) {
@@ -1748,19 +1863,56 @@ static void test_pv_orca_valid_characters_invalid_inputs(void) {
 
     pv_status_t status = pv_orca_valid_characters(NULL, &num_characters, &characters);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `object` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL orca_object");
 
     status = pv_orca_valid_characters(orca_object, NULL, &characters);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `num_characters` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL num_characters");
 
     status = pv_orca_valid_characters(orca_object, &num_characters, NULL);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `characters` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL characters");
 }
 
-static void test_pv_orca_valid_characters_failure_helper(pv_status_t expected) {
+static void test_pv_orca_valid_characters_failure_helper(
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     int32_t num_characters = 0;
     const char *const *characters = NULL;
     pv_status_t status = pv_orca_valid_characters(orca_object, &num_characters, &characters);
+    reset_mocks();
     pv_test_true(status == expected, "failed to fail with %s", pv_status_to_string(expected));
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "valid characters error message mismatch, expected '%s'",
+                expected_message);
+    }
     if (status == PV_STATUS_SUCCESS) {
         pv_orca_valid_characters_delete(characters);
     }
@@ -1769,7 +1921,7 @@ static void test_pv_orca_valid_characters_failure_helper(pv_status_t expected) {
 static void test_pv_orca_valid_characters_malloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(malloc, malloc_return_null)
 
-    test_pv_orca_valid_characters_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_valid_characters_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `characters_internal`\\.");
 }
 
 static void test_pv_orca_sample_rate_failure(void) {
@@ -1777,20 +1929,45 @@ static void test_pv_orca_sample_rate_failure(void) {
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
 }
 
-static void pv_orca_phoneme_alignment_init_failure_helper(pv_status_t expected) {
+static void pv_orca_phoneme_alignment_init_failure_helper(
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     const char *phoneme_string = "AA";
     pv_orca_phoneme_alignment_t *phoneme = NULL;
     pv_status_t status = pv_orca_phoneme_alignment_init(phoneme_string, 0.0f, 0.1f, &phoneme);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to fail with `%s`",
             pv_status_to_string(expected));
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "phoneme alignment init error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void pv_orca_phoneme_alignment_init_1st_calloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
-    pv_orca_phoneme_alignment_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    pv_orca_phoneme_alignment_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY, 
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.");
 }
 
 static void pv_orca_phoneme_alignment_init_2nd_calloc_failure(void) {
@@ -1800,26 +1977,55 @@ static void pv_orca_phoneme_alignment_init_2nd_calloc_failure(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    pv_orca_phoneme_alignment_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    pv_orca_phoneme_alignment_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY, 
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->phoneme`\\.");
 }
 
-static void pv_orca_word_alignment_init_failure_helper(pv_status_t expected) {
+static void pv_orca_word_alignment_init_failure_helper(
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_orca_phoneme_alignment_t phoneme1 = {.phoneme = "W", .start_sec = 0.0f, .end_sec = 0.1f};
     pv_orca_phoneme_alignment_t *phonemes[1] = {&phoneme1};
 
     const char *word_string = "word";
     pv_orca_word_alignment_t *word = NULL;
     pv_status_t status = pv_orca_word_alignment_init(word_string, 0.0f, 0.1f, 1, phonemes, &word);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to fail with `%s`",
             pv_status_to_string(expected));
+
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "word alignment init error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void pv_orca_word_alignment_init_1st_calloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
-    pv_orca_word_alignment_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    pv_orca_word_alignment_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY, 
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.");
 }
 
 static void pv_orca_word_alignment_init_2nd_calloc_failure(void) {
@@ -1829,7 +2035,10 @@ static void pv_orca_word_alignment_init_2nd_calloc_failure(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    pv_orca_word_alignment_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    pv_orca_word_alignment_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->word`\\.");
 }
 
 static void test_pv_orca_synthesize_params_set_speech_rate_invalid_inputs(void) {
@@ -1842,17 +2051,37 @@ static void test_pv_orca_synthesize_params_get_speech_rate_invalid_inputs(void) 
 
     pv_status_t status = pv_orca_synthesize_params_get_speech_rate(NULL, &speech_rate);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `object` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL synthesize_params_object");
 
     status = pv_orca_synthesize_params_get_speech_rate(synthesize_params_object, NULL);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `speech_rate` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL speech_rate");
 }
 
 static void test_pv_orca_synthesize_params_set_random_state_invalid_inputs(void) {
     pv_status_t status = pv_orca_synthesize_params_set_random_state(NULL, 17);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `object` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL synthesize_params_object");
 
     status = pv_orca_synthesize_params_set_random_state(synthesize_params_object, -1);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to set random state");
+    pv_test_error_message(
+            "Argument `random_state` value `-1` is less than the minimum acceptable value of `0`\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for negative random_state");
 }
 
 static void test_pv_orca_synthesize_params_get_random_state_invalid_inputs(void) {
@@ -1860,9 +2089,19 @@ static void test_pv_orca_synthesize_params_get_random_state_invalid_inputs(void)
 
     pv_status_t status = pv_orca_synthesize_params_get_random_state(NULL, &random_state);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `object` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL synthesize_params_object");
 
     status = pv_orca_synthesize_params_get_random_state(synthesize_params_object, NULL);
     pv_test_true(status == PV_STATUS_INVALID_ARGUMENT, "failed to fail with PV_STATUS_INVALID_ARGUMENT");
+    pv_test_error_message(
+            "Argument `random_state` is NULL\\.",
+            NULL,
+            true,
+            "failed to fail with PV_STATUS_INVALID_ARGUMENT for NULL random_state");
 }
 
 #if !defined(__PV_TARGET_NO_FILE_INTERFACE__) && !defined(__PV_TARGET_NO_FILE_SYSTEM__)
@@ -1886,6 +2125,11 @@ static void test_pv_orca_synthesize_to_file_writer_init_failure(void) {
             args.num_alignments,
             args.alignments);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to file with OUT_OF_MEMORY");
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_writer_wav_init` failed with status `OUT_OF_MEMORY`\\.",
+            true,
+            "failed to fail with OUT_OF_MEMORY for writer init");
 }
 
 static void test_pv_orca_synthesize_to_file_synthesize_failure(void) {
@@ -1904,6 +2148,11 @@ static void test_pv_orca_synthesize_to_file_synthesize_failure(void) {
             args.num_alignments,
             args.alignments);
     pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with OUT_OF_MEMORY");
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_orca_synthesize_internal` failed with status `OUT_OF_MEMORY`\\.",
+            true,
+            "failed to fail with OUT_OF_MEMORY for synthesize internal");
 }
 
 static void test_pv_orca_synthesize_to_file_writer_write_failure(void) {
@@ -1922,6 +2171,11 @@ static void test_pv_orca_synthesize_to_file_writer_write_failure(void) {
             args.num_alignments,
             args.alignments);
     pv_test_true(status == PV_STATUS_IO_ERROR, "failed to fail with IO_ERROR");
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_writer_wav_write` failed with status `IO_ERROR`\\.",
+            true,
+            "failed to fail with IO_ERROR for writer write");
 }
 
 #endif
@@ -1969,7 +2223,10 @@ static void test_pv_orca_stream_state_append_phonemes(void) {
     pv_orca_stream_close(orca_stream);
 }
 
-static void test_pv_orca_stream_state_append_phonemes_failure_helper(pv_status_t expected) {
+static void test_pv_orca_stream_state_append_phonemes_failure_helper(
+        pv_status_t expected,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_orca_stream_state_t *stream_state = pv_orca_stream_state_get(orca_object);
     pv_test_true(stream_state != NULL, "failed to get stream state");
 
@@ -1979,24 +2236,49 @@ static void test_pv_orca_stream_state_append_phonemes_failure_helper(pv_status_t
             stream_state,
             num_encoded_phonemes,
             encoded_phonemes);
+    reset_mocks();
     pv_test_true(
             status == expected,
             "failed to append encoded phonemes. got `%s`, expected `%s`",
             pv_status_to_string(status),
             pv_status_to_string(expected));
+    if (expected != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "stream state append phonemes error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_orca_stream_state_append_phonemes_failure_1(void) {
     PV_SET_MOCK_RETURN_VAL(pv_buffer_int32_append, PV_STATUS_OUT_OF_MEMORY);
 
-    test_pv_orca_stream_state_append_phonemes_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_stream_state_append_phonemes_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY, 
+            pv_test_function_hash_regex(),
+            "`pv_buffer_int32_append` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_stream_state_append_phonemes_failure_2(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_index_past_cutoff, 10)
     PV_SET_MOCK_RETURN_VAL(pv_buffer_int32_remove_from_start, PV_STATUS_INVALID_ARGUMENT);
 
-    test_pv_orca_stream_state_append_phonemes_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_stream_state_append_phonemes_failure_helper(
+            PV_STATUS_INVALID_ARGUMENT,
+            pv_test_function_hash_regex(),
+            "`pv_buffer_int32_remove_from_start` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 #endif

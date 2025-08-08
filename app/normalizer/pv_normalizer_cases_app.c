@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
     char **message_stack = NULL;
     int32_t message_stack_depth = 0;
 
-    pv_picollm_tokenizer_t *stream_tokenizer = NULL;
+    pv_tokenizer_t *stream_tokenizer = NULL;
     if (tokenizer_bin_path != NULL) {
         FILE *f = pv_fopen(tokenizer_bin_path, "rb");
         if (!f) {
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
 
-        pv_status_t status = pv_picollm_tokenizer_init(f, &stream_tokenizer);
+        pv_status_t status = pv_tokenizer_init(f, &stream_tokenizer);
         (void) fclose(f);
         if (status != PV_STATUS_SUCCESS) {
             (void) fprintf(stderr, "Could not load stream tokenizer: `%s`", pv_status_to_string(status));
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
     pv_normalizer_cases_helper_delete(text_cases_helper);
     text_cases_helper = NULL;
 
-    pv_picollm_tokenizer_delete(stream_tokenizer);
+    pv_tokenizer_delete(stream_tokenizer);
     stream_tokenizer = NULL;
 
     pv_normalizer_delete(normalizer_object);

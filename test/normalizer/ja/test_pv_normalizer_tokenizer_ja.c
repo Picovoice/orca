@@ -576,11 +576,17 @@ static void test_pv_normalizer_tokenizer_init_calloc_fail(void) {
             language_info_object,
             &shadow,
             &t);
+    reset_mocks();
     pv_test_true(
             status == PV_STATUS_OUT_OF_MEMORY,
             "expected init to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_OUT_OF_MEMORY),
             pv_status_to_string(status));
+    pv_test_error_message(
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_init_mecab_fail(void) {
@@ -596,6 +602,11 @@ static void test_pv_normalizer_tokenizer_init_mecab_fail(void) {
             "expected init to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_IO_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            "Picovoice Error",
+            "`mecab_new_from_buffer` failed.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_init_tokenizer_generic_fail(void) {
@@ -613,6 +624,11 @@ static void test_pv_normalizer_tokenizer_init_tokenizer_generic_fail(void) {
             "expected init to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+        "`pv_normalizer_tokenizer_generic_init` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_init_tokenize_validate_fail(void) {
@@ -631,6 +647,11 @@ static void test_pv_normalizer_tokenizer_init_tokenize_validate_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_validate_text` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_token_list_init_fail(void) {
@@ -649,6 +670,11 @@ static void test_pv_normalizer_tokenizer_tokenize_token_list_init_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_token_list_init` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_num_bytes_fail(void) {
@@ -667,6 +693,11 @@ static void test_pv_normalizer_tokenizer_tokenize_num_bytes_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
             pv_status_to_string(status));
+    pv_test_error_message(
+            "Argument `text` is invalid.",
+            NULL,
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_is_punctuation_fail(void) {
@@ -685,6 +716,11 @@ static void test_pv_normalizer_tokenizer_tokenize_is_punctuation_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_is_punctuation` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_generic_tokenizer_fail(void) {
@@ -703,6 +739,11 @@ static void test_pv_normalizer_tokenizer_tokenize_generic_tokenizer_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_tokenizer_generic_tokenize` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_normalize_full_width_fail(void) {
@@ -721,6 +762,11 @@ static void test_pv_normalizer_tokenizer_tokenize_normalize_full_width_fail(void
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_ja_normalize_full_width_text` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_token_init_fail(void) {
@@ -739,6 +785,11 @@ static void test_pv_normalizer_tokenizer_tokenize_token_init_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_token_init_with_original_string` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 static void test_pv_normalizer_tokenizer_tokenize_on_character_fail(void) {
@@ -758,6 +809,11 @@ static void test_pv_normalizer_tokenizer_tokenize_on_character_fail(void) {
             "expected tokenize to fail with `%s`, got `%s`",
             pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
             pv_status_to_string(status));
+    pv_test_error_message(
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_tokenizer_generic_tokenize` failed with status `RUNTIME_ERROR`.",
+            false,
+            "error message mismatch");
 }
 
 #endif
