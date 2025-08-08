@@ -54,7 +54,7 @@ build-prod-linux:
   tags:
     - pv-cicd-linux-x86-docker
   cache:
-    - !reference [.build-test-beta-props, cache]
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-mac:
@@ -136,6 +136,8 @@ build-prod-rpi3:
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-rpi3-64:
@@ -158,6 +160,8 @@ build-prod-rpi3-64:
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-rpi4:
@@ -180,6 +184,8 @@ build-prod-rpi4:
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-rpi4-64:
@@ -202,6 +208,8 @@ build-prod-rpi4-64:
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-rpi5:
@@ -224,6 +232,8 @@ build-prod-rpi5:
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-rpi5-64:
@@ -246,6 +256,8 @@ build-prod-rpi5-64:
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-wasm:
@@ -266,7 +278,7 @@ build-prod-wasm:
   tags:
     - pv-cicd-linux-x86-docker
   cache:
-    - !reference [.build-test-beta-props, cache]
+    - !reference [ .build-prod-props, cache ]
   when: manual
 
 build-prod-android:
