@@ -334,6 +334,8 @@ build-beta-rpi3-release:
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -355,6 +357,8 @@ build-beta-rpi3-64-release:
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -376,6 +380,8 @@ build-beta-rpi4-release:
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -397,6 +403,8 @@ build-beta-rpi4-64-release:
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -418,6 +426,8 @@ build-beta-rpi5-debug:
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -439,6 +449,8 @@ build-beta-rpi5-release:
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -460,6 +472,8 @@ build-beta-rpi5-64-debug:
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
@@ -481,6 +495,8 @@ build-beta-rpi5-64-release:
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
   rules:
     - !reference [.build-test-beta-props, rules]
 
