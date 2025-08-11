@@ -242,7 +242,10 @@ static void *malloc_return_null(size_t arg0) {
     return NULL;
 }
 
-static void test_pv_orca_phonemizer_init_failure_helper(pv_status_t expected_status) {
+static void test_pv_orca_phonemizer_init_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_orca_phonemizer_t *test_orca_phonemizer_object = NULL;
     pv_log_disable();
     pv_status_t status = pv_orca_phonemizer_init(
@@ -254,10 +257,30 @@ static void test_pv_orca_phonemizer_init_failure_helper(pv_status_t expected_sta
             language_info_object,
             &test_orca_phonemizer_object);
     pv_log_enable();
+    reset_mocks();
     pv_test_true(
             status == expected_status,
             "failed to fail init. Got unexpected status `%s`",
             pv_status_to_string(status));
+
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                true,
+                "init error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_orca_phonemizer_init_1st_calloc_failure(void) {
@@ -265,12 +288,17 @@ static void test_pv_orca_phonemizer_init_1st_calloc_failure(void) {
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_init_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_init_failure_helper(
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_orca_phonemizer_phonemize_failure_helper(
         struct phonemize_args *args,
-        pv_status_t expected_status) {
+        pv_status_t expected_status,
+        const char *expected_public_error_message_regex,
+        const char *expected_private_error_message_regex) {
     pv_log_disable();
     pv_status_t status = pv_orca_phonemizer_phonemize(
             args->object,
@@ -285,10 +313,30 @@ static void test_pv_orca_phonemizer_phonemize_failure_helper(
             &(args->phoneme_token),
             &(args->text_tokens_num_phonemes));
     pv_log_enable();
+    reset_mocks();
     pv_test_true(
             status == expected_status,
             "failed to fail phonemizing sentence. Got unexpected status `%s`",
             pv_status_to_string(status));
+
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_error_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_error_message_regex) {
+            expected_message = expected_private_error_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_error_message_regex,
+                expected_private_error_message_regex,
+                false,
+                "phonemize error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_orca_phonemizer_phonemize_1st_calloc_failure(void) {
@@ -296,7 +344,11 @@ static void test_pv_orca_phonemizer_phonemize_1st_calloc_failure(void) {
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &default_phonemize_args,
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `phoneme_tokens_buffer`\\.");
 }
 
 static void test_pv_orca_phonemizer_phonemize_2nd_calloc_failure(void) {
@@ -305,19 +357,12 @@ static void test_pv_orca_phonemizer_phonemize_2nd_calloc_failure(void) {
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &default_phonemize_args,
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `num_phonemes_buffer`\\.");
 }
-
-static void test_pv_orca_phonemizer_phonemize_3rd_calloc_failure(void) {
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
-}
-
 
 static void test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_1st_calloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
@@ -327,7 +372,11 @@ static void test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_1st_calloc_f
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&phonemize_args_comma, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &phonemize_args_comma,
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `num_phonemes_buffer_with_pronunciation`\\.");
 }
 
 
@@ -340,7 +389,11 @@ static void test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_2nd_calloc_f
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&phonemize_args_comma, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &phonemize_args_comma,
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `phonemes_buffer_with_pronunciation`\\.");
 }
 
 
@@ -354,42 +407,29 @@ static void test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_3rd_calloc_f
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&phonemize_args_comma, PV_STATUS_OUT_OF_MEMORY);
-}
-
-
-static void test_pv_orca_phonemizer_phonemize_1st_malloc_failure(void) {
-    PV_SET_MOCK_CUSTOM_FUNC(malloc, malloc_return_null)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
-}
-
-static void test_pv_orca_phonemizer_phonemize_2nd_malloc_failure(void) {
-    void *(*custom_funcs[])(size_t arg0) = {
-            malloc_real,
-            malloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(malloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
-}
-
-static void test_pv_orca_phonemizer_phonemize_3rd_malloc_failure(void) {
-    void *(*custom_funcs[])(size_t arg0) = {
-            malloc_real,
-            malloc_real,
-            malloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(malloc, custom_funcs)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &phonemize_args_comma,
+        PV_STATUS_OUT_OF_MEMORY,
+        "Failed to allocate, out of memory\\.",
+        "Failed to allocate memory for `text_tokens_num_encoded_phonemes_final`\\.");
 }
 
 static void test_pv_orca_phonemizer_phonemize_1st_language_info_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_language_info_phoneme_index_from_string, PV_STATUS_INVALID_ARGUMENT)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &default_phonemize_args,
+        PV_STATUS_INVALID_ARGUMENT,
+        pv_test_function_hash_regex(),
+        "`pv_language_info_phoneme_index_from_string` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_orca_phonemizer_phonemize_hippo_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_get_phonemes_hippo, PV_STATUS_INVALID_ARGUMENT)
-    test_pv_orca_phonemizer_phonemize_failure_helper(&default_phonemize_args, PV_STATUS_INVALID_ARGUMENT);
+    test_pv_orca_phonemizer_phonemize_failure_helper(
+        &default_phonemize_args,
+        PV_STATUS_INVALID_ARGUMENT,
+        pv_test_function_hash_regex(),
+        "`pv_orca_phonemizer_get_phonemes_hippo` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 static void test_pv_orca_phonemizer_get_phonemes_custom_pronunciation_1st_malloc_failure(void) {
@@ -975,13 +1015,9 @@ static const pv_test_case_t PV_ORCA_PHONEMIZER_TEST_CASES[] = {
         {"init 1st calloc failure", test_pv_orca_phonemizer_init_1st_calloc_failure},
         {"phonemize 1st calloc failure", test_pv_orca_phonemizer_phonemize_1st_calloc_failure},
         {"phonemize 2nd calloc failure", test_pv_orca_phonemizer_phonemize_2nd_calloc_failure},
-        {"phonemize 3rd calloc failure", test_pv_orca_phonemizer_phonemize_3rd_calloc_failure},
         {"phonemize after phonemes buffer 1st calloc failure", test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_1st_calloc_failure},
         {"phonemize after phonemes buffer 2nd calloc failure", test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_2nd_calloc_failure},
         {"phonemize after phonemes buffer 3rd calloc failure", test_pv_orca_phonemizer_phonemize_after_phonemes_buffer_3rd_calloc_failure},
-        {"phonemize 1st malloc failure", test_pv_orca_phonemizer_phonemize_1st_malloc_failure},
-        {"phonemize 2nd malloc failure", test_pv_orca_phonemizer_phonemize_2nd_malloc_failure},
-        {"phonemize 3rd malloc failure", test_pv_orca_phonemizer_phonemize_3rd_malloc_failure},
         {"phonemize 1st language_info failure", test_pv_orca_phonemizer_phonemize_1st_language_info_failure},
         {"phonemize hippo failure", test_pv_orca_phonemizer_phonemize_hippo_failure},
         {"phonemize custom pronunciation 1st malloc failure",

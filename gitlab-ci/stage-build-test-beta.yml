@@ -319,19 +319,20 @@ build-beta-windows-arm64-release:
 build-beta-rpi3-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
     PLATFORM_NAME: raspberry-pi3
     BUILD_TYPE: release
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi4-armv7
+    - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -339,19 +340,20 @@ build-beta-rpi3-release:
 build-beta-rpi3-64-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
     PLATFORM_NAME: raspberry-pi3-64
     BUILD_TYPE: release
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi4-arm64
+    - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -359,19 +361,20 @@ build-beta-rpi3-64-release:
 build-beta-rpi4-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
     PLATFORM_NAME: raspberry-pi4
     BUILD_TYPE: release
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi4-armv7
+    - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -379,19 +382,20 @@ build-beta-rpi4-release:
 build-beta-rpi4-64-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
     PLATFORM_NAME: raspberry-pi4-64
     BUILD_TYPE: release
   before_script:
-    - export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi4-arm64
+    - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -399,6 +403,7 @@ build-beta-rpi4-64-release:
 build-beta-rpi5-eng-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -411,7 +416,7 @@ build-beta-rpi5-eng-release:
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi5-armv7
+    - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -419,6 +424,7 @@ build-beta-rpi5-eng-release:
 build-beta-rpi5-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -431,7 +437,7 @@ build-beta-rpi5-release:
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi5-armv7
+    - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -439,6 +445,7 @@ build-beta-rpi5-release:
 build-beta-rpi5-64-eng-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -451,7 +458,7 @@ build-beta-rpi5-64-eng-release:
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi5-arm64
+    - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -459,6 +466,7 @@ build-beta-rpi5-64-eng-release:
 build-beta-rpi5-64-release:
   stage: build-beta
   interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -471,7 +479,7 @@ build-beta-rpi5-64-release:
   script:
     - !reference [.build-beta, script-toolchain]
   tags:
-    - pv-cicd-rpi5-arm64
+    - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]

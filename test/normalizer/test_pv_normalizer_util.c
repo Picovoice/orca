@@ -279,7 +279,10 @@ static void test_pv_normalizer_util_remap_spaces(void) {
 
 #ifdef __PV_MOCKS__
 
-static void test_pv_normalizer_util_failure_helper(pv_status_t expected) {
+static void test_pv_normalizer_util_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     pv_status_t status = pv_normalizer_util_validate_text(
             PV_NORMALIZER_LANGUAGE_DE,
             language_info_object,
@@ -287,40 +290,75 @@ static void test_pv_normalizer_util_failure_helper(pv_status_t expected) {
             false,
             true,
             NULL);
-    pv_test_true(status == expected,
+    reset_mocks();
+    pv_test_true(status == expected_status,
                  "Expected '%s' got '%s'",
-                 pv_status_to_string(expected),
+                 pv_status_to_string(expected_status),
                  pv_status_to_string(status));
+
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 static void test_pv_normalizer_util_calloc_failure(void) {
     PV_SET_MOCK_RETURN_VAL(calloc, NULL)
 
-    test_pv_normalizer_util_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_util_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `cleaned_text_internal`\\.");
 }
 
 static void test_pv_normalizer_util_pv_language_num_bytes_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_language_num_bytes_character, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_normalizer_util_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_normalizer_util_failure_helper(
+            PV_STATUS_INVALID_ARGUMENT,
+            "Argument `text` is invalid.",
+            NULL);
 }
 
 static void test_pv_normalizer_util_ph_malloc_failure(void) {
     PV_SET_MOCK_RETURN_VAL(malloc, NULL)
 
-    test_pv_normalizer_util_failure_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_util_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `token`\\.");
 }
 
 static void test_pv_normalizer_util_language_info_phoneme_index_from_string_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_language_info_phoneme_index_from_string, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_normalizer_util_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_normalizer_util_failure_helper(
+            PV_STATUS_INVALID_ARGUMENT,
+            "Phoneme `ɛ̃` in custom pronunciation is invalid.",
+            NULL);
 }
 
 static void test_pv_normalizer_util_normalizable_character_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_util_is_normalizable_character, PV_STATUS_INVALID_ARGUMENT)
 
-    test_pv_normalizer_util_failure_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_normalizer_util_failure_helper(
+            PV_STATUS_INVALID_ARGUMENT,
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_util_is_normalizable_character` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 

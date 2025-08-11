@@ -153,7 +153,7 @@ pv_status_t PV_MOCKABLE(pv_normalizer_verbalizer_init)(
                     (pv_normalizer_verbalizer_ko_t **) (&(o->verbalizer)));
             if (status != PV_STATUS_SUCCESS) {
                 PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                        pv_normalizer_verbalizer_pt_init,
+                        pv_normalizer_verbalizer_ko_init,
                         pv_status_to_string(status));
                 pv_normalizer_verbalizer_delete(o);
                 return status;

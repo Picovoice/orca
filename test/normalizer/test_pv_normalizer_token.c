@@ -119,6 +119,13 @@ static void test_pv_normalizer_token_invalid_custom_pronunciation(void) {
                 "raised %s instead of PV_STATUS_INVALID_ARGUMENT",
                 pv_status_to_string(status));
 
+        pv_test_error_message(
+                pv_test_function_hash_regex(),
+                "`pv_normalizer_token_read_custom_pronunciation` failed with status `INVALID_ARGUMENT`\\.",
+                true,
+                "error message mismatch for string '%s'",
+                strings[i]);
+
         if (token != NULL) {
             pv_normalizer_token_delete(token);
             token = NULL;
@@ -337,6 +344,12 @@ static void test_pv_normalizer_token_list_unroll_token_invalid_index(void) {
             "raised %s instead of %s",
             pv_status_to_string(status),
             pv_status_to_string(PV_STATUS_INVALID_ARGUMENT));
+
+    pv_test_error_message(
+            "Picovoice Error",
+            "Argument `string_split_index` is invalid.",
+            true,
+            "error message mismatch");
 }
 
 #ifdef __PV_MOCKS__
@@ -347,7 +360,10 @@ static void *calloc_return_null(size_t arg0, size_t arg1) {
     return NULL;
 }
 
-static void test_pv_normalizer_token_init_failure_helper(void) {
+static void test_pv_normalizer_token_init_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     pv_normalizer_token_t *token = NULL;
     pv_status_t status = pv_normalizer_token_init(
             0,
@@ -357,10 +373,40 @@ static void test_pv_normalizer_token_init_failure_helper(void) {
             false,
             false,
             &token);
-    pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with oom error");
+    reset_mocks();
+    pv_test_true(
+            status == expected_status,
+            "init token error, expected '%s' got '%s'",
+            pv_status_to_string(expected_status),
+            pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
+
+    if (status == PV_STATUS_SUCCESS) {
+        pv_normalizer_token_delete(token);
+    }
 }
 
-static void test_pv_normalizer_token_init_with_original_string_failure_helper(void) {
+static void test_pv_normalizer_token_init_with_original_string_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     pv_normalizer_token_t *token = NULL;
     pv_status_t status = pv_normalizer_token_init_with_original_string(
             "string",
@@ -370,20 +416,58 @@ static void test_pv_normalizer_token_init_with_original_string_failure_helper(vo
             0,
             0,
             &token);
-    pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with oom error");
+    reset_mocks();
+    pv_test_true(
+            status == expected_status,
+            "init token error, expected '%s' got '%s'",
+            pv_status_to_string(expected_status),
+            pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
+
+    if (status == PV_STATUS_SUCCESS) {
+        pv_normalizer_token_delete(token);
+    }
 }
 
 static void test_pv_normalizer_token_init_failure_1(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_token_read_text_segment, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_normalizer_token_init_failure_helper();
+    test_pv_normalizer_token_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_token_read_text_segment` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_token_init_failure_2(void) {
     PV_SET_MOCK_RETURN_VAL(calloc, NULL)
 
-    test_pv_normalizer_token_init_failure_helper();
-    test_pv_normalizer_token_init_with_original_string_failure_helper();
+    test_pv_normalizer_token_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.");
+
+    PV_SET_MOCK_RETURN_VAL(calloc, NULL)
+    test_pv_normalizer_token_init_with_original_string_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_normalizer_token_init_failure_3(void) {
@@ -393,19 +477,55 @@ static void test_pv_normalizer_token_init_failure_3(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_normalizer_token_init_failure_helper();
+    test_pv_normalizer_token_init_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->original_string`\\.");
 }
 
-static void test_pv_normalizer_token_copy_failure_helper(void) {
+static void test_pv_normalizer_token_copy_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     pv_normalizer_token_t *token_two = NULL;
     pv_status_t status = pv_normalizer_token_copy(token_verbalized_pronunciation_object, &token_two);
-    pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail to copy token with oom error");
+    reset_mocks();
+    pv_test_true(
+            status == expected_status,
+            "copy token error, expected '%s' got '%s'",
+            pv_status_to_string(expected_status),
+            pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
+
+    if (status == PV_STATUS_SUCCESS) {
+        pv_normalizer_token_delete(token_two);
+    }
 }
 
 static void test_pv_normalizer_token_copy_failure_calloc_1(void) {
     PV_SET_MOCK_RETURN_VAL(calloc, NULL)
 
-    test_pv_normalizer_token_copy_failure_helper();
+    test_pv_normalizer_token_copy_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_normalizer_token_copy_failure_calloc_2(void) {
@@ -415,7 +535,10 @@ static void test_pv_normalizer_token_copy_failure_calloc_2(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_normalizer_token_copy_failure_helper();
+    test_pv_normalizer_token_copy_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `string`\\.");
 }
 
 static void test_pv_normalizer_token_copy_failure_calloc_3(void) {
@@ -426,7 +549,10 @@ static void test_pv_normalizer_token_copy_failure_calloc_3(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_normalizer_token_copy_failure_helper();
+    test_pv_normalizer_token_copy_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->original_string`\\.");
 }
 
 static void test_pv_normalizer_token_copy_failure_calloc_4(void) {
@@ -438,7 +564,10 @@ static void test_pv_normalizer_token_copy_failure_calloc_4(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_normalizer_token_copy_failure_helper();
+    test_pv_normalizer_token_copy_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->verbalized`\\.");
 }
 
 static void test_pv_normalizer_token_copy_failure_calloc_5(void) {
@@ -451,7 +580,10 @@ static void test_pv_normalizer_token_copy_failure_calloc_5(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
 
-    test_pv_normalizer_token_copy_failure_helper();
+    test_pv_normalizer_token_copy_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            "Failed to allocate, out of memory\\.",
+            "Failed to allocate memory for `o->pronunciation`\\.");
 }
 
 static pv_status_t pv_normalizer_token_read_text_segment_return_oom(
@@ -467,7 +599,10 @@ static pv_status_t pv_normalizer_token_read_text_segment_return_oom(
     return PV_STATUS_OUT_OF_MEMORY;
 }
 
-static void test_pv_normalizer_token_read_custom_pronunciation_failure_helper(void) {
+static void test_pv_normalizer_token_read_custom_pronunciation_failure_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     char *segment = NULL;
     char *pronunciation = NULL;
     pv_status_t status = pv_normalizer_token_read_custom_pronunciation(
@@ -476,13 +611,44 @@ static void test_pv_normalizer_token_read_custom_pronunciation_failure_helper(vo
             TOKEN_STRING_CUSTOM_PRON,
             &segment,
             &pronunciation);
-    pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with oom error");
+    reset_mocks();
+    pv_test_true(
+            status == expected_status,
+            "read custom pronunciation error, expected '%s' got '%s'",
+            pv_status_to_string(expected_status),
+            pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
+
+    if (status == PV_STATUS_SUCCESS) {
+        free(segment);
+        free(pronunciation);
+    }
 }
 
 static void test_pv_normalizer_token_read_custom_pronunciation_failure_1(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_token_read_text_segment, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_normalizer_token_read_custom_pronunciation_failure_helper();
+    test_pv_normalizer_token_read_custom_pronunciation_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_token_read_text_segment` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_token_read_custom_pronunciation_failure_2(void) {
@@ -496,7 +662,10 @@ static void test_pv_normalizer_token_read_custom_pronunciation_failure_2(void) {
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_normalizer_token_read_text_segment, custom_funcs)
 
-    test_pv_normalizer_token_read_custom_pronunciation_failure_helper();
+    test_pv_normalizer_token_read_custom_pronunciation_failure_helper(
+            PV_STATUS_OUT_OF_MEMORY,
+            pv_test_function_hash_regex(),
+            "`pv_normalizer_token_read_text_segment` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_token_list_init_calloc_failure(void) {
@@ -504,7 +673,32 @@ static void test_pv_normalizer_token_list_init_calloc_failure(void) {
 
     pv_normalizer_token_list_t *token_list = NULL;
     pv_status_t status = pv_normalizer_token_list_init(&token_list);
-    pv_test_true(status == PV_STATUS_OUT_OF_MEMORY, "failed to fail with oom error");
+    reset_mocks();
+    pv_test_true(
+            status == PV_STATUS_OUT_OF_MEMORY,
+            "init token list error, expected '%s' got '%s'",
+            pv_status_to_string(PV_STATUS_OUT_OF_MEMORY),
+            pv_status_to_string(status));
+    if (PV_STATUS_OUT_OF_MEMORY != PV_STATUS_SUCCESS) {
+        const char *expected_public_message_regex = "Failed to allocate, out of memory\\.";
+        const char *expected_private_message_regex = "Failed to allocate memory for `o`\\.";
+        const char *expected_message = expected_public_message_regex;
+
+#ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+#endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 }
 
 #endif

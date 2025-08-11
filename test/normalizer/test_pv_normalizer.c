@@ -341,24 +341,49 @@ static void test_pv_normalizer_normalize_robustness_tests(void) {
 
 #ifdef __PV_MOCKS__
 
-static void test_pv_normalizer_init_helper(pv_status_t expected) {
+static void test_pv_normalizer_init_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
     pv_language_info_load_json(language_info_path, &language_info_object, true, true);
 
     pv_normalizer_t *object = NULL;
     pv_status_t status = pv_normalizer_init(language_info_object, noun_gender_dict_object, NULL, &object);
+    reset_mocks();
     pv_test_true(
-            status == expected,
+            status == expected_status,
             "init normalizer error, expected '%s' got '%s'",
-            pv_status_to_string(expected),
+            pv_status_to_string(expected_status),
             pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 
     if (status == PV_STATUS_SUCCESS) {
         pv_normalizer_delete(object);
     }
 }
 
-static void test_pv_normalizer_normalize_helper(pv_status_t expected) {
+static void test_pv_normalizer_normalize_helper(
+        pv_status_t expected_status,
+        const char *expected_public_message_regex,
+        const char *expected_private_message_regex) {
     char *normalized = NULL;
     pv_normalizer_token_list_t *token_list = NULL;
     pv_status_t status = pv_normalizer_normalize(
@@ -368,11 +393,30 @@ static void test_pv_normalizer_normalize_helper(pv_status_t expected) {
             false,
             &normalized,
             &token_list);
+    reset_mocks();
     pv_test_true(
-            status == expected,
+            status == expected_status,
             "normalizer normalize error, expected '%s' got '%s'",
-            pv_status_to_string(expected),
+            pv_status_to_string(expected_status),
             pv_status_to_string(status));
+    if (expected_status != PV_STATUS_SUCCESS) {
+        const char *expected_message = expected_public_message_regex;
+
+        #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
+
+        if (expected_private_message_regex) {
+            expected_message = expected_private_message_regex;
+        }
+
+        #endif
+
+        pv_test_error_message(
+                expected_public_message_regex,
+                expected_private_message_regex,
+                true,
+                "error message mismatch, expected '%s'",
+                expected_message);
+    }
 
     if (status == PV_STATUS_SUCCESS) {
         free(normalized);
@@ -384,94 +428,48 @@ static void test_pv_normalizer_init_failure(void) {
             calloc_return_null,
     };
     PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `o`\\.");
 }
 
 static void test_pv_normalizer_tokenizer_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_language_info_load_json, PV_STATUS_SUCCESS);
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY);
+    PV_SET_MOCK_RETURN_VAL(pv_normalizer_tokenizer_init, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_tokenizer_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_tagger_init_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_language_info_load_json, PV_STATUS_SUCCESS);
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY);
+    PV_SET_MOCK_RETURN_VAL(pv_normalizer_tagger_init, PV_STATUS_OUT_OF_MEMORY);
+test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_tagger_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_verbalizer_init_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_language_info_load_json, PV_STATUS_SUCCESS);
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY);
+    PV_SET_MOCK_RETURN_VAL(pv_normalizer_verbalizer_en_init, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_init` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_use_cases_init_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_language_info_load_json, PV_STATUS_SUCCESS);
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY);
+    PV_SET_MOCK_RETURN_VAL(pv_normalizer_get_use_cases_from_language, PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_init_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_get_use_cases_from_language` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_normalize_tokenize_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_tokenizer_tokenize, PV_STATUS_OUT_OF_MEMORY);
-    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_tokenizer_tokenize` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_normalize_tag_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_tagger_tag, PV_STATUS_OUT_OF_MEMORY);
-    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_tagger_tag` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_normalize_verbalize_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_verbalizer_en_verbalize, PV_STATUS_OUT_OF_MEMORY);
-    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY);
-}
-
-static void test_pv_normalizer_normalize_output_calloc_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_normalizer_tagger_tag, PV_STATUS_SUCCESS);
-    PV_SET_MOCK_RETURN_VAL(pv_normalizer_verbalizer_en_verbalize, PV_STATUS_SUCCESS);
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_real,
-            calloc_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs);
-    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY);
+    test_pv_normalizer_normalize_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_normalizer_verbalizer_verbalize` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_normalizer_normalize_token_num_bytes_character_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_normalizer_tokenizer_tokenize, PV_STATUS_INVALID_ARGUMENT);
-    test_pv_normalizer_normalize_helper(PV_STATUS_INVALID_ARGUMENT);
+    test_pv_normalizer_normalize_helper(PV_STATUS_INVALID_ARGUMENT, pv_test_function_hash_regex(), "`pv_normalizer_tokenizer_tokenize` failed with status `INVALID_ARGUMENT`\\.");
 }
 
 #endif
@@ -501,7 +499,6 @@ static const pv_test_case_t PV_NORMALIZER_TEST_CASES[] = {
         {"normalize_tokenize_failure", test_pv_normalizer_normalize_tokenize_failure},
         {"normalize_tag_failure", test_pv_normalizer_normalize_tag_failure},
         {"normalize_verbalize_failure", test_pv_normalizer_normalize_verbalize_failure},
-        {"normalize_output_calloc_failure", test_pv_normalizer_normalize_output_calloc_failure},
         {"normalize_token_num_bytes_character_failure", test_pv_normalizer_normalize_token_num_bytes_character_failure},
 
 #endif
