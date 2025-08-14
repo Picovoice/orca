@@ -43,7 +43,7 @@
       --build
       --test
 
-build-beta-linux-debug:
+build-beta-linux-eng-release:
   stage: build-beta
   interruptible: true
   coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
@@ -52,7 +52,7 @@ build-beta-linux-debug:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
     PLATFORM_NAME: linux
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -71,9 +71,9 @@ beta-coverage-linux:
   image: python:3.10
   interruptible: true
   needs:
-    - build-beta-linux-debug
+    - build-beta-linux-eng-release
   variables:
-    JOB_NAME: build-beta-linux-debug
+    JOB_NAME: build-beta-linux-eng-release
     TARGET_BRANCH: main
   before_script:
     - pip3 install requests
@@ -95,13 +95,13 @@ beta-asan-linux:
   stage: test-beta
   interruptible: true
   needs:
-    - build-beta-linux-debug
+    - build-beta-linux-eng-release
   image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
   variables:
     TOOLCHAIN_VER: 1.1.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
     PLATFORM_NAME: linux
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -151,12 +151,12 @@ build-beta-linux-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-mac-m1-debug:
+build-beta-mac-m1-eng-release:
   stage: build-beta
   interruptible: true
   variables:
     PLATFORM_NAME: mac
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
@@ -183,13 +183,13 @@ build-beta-mac-m1-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-windows-x86-debug:
+build-beta-windows-x86-eng-release:
   stage: build-beta
   interruptible: true
   coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
   variables:
     PLATFORM_NAME: windows
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - $ENV:JAVA_HOME = "C:\Java\jdk-11"
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -207,7 +207,7 @@ build-beta-windows-x86-debug:
     - >
       python -m gcovr --txt -s
       --gcov-ignore-errors=no_working_dir_found
-      --gcov-object-directory=build/debug/amd64/CMakeFiles/pv_orca_real_pv_orca_mock_tree.dir/src/
+      --gcov-object-directory=build/eng_release/amd64/CMakeFiles/pv_orca_real_pv_orca_mock_tree.dir/src/
   tags:
     - pv-cicd-windows-x86
     - pv-cicd-c
@@ -219,9 +219,9 @@ beta-coverage-windows:
   image: python:3.10
   interruptible: true
   needs:
-    - build-beta-windows-x86-debug
+    - build-beta-windows-x86-eng-release
   variables:
-    JOB_NAME: build-beta-windows-x86-debug
+    JOB_NAME: build-beta-windows-x86-eng-release
     TARGET_BRANCH: main
   before_script:
     - python -m pip install requests
@@ -264,12 +264,12 @@ build-beta-windows-x86-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-windows-arm64-debug:
+build-beta-windows-arm64-eng-release:
   stage: build-beta
   interruptible: true
   variables:
     PLATFORM_NAME: windows
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - $ENV:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -408,7 +408,7 @@ build-beta-rpi4-64-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-rpi5-debug:
+build-beta-rpi5-eng-release:
   stage: build-beta
   interruptible: true
   image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
@@ -416,7 +416,7 @@ build-beta-rpi5-debug:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
     PLATFORM_NAME: raspberry-pi5
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
     - !reference [.build-toolchain-setup, before-script-toolchain]
@@ -454,7 +454,7 @@ build-beta-rpi5-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-rpi5-64-debug:
+build-beta-rpi5-64-eng-release:
   stage: build-beta
   interruptible: true
   image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
@@ -462,7 +462,7 @@ build-beta-rpi5-64-debug:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
     PLATFORM_NAME: raspberry-pi5-64
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
     - !reference [.build-toolchain-setup, before-script-toolchain]
@@ -500,13 +500,13 @@ build-beta-rpi5-64-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-wasm-browser-debug:
+build-beta-wasm-browser-eng-release:
   stage: build-beta
   interruptible: true
   image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
   variables:
     PLATFORM_NAME: wasm
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - export EMSDK_HOME=~/.emsdk
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -558,7 +558,7 @@ build-beta-wasm-browser-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-wasm-linux-debug:
+build-beta-wasm-linux-eng-release:
   stage: build-beta
   interruptible: true
   coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
@@ -567,7 +567,7 @@ build-beta-wasm-linux-debug:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
     PLATFORM_NAME: wasm-linux
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -586,9 +586,9 @@ beta-coverage-wasm:
   image: python:3.10
   interruptible: true
   needs:
-    - build-beta-wasm-linux-debug
+    - build-beta-wasm-linux-eng-release
   variables:
-    JOB_NAME: build-beta-wasm-linux-debug
+    JOB_NAME: build-beta-wasm-linux-eng-release
     TARGET_BRANCH: main
   before_script:
     - pip3 install requests
@@ -626,12 +626,12 @@ build-beta-wasm-linux-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-android-debug:
+build-beta-android-eng-release:
   stage: build-beta
   interruptible: true
   variables:
     PLATFORM_NAME: android
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
     - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
@@ -684,12 +684,12 @@ build-beta-android-release:
   rules:
     - !reference [.build-test-beta-props, rules]
 
-build-beta-ios-debug:
+build-beta-ios-eng-release:
   stage: build-beta
   interruptible: true
   variables:
     PLATFORM_NAME: ios
-    BUILD_TYPE: debug
+    BUILD_TYPE: eng_release
   before_script:
     - !reference [.build-toolchain-setup, before-script-setup-token]
     - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
