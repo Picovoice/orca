@@ -69,7 +69,7 @@ static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normal
 static const char TOKENIZER_DATA_PATH[] = "normalizer/tokenizer_data/ipadic.bin";
 
 static pv_status_t test_pv_normalizer_tagger_setup(void) {
-    char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
+    char *language_info_path = pv_test_module_res_path(LANGUAGE_INFO_PATH);
     pv_test_true(language_info_path != NULL, "Failed to get language_info_path");
     if (!language_info_path) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -83,7 +83,7 @@ static pv_status_t test_pv_normalizer_tagger_setup(void) {
     }
 
 
-    char *tokenizer_data_path = pv_test_resource_path(TOKENIZER_DATA_PATH);
+    char *tokenizer_data_path = pv_test_module_res_path(TOKENIZER_DATA_PATH);
     pv_test_true(tokenizer_data_path != NULL, "Failed to get tokenizer_data_path");
     if (!tokenizer_data_path) {
         return PV_STATUS_OUT_OF_MEMORY;

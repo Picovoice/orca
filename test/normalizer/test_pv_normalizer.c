@@ -38,7 +38,7 @@ static void *calloc_return_null(size_t arg0, size_t arg1) {
 }
 
 static pv_status_t test_pv_normalizer_setup(void) {
-    char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
+    char *language_info_path = pv_test_module_res_path(LANGUAGE_INFO_PATH);
     pv_test_true(language_info_path != NULL, "Failed to get language_info_path");
     if (!language_info_path) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -51,7 +51,7 @@ static pv_status_t test_pv_normalizer_setup(void) {
         return status;
     }
 
-    char *noun_gender_dict_path = pv_test_resource_path(NOUN_GENDER_DICT_PATH);
+    char *noun_gender_dict_path = pv_test_module_res_path(NOUN_GENDER_DICT_PATH);
     pv_test_true(noun_gender_dict_path != NULL, "Failed to get noun_gender_dict_path");
     if (!noun_gender_dict_path) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -345,7 +345,7 @@ static void test_pv_normalizer_init_helper(
         pv_status_t expected_status,
         const char *expected_public_message_regex,
         const char *expected_private_message_regex) {
-    char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
+    char *language_info_path = pv_test_module_res_path(LANGUAGE_INFO_PATH);
     pv_language_info_load_json(language_info_path, &language_info_object, true, true);
 
     pv_normalizer_t *object = NULL;

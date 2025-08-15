@@ -48,7 +48,7 @@ static const char LANGUAGE_INFO_PATH[] = "normalizer/ref/pv_language_info_normal
 static const char NOUN_GENDER_DICT_PATH[] = "test_data/noun_gender_dict/noun_gender_dict_pt.txt";
 
 static pv_status_t test_pv_normalizer_tagger_setup(void) {
-    char *language_info_path = pv_test_resource_path(LANGUAGE_INFO_PATH);
+    char *language_info_path = pv_test_module_res_path(LANGUAGE_INFO_PATH);
     pv_test_true(language_info_path != NULL, "Failed to get language_info_path");
     if (!language_info_path) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -66,7 +66,7 @@ static pv_status_t test_pv_normalizer_tagger_setup(void) {
         return status;
     }
 
-    char *noun_gender_dict_path = pv_test_resource_path(NOUN_GENDER_DICT_PATH);
+    char *noun_gender_dict_path = pv_test_module_res_path(NOUN_GENDER_DICT_PATH);
     pv_test_true(noun_gender_dict_path != NULL, "Failed to get noun_gender_dict_path");
     if (!noun_gender_dict_path) {
         return PV_STATUS_OUT_OF_MEMORY;

@@ -42,7 +42,8 @@ test {
     systemProperty 'accessKey', System.getProperty('accessKey')
     systemProperty 'buildPath', System.getProperty('buildPath')
     systemProperty 'libExt', System.getProperty('libExt')
-    systemProperty 'resourceDirectory', System.getProperty('resourceDirectory')
+    systemProperty 'moduleResDirectory', System.getProperty('moduleResDirectory')
+    systemProperty 'sharedResDirectory', System.getProperty('sharedResDirectory')
     systemProperty 'platform', System.getProperty('platform')
     useJUnitPlatform()
 }

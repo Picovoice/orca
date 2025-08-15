@@ -9,7 +9,7 @@ static void test_pv_orca_words_pron_helper(
         const char **words,
         const char **word_phonemes,
         int32_t num_words) {
-    char *dict_path = pv_test_resource_path(dict_uri);
+    char *dict_path = pv_test_module_res_path(dict_uri);
     pv_test_true(dict_path, "unable to create resource path for `%s`", dict_uri);
     if (!dict_path) {
         return;

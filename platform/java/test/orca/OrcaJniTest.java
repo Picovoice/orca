@@ -17,9 +17,9 @@ public class OrcaJniTest {
 
     private final String accessKey = System.getProperty("accessKey");
 
-    private final Path resourcePath = Paths.get(System.getProperty("resourceDirectory"));
+    private final Path moduleResPath = Paths.get(System.getProperty("moduleResDirectory"));
 
-    private final String modelPath = resourcePath.resolve("param/orca_params_en_female.pv").toString();
+    private final String modelPath = moduleResPath.resolve("param/orca_params_en_female.pv").toString();
 
     private long libraryHandle;
 

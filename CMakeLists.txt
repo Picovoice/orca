@@ -458,7 +458,10 @@ pv_module_build_test_app(
   SUB_MODULES pv_normalizer
 )
 
-set(ORCA_TEST_RESOURCES "${PROJECT_SOURCE_DIR}/res")
+set(ORCA_TEST_RESOURCES
+  "${PROJECT_SOURCE_DIR}/res"
+  "${zoo-dev_SOURCE_DIR}/res/hippo"
+  "${zoo-dev_SOURCE_DIR}/res/phonebook")
 pv_module_copy_test_resource_dirs(
   MODULE_NAME pv_orca
   TEST_RESOURCE_DIRS ${ORCA_TEST_RESOURCES}

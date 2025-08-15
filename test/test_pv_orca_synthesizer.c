@@ -55,7 +55,7 @@ static pv_status_t test_pv_orca_synthesizer_setup_helper(
         pv_orca_synthesize_params_t **synthesize_params,
         pv_orca_synthesizer_param_t **synthesizer_param,
         pv_orca_synthesizer_t **object) {
-    char *model_path = pv_test_resource_path(param_name);
+    char *model_path = pv_test_module_res_path(param_name);
     pv_test_true(
             model_path != NULL,
             "failed to open file with '%s'",
