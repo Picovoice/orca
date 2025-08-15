@@ -25,7 +25,7 @@ static const int32_t SAMPLING_RATE = 16000;
 static pv_orca_metric_t *orca_metric_object = NULL;
 
 static pv_status_t test_pv_orca_metric_setup(void) {
-    char *model_path = pv_test_resource_path(CLASSIFIER_MODEL_PATH);
+    char *model_path = pv_test_module_res_path(CLASSIFIER_MODEL_PATH);
     pv_test_true(
             model_path != NULL,
             "failed to open file with '%s'",

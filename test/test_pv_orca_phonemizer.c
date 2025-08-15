@@ -148,18 +148,18 @@ static const pv_orca_phonemizer_param_t DEFAULT_PHONEMIZER_PARAM = {
 };
 
 static pv_status_t test_pv_orca_phonemizer_setup(void) {
-    char *hippo_path = pv_test_resource_path("hippo/param/hippo_params_en.pv");
+    char *hippo_path = pv_test_shared_res_path("hippo/param/hippo_params_en.pv");
     pv_status_t status = pv_hippo_init(hippo_path, &hippo_object);
     free(hippo_path);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
 
-    char *lexicon_path = pv_test_resource_path("test_data/phonemizer_test/lexicon.txt");
+    char *lexicon_path = pv_test_module_res_path("test_data/phonemizer_test/lexicon.txt");
     if (!lexicon_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    char *language_info_path = pv_test_resource_path("language_info/pv_language_info_orca_normalizer_en.json");
+    char *language_info_path = pv_test_module_res_path("language_info/pv_language_info_orca_normalizer_en.json");
     if (!language_info_path) {
         free(lexicon_path);
         return PV_STATUS_OUT_OF_MEMORY;
@@ -177,11 +177,11 @@ static pv_status_t test_pv_orca_phonemizer_setup(void) {
         return status;
     }
 
-    char *phoneme_path = pv_test_resource_path("phonebook/en-phonemes.txt");
+    char *phoneme_path = pv_test_shared_res_path("phonebook/en-phonemes.txt");
     if (!phoneme_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    char *dict_path = pv_test_resource_path("test_data/phonemizer_test/dictionary.txt");
+    char *dict_path = pv_test_module_res_path("test_data/phonemizer_test/dictionary.txt");
     if (!dict_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
@@ -192,7 +192,7 @@ static pv_status_t test_pv_orca_phonemizer_setup(void) {
         return status;
     }
 
-    char *tree_path = pv_test_resource_path("test_data/phonemizer_test/heteronym_tree.txt");
+    char *tree_path = pv_test_module_res_path("test_data/phonemizer_test/heteronym_tree.txt");
     if (!tree_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }

@@ -18,7 +18,7 @@ static pv_status_t test_pv_orca_setup_helper(
         const char *param_name,
         pv_orca_t **object,
         pv_orca_synthesize_params_t **synthesize_object) {
-    char *model_path = pv_test_resource_path(param_name);
+    char *model_path = pv_test_module_res_path(param_name);
     if (!model_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }

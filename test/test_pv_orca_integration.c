@@ -80,7 +80,7 @@ static pv_status_t test_pv_orca_setup_helper(
     PV_ASSERT(orca_object);
     PV_ASSERT(synthesize_params_object);
 
-    char *model_path = pv_test_resource_path(param_name);
+    char *model_path = pv_test_module_res_path(param_name);
     if (!model_path) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
@@ -124,7 +124,7 @@ static pv_status_t test_pv_orca_metric_classifier_setup_helper(
     PV_ASSERT(orca_object);
     PV_ASSERT(metric);
 
-    char *metric_classifier_path_resolved = pv_test_resource_path(metric_classifier_path);
+    char *metric_classifier_path_resolved = pv_test_module_res_path(metric_classifier_path);
     pv_test_true(
             metric_classifier_path_resolved != NULL,
             "failed to open file with `%s`",
@@ -165,7 +165,7 @@ static pv_status_t test_pv_orca_integration_setup(void) {
     for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
         const char *tokenizer_bin_filename = TOKENIZER_PATH_ARRAY[i];
 
-        char *tokenizer_bin_path = pv_test_resource_path(tokenizer_bin_filename);
+        char *tokenizer_bin_path = pv_test_module_res_path(tokenizer_bin_filename);
 
         FILE *f_tokenizer = pv_fopen(tokenizer_bin_path, "rb");
         pv_test_true(f_tokenizer, "Failed to load tokenizer file `%s`", tokenizer_bin_path);
@@ -940,7 +940,7 @@ static void test_pv_orca_integration_speaker_suite(
         return;
     }
 
-    char *test_sentences_path = pv_test_resource_path(test_sentences_filename);
+    char *test_sentences_path = pv_test_module_res_path(test_sentences_filename);
     pv_test_true(
             test_sentences_path,
             "Failed to get path of for test file `%s`",

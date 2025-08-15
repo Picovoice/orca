@@ -49,10 +49,12 @@ def test_jni_orca(platform_name, build_mode, access_key):
     root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
     buildPath = os.path.join(root_dir, "build", build_mode, platform.machine())
     platform_dir = os.path.join(root_dir, "platform")
+    shared_res_dir = os.path.join(os.path.abspath(PEER_MODULE_DIR), "zoo-dev", "res")
 
     cmd = f'./gradlew test -DaccessKey="{access_key}" ' \
           f'-DbuildPath="{buildPath}" ' \
-          f'-DresourceDirectory="{root_dir}/res" -Dplatform="{platform_name.value}"'
+          f'-DsharedResDirectory="{shared_res_dir}" ' \
+          f'-DmoduleResDirectory="{root_dir}/res" -Dplatform="{platform_name.value}"'
     if platform_name == Platforms.LINUX:
         cmd += ' -DlibExt="so"'
     elif platform_name == Platforms.MAC:
@@ -220,18 +222,18 @@ def test_unittest_orca(
 
         res_integration_test = run_unit_test(
             f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app res integration", platform_name)
+            f"pv_orca_test_app res -i", platform_name)
 
         res = 1 if any([res_unit_test, res_integration_test]) else 0
 
     elif platform_name == Platforms.WINDOWS:
         res_unit_test = run_unit_test(
             f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app.exe res dump_{build_mode}", platform_name)
+            f"pv_orca_test_app.exe res -d dump_{build_mode}", platform_name)
 
         res_integration_test = run_unit_test(
             f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app.exe res integration dump_{build_mode}", platform_name)
+            f"pv_orca_test_app.exe res -i -d dump_{build_mode}", platform_name)
 
         absolute_peer_module_dir = os.path.join(os.path.dirname(__file__), '..', PEER_MODULE_DIR)
         build_dir = os.path.join(root_dir, 'build', build_mode)
@@ -248,11 +250,11 @@ def test_unittest_orca(
         for arch in OSX_ARCHS:
             res_unit_test = run_unit_test(
                 f"{root_dir}/build/{build_mode}/{arch}/"
-                f"pv_orca_test_app res dump_{build_mode}", platform_name)
+                f"pv_orca_test_app res -d dump_{build_mode}", platform_name)
 
             res_integration_test = run_unit_test(
                 f"{root_dir}/build/{build_mode}/{arch}/"
-                f"pv_orca_test_app res integration dump_{build_mode}", platform_name)
+                f"pv_orca_test_app res -i -d dump_{build_mode}", platform_name)
 
             res = 1 if any([res_unit_test, res_integration_test]) else 0
             if res != 0:
@@ -263,11 +265,11 @@ def test_unittest_orca(
     else:
         build_dir = f"build/{build_mode}/{platform.machine()}"
         res_unit_test = run_unit_test(
-            f"{root_dir}/{build_dir}/pv_orca_test_app res dump_{build_mode}",
+            f"{root_dir}/{build_dir}/pv_orca_test_app res -d dump_{build_mode}",
             platform_name)
 
         res_integration_test = run_unit_test(
-            f"{root_dir}/{build_dir}/pv_orca_test_app res integration dump_{build_mode}",
+            f"{root_dir}/{build_dir}/pv_orca_test_app res -i -d dump_{build_mode}",
             platform_name)
 
         res = 1 if any([res_unit_test, res_integration_test]) else 0

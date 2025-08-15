@@ -37,7 +37,7 @@ static pv_status_t test_pv_normalizer_cases_normalize_helper_init(
         pv_normalizer_t **normalizer,
         pv_normalizer_cases_helper_t **text_cases_helper) {
 
-    char *language_info_path = pv_test_resource_path(language_info_filename);
+    char *language_info_path = pv_test_module_res_path(language_info_filename);
     pv_test_true(language_info_path, "Failed to get path for file: `%s`", language_info_filename);
     if (!language_info_path) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -51,7 +51,7 @@ static pv_status_t test_pv_normalizer_cases_normalize_helper_init(
         return status;
     }
 
-    char *noun_gender_dict_path = pv_test_resource_path(noun_gender_dict_filename);
+    char *noun_gender_dict_path = pv_test_module_res_path(noun_gender_dict_filename);
     pv_test_true(noun_gender_dict_path, "Failed to get path for file: `%s`", noun_gender_dict_filename);
     if (!noun_gender_dict_path) {
         pv_language_info_delete(language_info_internal);
@@ -69,7 +69,7 @@ static pv_status_t test_pv_normalizer_cases_normalize_helper_init(
 
     void *tokenizer_data = NULL;
     if (tokenizer_data_filename) {
-        char *tokenizer_data_path = pv_test_resource_path(tokenizer_data_filename);
+        char *tokenizer_data_path = pv_test_module_res_path(tokenizer_data_filename);
         pv_test_true(tokenizer_data_path, "Failed to get path for file: `%s`", tokenizer_data_filename);
         if (!tokenizer_data_path) {
             pv_noun_gender_dict_delete(noun_gender_dict_internal);
@@ -103,7 +103,7 @@ static pv_status_t test_pv_normalizer_cases_normalize_helper_init(
         return status;
     }
 
-    char *text_cases_path = pv_test_resource_path(test_cases_filename);
+    char *text_cases_path = pv_test_module_res_path(test_cases_filename);
     pv_test_true(text_cases_path, "Failed to get path for file: `%s`", test_cases_filename);
     if (!text_cases_path) {
         pv_normalizer_delete(normalizer_internal);
@@ -239,7 +239,7 @@ static void test_pv_normalizer_cases_normalize_stream_helper(
 
         pv_normalizer_cases_helper_reindex(text_cases_helper);
 
-        char *tokenizer_bin_path = pv_test_resource_path(tokenizer_bin_filename);
+        char *tokenizer_bin_path = pv_test_module_res_path(tokenizer_bin_filename);
         pv_test_true(tokenizer_bin_path, "Failed to get path for file: `%s`", tokenizer_bin_filename);
         if (!tokenizer_bin_path) {
             pv_normalizer_cases_helper_delete(text_cases_helper);
