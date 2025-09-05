@@ -2,8 +2,12 @@
 <html lang="en">
   <head>
     <script src="node_modules/@picovoice/orca-web/dist/iife/index.js"></script>
-    <script type="application/javascript" src="models/orcaModel.js"></script>
     <script type="application/javascript" src="scripts/orca.js"></script>
+    <script>
+      const script = document.createElement('script');
+      script.src = 'models/orcaModel.js?t=' + Date.now();
+      document.head.appendChild(script);
+    </script>
   </head>
   <body>
     <h1>Orca Web Demo</h1>
