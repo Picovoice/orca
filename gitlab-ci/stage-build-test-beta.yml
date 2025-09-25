@@ -4,6 +4,7 @@
     paths:
       - ${PV_PEER_MODULE_DIR}/zoo-dev
   rules:
+    - if: $CI_COMMIT_REF_NAME == "main-cicd" && $CI_PIPELINE_SOURCE == "api"
     - if: $CI_OPEN_MERGE_REQUESTS && $CI_MERGE_REQUEST_TITLE =~ /^(\[Draft\]|\(Draft\)|Draft:)/
       when: manual
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"

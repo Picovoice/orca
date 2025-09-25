@@ -28,14 +28,25 @@ include(cmake/speakers.cmake)
 include(cmake/languages.cmake)
 include(normalizer.cmake)
 
+set(pv_orca_additional_sources "")
+set(pv_orca_additional_system_include_dirs "")
 set(pv_orca_additional_pv_deps "")
+
 if (NOT ${PV_TARGET_PLATFORM} STREQUAL "wasm")
   list(APPEND pv_orca_additional_pv_deps pv_audio_private)
+endif ()
+
+if (ANDROID_ABI)
+  if (${ANDROID_ABI} STREQUAL "armeabi-v7a" OR ${ANDROID_ABI} STREQUAL "arm64-v8a")
+    list(APPEND pv_orca_additional_sources ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
+    list(APPEND pv_orca_additional_system_include_dirs ${ANDROID_NDK}/sources/android/cpufeatures)
+  endif ()
 endif ()
 
 pv_module_register(
   MODULE_NAME pv_orca
   INCLUDE_DIRECTORIES include
+  SYSTEM_INCLUDE_DIRECTORIES "${pv_orca_additional_system_include_dirs}"
   HEADERS
     include/orca/pv_orca.h
     include/orca/pv_orca_internal.h
@@ -110,6 +121,7 @@ pv_module_register(
     src/normalizer/ja/pv_normalizer_data_ja/pv_normalizer_word_character_data_ja.c
     src/normalizer/ko/pv_normalizer_data_ko/pv_normalizer_word_character_data_ko.c
     src/normalizer/pt/pv_normalizer_data_pt/pv_normalizer_word_character_data_pt.c
+    ${pv_orca_additional_sources}
   PV_DEPENDENCIES
     pv_core
     pv_dump

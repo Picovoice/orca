@@ -4,7 +4,7 @@
 
 #endif
 
-#if defined(__PV_TARGET_PLATFORM_ANDROID__) && defined(__PV_ARM_NEON__)
+#if defined(__PV_TARGET_PLATFORM_ANDROID__) && (defined(__PV_ARM_NEON__) || defined(__PV_ARM_NEON_64__))
 
 #include <cpu-features.h>
 
