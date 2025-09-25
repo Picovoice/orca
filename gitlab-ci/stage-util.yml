@@ -1,0 +1,86 @@
+include:
+  - local: 'gitlab-ci/utils.yml'
+
+cicd-register-with-dependency-projects:
+  stage: util
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  before_script:
+    - python3 -m pip install requests==2.32.3
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/cicd/register_with_dependencies.py
+      --token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --project_name "${CI_PROJECT_NAME}"
+      --dependencies_dir "peer/"
+  tags:
+    - pv-cicd-linux-x86-docker
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always
+
+cicd-trigger-dependent-projects:
+  stage: util
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  before_script:
+    - pip install requests==2.32.3
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/cicd/trigger_dependents.py
+      --token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --project_name "${CI_PROJECT_NAME}"
+      --merge_request_iid "${CI_MERGE_REQUEST_IID}"
+      --trigger
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: always
+
+cicd-check-dependent-projects:
+  stage: util
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  needs:
+    - cicd-trigger-dependent-projects
+  allow_failure: true
+  timeout: 30 minutes
+  before_script:
+    - pip install requests==2.32.3
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/cicd/trigger_dependents.py
+      --token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --project_name "${CI_PROJECT_NAME}"
+      --merge_request_iid "${CI_MERGE_REQUEST_IID}"
+      --check
+      --check_job_name "cicd-trigger-dependent-projects"
+      --check_pipeline_id "${CI_PIPELINE_ID}"
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: always
+
+cicd-check-peer-versions:
+  stage: util
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  allow_failure: true
+  before_script:
+    - pip install requests==2.32.3
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/cicd/check_peer_versions.py
+      --token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --project_name "${CI_PROJECT_NAME}"
+      --project_root_dir "${CI_PROJECT_DIR}"
+      --dependencies_dir "${CI_PROJECT_DIR}/peer"
+      --main_branch_name "origin/main"
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: always

@@ -13,8 +13,10 @@ stages:
   - build-prod
   - test-prod
   - collect-artifacts
+  - util
 
 include:
   - local: 'gitlab-ci/stage-build-test-beta.yml'
   - local: 'gitlab-ci/stage-build-test-prod.yml'
   - local: 'gitlab-ci/stage-collect-artifacts.yml'
+  - local: 'gitlab-ci/stage-util.yml'
