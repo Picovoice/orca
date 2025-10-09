@@ -110,13 +110,22 @@ def test_unittest_orca(
             shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_orca_mock_tree.so'), dst_path)
             shutil.copy(os.path.join(build_dir, 'libpv_normalizer_real_pv_orca_mock_tree.so'), dst_path)
 
-            zoo_dev_build_dir = os.path.join(build_dir, '_deps', 'zoo-dev-build', 'src')
-            for module in os.listdir(zoo_dev_build_dir):
-                if module == 'test' or module == 'mock':
-                    continue
-                for src_path in glob.glob(os.path.join(zoo_dev_build_dir, module, "*_real_pv_orca_mock_tree.so")):
+            dependencies_build_dirs = [
+                os.path.join(build_dir, '_deps', 'zoo-dev-build', 'src'),
+                os.path.join(build_dir, '_deps', 'hippo-build'),
+            ]
+            for dep_build_dir in dependencies_build_dirs:
+                for module in os.listdir(dep_build_dir):
+                    if module == 'test' or module == 'mock':
+                        continue
+                    for src_path in glob.glob(os.path.join(dep_build_dir, module, "*_real_pv_orca_mock_tree.so")):
+                        shutil.copy(src_path, dst_path)
+                    for src_path in glob.glob(os.path.join(dep_build_dir, module, "*_real.so")):
+                        shutil.copy(src_path, dst_path)
+
+                for src_path in glob.glob(os.path.join(dep_build_dir, "*_real_pv_orca_mock_tree.so")):
                     shutil.copy(src_path, dst_path)
-                for src_path in glob.glob(os.path.join(zoo_dev_build_dir, module, "*_real.so")):
+                for src_path in glob.glob(os.path.join(dep_build_dir, "*_real.so")):
                     shutil.copy(src_path, dst_path)
 
         setup_command_1 = ("grep -q '^testCollectionsLib=' local.properties && "
