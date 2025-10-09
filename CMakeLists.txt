@@ -6,6 +6,7 @@ endif ()
 
 include(peer-module.cmake)
 include(peer/zoo-dev.cmake)
+include(peer/hippo.cmake)
 
 include ("${zoo-dev_SOURCE_DIR}/preload.cmake")
 
@@ -13,7 +14,8 @@ project(orca LANGUAGES C CXX)
 
 include("${zoo-dev_SOURCE_DIR}/config.cmake")
 pv_util_func_hash_gen_add_dir(MODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-add_subdirectory(${zoo-dev_SOURCE_DIR} ${zoo-dev_BINARY_DIR} EXCLUDE_FROM_ALL)
+add_peer_subdirectory(zoo-dev)
+add_peer_subdirectory(hippo)
 
 set(MODULE_VERSION 1.2.X)
 
@@ -179,7 +181,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_en.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_en.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_en.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -196,7 +198,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_en.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_en.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_en.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -213,7 +215,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_de.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_de.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_de.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -230,7 +232,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_de.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_de.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_de.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -247,7 +249,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_fr.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_fr.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_fr.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -264,7 +266,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_fr.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_fr.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_fr.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -281,7 +283,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_es.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_es.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_es.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -298,7 +300,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_es.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_es.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_es.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -315,7 +317,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_it.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_it.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_it.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -332,7 +334,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_it.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_it.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_it.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -349,7 +351,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_pt.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_pt.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_pt.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -366,7 +368,7 @@ pv_module_build_app_additional_sources(
   APP_NAME pv_orca_serializer
   APP_NAME_SUFFIX _16
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_pt.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_pt.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_pt.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -383,7 +385,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_ko.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_ko.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_ko.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -400,7 +402,7 @@ pv_module_build_app_additional_sources(
   MODULE_NAME pv_orca
   APP_NAME pv_orca_serializer
   SOURCES
-    ${zoo-dev_SOURCE_DIR}/src/hippo/src/pv_classifier_ja.c
+    ${hippo_SOURCE_DIR}/src/pv_classifier_ja.c
     app/pv_orca_serializer.c
     src/dict/pv_noun_gender_dict_ja.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
@@ -472,8 +474,8 @@ pv_module_build_test_app(
 
 set(ORCA_TEST_RESOURCES
   "${PROJECT_SOURCE_DIR}/res"
-  "${zoo-dev_SOURCE_DIR}/res/hippo"
-  "${zoo-dev_SOURCE_DIR}/res/phonebook")
+  "${zoo-dev_SOURCE_DIR}/res/phonebook"
+  "${zoo-dev_SOURCE_DIR}/res/hippo")
 pv_module_copy_test_resource_dirs(
   MODULE_NAME pv_orca
   TEST_RESOURCE_DIRS ${ORCA_TEST_RESOURCES}

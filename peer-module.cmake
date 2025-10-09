@@ -19,8 +19,8 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
     if (NOT EXISTS "${MODULE_DIR}")
         message(STATUS "Cloning ${MODULE_NAME} to ${MODULE_DIR}")
         execute_process(
-          COMMAND git clone --depth 100 --no-single-branch --shallow-submodules --recurse-submodules ${MODULE_REMOTE} ${MODULE_DIR}
-          RESULT_VARIABLE res
+            COMMAND git clone --depth 100 --no-single-branch --shallow-submodules --recurse-submodules ${MODULE_REMOTE} ${MODULE_DIR}
+            RESULT_VARIABLE res
         )
         if (NOT res EQUAL 0)
             message(FATAL_ERROR "Failed to clone ${MODULE_NAME}")
@@ -30,9 +30,9 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
             # Remote needs to change to match current GitLab job
             message(STATUS "Setting remote to origin ${MODULE_REMOTE}")
             execute_process(
-              COMMAND git remote set-url origin "${MODULE_REMOTE}"
-              WORKING_DIRECTORY "${MODULE_DIR}"
-              RESULT_VARIABLE res
+                COMMAND git remote set-url origin "${MODULE_REMOTE}"
+                WORKING_DIRECTORY "${MODULE_DIR}"
+                RESULT_VARIABLE res
             )
             if (NOT res EQUAL 0)
                 message(FATAL_ERROR "Failed to set remote for ${MODULE_NAME} to ${MODULE_REMOTE}")
@@ -40,9 +40,9 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
 
             message(STATUS "Syncing submodules with new remote")
             execute_process(
-              COMMAND git submodule sync --recursive
-              WORKING_DIRECTORY "${MODULE_DIR}"
-              RESULT_VARIABLE res
+                    COMMAND git submodule sync --recursive
+                    WORKING_DIRECTORY "${MODULE_DIR}"
+                    RESULT_VARIABLE res
             )
             if (NOT res EQUAL 0)
                 message(FATAL_ERROR "Failed to sync submodules")
@@ -51,18 +51,18 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
     endif()
 
     execute_process(
-      COMMAND git rev-parse HEAD
-      WORKING_DIRECTORY ${MODULE_DIR}
-      OUTPUT_VARIABLE CURRENT_COMMIT
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${MODULE_DIR}
+        OUTPUT_VARIABLE CURRENT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     if (NOT "${CURRENT_COMMIT}" STREQUAL "${EXPECTED_COMMIT}")
         if (SETUP_REPO)
             message(STATUS "Fetching ${EXPECTED_COMMIT} from ${MODULE_NAME}")
             execute_process(
-              COMMAND git fetch origin ${EXPECTED_COMMIT}
-              WORKING_DIRECTORY "${MODULE_DIR}"
-              RESULT_VARIABLE res
+                    COMMAND git fetch origin ${EXPECTED_COMMIT}
+                    WORKING_DIRECTORY "${MODULE_DIR}"
+                    RESULT_VARIABLE res
             )
             if (NOT res EQUAL 0)
                 message(FATAL_ERROR "Failed to fetch ${MODULE_NAME} at commit ${EXPECTED_COMMIT}")
@@ -75,9 +75,9 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
     if (SETUP_REPO)
         message(STATUS "Cleaning ${MODULE_NAME} directory")
         execute_process(
-          COMMAND git clean -dfx
-          WORKING_DIRECTORY "${MODULE_DIR}"
-          RESULT_VARIABLE res
+                COMMAND git clean -dfx
+                WORKING_DIRECTORY "${MODULE_DIR}"
+                RESULT_VARIABLE res
         )
         if (NOT res EQUAL 0)
             message(FATAL_ERROR "Failed to clean ${MODULE_NAME} directory")
@@ -85,9 +85,9 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
 
         message(STATUS "Resetting to ${EXPECTED_COMMIT}")
         execute_process(
-          COMMAND git reset --hard ${EXPECTED_COMMIT}
-          WORKING_DIRECTORY "${MODULE_DIR}"
-          RESULT_VARIABLE res
+                COMMAND git reset --hard ${EXPECTED_COMMIT}
+                WORKING_DIRECTORY "${MODULE_DIR}"
+                RESULT_VARIABLE res
         )
         if (NOT res EQUAL 0)
             message(FATAL_ERROR "Failed to reset to commit ${EXPECTED_COMMIT}")
@@ -95,9 +95,9 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
 
         message(STATUS "Initializing submodules for ${EXPECTED_COMMIT}")
         execute_process(
-          COMMAND git submodule update --init --recursive --force
-          WORKING_DIRECTORY "${MODULE_DIR}"
-          RESULT_VARIABLE res
+                COMMAND git submodule update --init --recursive --force
+                WORKING_DIRECTORY "${MODULE_DIR}"
+                RESULT_VARIABLE res
         )
         if (NOT res EQUAL 0)
             message(FATAL_ERROR "Failed to initialize submodules at commit ${EXPECTED_COMMIT}")
@@ -112,9 +112,19 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
             cmake_policy(SET CMP0169 OLD)
         endif ()
         FetchContent_Declare(
-          ${MODULE_NAME}
-          SOURCE_DIR "${MODULE_DIR}"
+            ${MODULE_NAME}
+            SOURCE_DIR "${MODULE_DIR}"
         )
-        FetchContent_Populate(${MODULE_NAME})
+        FetchContent_GetProperties(${MODULE_NAME})
+        if (NOT ${MODULE_NAME}_POPULATED)
+            FetchContent_Populate(${MODULE_NAME})
+        endif ()
+    endif ()
+endmacro()
+
+macro(add_peer_subdirectory MODULE_NAME)
+    if (NOT ${MODULE_NAME}_SUBDIR_ADDED)
+        add_subdirectory(${${MODULE_NAME}_SOURCE_DIR} ${${MODULE_NAME}_BINARY_DIR} EXCLUDE_FROM_ALL)
+        set(${MODULE_NAME}_SUBDIR_ADDED "TRUE")
     endif ()
 endmacro()
