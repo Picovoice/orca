@@ -1,4 +1,5 @@
 import glob
+import json
 import logging
 import os
 import platform
@@ -24,8 +25,9 @@ from automation.gitlab_runner import (
     run_unit_test,
     test_build,
     run_windows_ucrt_test,
+    update_environment,
 )
-from util.build import Platforms
+from util.build import Platforms, TestTypes
 
 
 def check_symbols_orca(
@@ -91,7 +93,9 @@ def test_napi_orca(platform_name, access_key):
 
 def test_unittest_orca(
         platform_name,
-        build_mode):
+        build_mode,
+        test_types=[],
+        disable_mocks=False):
     peer_dir = os.path.join(os.path.abspath(PEER_MODULE_DIR) ,'zoo-dev')
     root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
@@ -106,9 +110,10 @@ def test_unittest_orca(
             build_dir = os.path.join(root_dir, 'build', build_mode, arch)
 
             shutil.copy(os.path.join(build_dir, 'libpv_orca_test_collections.so'), dst_path)
-            shutil.copy(os.path.join(build_dir, 'libpv_orca_mock_tree_shared.so'), dst_path)
-            shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_orca_mock_tree.so'), dst_path)
-            shutil.copy(os.path.join(build_dir, 'libpv_normalizer_real_pv_orca_mock_tree.so'), dst_path)
+            if not disable_mocks:
+                shutil.copy(os.path.join(build_dir, 'libpv_orca_mock_tree_shared.so'), dst_path)
+                shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_orca_mock_tree.so'), dst_path)
+                shutil.copy(os.path.join(build_dir, 'libpv_normalizer_real_pv_orca_mock_tree.so'), dst_path)
 
             dependencies_build_dirs = [
                 os.path.join(build_dir, '_deps', 'zoo-dev-build', 'src'),
@@ -152,11 +157,15 @@ def test_unittest_orca(
         if res != 0:
             return res
 
+        if TestTypes.PERFORMANCE not in test_types:
+            destination = 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5'
+        else:
+            destination = 'platform=iOS,name=Picollm iPhone 13'
         res = run_command(
             f"cd ios/test && xcrun xcodebuild build-for-testing "
             f"-configuration Debug -project test.xcodeproj "
             f"-sdk iphoneos -scheme PvTestRunner "
-            f"-destination 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5' CODE_SIGNING_ALLOWED=NO")
+            f"-destination '{destination}' CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates")
         if res != 0:
             return res
 
@@ -170,30 +179,72 @@ def test_unittest_orca(
         # testing on Pixel_4_API_30
         run_command("adb root")
         run_command("adb shell setenforce 0")
-        res_unit_test = run_unit_test(
-            f"cd android && "
-            f"./gradlew connectedAndroidTest "
-            f"-i "
-            f"-Pandroid.testInstrumentationRunnerArguments.class=ai.picovoice.zoo.ZooDevUnitTestRunner",
-            platform_name)
+        results = []
+        env_path = os.path.join(peer_dir, 'android', 'app', 'src', 'androidTest', 'assets', 'res', 'environment.json')
+        update_environment(env_path)
+        if TestTypes.UNIT in test_types:
+            res_unit_test = run_unit_test(
+                f"cd android && "
+                f"./gradlew connectedAndroidTest "
+                f"-i "
+                f"-Pandroid.testInstrumentationRunnerArguments.class=ai.picovoice.zoo.ZooDevUnitTestRunner",
+                platform_name)
+            results.append(res_unit_test)
 
-        res = 1 if any([res_unit_test]) else 0
+        if TestTypes.INTEGRATION in test_types:
+            res_integration_test = run_unit_test(
+                f"cd android && "
+                f"./gradlew connectedAndroidTest "
+                f"-i "
+                f"-Pandroid.testInstrumentationRunnerArguments.class=ai.picovoice.zoo.ZooDevIntegrationTestRunner",
+                platform_name)
+            results.append(res_integration_test)
+
+        if TestTypes.PERFORMANCE in test_types:
+            res_performance_test = run_unit_test(
+                f"cd android && "
+                f"adb logcat -c && "
+                f"./gradlew connectedAndroidTest "                
+                f"-Pandroid.testInstrumentationRunnerArguments.class=ai.picovoice.zoo.ZooDevPerformanceTestRunner; "
+                "adb logcat -d -s PICOVOICE",
+                platform_name,
+                extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+            results.append(res_performance_test)
+
+        res = 1 if any(results) else 0
 
     elif platform_name == Platforms.IOS:
         # testing on iPhone 11 Pro
-        res_unit_test = run_unit_test(
-            f"cd ios/test && xcrun xcodebuild test "
-            f"-scheme PvTestRunner "
-            f"-destination 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5' "
-            f"-only-testing PvTestRunnerUITests/PvUnitTests", platform_name)
+        results = []
+        env_path = os.path.join(peer_dir, 'ios', 'test', 'res', 'environment.json')
+        update_environment(env_path)
+        if TestTypes.UNIT in test_types:
+            res_unit_test = run_unit_test(
+                f"cd ios/test && xcrun xcodebuild test "
+                f"-scheme PvTestRunner "
+                f"-destination 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5' "
+                f"-only-testing PvTestRunnerUITests/PvUnitTests", platform_name)
+            results.append(res_unit_test)
 
-        res_integration_test = run_unit_test(
-            f"cd ios/test && xcrun xcodebuild test "
-            f"-scheme PvTestRunner "
-            f"-destination 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5' "
-            f"-only-testing PvTestRunnerUITests/PvIntegrationTests", platform_name)
+        if TestTypes.INTEGRATION in test_types:
+            res_integration_test = run_unit_test(
+                f"cd ios/test && xcrun xcodebuild test "
+                f"-scheme PvTestRunner "
+                f"-destination 'platform=iOS Simulator,name=iPhone 11 Pro,OS=17.5' "
+                f"-only-testing PvTestRunnerUITests/PvIntegrationTests", platform_name)
+            results.append(res_integration_test)
 
-        res = 1 if any([res_unit_test, res_integration_test]) else 0
+        if TestTypes.PERFORMANCE in test_types:
+            res_performance_test = run_unit_test(
+                f"cd ios/test && xcrun xcodebuild test "
+                f"-scheme PvTestRunner "
+                f"-destination 'platform=iOS,name=Picollm iPhone 13' "
+                f"-only-testing PvTestRunnerUITests/PvPerformanceTests -allowProvisioningUpdates",
+                platform_name,
+                extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+            results.append(res_performance_test)
+
+        res = 1 if any(results) else 0
 
     elif platform_name == Platforms.WASM:
         logging.info("Installing unit test dependencies")
@@ -214,35 +265,77 @@ def test_unittest_orca(
                     logging.info(f"running unit test in browser (simd) ...")
                 else:
                     logging.info(f"running unit test in browser ...")
-                res_unit_test = run_command(
-                    f"python3 {selenium_script} {arg} "
-                    f"--build_mode {build_mode} --root_path {peer_dir} --test_type unit")
+                results = []
 
-                res_integration_test = run_command(
-                    f"python3 {selenium_script} {arg} "
-                    f"--build_mode {build_mode} --root_path {peer_dir} --test_type integration")
+                env_path = os.path.join(peer_dir, 'wasm', 'wasi-zoo', 'unit_test', 'wasm', 'res', 'environment.json')
+                update_environment(env_path)
 
-                res = 1 if any([res_unit_test, res_integration_test]) else 0
+                if TestTypes.UNIT in test_types:
+                    res_unit_test = run_command(
+                        f"python3 {selenium_script} {arg} "
+                        f"--build_mode {build_mode} --root_path {peer_dir} --test_type unit")
+                    results.append(res_unit_test)
+
+                if TestTypes.INTEGRATION in test_types:
+                    res_integration_test = run_command(
+                        f"python3 {selenium_script} {arg} "
+                        f"--build_mode {build_mode} --root_path {peer_dir} --test_type integration")
+                    results.append(res_integration_test)
+
+                if TestTypes.PERFORMANCE in test_types:
+                    res_performance_test = run_command(
+                        f"python3 {selenium_script} {arg} "
+                        f"--build_mode {build_mode} --root_path {peer_dir} --test_type performance",
+                        extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+                    results.append(res_performance_test)
+
+                res = 1 if any(results) else 0
 
     elif platform_name == Platforms.WASM_LINUX:
-        res_unit_test = run_unit_test(
-            f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app res", platform_name)
+        results = []
+        if TestTypes.UNIT in test_types:
+            res_unit_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app res", platform_name)
+            results.append(res_unit_test)
 
-        res_integration_test = run_unit_test(
-            f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app res -i", platform_name)
+        if TestTypes.INTEGRATION in test_types:
+            res_integration_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app res -i", platform_name)
+            results.append(res_integration_test)
 
-        res = 1 if any([res_unit_test, res_integration_test]) else 0
+        if TestTypes.PERFORMANCE in test_types:
+            res_performance_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app res -i",
+                platform_name,
+                extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+            results.append(res_performance_test)
+
+        res = 1 if any(results) else 0
 
     elif platform_name == Platforms.WINDOWS:
-        res_unit_test = run_unit_test(
-            f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app.exe res -d dump_{build_mode}", platform_name)
+        results = []
+        if TestTypes.UNIT in test_types:
+            res_unit_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app.exe res -d dump_{build_mode}", platform_name)
+            results.append(res_unit_test)
 
-        res_integration_test = run_unit_test(
-            f"{root_dir}/build/{build_mode}/{platform.machine()}/"
-            f"pv_orca_test_app.exe res -i -d dump_{build_mode}", platform_name)
+        if TestTypes.INTEGRATION in test_types:
+            res_integration_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app.exe res -i -d dump_{build_mode}", platform_name)
+            results.append(res_integration_test)
+
+        if TestTypes.PERFORMANCE in test_types:
+            res_performance_test = run_unit_test(
+                f"{root_dir}/build/{build_mode}/{platform.machine()}/"
+                f"pv_orca_test_app.exe res -p -d dump_{build_mode}",
+                platform_name,
+                extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+            results.append(res_performance_test)
 
         absolute_peer_module_dir = os.path.join(os.path.dirname(__file__), '..', PEER_MODULE_DIR)
         build_dir = os.path.join(root_dir, 'build', build_mode)
@@ -252,20 +345,35 @@ def test_unittest_orca(
             build_mode,
             ["orca"],
             peer_module_dir=absolute_peer_module_dir)
+        results.append(res_ucrt_test)
 
-        res = 1 if any([res_unit_test, res_integration_test, res_ucrt_test]) else 0
+        res = 1 if any(results) else 0
 
     elif platform_name == Platforms.MAC:
         for arch in OSX_ARCHS:
-            res_unit_test = run_unit_test(
-                f"{root_dir}/build/{build_mode}/{arch}/"
-                f"pv_orca_test_app res -d dump_{build_mode}", platform_name)
+            results = []
 
-            res_integration_test = run_unit_test(
-                f"{root_dir}/build/{build_mode}/{arch}/"
-                f"pv_orca_test_app res -i -d dump_{build_mode}", platform_name)
+            if TestTypes.UNIT in test_types:
+                res_unit_test = run_unit_test(
+                    f"{root_dir}/build/{build_mode}/{arch}/"
+                    f"pv_orca_test_app res -d dump_{build_mode}", platform_name)
+                results.append(res_unit_test)
 
-            res = 1 if any([res_unit_test, res_integration_test]) else 0
+            if TestTypes.INTEGRATION in test_types:
+                res_integration_test = run_unit_test(
+                    f"{root_dir}/build/{build_mode}/{arch}/"
+                    f"pv_orca_test_app res -i -d dump_{build_mode}", platform_name)
+                results.append(res_integration_test)
+
+            if TestTypes.PERFORMANCE in test_types:
+                res_performance_test = run_unit_test(
+                    f"{root_dir}/build/{build_mode}/{arch}/"
+                    f"pv_orca_test_app res -p -d dump_{build_mode}",
+                    platform_name,
+                    extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+                results.append(res_performance_test)
+
+            res = 1 if any(results) else 0
             if res != 0:
                 break
 
@@ -273,15 +381,28 @@ def test_unittest_orca(
         return 0
     else:
         build_dir = f"build/{build_mode}/{platform.machine()}"
-        res_unit_test = run_unit_test(
-            f"{root_dir}/{build_dir}/pv_orca_test_app res -d dump_{build_mode}",
-            platform_name)
+        results = []
 
-        res_integration_test = run_unit_test(
-            f"{root_dir}/{build_dir}/pv_orca_test_app res -i -d dump_{build_mode}",
-            platform_name)
+        if TestTypes.UNIT in test_types:
+            res_unit_test = run_unit_test(
+                f"{root_dir}/{build_dir}/pv_orca_test_app res -d dump_{build_mode}",
+                platform_name)
+            results.append(res_unit_test)
 
-        res = 1 if any([res_unit_test, res_integration_test]) else 0
+        if TestTypes.INTEGRATION in test_types:
+            res_integration_test = run_unit_test(
+                f"{root_dir}/{build_dir}/pv_orca_test_app res -i -d dump_{build_mode}",
+                platform_name)
+            results.append(res_integration_test)
+
+        if TestTypes.PERFORMANCE in test_types:
+            res_performance_test = run_unit_test(
+                f"{root_dir}/{build_dir}/pv_orca_test_app res -p -d dump_{build_mode}",
+                platform_name,
+                extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
+            results.append(res_performance_test)
+
+        res = 1 if any(results) else 0
 
     try:
         shutil.rmtree(f"./dump_{build_mode}")
@@ -295,6 +416,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--build', action='store_true')
     parser.add_argument('--test', action='store_true')
+    parser.add_argument('--perf', action='store_true')
     parser.add_argument(
         '--platform',
         '-p',
@@ -320,6 +442,7 @@ def main():
     parser.add_argument('--remote_runner_user', default=None)
     parser.add_argument('--remote_runner_pwd', default=None)
 
+    parser.add_argument('--disable_mocks', action='store_true')
     parser.add_argument('--enable_asan', action='store_true')
     args = parser.parse_args()
 
@@ -337,11 +460,20 @@ def main():
                 build_folder=args.build_folder,
                 toolchain_path=args.toolchain_path,
                 toolchain_prefix=args.toolchain_prefix,
+                disable_mocks=args.disable_mocks,
                 enable_asan=args.enable_asan)
             if res != 0:
                 sys.exit(res)
 
+        test_types = []
         if args.test:
+            test_types.append(TestTypes.UNIT)
+            test_types.append(TestTypes.INTEGRATION)
+
+        if args.perf:
+            test_types.append(TestTypes.PERFORMANCE)
+
+        if len(test_types) > 0:
             logging.info(f"Testing ...")
             for build in args.builds:
                 if build == 'release':
@@ -368,23 +500,15 @@ def main():
                 if res != 0:
                     sys.exit(res)
 
-            logging.info(f"Running unit and integration tests ...")
-            if args.platform in PARALLEL_TEST_PLATFORMS:
-                input_arguments_list = list()
-                for build in args.builds:
-                    input_arguments_list.append((args.platform, build))
-                with ThreadPool(min(os.cpu_count(), len(args.builds))) as pool:
-                    res = pool.starmap(test_unittest_orca, input_arguments_list)
-                res_sum = sum(res)
-                if res_sum != 0:
-                    sys.exit(res_sum)
-            else:
-                for build in args.builds:
-                    res = test_unittest_orca(
-                        args.platform,
-                        build)
-                    if res != 0:
-                        sys.exit(res)
+            logging.info(f"Running {' and '.join(map(lambda x: x.value, test_types))} tests ...")
+            for build in args.builds:
+                res = test_unittest_orca(
+                    args.platform,
+                    build,
+                    test_types,
+                    args.disable_mocks)
+                if res != 0:
+                    sys.exit(res)
 
     except Exception as e:
         logging.error(e)
