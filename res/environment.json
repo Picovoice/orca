@@ -1,0 +1,10 @@
+{
+    "YPU_MACHINE": "default",
+    "YPU_ITERATIONS": "64",
+    "YPU_DURATION": "3",
+    "YPU_IGNORE_CPU": null,
+    "YPU_IGNORE_CUDA": null,
+    "YPU_IGNORE_DIRECTX": null,
+    "YPU_IGNORE_MCU": null,
+    "YPU_IGNORE_METAL": null
+}

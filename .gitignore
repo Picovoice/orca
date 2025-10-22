@@ -25,3 +25,4 @@ pv_*_mock.c
 graphiz
 script/.idea
 **/*_test_collections.c
+res/performance/*.json

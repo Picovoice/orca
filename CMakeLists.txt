@@ -431,6 +431,12 @@ pv_module_build_app(
   SOURCES app/pv_orca_synthesizer_bench.c
 )
 
+set(TEST_DEPENDENCIES "")
+
+if (NOT PV_BUILD_SIMULATED_MCU)
+    list(APPEND TEST_DEPENDENCIES "pv_cjson")
+endif ()
+
 pv_module_register_tests(
   MODULE_NAME pv_orca
   UNIT_TEST_SOURCES
@@ -460,8 +466,11 @@ pv_module_register_tests(
     test/pv_orca_metric.c
     src/pv_orca.c
     src/model/pv_orca_synthesizer_param_en_female.c
+  PERFORMANCE_TEST_SOURCES test/test_performance_pv_orca.c
   PV_DEPENDENCIES
     pv_tokenizer
+    pv_io
+    ${TEST_DEPENDENCIES}
   TEST_RESOURCES
     ${zoo-dev_SOURCE_DIR}/res/ref/shut_off_lights.c
 )

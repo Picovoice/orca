@@ -9,6 +9,7 @@ default:
 
 stages:
   - build-beta
+  - perf-beta
   - test-beta
   - build-prod
   - test-prod

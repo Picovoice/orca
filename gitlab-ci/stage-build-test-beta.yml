@@ -18,6 +18,18 @@
       when: manual
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
+.beta-perf-rules-main:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+.beta-perf-rules-branch:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_OPEN_MERGE_REQUESTS && $CI_MERGE_REQUEST_TITLE =~ /^(\[Draft\]|\(Draft\)|Draft:)/
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 .build-beta:
   script-toolchain:
     - >
@@ -43,6 +55,32 @@
       --build_folder ${CI_PROJECT_DIR}/build
       --build
       --test
+  script-perf-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --build
+      --perf
+      --disable_mocks
+  script-perf-no-toolchain:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --build
+      --perf
+      --disable_mocks
 
 build-beta-linux-eng-release:
   stage: build-beta
@@ -762,3 +800,770 @@ build-beta-ios-release:
   rules:
     - !reference [.build-test-beta-props, rules]
   retry: 2
+
+.default-beta-perf-linux-cpu: &beta-perf-linux-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-linux-release
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: release
+    YPU_MACHINE: linux-cpu
+    YPU_IGNORE_CUDA: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-ypu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-linux-cpu-main:
+  <<: *beta-perf-linux-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-linux-cpu-branch:
+  <<: *beta-perf-linux-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-linux-cuda: &beta-perf-linux-cuda-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-linux-release
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: release
+    YPU_MACHINE: linux-cuda
+    YPU_IGNORE_CPU: ON
+    YPU_IGNORE_MCU: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-linux-cuda-main:
+  <<: *beta-perf-linux-cuda-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-linux-cuda-branch:
+  <<: *beta-perf-linux-cuda-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-mac-m1-cpu: &beta-perf-mac-m1-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-mac-m1-release
+  variables:
+    PLATFORM_NAME: mac
+    BUILD_TYPE: release
+    YPU_MACHINE: mac-m1-cpu
+    YPU_IGNORE_METAL: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-c
+    - pv-cicd-ypu
+
+beta-perf-mac-m1-cpu-main:
+  <<: *beta-perf-mac-m1-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-mac-m1-cpu-branch:
+  <<: *beta-perf-mac-m1-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-mac-m1-metal: &beta-perf-mac-m1-metal-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-mac-m1-release
+  variables:
+    PLATFORM_NAME: mac
+    BUILD_TYPE: release
+    YPU_MACHINE: mac-m1-metal
+    YPU_IGNORE_CPU: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-c
+    - pv-cicd-ypu
+
+beta-perf-mac-m1-metal-main:
+  <<: *beta-perf-mac-m1-metal-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-mac-m1-metal-branch:
+  <<: *beta-perf-mac-m1-metal-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-windows-x86-cpu: &beta-perf-windows-x86-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-windows-x86-release
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: release
+    YPU_MACHINE: windows-x86-cpu
+    YPU_IGNORE_DIRECTX: ON
+    YPU_IGNORE_CUDA: ON
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-windows-x86
+    - pv-cicd-c
+
+beta-perf-windows-x86-cpu-main:
+  <<: *beta-perf-windows-x86-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-windows-x86-cpu-branch:
+  <<: *beta-perf-windows-x86-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-windows-x86-cuda: &beta-perf-windows-x86-cuda-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-windows-x86-release
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: release
+    YPU_MACHINE: windows-x86-cuda
+    YPU_IGNORE_CPU: ON
+    YPU_IGNORE_DIRECTX: ON
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-windows-x86
+    - pv-cicd-gpu
+    - pv-cicd-c
+
+beta-perf-windows-x86-cuda-main:
+  <<: *beta-perf-windows-x86-cuda-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-windows-x86-cuda-branch:
+  <<: *beta-perf-windows-x86-cuda-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+# Porcupine doesn't have a igpu build yet
+#
+# .default-beta-perf-windows-x86-directx: &beta-perf-windows-x86-directx-template
+#   allow_failure: true # TODO: Remove after performance tests are updated.
+#   stage: perf-beta
+#   interruptible: true
+#   needs:
+#     - build-beta-windows-x86-igpu-release
+#   variables:
+#     PLATFORM_NAME: windows
+#     BUILD_TYPE: release
+#     YPU_MACHINE: windows-x86-directx
+#     YPU_IGNORE_CPU: ON
+#     YPU_IGNORE_CUDA: ON
+#   before_script:
+#     - $ENV:JAVA_HOME = "C:\Java\jdk-11"
+#     - !reference [.build-toolchain-setup, before-script-setup-token]
+#   script:
+#     - !reference [.build-beta, script-perf-no-toolchain]
+#   tags:
+#     - pv-cicd-windows-x86
+#     - pv-cicd-gpu-non-nvidia
+#     - pv-cicd-c
+#
+# beta-perf-windows-x86-directx-main:
+#   <<: *beta-perf-windows-x86-directx-template
+#   artifacts:
+#     paths:
+#       - res/performance/*.json
+#     when: always
+#     expire_in: never
+#   rules:
+#     - !reference [ .beta-perf-rules-main, rules ]
+#
+# beta-perf-windows-x86-directx-branch:
+#   <<: *beta-perf-windows-x86-directx-template
+#   artifacts:
+#     paths:
+#       - res/performance/*.json
+#     when: always
+#     expire_in: 1 week
+#   rules:
+#     - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-windows-arm64-cpu: &beta-perf-windows-arm64-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-windows-arm64-release
+  variables:
+    PLATFORM_NAME: windows
+    BUILD_TYPE: release
+    YPU_MACHINE: windows-arm64-cpu
+    YPU_IGNORE_DIRECTX: ON
+    YPU_IGNORE_CUDA: ON
+  before_script:
+    - $ENV:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.5.11-hotspot"
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-windows-arm64
+    - pv-cicd-c
+    - pv-cicd-ypu
+
+beta-perf-windows-arm64-cpu-main:
+  <<: *beta-perf-windows-arm64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-windows-arm64-cpu-branch:
+  <<: *beta-perf-windows-arm64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-rpi4-cpu: &beta-perf-rpi4-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
+  needs:
+    - build-beta-rpi4-release
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi4
+    BUILD_TYPE: release
+    YPU_MACHINE: rpi4-32-cpu
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-rpi4-armv7-docker
+    - pv-cicd-c
+    - pv-cicd-ypu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-rpi4-cpu-main:
+  <<: *beta-perf-rpi4-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-rpi4-cpu-branch:
+  <<: *beta-perf-rpi4-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-rpi4-64-cpu: &beta-perf-rpi4-64-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
+  needs:
+    - build-beta-rpi4-64-release
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi4-64
+    BUILD_TYPE: release
+    YPU_MACHINE: rpi4-64-cpu
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-rpi4-arm64-docker
+    - pv-cicd-c
+    - pv-cicd-ypu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-rpi4-64-cpu-main:
+  <<: *beta-perf-rpi4-64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-rpi4-64-cpu-branch:
+  <<: *beta-perf-rpi4-64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-rpi5-cpu: &beta-perf-rpi5-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
+  needs:
+    - build-beta-rpi5-release
+  variables:
+    TOOLCHAIN_VER: 2.0.0
+    TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
+    PLATFORM_NAME: raspberry-pi5
+    BUILD_TYPE: release
+    YPU_MACHINE: rpi5-32-cpu
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-rpi5-armv7-docker
+    - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-rpi5-cpu-main:
+  <<: *beta-perf-rpi5-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-rpi5-cpu-branch:
+  <<: *beta-perf-rpi5-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-rpi5-64-cpu: &beta-perf-rpi5-64-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
+  needs:
+    - build-beta-rpi5-64-release
+  variables:
+    TOOLCHAIN_VER: 2.1.0
+    TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
+    PLATFORM_NAME: raspberry-pi5-64
+    BUILD_TYPE: release
+    YPU_MACHINE: rpi5-64-cpu
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-toolchain]
+  tags:
+    - pv-cicd-rpi5-arm64-docker
+    - pv-cicd-c
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-rpi5-64-cpu-main:
+  <<: *beta-perf-rpi5-64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-rpi5-64-cpu-branch:
+  <<: *beta-perf-rpi5-64-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-wasm-browser-cpu: &beta-perf-wasm-browser-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-wasm-browser-release
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  variables:
+    PLATFORM_NAME: wasm
+    BUILD_TYPE: release
+    YPU_MACHINE: wasm-cpu
+    GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - export EMSDK_HOME=~/.emsdk
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - cd ${PV_PEER_MODULE_DIR}/zoo-dev/wasm/utils && yarn && yarn build && cd ${CI_PROJECT_DIR}
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-ypu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-perf-wasm-browser-cpu-main:
+  <<: *beta-perf-wasm-browser-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-wasm-browser-cpu-branch:
+  <<: *beta-perf-wasm-browser-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-android-cpu: &beta-perf-android-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-android-release
+  variables:
+    PLATFORM_NAME: android
+    BUILD_TYPE: release
+    YPU_MACHINE: android-cpu
+  before_script:
+    - export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+    - export PATH="/home/picovoice/Android/Sdk/platform-tools:$PATH"
+    - export ANDROID_NDK=$NEW_NDK_FOLDER
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+  script:
+    - !reference [.build-beta, script-perf-no-toolchain]
+  tags:
+    - pv-cicd-linux-x86
+    - pv-cicd-android-device
+
+beta-perf-android-cpu-main:
+  <<: *beta-perf-android-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-android-cpu-branch:
+  <<: *beta-perf-android-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-ios-cpu: &beta-perf-ios-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-ios-release
+  variables:
+    PLATFORM_NAME: ios
+    BUILD_TYPE: release
+    YPU_MACHINE: ios-cpu
+    YPU_IGNORE_METAL: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunnerUITests.xctrunner
+    - export LC_CTYPE="en_US.UTF-8"
+  script:
+    - >
+      set -o pipefail &&
+      python3 -m script.cicd
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --build
+      --disable_mocks
+      2>&1 | xcpretty
+    - >
+      python3 -m script.cicd
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --perf
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-ios-device
+
+beta-perf-ios-cpu-main:
+  <<: *beta-perf-ios-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-ios-cpu-branch:
+  <<: *beta-perf-ios-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-ios-metal: &beta-perf-ios-metal-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-ios-release
+  variables:
+    PLATFORM_NAME: ios
+    BUILD_TYPE: release
+    YPU_MACHINE: ios-metal
+    YPU_IGNORE_CPU: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunner
+    - xcrun simctl uninstall "iPhone 11 Pro" ai.picovoice.PvTestRunnerUITests.xctrunner
+    - export LC_CTYPE="en_US.UTF-8"
+  script:
+    - >
+      set -o pipefail &&
+      python3 -m script.cicd
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --build
+      --disable_mocks
+      2>&1 | xcpretty
+    - >
+      python3 -m script.cicd
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      -k BETA
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      --perf
+  tags:
+    - pv-cicd-macos-arm64
+    - pv-cicd-ios-device
+
+beta-perf-ios-metal-main:
+  <<: *beta-perf-ios-metal-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-ios-metal-branch:
+  <<: *beta-perf-ios-metal-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+.default-beta-perf-aggregate: &beta-perf-aggregate-template
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  before_script:
+    - pip3 install requests
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/aggregate.py
+      --api_token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --project_id ${CI_PROJECT_ID}
+      --pipeline_id ${CI_PIPELINE_ID}
+      --ignored_platforms windows-x86-directx
+  tags:
+    - pv-cicd-linux-x86-docker
+
+beta-perf-aggregate-main:
+  <<: *beta-perf-aggregate-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-perf-aggregate-branch:
+  <<: *beta-perf-aggregate-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
