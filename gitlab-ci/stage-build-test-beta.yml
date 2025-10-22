@@ -1567,3 +1567,32 @@ beta-perf-aggregate-branch:
     expire_in: 1 week
   rules:
     - !reference [ .beta-perf-rules-branch, rules ]
+
+beta-perf-relative:
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  needs:
+    - beta-perf-aggregate-branch
+  variables:
+    TARGET_BRANCH: main
+    JOB_NAME: beta-perf-aggregate
+  before_script:
+    - pip3 install requests
+  script:
+    - >
+      python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/check_relative.py
+      --gitlab_api_token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --target_branch_name ${TARGET_BRANCH}
+      --job_name ${JOB_NAME}
+      --project_id ${CI_PROJECT_ID}
+      --branch_pipeline_id ${CI_PIPELINE_ID}
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
