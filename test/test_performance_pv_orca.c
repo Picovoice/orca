@@ -6,6 +6,7 @@
 
 #include "io/pv_log.h"
 #include "test/pv_test.h"
+#include "test/pv_test_memory.h"
 #include "cJSON.h"
 
 #include "../../gatekeeper/test/test_pv_gatekeeper_usage_helper.h"
@@ -27,6 +28,7 @@
 
 #endif
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
 static const char *MODEL_PATH = "param/orca_params_en_female.pv";
 extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
@@ -38,16 +40,19 @@ static const char *DEFAULT_SENTENCE = "Orca performance test";
 
 static cJSON *ENVIRONMENT = NULL;
 static cJSON *RESULTS = NULL;
+static cJSON *MEMORY = NULL;
 static const char *YPU_ITERATIONS = NULL;
+static const char *YPU_MEMORY_ITERATIONS = NULL;
 static const char *YPU_DURATION = NULL;
 static const char *YPU_MACHINE = NULL;
 static const char *YPU_DEVICE = NULL;
 
 static int32_t test_iterations = 1;
+static int32_t memory_test_iterations = 1;
 static int64_t test_duration_usec = 1;
 static int64_t *test_durations = NULL;
 
-cJSON *pv_load_json(const char *filename) {
+static cJSON *pv_load_json(const char *filename) {
     char *path = pv_test_module_res_path(filename);
     FILE *fd = fopen(path, "r");
     free(path);
@@ -78,7 +83,7 @@ cJSON *pv_load_json(const char *filename) {
     return result;
 }
 
-const char *pv_getenv(const char *key, const cJSON *env_json) {
+static const char *pv_getenv(const char *key, const cJSON *env_json) {
     const char *result = getenv(key);
     if (result != NULL) {
         return result;
@@ -142,11 +147,13 @@ static pv_status_t test_performance_pv_orca_setup(void) {
     ENVIRONMENT = pv_load_json("environment.json");
 
     YPU_ITERATIONS = pv_getenv("YPU_ITERATIONS", ENVIRONMENT);
+    YPU_MEMORY_ITERATIONS = pv_getenv("YPU_MEMORY_ITERATIONS", ENVIRONMENT);
     YPU_DURATION = pv_getenv("YPU_DURATION", ENVIRONMENT);
     YPU_MACHINE = pv_getenv("YPU_MACHINE", ENVIRONMENT);
     YPU_DEVICE = pv_getenv("YPU_DEVICE", ENVIRONMENT);
 
     test_iterations = YPU_ITERATIONS ? atoi(YPU_ITERATIONS) : 1;
+    memory_test_iterations = YPU_MEMORY_ITERATIONS ? atoi(YPU_MEMORY_ITERATIONS) : 1;
     double ypu_duration = YPU_DURATION ? atof(YPU_DURATION) : 1.0;
     test_duration_usec = (int64_t) (ypu_duration * 1e6);
 
@@ -162,6 +169,13 @@ static pv_status_t test_performance_pv_orca_setup(void) {
     cJSON *results_machine = cJSON_CreateObject();
     cJSON_AddItemToObject(RESULTS, YPU_MACHINE, results_machine);
 
+    MEMORY = cJSON_CreateObject();
+    if (!MEMORY) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+    cJSON *results_memory = cJSON_CreateObject();
+    cJSON_AddItemToObject(MEMORY, YPU_MACHINE, results_memory);
+
     return PV_STATUS_SUCCESS;
 }
 
@@ -170,6 +184,21 @@ static void test_performance_pv_orca_teardown(void) {
     pv_orca_delete(orca_object);
 
     free(test_durations);
+
+    if (MEMORY != NULL) {
+        char *memory_results_str = cJSON_PrintUnformatted(MEMORY);
+        pv_test_true(
+                memory_results_str != NULL,
+                "Unable to allocate JSON output string for `orca` memory results");
+        if (!memory_results_str) {
+            return;
+        }
+
+        LOG_INFO("MEMORY JSON=`%s`", memory_results_str);
+        cJSON_Delete(MEMORY);
+        free(memory_results_str);
+    }
+
     if (RESULTS != NULL) {
         char *perf_results_str = cJSON_PrintUnformatted(RESULTS);
         pv_test_true(
@@ -187,6 +216,114 @@ static void test_performance_pv_orca_teardown(void) {
     if (ENVIRONMENT != NULL) {
         cJSON_Delete(ENVIRONMENT);
     }
+}
+
+static void test_memory_helper(const char *ypu_device) {
+    pv_orca_t *object = NULL;
+
+    cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY, YPU_MACHINE);
+    cJSON *results_device = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_machine, ypu_device, results_device);
+    cJSON *results_orca = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_device, "orca", results_orca);
+
+    pv_status_t status = pv_test_memory_start(0);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
+        return;
+    }
+
+    char *model_path = pv_test_module_res_path(MODEL_PATH);
+    if (!model_path) {
+        return;
+    }
+
+    char *access_key = NULL;
+    status = pv_access_serialize(&BYPASS_ACCESS, &access_key);
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    pv_https_client_factory_t *factory = NULL;
+    status = get_https_client_factory_usage_success(&factory);
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    size_t init_pre = pv_test_memory_get_current_usage();
+
+    status = pv_orca_internal_init(
+            access_key,
+            factory,
+            model_path,
+            &object);
+    free(access_key);
+    free(model_path);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("pv_orca_init_internal failed with `%s`", pv_status_to_string(status));
+        return;
+    }
+
+    size_t init_post = pv_test_memory_get_current_usage();
+
+    pv_test_memory_stop();
+    size_t init_peak = pv_test_memory_get_peak_usage();
+    size_t init_system_peak = pv_test_memory_get_system_peak_usage();
+
+    status = pv_test_memory_start(10);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
+        return;
+    }
+
+    int32_t num_samples = 0;
+    int16_t *pcms = NULL;
+    pv_orca_word_alignment_t **alignments = NULL;
+    int32_t num_alignments = 0;
+
+    size_t process_pre = pv_test_memory_get_current_usage();
+
+    for (int32_t i = 0; i < memory_test_iterations; i++) {
+        status = pv_orca_synthesize(
+                orca_object,
+                DEFAULT_SENTENCE,
+                synthesize_params_object,
+                &num_samples,
+                &pcms,
+                &num_alignments,
+                &alignments);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("synthesize failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        free(pcms);
+        pv_orca_word_alignments_delete(num_alignments, alignments);
+    }
+    size_t process_post = pv_test_memory_get_current_usage();
+
+    pv_test_memory_stop();
+    size_t process_peak = pv_test_memory_get_peak_usage();
+    size_t process_system_peak = pv_test_memory_get_system_peak_usage();
+
+    LOG_INFO("init memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
+        init_pre,
+        init_post,
+        init_peak,
+        init_system_peak);
+    LOG_INFO("process memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
+        process_pre,
+        process_post,
+        process_peak,
+        process_system_peak);
+
+    size_t init_result = max(init_peak, init_system_peak) - init_pre;
+    size_t process_result = max(process_peak, process_system_peak) - process_pre;
+
+    cJSON_AddNumberToObject(results_orca, "init_bytes", (double) init_result);
+    cJSON_AddNumberToObject(results_orca, "process_bytes", (double) process_result);
+
+    pv_orca_delete(object);
 }
 
 static void test_performance_helper(const char *ypu_device) {
@@ -225,7 +362,7 @@ static void test_performance_helper(const char *ypu_device) {
             }
         }
         duration_usec = get_now_usec() - start;
-        LOG_INFO("orca: %d iterations in %.3f sec\n", iterations, duration_usec / 1e6);
+        LOG_INFO("orca: %d iterations in %.3f sec", iterations, duration_usec / 1e6);
 
         for (int32_t i = 0; i < iterations; i++) {
             free(pcms[i]);
@@ -260,7 +397,7 @@ static void test_performance_helper(const char *ypu_device) {
         }
         int64_t now = get_now_usec();
         test_durations[i] = now - start;
-        LOG_INFO("orca: %d iterations in %.3f sec\n", iterations, test_durations[i] / 1e6);
+        LOG_INFO("orca: %d iterations in %.3f sec", iterations, test_durations[i] / 1e6);
 
         for (int32_t j = 0; j < iterations; j++) {
             free(pcms[j]);
@@ -300,11 +437,16 @@ static void test_performance_helper(const char *ypu_device) {
     cJSON_AddNumberToObject(results_orca, "test_sentence", median_frame_usec);
 }
 
+static void test_memory_pv_orca_cpu_impl(void) {
+    test_memory_helper("cpu:1");
+}
+
 static void test_performance_pv_orca_cpu_impl(void) {
     test_performance_helper("cpu:1");
 }
 
 static const pv_test_case_t PERFORMANCE_PV_ORCA_TEST_CASES[] = {
+        {"memory", test_memory_pv_orca_cpu_impl},
         {"cpu", test_performance_pv_orca_cpu_impl},
 };
 
