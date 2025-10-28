@@ -2,6 +2,7 @@
     "YPU_MACHINE": "default",
     "YPU_ITERATIONS": "64",
     "YPU_DURATION": "3",
+    "YPU_MEMORY_ITERATIONS": "10",
     "YPU_IGNORE_CPU": null,
     "YPU_IGNORE_CUDA": null,
     "YPU_IGNORE_DIRECTX": null,
