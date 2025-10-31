@@ -138,6 +138,7 @@ static void test_pv_orca_synthesizer_teardown(void) {
     pv_orca_synthesizer_delete(orca_synthesizer_object);
     pv_orca_synthesizer_param_delete((pv_orca_synthesizer_param_t *) synthesizer_param_object);
     pv_orca_synthesize_params_delete(synthesize_params_object);
+    free(default_init_args.object);
 }
 
 #ifdef __PV_MOCKS__

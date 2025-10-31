@@ -12,6 +12,10 @@ include ("${zoo-dev_SOURCE_DIR}/preload.cmake")
 
 project(orca LANGUAGES C CXX)
 
+if (PV_CMAKE_ENABLE_ASAN)
+  set(PV_ENABLE_RELEASE_TESTS OFF)
+endif ()
+
 include("${zoo-dev_SOURCE_DIR}/config.cmake")
 pv_util_func_hash_gen_add_dir(MODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_peer_subdirectory(zoo-dev)

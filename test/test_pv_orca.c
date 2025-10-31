@@ -320,6 +320,12 @@ static pv_status_t test_pv_orca_setup(void) {
 static void test_pv_orca_teardown(void) {
     pv_orca_synthesize_params_delete(synthesize_params_object);
     pv_orca_delete(orca_object);
+    free(default_init_args.model_path);
+    free(default_init_args.object);
+    free(default_synthesize_args.num_samples);
+    free(default_synthesize_args.pcm);
+    free(default_synthesize_args.num_alignments);
+    free(default_synthesize_args.alignments);
 }
 
 // TODO(Jaeger): This test needs to become multi-lingual
