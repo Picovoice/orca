@@ -1532,6 +1532,64 @@ beta-perf-ios-metal-branch:
   rules:
     - !reference [ .beta-perf-rules-branch, rules ]
 
+.default-beta-mem-linux-cpu: &beta-mem-linux-cpu-template
+  allow_failure: true # TODO: Remove after performance tests are updated.
+  stage: perf-beta
+  interruptible: true
+  needs:
+    - build-beta-linux-release
+  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  variables:
+    TOOLCHAIN_VER: 1.0.0
+    TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
+    PLATFORM_NAME: linux
+    BUILD_TYPE: release
+    YPU_MACHINE: linux-cpu
+    YPU_IGNORE_CUDA: ON
+  before_script:
+    - !reference [.build-toolchain-setup, before-script-toolchain]
+    - !reference [.build-toolchain-setup, before-script-setup-token]
+    - apt-get install -y time
+  script:
+    - >
+      python3 -m script.cicd
+      -a $PV_GROUP_VALID_ACCESS_KEY_BETA
+      -k BETA
+      --platform ${PLATFORM_NAME}
+      --builds ${BUILD_TYPE}
+      --repo_folder ${CI_PROJECT_DIR}
+      --build_folder ${CI_PROJECT_DIR}/build
+      --toolchain_prefix=${TOOLCHAIN_NAME}-
+      --toolchain_path=${CI_PROJECT_DIR}/${TOOLCHAIN_NAME}
+      --build
+      --mem
+      --disable_mocks
+  tags:
+    - pv-cicd-linux-x86-docker
+    - pv-cicd-ypu
+  cache:
+    - !reference [.build-test-beta-props, cache]
+
+beta-mem-linux-cpu-main:
+  <<: *beta-mem-linux-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: never
+  rules:
+    - !reference [ .beta-perf-rules-main, rules ]
+
+beta-mem-linux-cpu-branch:
+  <<: *beta-mem-linux-cpu-template
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
 .default-beta-perf-aggregate: &beta-perf-aggregate-template
   stage: test-beta
   image: python:3.10
