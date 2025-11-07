@@ -1,1 +1,1 @@
-fetch_peer_module(zoo-dev "f1c03987bbf1b9ec0fca300ff2a5f5e18eb6efda")
+fetch_peer_module(zoo-dev "96e83e0fbc46c06b8271b91d24622d5b9479896f")

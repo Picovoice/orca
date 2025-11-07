@@ -16,6 +16,7 @@ from automation.check_symbols import check_symbols
 from automation.gitlab_runner import (
     ANDROID_ABIS,
     ANDROID_CLANG_ABIS,
+    get_mem_usage_bytes,
     KeymakerEndpoints,
     OSX_ARCHS,
     PARALLEL_TEST_PLATFORMS,
@@ -89,6 +90,38 @@ def test_napi_orca(platform_name, access_key):
         res = run_napi_test(cmd, node_test_dir=node_test_dir) or run_napi_test(cmd2, node_test_dir=node_test_dir)
 
     return res
+
+
+def run_mem_usage_orca(build_mode, access_key):
+    root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    build_path = os.path.join(root_dir, "build", build_mode, platform.machine())
+
+    module_res_dir = os.path.join(root_dir, "res")
+    shared_res_dir = os.path.join(os.path.abspath(PEER_MODULE_DIR), "zoo-dev", "res")
+
+    input_text_file = os.path.join(shared_res_dir, "wav", "very_long_sample.txt")
+    with open(input_text_file, "r") as f:
+        input_text = f.read()
+
+    model_file = os.path.join(module_res_dir, "param", "orca_params_en_male.pv")
+    output_file = os.path.join(module_res_dir, "output.wav")
+
+    command = f"{build_path}/pv_orca_app -a {access_key} -m {model_file} -t '{input_text}' -o {output_file}"
+    mem_usage = get_mem_usage_bytes(command)
+
+    os.remove(output_file)
+
+    if mem_usage == 0:
+        return 1
+
+    extract_mem_dir = os.path.join(os.path.dirname(__file__), "..", "res", "performance")
+    process_memory_file = os.path.join(extract_mem_dir, "process_memory.json")
+
+    process_memory_dict = {'pv_orca_app_bytes': mem_usage}
+    with open(process_memory_file, "w") as f:
+        json.dump(process_memory_dict, f, indent=4)
+
+    return 0
 
 
 def test_unittest_orca(
@@ -208,6 +241,7 @@ def test_unittest_orca(
                 f"-Pandroid.testInstrumentationRunnerArguments.class=ai.picovoice.zoo.ZooDevPerformanceTestRunner; "
                 "adb logcat -d -s PICOVOICE",
                 platform_name,
+                extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                 extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
             results.append(res_performance_test)
 
@@ -241,6 +275,7 @@ def test_unittest_orca(
                 f"-destination 'platform=iOS,name=Picollm iPhone 13' "
                 f"-only-testing PvTestRunnerUITests/PvPerformanceTests -allowProvisioningUpdates",
                 platform_name,
+                extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                 extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
             results.append(res_performance_test)
 
@@ -286,6 +321,7 @@ def test_unittest_orca(
                     res_performance_test = run_command(
                         f"python3 {selenium_script} {arg} "
                         f"--build_mode {build_mode} --root_path {peer_dir} --test_type performance",
+                        extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                         extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
                     results.append(res_performance_test)
 
@@ -310,6 +346,7 @@ def test_unittest_orca(
                 f"{root_dir}/build/{build_mode}/{platform.machine()}/"
                 f"pv_orca_test_app res -i",
                 platform_name,
+                extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                 extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
             results.append(res_performance_test)
 
@@ -334,6 +371,7 @@ def test_unittest_orca(
                 f"{root_dir}/build/{build_mode}/{platform.machine()}/"
                 f"pv_orca_test_app.exe res -p -d dump_{build_mode}",
                 platform_name,
+                extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                 extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
             results.append(res_performance_test)
 
@@ -370,6 +408,7 @@ def test_unittest_orca(
                     f"{root_dir}/build/{build_mode}/{arch}/"
                     f"pv_orca_test_app res -p -d dump_{build_mode}",
                     platform_name,
+                    extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                     extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
                 results.append(res_performance_test)
 
@@ -399,6 +438,7 @@ def test_unittest_orca(
             res_performance_test = run_unit_test(
                 f"{root_dir}/{build_dir}/pv_orca_test_app res -p -d dump_{build_mode}",
                 platform_name,
+                extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
                 extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
             results.append(res_performance_test)
 
@@ -417,6 +457,7 @@ def main():
     parser.add_argument('--build', action='store_true')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('--perf', action='store_true')
+    parser.add_argument('--mem', action='store_true')
     parser.add_argument(
         '--platform',
         '-p',
@@ -472,6 +513,16 @@ def main():
 
         if args.perf:
             test_types.append(TestTypes.PERFORMANCE)
+
+        if args.mem:
+            for build in args.builds:
+                if build == 'release':
+                    logging.info(f"Running memory usage...")
+                    res = run_mem_usage_orca(build, args.access_key)
+                    if res != 0:
+                        sys.exit(res)
+
+                    logging.info(f"Running memory usage completed successfully")
 
         if len(test_types) > 0:
             logging.info(f"Testing ...")
