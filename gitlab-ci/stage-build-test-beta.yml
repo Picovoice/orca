@@ -1549,7 +1549,7 @@ beta-perf-ios-metal-branch:
   before_script:
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
-    - apt-get install -y time
+    - apt-get update && apt-get install -y time
   script:
     - >
       python3 -m script.cicd
