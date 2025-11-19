@@ -182,5 +182,5 @@ The `OrcaPhoneme` object has the following properties:
 
 ## Demos
 
-[Orca Node.js demo package](https://www.npmjs.com/package/@picovoice/orca-node-demo) provides command-line utilities for
+[Orca Node.js demo package](https://www.npmjs.com/package/@picovoice/orca-node-demo) provides command-line utilities for<!-- markdown-link-check-disable-line -->
 processing audio using Orca.

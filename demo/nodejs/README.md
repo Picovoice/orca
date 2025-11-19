@@ -45,7 +45,7 @@ In the single synthesis mode, the text is synthesized in a single call to the Or
 In this demo, we simulate a response from a language model by creating a text stream from a user-defined text.
 We stream that text to Orca and play the synthesized audio as soon as it gets generated.
 
-[@picovoice/pvspeaker-node](https://www.npmjs.com/package/@picovoice/pvspeaker-node) is used to play pcm audio generated
+[@picovoice/pvspeaker-node](https://www.npmjs.com/package/@picovoice/pvspeaker-node) is used to play pcm audio generated<!-- markdown-link-check-disable-line -->
 by Orca to your device's speakers.
 
 Execute the following:
