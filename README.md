@@ -3,8 +3,8 @@
 [![GitHub](https://img.shields.io/github/license/Picovoice/orca)](https://github.com/Picovoice/orca/)
 
 [![Maven Central](https://img.shields.io/maven-central/v/ai.picovoice/orca-android?label=maven-central%20%5Bandroid%5D)](https://repo1.maven.org/maven2/ai/picovoice/orca-android/)
-[![npm](https://img.shields.io/npm/v/@picovoice/orca-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/orca-node)
-[![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)
+[![npm](https://img.shields.io/npm/v/@picovoice/orca-node?label=npm%20%5Bnode%5D)](https://www.npmjs.com/package/@picovoice/orca-node)<!-- markdown-link-check-disable-line -->
+[![npm](https://img.shields.io/npm/v/@picovoice/orca-web?label=npm%20%5Bweb%5D)](https://www.npmjs.com/package/@picovoice/orca-web)<!-- markdown-link-check-disable-line -->
 [![CocoaPods](https://img.shields.io/cocoapods/v/Orca-iOS)](https://cocoapods.org/pods/Orca-iOS)<!-- markdown-link-check-disable-line -->
 [![PyPI](https://img.shields.io/pypi/v/pvorca)](https://pypi.org/project/pvorca/)
 [![Nuget](https://img.shields.io/nuget/v/Picovoice.Orca)](https://www.nuget.org/packages/Picovoice.Orca/)
