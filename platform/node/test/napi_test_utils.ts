@@ -3,6 +3,8 @@ import * as fs from "fs";
 import {distance} from "fastest-levenshtein";
 import {WaveFile} from "wavefile";
 
+export const DEVICE_STRING = "cpu:1";
+
 export const ACCESS_KEY = process.argv
     .filter((x) => x.startsWith('--access_key='))[0]?.split('--access_key=')[1];
 if (!ACCESS_KEY) {

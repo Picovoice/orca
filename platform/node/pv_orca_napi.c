@@ -11,7 +11,7 @@
 #include "orca/pv_orca.h"
 
 napi_value napi_orca_init(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
+    size_t argc = 3;
     napi_value args[argc];
     napi_status status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
     if (status != napi_ok) {
@@ -79,10 +79,44 @@ napi_value napi_orca_init(napi_env env, napi_callback_info info) {
         return NULL;
     }
 
+    length = 0;
+    status = napi_get_value_string_utf8(env, args[2], NULL, 0, &length);
+    if (status != napi_ok) {
+        free(model_path);
+        free(access_key);
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
+                "Unable to get the device");
+        return NULL;
+    }
+    char *device = (char *) calloc(length + 1, sizeof(char));
+    if (!device) {
+        free(model_path);
+        free(access_key);
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_OUT_OF_MEMORY),
+                "Unable to allocate memory");
+        return NULL;
+    }
+    status = napi_get_value_string_utf8(env, args[2], device, length + 1, &length);
+    if (status != napi_ok) {
+        free(device);
+        free(model_path);
+        free(access_key);
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_INVALID_ARGUMENT),
+                "Unable to get the device");
+        return NULL;
+    }
+
     pv_orca_t *handle = NULL;
     pv_status_t pv_status = pv_orca_init(
             access_key,
             model_path,
+            device,
             &handle);
     free(access_key);
     free(model_path);
@@ -1781,6 +1815,91 @@ napi_value napi_orca_get_error_stack(napi_env env, napi_callback_info info) {
     return object_js;
 }
 
+napi_value napi_orca_list_hardware_devices(napi_env env, napi_callback_info info) {
+    char **hardware_devices = NULL;
+    int32_t num_hardware_devices = 0;
+    const pv_status_t pv_status = pv_orca_list_hardware_devices(
+            &hardware_devices,
+            &num_hardware_devices);
+    if (pv_status != PV_STATUS_SUCCESS) {
+        hardware_devices = NULL;
+        num_hardware_devices = 0;
+    }
+
+    napi_value result_object = NULL;
+    napi_value hardware_devices_js = NULL;
+    napi_value status_js = NULL;
+    const char *ERROR_MSG = "Unable to allocate memory for the constructed return value";
+    napi_status status = napi_create_object(env, &result_object);
+    if (status != napi_ok) {
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                ERROR_MSG);
+        return NULL;
+    }
+
+    status = napi_create_array_with_length(env, num_hardware_devices, &hardware_devices_js);
+    if (status != napi_ok) {
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                ERROR_MSG);
+        return NULL;
+    }
+
+    for (int32_t i = 0; i < num_hardware_devices; i++) {
+        napi_value hardware_device_js = NULL;
+        status = napi_create_string_utf8(env, hardware_devices[i], NAPI_AUTO_LENGTH, &hardware_device_js);
+        if (status != napi_ok) {
+            napi_throw_error(
+                    env,
+                    pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                    ERROR_MSG);
+            return NULL;
+        }
+
+        status = napi_set_element(env, hardware_devices_js, i, hardware_device_js);
+        if (status != napi_ok) {
+            napi_throw_error(
+                    env,
+                    pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                    ERROR_MSG);
+            return NULL;
+        }
+    }
+    status = napi_set_named_property(env, result_object, "hardware_devices", hardware_devices_js);
+    if (status != napi_ok) {
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                ERROR_MSG);
+        return NULL;
+    }
+
+    status = napi_create_int32(env, pv_status, &status_js);
+    if (status != napi_ok) {
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                ERROR_MSG);
+        return NULL;
+    }
+    status = napi_set_named_property(env, result_object, "status", status_js);
+    if (status != napi_ok) {
+        napi_throw_error(
+                env,
+                pv_status_to_string(PV_STATUS_RUNTIME_ERROR),
+                ERROR_MSG);
+        return NULL;
+    }
+
+    pv_orca_free_hardware_devices(hardware_devices, num_hardware_devices);
+
+    (void) info;
+    return result_object;
+}
+
 #define DECLARE_NAPI_METHOD(name, func) (napi_property_descriptor){ name, 0, func, 0, 0, 0, napi_default, 0 }
 
 napi_value Init(napi_env env, napi_value exports) {
@@ -1863,6 +1982,11 @@ napi_value Init(napi_env env, napi_value exports) {
     desc = DECLARE_NAPI_METHOD("get_error_stack", napi_orca_get_error_stack);
     status = napi_define_properties(env, exports, 1, &desc);
     assert(status == napi_ok);
+
+    desc = DECLARE_NAPI_METHOD("list_hardware_devices", napi_orca_list_hardware_devices);
+    status = napi_define_properties(env, exports, 1, &desc);
+    assert(status == napi_ok);
+
 
     (void) status;
     return exports;

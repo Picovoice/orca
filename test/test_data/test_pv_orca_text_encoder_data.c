@@ -202,6 +202,18 @@ static const q7_t ENC_P_CONV_POST_BIAS[] = {
     15, 13, 11, 10, -4, 9, -32, 20, -14, 5, -24, 12, 15, 31, -15, 4, -12, -11, -2, 21, -15, 7, -18, 30, -8, 6, 32, -23, 
     24, -16, 5, -31};
 
+static const pv_ypu_config_mem_t ENC_P_CONV_POST_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_CONV_POST_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_CONV_POST_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_CONV_POST_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_CONV_POST_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_CONV_POST_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_CONV_POST_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -209,8 +221,8 @@ static const pv_cnn_param_t ENC_P_CONV_POST_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_CONV_POST_WEIGHT,
-        .bias = ENC_P_CONV_POST_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_CONV_POST_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_CONV_POST_BIAS_CONFIG,
 };
 
 static const float ENC_P_ENCODER_0_ATTENTION_EMB_REL_K_WEIGHT[] = {
@@ -260,6 +272,18 @@ static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS[] = {
     32, 25, -1, -30, 0, -4, -30, -31, -4, -15, -24, 2, -24, 10, -3, 8};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -267,8 +291,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_Q_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT,
-        .bias = ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_Q_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_Q_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT[] = {
@@ -286,6 +310,18 @@ static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS[] = {
     -1, -13, 25, -2, -10, 3, -15, -4, 29, -24, -11, -1, -16, -21, -4, -17};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_K_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -293,8 +329,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_K_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT,
-        .bias = ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_K_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_K_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT[] = {
@@ -312,6 +348,18 @@ static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS[] = {
     15, -19, -27, 15, -2, -11, -10, 11, -25, -1, 29, 4, 9, 16, -6, -3};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_V_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -319,8 +367,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_V_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT,
-        .bias = ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_V_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_V_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT[] = {
@@ -338,6 +386,18 @@ static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS[] = {
     6, -10, 8, 21, -20, 18, 27, 7, 10, 15, -17, 21, -5, -13, 29, -16};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_O_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -345,8 +405,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_ATTENTION_CONV_O_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT,
-        .bias = ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_O_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_ATTENTION_CONV_O_BIAS_CONFIG,
 };
 
 static const pv_attention_param_t ENC_P_ENCODER_0_ATTENTION_PARAM = {
@@ -368,10 +428,22 @@ static const q7_t ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_LAYER_NORM_1_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_LAYER_NORM_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_LAYER_NORM_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_LAYER_NORM_1_BIAS,
+};
+
 static const pv_layer_norm_param_t ENC_P_ENCODER_0_LAYER_NORM_1_PARAM = {
         .num_channels = 16,
-        .weight = ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT,
-        .bias = ENC_P_ENCODER_0_LAYER_NORM_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_LAYER_NORM_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_LAYER_NORM_1_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -435,6 +507,18 @@ static const q7_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS[] = {
     5, -5, 9, -1, -5, -18, 8, 16, -6, -13, -15, -11, 12, 12, -6, -18, 17, -15, 14, -6, -1, 1, -9, 5, -1, -3, 1, -10, 3, 
     -10, 14, 10};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -442,8 +526,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_WEIGHT,
-        .bias = ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_FEED_FORWARD_CONV_1_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT[] = {
@@ -502,6 +586,18 @@ static const q7_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS[] = {
     -3, -4, -2, -2, 6, -1, 4, -3, 4, -6, -4, -8, -4, -3, -1, 4};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_PARAM = {
         .input_channels = 32,
         .output_channels = 16,
@@ -509,8 +605,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT,
-        .bias = ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_FEED_FORWARD_CONV_2_BIAS_CONFIG,
 };
 
 static const pv_transformer_ffn_param_t ENC_P_ENCODER_0_FEED_FORWARD_PARAM = {
@@ -524,10 +620,22 @@ static const q7_t ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_0_LAYER_NORM_2_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_0_LAYER_NORM_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_0_LAYER_NORM_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_0_LAYER_NORM_2_BIAS,
+};
+
 static const pv_layer_norm_param_t ENC_P_ENCODER_0_LAYER_NORM_2_PARAM = {
         .num_channels = 16,
-        .weight = ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT,
-        .bias = ENC_P_ENCODER_0_LAYER_NORM_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_LAYER_NORM_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_0_LAYER_NORM_2_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -585,6 +693,18 @@ static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS[] = {
     8, 7, -15, -14, 22, 1, 6, 29, -8, -22, 21, -2, 18, -26, 19, 18};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -592,8 +712,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_Q_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT,
-        .bias = ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_Q_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_Q_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT[] = {
@@ -611,6 +731,18 @@ static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS[] = {
     1, 5, -22, 11, -29, -12, 31, 25, -31, -7, -14, 29, -9, 4, 27, 17};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_K_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -618,8 +750,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_K_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT,
-        .bias = ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_K_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_K_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT[] = {
@@ -637,6 +769,18 @@ static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS[] = {
     18, 14, -25, 17, 24, 22, 8, 20, 26, 7, -11, -18, -5, -3, 20, 5};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_V_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -644,8 +788,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_V_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT,
-        .bias = ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_V_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_V_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT[] = {
@@ -663,6 +807,18 @@ static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS[] = {
     24, 31, 12, 14, 10, 16, 32, -29, 26, -20, 18, 17, -9, -19, 21, -10};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_O_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -670,8 +826,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_ATTENTION_CONV_O_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT,
-        .bias = ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_O_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_ATTENTION_CONV_O_BIAS_CONFIG,
 };
 
 static const pv_attention_param_t ENC_P_ENCODER_1_ATTENTION_PARAM = {
@@ -693,10 +849,22 @@ static const q7_t ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_LAYER_NORM_1_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_LAYER_NORM_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_LAYER_NORM_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_LAYER_NORM_1_BIAS,
+};
+
 static const pv_layer_norm_param_t ENC_P_ENCODER_1_LAYER_NORM_1_PARAM = {
         .num_channels = 16,
-        .weight = ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT,
-        .bias = ENC_P_ENCODER_1_LAYER_NORM_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_LAYER_NORM_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_LAYER_NORM_1_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -760,6 +928,18 @@ static const q7_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS[] = {
     4, 12, -11, -11, 17, 18, -8, 4, -6, 11, -3, 0, 10, 13, -11, 2, -13, -10, 0, -15, -2, -17, -18, -1, 10, 0, 6, -7, 
     17, 5, 0, -3};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -767,8 +947,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_WEIGHT,
-        .bias = ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_FEED_FORWARD_CONV_1_BIAS_CONFIG,
 };
 
 static const q7_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT[] = {
@@ -827,6 +1007,18 @@ static const q7_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS[] = {
     11, 11, 2, -9, -9, -2, -9, -1, -4, 4, 4, 0, 9, 1, -10, -13};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS,
+};
+
 static const pv_cnn_param_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_PARAM = {
         .input_channels = 32,
         .output_channels = 16,
@@ -834,8 +1026,8 @@ static const pv_cnn_param_t ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT,
-        .bias = ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_FEED_FORWARD_CONV_2_BIAS_CONFIG,
 };
 
 static const pv_transformer_ffn_param_t ENC_P_ENCODER_1_FEED_FORWARD_PARAM = {
@@ -849,10 +1041,22 @@ static const q7_t ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT[] = {
 static const q7_t ENC_P_ENCODER_1_LAYER_NORM_2_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t ENC_P_ENCODER_1_LAYER_NORM_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(ENC_P_ENCODER_1_LAYER_NORM_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) ENC_P_ENCODER_1_LAYER_NORM_2_BIAS,
+};
+
 static const pv_layer_norm_param_t ENC_P_ENCODER_1_LAYER_NORM_2_PARAM = {
         .num_channels = 16,
-        .weight = ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT,
-        .bias = ENC_P_ENCODER_1_LAYER_NORM_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_LAYER_NORM_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &ENC_P_ENCODER_1_LAYER_NORM_2_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 

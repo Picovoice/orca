@@ -32,6 +32,7 @@ static const int32_t MAX_CHARACTER_LIMIT = 2000;
 extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
 extern const pv_orca_synthesizer_param_t PV_ORCA_SYNTHESIZER_PARAM;
 
+static pv_ypu_t *ypu = NULL;
 static pv_orca_t *orca_object = NULL;
 static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 static pv_orca_stream_state_t *stream_state_object = NULL;
@@ -181,9 +182,11 @@ static struct init_args {
     char *access_key;
     pv_https_client_factory_t *https_client_factory;
     char *model_path;
+    const char *device;
     pv_orca_t **object;
 } default_init_args = {
         .access_key = FAKE_ACCESS_KEY,
+        .device = "cpu:1"
 };
 
 static struct synthesize_args {
@@ -195,6 +198,9 @@ static struct synthesize_args {
     int32_t *num_alignments;
     pv_orca_word_alignment_t ***alignments;
 } default_synthesize_args = {};
+
+static int32_t curr_fread = 0;
+static int32_t fread_count = 0;
 
 #if !defined(__PV_TARGET_NO_FILE_INTERFACE__) && !defined(__PV_TARGET_NO_FILE_SYSTEM__)
 
@@ -243,6 +249,7 @@ static pv_status_t test_pv_orca_setup_helper(
             access_key,
             factory,
             model_path,
+            pv_ypu_clone(ypu),
             object);
     free(access_key);
     free(model_path);
@@ -261,7 +268,12 @@ static pv_status_t test_pv_orca_setup_helper(
 }
 
 static pv_status_t test_pv_orca_setup(void) {
-    pv_status_t status = test_pv_orca_setup_helper(
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = test_pv_orca_setup_helper(
             MODEL_PATH,
             &orca_object);
     if (status != PV_STATUS_SUCCESS) {
@@ -326,6 +338,7 @@ static void test_pv_orca_teardown(void) {
     free(default_synthesize_args.pcm);
     free(default_synthesize_args.num_alignments);
     free(default_synthesize_args.alignments);
+    pv_ypu_delete(ypu);
 }
 
 // TODO(Jaeger): This test needs to become multi-lingual
@@ -1281,6 +1294,7 @@ static void test_pv_orca_init_internal_helper(
             args->access_key,
             args->https_client_factory,
             args->model_path,
+            pv_ypu_clone(ypu),
             args->object);
     pv_log_enable();
     reset_mocks();
@@ -1356,9 +1370,51 @@ static void test_pv_orca_synthesize_helper(
     }
 }
 
+static void test_pv_orca_internal_param_load_helper(
+        struct init_args *args,
+        pv_status_t expected) {
+    FILE *f = pv_fopen(args->model_path, "rb");
+    pv_test_true(
+        f != NULL,
+        "failed to open %s",
+        args->model_path);
+    if (f == NULL) {
+        return;
+    }
+
+    pv_orca_phonemizer_param_t *phonemizer_param = NULL;
+    pv_orca_synthesizer_param_t *synthesizer_param = NULL;
+    pv_status_t status = pv_orca_internal_param_load(
+        ypu,
+        f,
+        &phonemizer_param,
+        &synthesizer_param);
+    fclose(f);
+    pv_test_true(
+            status == expected,
+            "expected '%s' but got '%s'",
+            pv_status_to_string(expected),
+            pv_status_to_string(status));
+    if (status != expected) {
+        printf("%d\n", curr_fread);
+        exit(1);
+    }
+
+    if (status == PV_STATUS_SUCCESS) {
+        pv_orca_phonemizer_param_delete(phonemizer_param);
+        pv_orca_synthesizer_param_delete(ypu, synthesizer_param);
+    }
+}
+
 static void *calloc_return_null(size_t arg0, size_t arg1) {
     (void) arg0;
     (void) arg1;
+    return NULL;
+}
+
+static void *pv_ypu_host_alloc_return_null(pv_ypu_t *ypu, int32_t size_bytes) {
+    (void) ypu;
+    (void) size_bytes;
     return NULL;
 }
 
@@ -1374,11 +1430,20 @@ static FILE *pv_fopen_return_null(const char *arg0, const char *arg1) {
     return NULL;
 }
 
+static size_t pv_fread_fail(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    if (fread_count < curr_fread - 1) {
+        fread_count++;
+        return pv_fread_real(ptr, size, nmemb, stream);
+    }
+
+    return 0;
+}
+
 static void test_pv_orca_init_success(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_internal_init, PV_STATUS_SUCCESS)
 
     pv_orca_t *pv_orca = NULL;
-    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "model_path", &pv_orca);
+    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "model_path", "cpu:1", &pv_orca);
     pv_test_true(
             status == PV_STATUS_SUCCESS,
             "failed to init orca with '%s'",
@@ -1389,7 +1454,7 @@ static void test_pv_orca_init_internal_init_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_internal_init, PV_STATUS_INVALID_ARGUMENT)
 
     pv_orca_t *pv_orca = NULL;
-    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "", &pv_orca);
+    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "", "cpu:1", &pv_orca);
     pv_test_true(
             status == PV_STATUS_INVALID_ARGUMENT,
             "expected '%s' but got '%s'",
@@ -1407,7 +1472,7 @@ static void test_pv_orca_init_https_client_factory_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
     pv_orca_t *pv_orca = NULL;
-    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "", &pv_orca);
+    const pv_status_t status = pv_orca_init(FAKE_ACCESS_KEY, "", "cpu:1", &pv_orca);
     reset_mocks();
     pv_test_true(
             status == PV_STATUS_OUT_OF_MEMORY,
@@ -1438,8 +1503,9 @@ static void test_pv_orca_init_internal_invalid_args(void) {
     test_pv_orca_init_internal_helper(&args, PV_STATUS_INVALID_ARGUMENT, "Argument `object` is NULL\\.", NULL);
 }
 
-static void test_pv_orca_init_internal_calloc_failure(void) {
-    PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
+static void test_pv_orca_init_internal_alloc_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_ypu_init_cpu, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_CUSTOM_FUNC(pv_ypu_host_alloc, pv_ypu_host_alloc_return_null)
 
     test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `o`\\.");
 }
@@ -1457,9 +1523,9 @@ static void test_pv_orca_init_internal_synthesizer_param_load_failure(void) {
 }
 
 static void test_pv_orca_init_internal_serialized_section_unpack_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_serialized_section_unpack, PV_STATUS_IO_ERROR)
+    PV_SET_MOCK_RETURN_VAL(pv_serialized_deserialize_file, PV_STATUS_IO_ERROR)
 
-    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, pv_test_function_hash_regex(), "`pv_serialized_section_unpack` failed with status `IO_ERROR`\\.");
+    test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_IO_ERROR, pv_test_function_hash_regex(), "`pv_orca_internal_param_load` failed with status `IO_ERROR`\\.");
 }
 
 static void test_pv_orca_init_internal_hippo_init_failure(void) {
@@ -1504,25 +1570,39 @@ static void test_pv_orca_init_internal_pv_gatekeeper_usage_animal_init_failure(v
     test_pv_orca_init_internal_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`pv_gatekeeper_usage_animal` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
+static void test_pv_orca_internal_param_load_fread_failure(void) {
+    PV_SET_MOCK_CUSTOM_FUNC(pv_fread, pv_fread_fail)
+
+    for (curr_fread = 0; curr_fread < 821; curr_fread++) {
+        fread_count = 0;
+
+        test_pv_orca_internal_param_load_helper(&default_init_args, PV_STATUS_IO_ERROR);
+    }
+}
+
 static void test_pv_orca_stream_state_update_z_prior_failure_helper(
         pv_status_t expected,
         bool is_first_chunk,
         const char *expected_public_error_message_regex,
         const char *expected_private_error_message_regex) {
     int32_t length = 100;
-    float *buffer_z_prior = calloc(length, sizeof(float));
-    pv_test_true(buffer_z_prior != NULL, "failed to allocate buffer_z_prior");
-    if (!buffer_z_prior) {
+
+    pv_ypu_mem_t *buffer_z_prior = pv_ypu_mem_alloc(
+        ypu,
+        length * stream_state_object->num_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(buffer_z_prior != NULL, "Failed to allocate buffer_z_prior");
+    if (buffer_z_prior == NULL) {
         return;
     }
 
     stream_state_object->is_first_chunk = is_first_chunk;
     stream_state_object->is_flush = false;
-    int32_t num_frames_to_flow = 0;
+    int32_t num_frames_to_flow = length;
     pv_status_t status = pv_orca_stream_state_update_z_prior(
+            ypu,
             stream_state_object,
-            length,
-            buffer_z_prior,
+            &buffer_z_prior,
             &num_frames_to_flow);
     reset_mocks();
     pv_test_true(
@@ -1531,7 +1611,7 @@ static void test_pv_orca_stream_state_update_z_prior_failure_helper(
             pv_status_to_string(expected),
             pv_status_to_string(status));
 
-    if (expected != PV_STATUS_SUCCESS) {
+    if (status != PV_STATUS_SUCCESS) {
         const char *expected_message = expected_public_error_message_regex;
 
 #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
@@ -1548,17 +1628,11 @@ static void test_pv_orca_stream_state_update_z_prior_failure_helper(
                 expected_message);
     }
 
-    free(buffer_z_prior);
+    pv_ypu_mem_free(ypu, buffer_z_prior);
 }
 
 static void test_pv_orca_stream_state_update_z_prior_1st_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
-
-    test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, true, pv_test_function_hash_regex(), "`cache_z_prior` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_stream_state_update_z_prior_2nd_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
+    PV_SET_MOCK_RETURN_VAL(pv_ypu_buffer_get, NULL)
 
     test_pv_orca_stream_state_update_z_prior_failure_helper(PV_STATUS_OUT_OF_MEMORY, false, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_buffer_get`\\.");
 }
@@ -1569,19 +1643,23 @@ static void test_pv_orca_stream_state_update_z_failure_helper(
         const char *expected_public_error_message_regex,
         const char *expected_private_error_message_regex) {
     int32_t length = 10;
-    float *buffer_z_prior = calloc(length, sizeof(float));
-    pv_test_true(buffer_z_prior != NULL, "failed to allocate buffer_z_prior");
-    if (!buffer_z_prior) {
+
+    pv_ypu_mem_t *buffer_z = pv_ypu_mem_alloc(
+        ypu,
+        length * stream_state_object->num_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(buffer_z != NULL, "Failed to allocate buffer_z");
+    if (buffer_z == NULL) {
         return;
     }
 
     stream_state_object->is_first_chunk = is_first_chunk;
     stream_state_object->is_flush = false;
-    int32_t num_frames_to_flow = 0;
-    pv_status_t status = pv_orca_stream_state_update_z(
+    int32_t num_frames_to_flow = length;
+    pv_status_t status = pv_orca_stream_state_update_z_prior(
+            ypu,
             stream_state_object,
-            length,
-            buffer_z_prior,
+            &buffer_z,
             &num_frames_to_flow);
     reset_mocks();
     pv_test_true(
@@ -1590,11 +1668,10 @@ static void test_pv_orca_stream_state_update_z_failure_helper(
             pv_status_to_string(expected),
             pv_status_to_string(status));
 
-    if (expected != PV_STATUS_SUCCESS) {
+    if (status != PV_STATUS_SUCCESS) {
         const char *expected_message = expected_public_error_message_regex;
 
 #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
-
         if (expected_private_error_message_regex) {
             expected_message = expected_private_error_message_regex;
         }
@@ -1608,17 +1685,11 @@ static void test_pv_orca_stream_state_update_z_failure_helper(
                 expected_message);
     }
 
-    free(buffer_z_prior);
+    pv_ypu_mem_free(ypu, buffer_z);
 }
 
 static void test_pv_orca_stream_state_update_z_1st_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
-
-    test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, true, pv_test_function_hash_regex(), "`cache_z` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_stream_state_update_z_2nd_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_buffer_get, NULL)
+    PV_SET_MOCK_RETURN_VAL(pv_ypu_buffer_get, NULL)
 
     test_pv_orca_stream_state_update_z_failure_helper(PV_STATUS_OUT_OF_MEMORY, false, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_buffer_get`\\.");
 }
@@ -1757,13 +1828,13 @@ static void test_pv_orca_create_alignments_failure_helper(
     }
 }
 
-static void test_pv_orca_create_alignments_1st_calloc_failure(void) {
+static void test_pv_orca_create_alignments_1st_alloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
     test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `aligns`\\.");
 }
 
-static void test_pv_orca_create_alignments_2nd_calloc_failure(void) {
+static void test_pv_orca_create_alignments_2nd_alloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
             calloc_real,
             calloc_return_null,
@@ -1773,7 +1844,7 @@ static void test_pv_orca_create_alignments_2nd_calloc_failure(void) {
     test_pv_orca_create_alignments_failure_helper(PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `indices_merged`\\.");
 }
 
-static void test_pv_orca_create_alignments_3rd_calloc_failure(void) {
+static void test_pv_orca_create_alignments_3rd_alloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
             calloc_real,
             calloc_real,
@@ -1967,7 +2038,7 @@ static void pv_orca_phoneme_alignment_init_failure_helper(
     }
 }
 
-static void pv_orca_phoneme_alignment_init_1st_calloc_failure(void) {
+static void pv_orca_phoneme_alignment_init_1st_alloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
     pv_orca_phoneme_alignment_init_failure_helper(
@@ -1976,7 +2047,7 @@ static void pv_orca_phoneme_alignment_init_1st_calloc_failure(void) {
             "Failed to allocate memory for `o`\\.");
 }
 
-static void pv_orca_phoneme_alignment_init_2nd_calloc_failure(void) {
+static void pv_orca_phoneme_alignment_init_2nd_alloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
             calloc_real,
             calloc_return_null,
@@ -2025,7 +2096,7 @@ static void pv_orca_word_alignment_init_failure_helper(
     }
 }
 
-static void pv_orca_word_alignment_init_1st_calloc_failure(void) {
+static void pv_orca_word_alignment_init_1st_alloc_failure(void) {
     PV_SET_MOCK_CUSTOM_FUNC(calloc, calloc_return_null)
 
     pv_orca_word_alignment_init_failure_helper(
@@ -2034,7 +2105,7 @@ static void pv_orca_word_alignment_init_1st_calloc_failure(void) {
             "Failed to allocate memory for `o`\\.");
 }
 
-static void pv_orca_word_alignment_init_2nd_calloc_failure(void) {
+static void pv_orca_word_alignment_init_2nd_alloc_failure(void) {
     void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
             calloc_real,
             calloc_return_null,
@@ -2300,6 +2371,7 @@ static void test_pv_orca_serializer_loop(void) {
     }
 
     pv_status_t status = pv_orca_internal_param_serialize(
+            ypu,
             &PV_ORCA_PHONEMIZER_PARAM,
             &PV_ORCA_SYNTHESIZER_PARAM,
             tmp_path);
@@ -2317,7 +2389,7 @@ static void test_pv_orca_serializer_loop(void) {
 
     pv_orca_phonemizer_param_t *loaded_phonemizer_param = NULL;
     pv_orca_synthesizer_param_t *loaded_synthesizer_param = NULL;
-    status = pv_orca_internal_param_load(f, &loaded_phonemizer_param, &loaded_synthesizer_param);
+    status = pv_orca_internal_param_load(ypu, f, &loaded_phonemizer_param, &loaded_synthesizer_param);
     remove(tmp_path);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to load");
     if (status != PV_STATUS_SUCCESS) {
@@ -2328,7 +2400,7 @@ static void test_pv_orca_serializer_loop(void) {
             pv_orca_synthesizer_param_is_equal(loaded_synthesizer_param, &PV_ORCA_SYNTHESIZER_PARAM),
             "loaded synthesizer param is not equal to the original");
 
-    pv_orca_synthesizer_param_delete(loaded_synthesizer_param);
+    pv_orca_synthesizer_param_delete(ypu, loaded_synthesizer_param);
     pv_orca_phonemizer_param_delete(loaded_phonemizer_param);
 }
 
@@ -2339,6 +2411,43 @@ static void test_pv_orca_get_normalizer(void) {
     pv_test_true(normalizer != NULL, "failed to get normalizer");
 }
 
+
+static void test_pv_orca_list_hardware_devices(void) {
+    char **hardware_devices = NULL;
+    int32_t num_hardware_devices = 0;
+    pv_status_t status = pv_orca_list_hardware_devices(
+        &hardware_devices,
+        &num_hardware_devices);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "`pv_orca_list_hardware_devices` failed with `%s`", pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    pv_test_true(
+            num_hardware_devices > 0,
+            "`num_hardware_devices` should be a positive number, got %d", num_hardware_devices);
+    if (num_hardware_devices <= 0) {
+        return;
+    }
+
+    pv_test_true(hardware_devices, "`hardware_devices` is NULL");
+    if (!hardware_devices) {
+        return;
+    }
+
+    for (int32_t i = 0; i < num_hardware_devices; i++) {
+        pv_test_true(hardware_devices[i], "`hardware_devices[%d]` is NULL", i);
+        if (!hardware_devices[i]) {
+            return;
+        }
+        pv_test_true(strlen(hardware_devices[i]) > 0, "`hardware_devices[%d]` is an empty string", i);
+    }
+
+    pv_orca_free_hardware_devices(hardware_devices, num_hardware_devices);
+}
+
 static const pv_test_case_t PV_ORCA_TEST_CASES[] = {
 
 #ifdef __PV_MOCKS__
@@ -2347,7 +2456,7 @@ static const pv_test_case_t PV_ORCA_TEST_CASES[] = {
         {"init internal init failure", test_pv_orca_init_internal_init_failure},
         {"init https client failure", test_pv_orca_init_https_client_factory_failure},
         {"init internal invalid args", test_pv_orca_init_internal_invalid_args},
-        {"init internal calloc failure", test_pv_orca_init_internal_calloc_failure},
+        {"init internal alloc failure", test_pv_orca_init_internal_alloc_failure},
         {"init internal fopen failure", test_pv_orca_init_internal_fopen_failure},
         {"init internal synthesizer_param_load failure", test_pv_orca_init_internal_synthesizer_param_load_failure},
         {"init internal streaming synthesis state init failure",
@@ -2360,24 +2469,21 @@ static const pv_test_case_t PV_ORCA_TEST_CASES[] = {
         {"init internal fclose_failure", test_pv_orca_init_internal_fclose_failure},
         {"init internal pv_gatekeeper_usage_animal_init failure",
          test_pv_orca_init_internal_pv_gatekeeper_usage_animal_init_failure},
+        {"internal param load fread failure", test_pv_orca_internal_param_load_fread_failure},
         {"stream state update z_prior failure 1st buffer",
          test_pv_orca_stream_state_update_z_prior_1st_buffer_failure},
-        {"stream state update z_prior failure 2nd buffer",
-         test_pv_orca_stream_state_update_z_prior_2nd_buffer_failure},
         {"stream state update z failure 1st buffer",
          test_pv_orca_stream_state_update_z_1st_buffer_failure},
-        {"stream state update z failure 2nd buffer",
-         test_pv_orca_stream_state_update_z_2nd_buffer_failure},
         {"synthesize invalid args", test_pv_orca_synthesize_invalid_args},
         {"synthesize normalizer failure", test_pv_orca_synthesize_normalizer_failure},
         {"synthesize phonemizer failure", test_pv_orca_synthesize_phonemizer_failure},
         {"synthesize synthesizer forward failure", test_pv_orca_synthesizer_forward_failure},
-        {"create alignments 1st calloc failure",
-         test_pv_orca_create_alignments_1st_calloc_failure},
-        {"create alignments 2nd calloc failure",
-         test_pv_orca_create_alignments_2nd_calloc_failure},
-        {"create alignments 3rd calloc failure",
-         test_pv_orca_create_alignments_3rd_calloc_failure},
+        {"create alignments 1st alloc failure",
+         test_pv_orca_create_alignments_1st_alloc_failure},
+        {"create alignments 2nd alloc failure",
+         test_pv_orca_create_alignments_2nd_alloc_failure},
+        {"create alignments 3rd alloc failure",
+         test_pv_orca_create_alignments_3rd_alloc_failure},
         {"create alignments failure path 1", test_pv_orca_create_alignments_failure_path_1},
         {"create alignments failure path 2", test_pv_orca_create_alignments_failure_path_2},
         {"create alignments failure path 3", test_pv_orca_create_alignments_failure_path_3},
@@ -2388,10 +2494,10 @@ static const pv_test_case_t PV_ORCA_TEST_CASES[] = {
         {"valid characters invalid inputs", test_pv_orca_valid_characters_invalid_inputs},
         {"valid characters malloc failure", test_pv_orca_valid_characters_malloc_failure},
         {"sample rate failure", test_pv_orca_sample_rate_failure},
-        {"phoneme alignment init 1st calloc failure", pv_orca_phoneme_alignment_init_1st_calloc_failure},
-        {"phoneme alignment init 2nd calloc failure", pv_orca_phoneme_alignment_init_2nd_calloc_failure},
-        {"word alignment init 1st calloc failure", pv_orca_word_alignment_init_1st_calloc_failure},
-        {"word alignment init 2nd calloc failure", pv_orca_word_alignment_init_2nd_calloc_failure},
+        {"phoneme alignment init 1st alloc failure", pv_orca_phoneme_alignment_init_1st_alloc_failure},
+        {"phoneme alignment init 2nd alloc failure", pv_orca_phoneme_alignment_init_2nd_alloc_failure},
+        {"word alignment init 1st alloc failure", pv_orca_word_alignment_init_1st_alloc_failure},
+        {"word alignment init 2nd alloc failure", pv_orca_word_alignment_init_2nd_alloc_failure},
         {"synthesize params set speech rate invalid inputs",
          test_pv_orca_synthesize_params_set_speech_rate_invalid_inputs},
         {"synthesize params get speech rate invalid inputs",
@@ -2455,6 +2561,7 @@ static const pv_test_case_t PV_ORCA_TEST_CASES[] = {
 
 #endif
 
+        {"list hardware devices", test_pv_orca_list_hardware_devices},
 };
 
 const pv_test_suite_t PV_ORCA_TEST_SUITE = {

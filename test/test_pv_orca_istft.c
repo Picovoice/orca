@@ -3,6 +3,7 @@
 
 #include "test/pv_test.h"
 
+#include "orca/pv_buffer.h"
 #include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_fft.h"
 #include "orca/pv_orca_pqmf.h"

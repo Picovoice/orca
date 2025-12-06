@@ -61,14 +61,26 @@ static const q7_t TEST_CONVNEXT_CONV_DEPTHWISE_BIAS[] = {
     41, 0, 28, -10, 32, -53, -29, 57, 26, 30, 68, -41, -50, -18, 13, -39, 56, -31, 37, 65, -84, 34, 27, -13, 2, 29, 45, 
     3, 32, 33, 19, -1, -74, 38, -66, 27, 74, 65, 16, 68, 5, 2, 57, -44, 29, 42, 77, -13, -60, -39, -73, -53};
 
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_DEPTHWISE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_DEPTHWISE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_DEPTHWISE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_DEPTHWISE_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_DEPTHWISE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_DEPTHWISE_BIAS,
+};
+
 static const pv_cnn_depthwise_param_t TEST_CONVNEXT_CONV_DEPTHWISE_PARAM = {
         .num_channels = 256,
         .kernel_size = 3,
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = TEST_CONVNEXT_CONV_DEPTHWISE_WEIGHT,
-        .bias = TEST_CONVNEXT_CONV_DEPTHWISE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_DEPTHWISE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_DEPTHWISE_BIAS_CONFIG,
 };
 
 static const q7_t TEST_CONVNEXT_LAYER_NORM_WEIGHT[] = {
@@ -95,10 +107,22 @@ static const q7_t TEST_CONVNEXT_LAYER_NORM_BIAS[] = {
     -12, 9, -1, -37, 33, -11, -34, -35, 41, -10, 14, -28, 7, -8, 12, 36, 32, -3, -2, 17, -15, -2, -91, -14, -16, -1, 5, 
     -10, -11, 28, -18, -20, -46, -32, 18, -40, -9, -28, 24};
 
+static const pv_ypu_config_mem_t TEST_CONVNEXT_LAYER_NORM_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_LAYER_NORM_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_LAYER_NORM_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CONVNEXT_LAYER_NORM_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_LAYER_NORM_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_LAYER_NORM_BIAS,
+};
+
 static const pv_layer_norm_param_t TEST_CONVNEXT_LAYER_NORM_PARAM = {
         .num_channels = 256,
-        .weight = TEST_CONVNEXT_LAYER_NORM_WEIGHT,
-        .bias = TEST_CONVNEXT_LAYER_NORM_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_LAYER_NORM_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_LAYER_NORM_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -4775,6 +4799,18 @@ static const q7_t TEST_CONVNEXT_CONV_PROJ_1_BIAS[] = {
     -4, 13, 0, -4, -10, -1, -12, 14, 53, -3, -3, 29, -30, -37, -25, -7, 23, 23, 47, 22, 14, 20, 4, 27, 29, -34, -21, 
     -21, 5, -22, 16, 26, 19, 9, -19, 42, -18, -16, 18, -13, -29, -2, 35, 3, 36, 29, 13, 37, -11, -24};
 
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_PROJ_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_PROJ_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_PROJ_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_PROJ_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_PROJ_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_PROJ_1_BIAS,
+};
+
 static const pv_cnn_param_t TEST_CONVNEXT_CONV_PROJ_1_PARAM = {
         .input_channels = 256,
         .output_channels = 512,
@@ -4782,8 +4818,8 @@ static const pv_cnn_param_t TEST_CONVNEXT_CONV_PROJ_1_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_CONVNEXT_CONV_PROJ_1_WEIGHT,
-        .bias = TEST_CONVNEXT_CONV_PROJ_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_PROJ_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_PROJ_1_BIAS_CONFIG,
 };
 
 static const q7_t TEST_CONVNEXT_CONV_PROJ_2_WEIGHT[] = {
@@ -9451,6 +9487,18 @@ static const q7_t TEST_CONVNEXT_CONV_PROJ_2_BIAS[] = {
     20, 55, 24, 21, 42, 2, 21, 19, -26, 6, 0, 15, 11, 33, -6, 36, -23, -7, -5, 12, 6, 32, 34, 45, -16, 38, -8, 14, 36, 
     -55, 26, -8, -30, 67, 53, -31, 32, -25, 13, 25};
 
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_PROJ_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_PROJ_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_PROJ_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CONVNEXT_CONV_PROJ_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_CONV_PROJ_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_CONV_PROJ_2_BIAS,
+};
+
 static const pv_cnn_param_t TEST_CONVNEXT_CONV_PROJ_2_PARAM = {
         .input_channels = 512,
         .output_channels = 256,
@@ -9458,12 +9506,18 @@ static const pv_cnn_param_t TEST_CONVNEXT_CONV_PROJ_2_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_CONVNEXT_CONV_PROJ_2_WEIGHT,
-        .bias = TEST_CONVNEXT_CONV_PROJ_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_PROJ_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_CONV_PROJ_2_BIAS_CONFIG,
+};
+
+static const pv_ypu_config_mem_t TEST_CONVNEXT_SCALE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CONVNEXT_SCALE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CONVNEXT_SCALE_WEIGHT,
 };
 
 static const pv_convnext_param_t TEST_CONVNEXT_PARAM = {
-        .scale_param = TEST_CONVNEXT_SCALE_WEIGHT,
+        .scale_param = (pv_ypu_config_mem_t *) &TEST_CONVNEXT_SCALE_WEIGHT_CONFIG,
         .conv_depthwise_param = &TEST_CONVNEXT_CONV_DEPTHWISE_PARAM,
         .layer_norm_param = &TEST_CONVNEXT_LAYER_NORM_PARAM,
         .conv_1_param = &TEST_CONVNEXT_CONV_PROJ_1_PARAM,

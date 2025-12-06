@@ -40,6 +40,16 @@ static const int64_t PV_ORCA_DEFAULT_RANDOM_STATE = -1;
 
 static const int32_t PV_ORCA_STREAM_STATE_TEXT_BUFFER_SIZE = 2000;
 
+#if defined(__PV_TARGET_PLATFORM_WINDOWS__) && defined(__PV_CPU_AVX2_SUPPORT__)
+
+#define PV_ORCA_BEST_YPU_DEVICE "cpu:1"
+
+#else
+
+#define PV_ORCA_BEST_YPU_DEVICE "cpu:2"
+
+#endif
+
 static pv_status_t pv_orca_get_eos_punctuation_indices(
         const pv_normalizer_language_t language,
         const pv_orca_phonemizer_t *phonemizer,
@@ -183,6 +193,7 @@ static pv_status_t pv_orca_get_fallback_cutoff_characters_indices(
 }
 
 struct pv_orca {
+    pv_ypu_t *ypu;
     pv_orca_synthesizer_t *synthesizer;
     pv_orca_synthesizer_param_t *synthesizer_param;
 
@@ -208,8 +219,21 @@ struct pv_orca {
 PV_API pv_status_t PV_MOCKABLE(pv_orca_init)(
         const char *access_key,
         const char *model_path,
+        const char *device,
         pv_orca_t **object) {
     pv_error_prepare();
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_internal(
+        device,
+        PV_ORCA_BEST_YPU_DEVICE,
+        &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_ypu_init_internal,
+                pv_status_to_string(status));
+        return status;
+    }
 
     pv_https_client_factory_t *https_client_factory = calloc(1, sizeof(pv_https_client_factory_t));
     if (!https_client_factory) {
@@ -217,14 +241,16 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_init)(
                 &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("https_client_factory"));
+        pv_ypu_delete(ypu);
         return PV_STATUS_OUT_OF_MEMORY;
     }
     https_client_factory->create = pv_gatekeeper_get_https_client;
 
-    pv_status_t status = pv_orca_internal_init(
+    status = pv_orca_internal_init(
             access_key,
             https_client_factory,
             model_path,
+            ypu,
             object);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
@@ -240,6 +266,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         const char *access_key,
         pv_https_client_factory_t *https_client_factory,
         const char *model_path,
+        pv_ypu_t *ypu,
         pv_orca_t **object) {
     pv_error_prepare();
 
@@ -248,6 +275,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_invalid_argument_null,
                 PV_ERROR_ARGS_PUBLIC("access_key"),
                 PV_ERROR_ARGS_PRIVATE_EMPTY());
+        pv_ypu_delete(ypu);
         return PV_STATUS_INVALID_ARGUMENT;
     }
     if (!object) {
@@ -255,6 +283,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_invalid_argument_null,
                 PV_ERROR_ARGS_PUBLIC("object"),
                 PV_ERROR_ARGS_PRIVATE_EMPTY());
+        pv_ypu_delete(ypu);
         return PV_STATUS_INVALID_ARGUMENT;
     }
     if (!model_path) {
@@ -262,19 +291,32 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_invalid_argument_null,
                 PV_ERROR_ARGS_PUBLIC("model_path"),
                 PV_ERROR_ARGS_PRIVATE_EMPTY());
+        pv_ypu_delete(ypu);
+        return PV_STATUS_INVALID_ARGUMENT;
+    }
+    if (!ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_invalid_argument_null_internal,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("ypu"));
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     *object = NULL;
 
-    pv_orca_t *o = calloc(1, sizeof(pv_orca_t));
+    pv_orca_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_orca_t));
     if (!o) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("o"));
+        pv_ypu_delete(ypu);
         return PV_STATUS_OUT_OF_MEMORY;
     }
+
+    memset(o, 0, sizeof(pv_orca_t));
+
+    o->ypu = ypu;
 
     FILE *f = pv_fopen(model_path, "rb");
     if (!f) {
@@ -282,12 +324,13 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_fopen_failure,
                 PV_ERROR_ARGS_PUBLIC(model_path),
                 PV_ERROR_ARGS_PRIVATE_EMPTY());
+        pv_orca_delete(o);
         return PV_STATUS_IO_ERROR;
     }
 
     pv_orca_phonemizer_param_t *phonemizer_param = NULL;
     pv_orca_synthesizer_param_t *synthesizer_param = NULL;
-    pv_status_t status = pv_orca_internal_param_load(f, &phonemizer_param, &synthesizer_param);
+    pv_status_t status = pv_orca_internal_param_load(ypu, f, &phonemizer_param, &synthesizer_param);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_internal_param_load,
@@ -320,20 +363,22 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
-    status = pv_serialized_section_unpack(
+    status = pv_serialized_deserialize_file(
+            pv_language_info_serialized_vtable(),
+            NULL,
+            true,
             f,
-            pv_language_info_serialized_context(),
             (void **) &(o->language_info));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                pv_serialized_section_unpack,
+                pv_serialized_deserialize_file,
                 pv_status_to_string(status));
         (void) fclose(f);
         pv_orca_delete(o);
         return status;
     }
 
-    status = pv_hippo_init2(f, &(o->hippo));
+    status = pv_hippo_init2(pv_ypu_clone(ypu), f, &(o->hippo));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
                 &pv_error_msg_module_init_internal,
@@ -379,7 +424,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
     }
 
     const int32_t length = end - curr;
-    void *buffer = malloc(length);
+    void *buffer = pv_ypu_host_alloc(ypu, length);
     if (!buffer) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -395,7 +440,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_fseek_failure,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(f));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         (void) fclose(f);
         pv_orca_delete(o);
         return PV_STATUS_IO_ERROR;
@@ -406,7 +451,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
                 &pv_error_msg_fread_failure,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(f));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         (void) fclose(f);
         pv_orca_delete(o);
         return PV_STATUS_IO_ERROR;
@@ -427,7 +472,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_lexicon_deserialize,
                 pv_status_to_string(status));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         pv_orca_delete(o);
         return status;
     }
@@ -437,7 +482,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_dict_deserialize,
                 pv_status_to_string(status));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         pv_orca_delete(o);
         return status;
     }
@@ -447,7 +492,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_heteronym_tree_deserialize,
                 pv_status_to_string(status));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         pv_orca_delete(o);
         return status;
     }
@@ -457,13 +502,13 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_noun_gender_dict_deserialize,
                 pv_status_to_string(status));
-        free(buffer);
+        pv_ypu_host_free(ypu, buffer);
         pv_orca_delete(o);
         return status;
     }
 
     status = pv_normalizer_init(o->language_info, o->noun_gender_dict, &shadow, &(o->normalizer));
-    free(buffer);
+    pv_ypu_host_free(ypu, buffer);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
                 &pv_error_msg_module_init_internal,
@@ -535,6 +580,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
     }
 
     status = pv_orca_stream_state_init(
+            ypu,
             o->synthesizer_param,
             num_eos_punctuation_indices,
             eos_punctuation_indices,
@@ -554,7 +600,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         return status;
     }
 
-    status = pv_orca_synthesizer_init(o->synthesizer_param, o->stream_state, &(o->synthesizer));
+    status = pv_orca_synthesizer_init(ypu, o->synthesizer_param, o->stream_state, &(o->synthesizer));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
                 &pv_error_msg_module_init_internal,
@@ -616,9 +662,11 @@ pv_orca_stream_state_t *PV_MOCKABLE(pv_orca_stream_state_get)(const pv_orca_t *o
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_orca_internal_param_serialize)(
+        pv_ypu_t *ypu,
         const pv_orca_phonemizer_param_t *phonemizer_param,
         const pv_orca_synthesizer_param_t *synthesizer_param,
         const char *path) {
+    PV_ASSERT(ypu);
     PV_ASSERT(synthesizer_param);
     PV_ASSERT(path);
 
@@ -626,6 +674,67 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_serialize)(
     if (!file) {
         return PV_STATUS_IO_ERROR;
     }
+
+    pv_orca_internal_param_t param = {
+            .phonemizer_param = (pv_orca_phonemizer_param_t *) phonemizer_param,
+            .synthesizer_param = (pv_orca_synthesizer_param_t *) synthesizer_param,
+    };
+
+    pv_status_t status = pv_serialized_serialize_file(
+            pv_orca_internal_param_serialized_vtable(),
+            ypu,
+            false,
+            file,
+            &param);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    return (fclose(file) == 0) ? PV_STATUS_SUCCESS : PV_STATUS_IO_ERROR;
+}
+
+#endif
+
+pv_normalizer_t *PV_MOCKABLE(pv_orca_get_normalizer)(const pv_orca_t *object) {
+    PV_ASSERT(object);
+
+    return object->normalizer;
+}
+
+pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
+        pv_ypu_t *ypu,
+        FILE *f,
+        pv_orca_phonemizer_param_t **phonemizer_param,
+        pv_orca_synthesizer_param_t **synthesizer_param) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(f);
+    PV_ASSERT(phonemizer_param);
+    PV_ASSERT(synthesizer_param);
+
+    pv_orca_internal_param_t param;
+
+    pv_status_t status = pv_serialized_deserialize_file(
+            pv_orca_internal_param_serialized_vtable(),
+            ypu,
+            false,
+            f,
+            &param);
+
+    *phonemizer_param = param.phonemizer_param;
+    *synthesizer_param = param.synthesizer_param;
+
+    return status;
+}
+
+#ifdef __PV_BUILD_APPS__
+
+static pv_status_t pv_orca_internal_param_serialized_serialize(
+        pv_ypu_t *ypu,
+        FILE *file,
+        const pv_orca_internal_param_t *param) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(file);
+    PV_ASSERT(param);
 
     const char *product = PV_ORCA_MAGIC_TOKEN;
     const size_t product_length = strlen(product);
@@ -640,43 +749,41 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_serialize)(
         return PV_STATUS_IO_ERROR;
     }
 
-    pv_status_t status = pv_orca_phonemizer_param_serialize(phonemizer_param, file);
+    pv_status_t status = pv_orca_phonemizer_param_serialize(param->phonemizer_param, file);
     PV_CHECK_STATUS(status);
 
-    status = pv_orca_synthesizer_param_serialize(synthesizer_param, file);
+    status = pv_orca_synthesizer_param_serialize(ypu, param->synthesizer_param, file);
     PV_CHECK_STATUS(status);
 
-    return (fclose(file) == 0) ? PV_STATUS_SUCCESS : PV_STATUS_IO_ERROR;
+    return PV_STATUS_SUCCESS;
 }
 
 #endif
 
-pv_normalizer_t *PV_MOCKABLE(pv_orca_get_normalizer)(const pv_orca_t *object) {
-    PV_ASSERT(object);
+static pv_status_t pv_orca_internal_param_serialized_deserialize(
+        pv_ypu_t *ypu,
+        const pv_serialized_header_t *header,
+        FILE *file,
+        pv_orca_internal_param_t *param) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(header);
+    PV_ASSERT(file);
+    PV_ASSERT(param);
 
-    return object->normalizer;
-}
+    (void) header;
 
-pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
-        FILE *f,
-        pv_orca_phonemizer_param_t **phonemizer_param,
-        pv_orca_synthesizer_param_t **synthesizer_param) {
-    PV_ASSERT(f);
-    PV_ASSERT(phonemizer_param);
-    PV_ASSERT(synthesizer_param);
-
-    *phonemizer_param = NULL;
-    *synthesizer_param = NULL;
+    param->phonemizer_param = NULL;
+    param->synthesizer_param = NULL;
 
     const size_t product_length = strlen(PV_ORCA_MAGIC_TOKEN);
     char loaded_product[product_length + 1];
     loaded_product[product_length] = '\0';
-    size_t count = pv_fread(loaded_product, sizeof(char), product_length, f);
+    size_t count = pv_fread(loaded_product, sizeof(char), product_length, file);
     if (count != product_length) {
         PV_ERROR_REPORT(
                 &pv_error_msg_fread_failure,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE(f));
+                PV_ERROR_ARGS_PRIVATE(file));
         return PV_STATUS_IO_ERROR;
     }
     if (strcmp(loaded_product, PV_ORCA_MAGIC_TOKEN) != 0) {
@@ -690,12 +797,12 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
     const size_t version_length = strlen(PV_ORCA_VERSION);
     char loaded_version[version_length + 1];
     loaded_version[version_length] = '\0';
-    count = pv_fread(loaded_version, sizeof(char), version_length, f);
+    count = pv_fread(loaded_version, sizeof(char), version_length, file);
     if (count != version_length) {
         PV_ERROR_REPORT(
                 &pv_error_msg_fread_failure,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE(f));
+                PV_ERROR_ARGS_PRIVATE(file));
         return PV_STATUS_IO_ERROR;
     }
     if (strcmp(loaded_version, PV_ORCA_VERSION) != 0) {
@@ -709,7 +816,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
-    pv_status_t status = pv_orca_phonemizer_param_load(f, phonemizer_param);
+    pv_status_t status = pv_orca_phonemizer_param_load(file, &(param->phonemizer_param));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_phonemizer_param_load,
@@ -717,7 +824,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
         return status;
     }
 
-    status = pv_orca_synthesizer_param_load(f, loaded_version, synthesizer_param);
+    status = pv_orca_synthesizer_param_load(ypu, file, loaded_version, &(param->synthesizer_param));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_synthesizer_param_load,
@@ -725,11 +832,37 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
         return status;
     }
 
-    return status;
+    return PV_STATUS_SUCCESS;
+}
+
+static const pv_serialized_vtable_t PV_ORCA_INTERNAL_SERIALIZER = {
+        .tag_func = NULL,
+        .version_func = NULL,
+        .size_bytes_func = NULL,
+        .serialize_buffer_func = NULL,
+        .deserialize_buffer_func = NULL,
+
+#ifdef __PV_BUILD_APPS__
+
+        .serialize_file_func = (pv_serialized_serialize_file_func_t) pv_orca_internal_param_serialized_serialize,
+
+#else
+
+        .serialize_file_func = NULL,
+
+#endif
+
+        .deserialize_file_func = (pv_serialized_deserialize_file_func_t) pv_orca_internal_param_serialized_deserialize,
+};
+
+const pv_serialized_vtable_t *PV_MOCKABLE(pv_orca_internal_param_serialized_vtable)(void) {
+    return &PV_ORCA_INTERNAL_SERIALIZER;
 }
 
 PV_API void PV_MOCKABLE(pv_orca_delete)(pv_orca_t *object) {
     if (object) {
+        pv_ypu_t *ypu = object->ypu;
+
         if (object->gatekeeper) {
             pv_gatekeeper_usage_animal_finish_reports(object->gatekeeper);
         }
@@ -745,15 +878,17 @@ PV_API void PV_MOCKABLE(pv_orca_delete)(pv_orca_t *object) {
         pv_normalizer_delete(object->normalizer);
         pv_language_info_delete(object->language_info);
 
-        pv_orca_synthesizer_delete(object->synthesizer);
+        pv_orca_synthesizer_delete(ypu, object->synthesizer);
 
-        pv_orca_stream_state_delete(object->stream_state);
+        pv_orca_stream_state_delete(ypu, object->stream_state);
 
         pv_orca_phonemizer_param_delete(object->phonemizer_param);
 
-        pv_orca_synthesizer_param_delete(object->synthesizer_param);
+        pv_orca_synthesizer_param_delete(ypu, object->synthesizer_param);
 
-        free(object);
+        pv_ypu_host_free(ypu, object);
+
+        pv_ypu_delete(ypu);
     }
 }
 
@@ -1098,7 +1233,8 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemize_text)(
     bool allow_prepend_bos = false;
     bool allow_append_eos = false;
     if (no_text_additions) {
-        // When testing for streaming and batching PCM match, then need to turn off the EOS, BOS, and terminator, because otherwise streaming and batching will naturally disagree.
+        // When testing for streaming and batching PCM match, then need to turn off the EOS, BOS, and terminator,
+        // because otherwise streaming and batching will naturally disagree.
         append_terminator = false;
         allow_prepend_bos = false;
         allow_append_eos = false;
@@ -1680,6 +1816,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesize_internal)(
     int16_t *pcm_internal = NULL;
     int32_t *encoded_phonemes_durations = NULL;
     status = pv_orca_synthesizer_forward(
+            object->ypu,
             object->synthesizer,
             synthesize_params,
             no_random_latents,
@@ -1712,7 +1849,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesize_internal)(
             encoded_phonemes_durations,
             &num_alignments_internal,
             &alignments_internal);
-    free(encoded_phonemes_durations);
+    pv_ypu_host_free(object->ypu, encoded_phonemes_durations);
     free(encoded_phonemes);
     free(text_tokens_num_encoded_phonemes);
     for (int32_t i = 0; i < num_text_tokens; i++) {
@@ -2219,7 +2356,8 @@ pv_status_t pv_orca_stream_append_token_arrays(
     PV_ASSERT(text_tokens);
 
     int32_t new_count = object->prev_verbalized_token_count + num_text_tokens;
-    pv_normalizer_token_t **new_prev_verbalized_token_array = malloc(new_count * sizeof(pv_normalizer_token_t *));
+    pv_normalizer_token_t **new_prev_verbalized_token_array = malloc(
+            new_count * (int32_t) sizeof(pv_normalizer_token_t *));
     if (!new_prev_verbalized_token_array) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -2362,7 +2500,8 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
         bool allow_prepend_bos = false;
         bool allow_append_eos = false;
         if (no_text_additions) {
-            // When testing for streaming and batching PCM match, then need to turn off the EOS, BOS, and terminator, because otherwise streaming and batching will naturally disagree.
+            // When testing for streaming and batching PCM match, then need to turn off the EOS, BOS, and terminator,
+            // because otherwise streaming and batching will naturally disagree.
             append_terminator = false;
             allow_prepend_bos = false;
             allow_append_eos = false;
@@ -2470,6 +2609,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
     int32_t num_samples_internal = 0;
     int16_t *pcm_internal = NULL;
     pv_status_t status = pv_orca_synthesizer_forward(
+            object->orca->ypu,
             object->orca->synthesizer,
             state->synthesize_params,
             no_random_latents,
@@ -2478,7 +2618,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
             &encoded_phonemes_durations,
             &num_samples_internal,
             &pcm_internal);
-    free(encoded_phonemes_durations); // only used in non-streaming version
+    pv_ypu_host_free(object->orca->ypu, encoded_phonemes_durations); // only used in non-streaming version
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_synthesizer_forward,
@@ -2590,4 +2730,33 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_flush_internal)(
     *pcm = pcm_internal;
 
     return PV_STATUS_SUCCESS;
+}
+
+
+PV_API pv_status_t PV_MOCKABLE(pv_orca_list_hardware_devices)(
+        char ***hardware_devices,
+        int32_t *num_hardware_devices) {
+    if (!hardware_devices) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_invalid_argument_null,
+                PV_ERROR_ARGS_PUBLIC("hardware_devices"),
+                PV_ERROR_ARGS_PRIVATE_EMPTY());
+        return PV_STATUS_INVALID_ARGUMENT;
+    }
+
+    if (!num_hardware_devices) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_invalid_argument_null,
+                PV_ERROR_ARGS_PUBLIC("num_hardware_devices"),
+                PV_ERROR_ARGS_PRIVATE_EMPTY());
+        return PV_STATUS_INVALID_ARGUMENT;
+    }
+
+    return pv_ypu_list_devices(hardware_devices, num_hardware_devices);
+}
+
+PV_API void PV_MOCKABLE(pv_orca_free_hardware_devices)(
+        char **hardware_devices,
+        int32_t num_hardware_devices) {
+    return pv_ypu_free_device_list(hardware_devices, num_hardware_devices);
 }

@@ -18,7 +18,12 @@ class OrcaNative {
 
     static native void setSdk(String sdk);
 
-    static native long init(String accessKey, String modelPath) throws OrcaException;
+    static native String[] listHardwareDevices() throws OrcaException;
+
+    static native long init(
+        String accessKey,
+        String modelPath,
+        String device) throws OrcaException;
 
     static native void delete(long object);
 

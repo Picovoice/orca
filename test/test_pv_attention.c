@@ -12,36 +12,21 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_attention_t *attention_object = NULL;
-static pv_buffer_t *buffer_text_encoder_1_object = NULL;
-static pv_buffer_t *buffer_text_encoder_2_object = NULL;
-static pv_buffer_t *buffer_attention_score_object = NULL;
 
 static pv_status_t test_pv_attention_setup(void) {
-    int32_t num_hidden_channels = TEST_ATTENTION_CONV_K_PARAM.output_channels;
-    pv_status_t status = pv_buffer_init(num_hidden_channels, &(buffer_text_encoder_1_object));
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    status = pv_buffer_init(num_hidden_channels, &(buffer_text_encoder_2_object));
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    int32_t num_heads = TEST_ATTENTION_PARAM.num_heads;
-    status = pv_buffer_init(num_heads, &(buffer_attention_score_object));
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
 
     status = pv_attention_init(
+            ypu,
             &TEST_ATTENTION_PARAM,
-            buffer_text_encoder_1_object,
-            buffer_text_encoder_2_object,
-            buffer_attention_score_object,
             &attention_object);
     if (status != PV_STATUS_SUCCESS) {
+        pv_ypu_delete(ypu);
         return status;
     }
 
@@ -49,25 +34,58 @@ static pv_status_t test_pv_attention_setup(void) {
 }
 
 static void test_pv_attention_teardown(void) {
-    pv_buffer_delete(buffer_attention_score_object);
-    pv_buffer_delete(buffer_text_encoder_2_object);
-    pv_buffer_delete(buffer_text_encoder_1_object);
-    pv_attention_delete(attention_object);
-    attention_object = NULL;
+    pv_attention_delete(ypu, attention_object);
+    pv_ypu_delete(ypu);
 }
 
 static void test_pv_attention_forward(void) {
-    pv_test_true(attention_object != NULL, "failed to create tmp file");
-
     int32_t num_channels = PV_ARRAY_LEN(TEST_ATTENTION_TARGET) / TEST_ATTENTION_SEQUENCE_LENGTH;
-    float *buffer = calloc(TEST_ATTENTION_SEQUENCE_LENGTH, num_channels * sizeof(float));
 
-    pv_attention_forward(
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(TEST_ATTENTION_INPUT),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        TEST_ATTENTION_SEQUENCE_LENGTH * num_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        TEST_ATTENTION_INPUT,
+        0,
+        sizeof(TEST_ATTENTION_INPUT));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_attention_forward(
+            ypu,
             attention_object,
             TEST_ATTENTION_SEQUENCE_LENGTH,
-            TEST_ATTENTION_INPUT,
-            TEST_ATTENTION_INPUT,
-            buffer);
+            m0,
+            m0,
+            m1,
+            0,
+            0,
+            0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_attention_forward failed with %s",
+        pv_status_to_string(status));
+
+    float *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_test_close_float_array(
             buffer,
             TEST_ATTENTION_TARGET,
@@ -75,8 +93,10 @@ static void test_pv_attention_forward(void) {
             0.05f,
             0.03f,
             "failed to forward attention");
+    pv_ypu_mem_release_host_view(ypu, m1, true);
 
-    free(buffer);
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
 }
 
 #ifdef __PV_MOCKS__
@@ -118,7 +138,7 @@ static void test_pv_attention_param_load_failure_helper(pv_status_t expected) {
     }
 
     pv_attention_param_t *param = NULL;
-    pv_status_t status = pv_attention_param_load(dummy_file, &param);
+    pv_status_t status = pv_attention_param_load(ypu, dummy_file, &param);
     pv_test_true(
             status == expected,
             "param load error, got `%s` expected `%s`",

@@ -14,6 +14,7 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_orca_phonemizer_t *orca_phonemizer_object = NULL;
 static pv_hippo_t *hippo_object = NULL;
 static pv_language_info_t *language_info_object = NULL;
@@ -148,8 +149,13 @@ static const pv_orca_phonemizer_param_t DEFAULT_PHONEMIZER_PARAM = {
 };
 
 static pv_status_t test_pv_orca_phonemizer_setup(void) {
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
     char *hippo_path = pv_test_shared_res_path("hippo/param/hippo_params_en.pv");
-    pv_status_t status = pv_hippo_init(hippo_path, &hippo_object);
+    status = pv_hippo_init(hippo_path, "cpu:1", &hippo_object);
     free(hippo_path);
     if (status != PV_STATUS_SUCCESS) {
         return status;
@@ -227,6 +233,7 @@ static void test_pv_orca_phonemizer_teardown(void) {
     pv_hippo_delete(hippo_object);
     pv_orca_phonemizer_delete(orca_phonemizer_object);
     pv_heteronym_tree_delete(tree_object);
+    pv_ypu_delete(ypu);
 }
 
 #ifdef __PV_MOCKS__

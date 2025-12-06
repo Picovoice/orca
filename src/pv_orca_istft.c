@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "io/pv_dump.h"
 #include "core/picovoice.h"
 #include "core/pv_error_messages.h"
 #include "core/pv_type.h"
+#include "io/pv_dump.h"
 #include "orca/pv_buffer.h"
-#include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_fft.h"
+#include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_pqmf.h"
 #include "orca/pv_profiler.h"
 
@@ -178,8 +178,8 @@ void PV_MOCKABLE(pv_orca_istft_preprocess_fft)(
             spec_complex[frame_offset + (2 * i) + 1] = mag * sinf(phase[i]) * multiplication_factor;
         }
 
-        spec_complex[frame_offset + 1] = 0.f;  // DC imaginary part is always 0 for real output signals
-        spec_complex[frame_offset + num_fft + 1] = 0.f;  // Nyquist frequency's imaginary part is 0 for real output
+        spec_complex[frame_offset + 1] = 0.f; // DC imaginary part is always 0 for real output signals
+        spec_complex[frame_offset + num_fft + 1] = 0.f; // Nyquist frequency's imaginary part is 0 for real output
     }
 }
 
@@ -315,7 +315,7 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
             object->num_subbands,
             num_samples_subband,
             buffer_pcm_all_subbands,
-            buffer_pcm_all_subbands);  // reuse buffer_pcm_all_subbands. becomes [num_samples]
+            buffer_pcm_all_subbands); // reuse buffer_pcm_all_subbands. becomes [num_samples]
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }

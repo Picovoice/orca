@@ -9,7 +9,7 @@
 #define PV_MAX_PROFILE_ENTRIES (50)
 
 typedef struct pv_profiler_data {
-    const char* section_name; // Name of the function or section being profiled
+    const char *section_name; // Name of the function or section being profiled
     double total_time;
     int32_t call_count;
     double last_start_time;
@@ -24,7 +24,7 @@ double get_time() {
     return (double) tv.tv_sec + (double) tv.tv_usec * 1e-6;
 }
 
-void pv_profiler_start(const char* name) {
+void pv_profiler_start(const char *name) {
     int32_t idx = -1;
     for (int32_t i = 0; i < profile_entry_count; i++) {
         if (strcmp(profiles[i].section_name, name) == 0) {
@@ -45,7 +45,7 @@ void pv_profiler_start(const char* name) {
     }
 }
 
-void pv_profiler_stop(const char* name) {
+void pv_profiler_stop(const char *name) {
     for (int32_t i = 0; i < profile_entry_count; i++) {
         if (strcmp(profiles[i].section_name, name) == 0) {
             profiles[i].total_time += (get_time() - profiles[i].last_start_time);
@@ -87,12 +87,12 @@ void pv_profiler_print_data(void) {
 
 #else
 
-void pv_profiler_start(const char* name) {
+void pv_profiler_start(const char *name) {
     (void) name;
     // Empty
 }
 
-void pv_profiler_stop(const char* name) {
+void pv_profiler_stop(const char *name) {
     (void) name;
     // Empty
 }

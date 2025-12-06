@@ -26,3 +26,5 @@ graphiz
 script/.idea
 **/*_test_collections.c
 res/performance/*.json
+res/pcm/*
+artifacts/

@@ -22,10 +22,22 @@ static const q7_t TEST_LAYER_NORM_BIAS[] = {
     49, 6, -25, 4, 51, 20, -2, -9, -26, -43, 53, -56, -3, 38, -27, 68, 61, -14, 25, 18, 38, 14, -1, -52, 7, -31, 30, 
     -3, 44, 14, -29, -19, 8};
 
+static const pv_ypu_config_mem_t TEST_LAYER_NORM_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_LAYER_NORM_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_LAYER_NORM_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_LAYER_NORM_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_LAYER_NORM_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_LAYER_NORM_BIAS,
+};
+
 static const pv_layer_norm_param_t TEST_LAYER_NORM_PARAM = {
         .num_channels = 192,
-        .weight = TEST_LAYER_NORM_WEIGHT,
-        .bias = TEST_LAYER_NORM_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_LAYER_NORM_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_LAYER_NORM_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 

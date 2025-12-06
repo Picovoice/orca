@@ -5,6 +5,7 @@
 #include "gatekeeper/pv_https_client.h"
 #include "hippo/pv_hippo.h"
 #include "io/pv_log.h"
+#include "io/pv_serialized.h"
 #include "orca/normalizer/pv_normalizer.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_synthesizer.h"
@@ -33,11 +34,13 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         const char *access_key,
         pv_https_client_factory_t *https_client_factory,
         const char *model_path,
+        pv_ypu_t *ypu,
         pv_orca_t **object);
 
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_orca_internal_param_serialize)(
+        pv_ypu_t *ypu,
         const pv_orca_phonemizer_param_t *phonemizer_param,
         const pv_orca_synthesizer_param_t *synthesizer_param,
         const char *path);
@@ -47,9 +50,17 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_param_serialize)(
 pv_normalizer_t *PV_MOCKABLE(pv_orca_get_normalizer)(const pv_orca_t *object);
 
 pv_status_t PV_MOCKABLE(pv_orca_internal_param_load)(
+        pv_ypu_t *ypu,
         FILE *f,
         pv_orca_phonemizer_param_t **phonemizer_param,
         pv_orca_synthesizer_param_t **synthesizer_param);
+
+typedef struct {
+    pv_orca_phonemizer_param_t *phonemizer_param;
+    pv_orca_synthesizer_param_t *synthesizer_param;
+} pv_orca_internal_param_t;
+
+const pv_serialized_vtable_t *PV_MOCKABLE(pv_orca_internal_param_serialized_vtable)(void);
 
 pv_status_t PV_MOCKABLE(pv_orca_phoneme_alignment_init)(
         const char *phoneme,

@@ -86,7 +86,7 @@ build-beta-linux-eng-release:
   stage: build-beta
   interruptible: true
   coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -100,6 +100,7 @@ build-beta-linux-eng-release:
     - gcovr --txt -s --gcov-ignore-errors=no_working_dir_found
   tags:
     - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
   cache:
     - !reference [.build-test-beta-props, cache]
   rules:
@@ -135,12 +136,13 @@ beta-asan-linux:
   interruptible: true
   needs:
     - build-beta-linux-eng-release
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.1.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
     PLATFORM_NAME: linux
     BUILD_TYPE: eng_release
+    ASAN_OPTIONS: protect_shadow_gap=0
   before_script:
     - !reference [.build-toolchain-setup, before-script-toolchain]
     - !reference [.build-toolchain-setup, before-script-setup-token]
@@ -160,6 +162,7 @@ beta-asan-linux:
       --enable_asan
   tags:
     - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
   cache:
     - !reference [.build-test-beta-props, cache]
   rules:
@@ -168,7 +171,7 @@ beta-asan-linux:
 build-beta-linux-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -183,8 +186,10 @@ build-beta-linux-release:
   artifacts:
     paths:
       - build/release/artifacts/
+      - res/pcm/
   tags:
     - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
   cache:
     - !reference [.build-test-beta-props, cache]
   rules:
@@ -216,6 +221,9 @@ build-beta-mac-m1-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-no-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-macos-arm64
     - pv-cicd-c
@@ -249,6 +257,7 @@ build-beta-windows-x86-eng-release:
       --gcov-object-directory=build/eng_release/amd64/CMakeFiles/pv_orca_real_pv_orca_mock_tree.dir/src/
   tags:
     - pv-cicd-windows-x86
+    - pv-cicd-gpu
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -297,8 +306,12 @@ build-beta-windows-x86-release:
       --build_folder ${CI_PROJECT_DIR}/build
       --build
       --test
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-windows-x86
+    - pv-cicd-gpu
     - pv-cicd-c
   rules:
     - !reference [.build-test-beta-props, rules]
@@ -349,6 +362,9 @@ build-beta-windows-arm64-release:
       --build_folder ${CI_PROJECT_DIR}/build
       --build
       --test
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-windows-arm64
     - pv-cicd-c
@@ -358,7 +374,7 @@ build-beta-windows-arm64-release:
 build-beta-rpi3-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -370,8 +386,11 @@ build-beta-rpi3-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
-    - pv-cicd-rpi4-armv7-docker
+    - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
   cache:
     - !reference [.build-test-beta-props, cache]
@@ -381,7 +400,7 @@ build-beta-rpi3-release:
 build-beta-rpi3-64-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -393,6 +412,9 @@ build-beta-rpi3-64-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
@@ -404,7 +426,7 @@ build-beta-rpi3-64-release:
 build-beta-rpi4-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -416,6 +438,9 @@ build-beta-rpi4-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
@@ -427,7 +452,7 @@ build-beta-rpi4-release:
 build-beta-rpi4-64-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -439,6 +464,9 @@ build-beta-rpi4-64-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
@@ -450,7 +478,7 @@ build-beta-rpi4-64-release:
 build-beta-rpi5-eng-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -473,7 +501,7 @@ build-beta-rpi5-eng-release:
 build-beta-rpi5-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.0.0
     TOOLCHAIN_NAME: arm-unknown-linux-gnueabihf
@@ -485,6 +513,9 @@ build-beta-rpi5-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
@@ -496,7 +527,7 @@ build-beta-rpi5-release:
 build-beta-rpi5-64-eng-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -519,7 +550,7 @@ build-beta-rpi5-64-eng-release:
 build-beta-rpi5-64-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-07-28
+  image: registry.gitlab.com/picovoice/zoo-dev/raspberrypi:2025-08-13
   variables:
     TOOLCHAIN_VER: 2.1.0
     TOOLCHAIN_NAME: aarch64-unknown-linux-gnu
@@ -531,6 +562,9 @@ build-beta-rpi5-64-release:
     - !reference [.build-toolchain-setup, before-script-setup-token]
   script:
     - !reference [.build-beta, script-toolchain]
+  artifacts:
+    paths:
+      - res/pcm/
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
@@ -542,7 +576,7 @@ build-beta-rpi5-64-release:
 build-beta-wasm-browser-eng-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     PLATFORM_NAME: wasm
     BUILD_TYPE: eng_release
@@ -571,7 +605,7 @@ build-beta-wasm-browser-eng-release:
 build-beta-wasm-browser-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     PLATFORM_NAME: wasm
     BUILD_TYPE: release
@@ -601,7 +635,7 @@ build-beta-wasm-linux-eng-release:
   stage: build-beta
   interruptible: true
   coverage: '/lines\:\s+(\d+.\d+)%\s+(?:\(\d+\s+out\s+of\s+\d+\))/'
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -647,7 +681,7 @@ beta-coverage-wasm:
 build-beta-wasm-linux-release:
   stage: build-beta
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -807,7 +841,7 @@ build-beta-ios-release:
   interruptible: true
   needs:
     - build-beta-linux-release
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -852,7 +886,7 @@ beta-perf-linux-cpu-branch:
   interruptible: true
   needs:
     - build-beta-linux-release
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -1329,7 +1363,7 @@ beta-perf-rpi5-64-cpu-branch:
   interruptible: true
   needs:
     - build-beta-wasm-browser-release
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     PLATFORM_NAME: wasm
     BUILD_TYPE: release
@@ -1538,7 +1572,7 @@ beta-perf-ios-metal-branch:
   interruptible: true
   needs:
     - build-beta-linux-release
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-08-13
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -1650,6 +1684,45 @@ beta-perf-relative:
       --job_name ${JOB_NAME}
       --project_id ${CI_PROJECT_ID}
       --branch_pipeline_id ${CI_PIPELINE_ID}
+  tags:
+    - pv-cicd-linux-x86-docker
+  rules:
+    - !reference [ .beta-perf-rules-branch, rules ]
+
+beta-relative-pcm-test:
+  stage: test-beta
+  image: python:3.10
+  interruptible: true
+  artifacts:
+    paths:
+      - res/performance/*.json
+    when: always
+    expire_in: 1 week
+  needs:
+    - build-beta-linux-release
+    - build-beta-mac-m1-release
+    - build-beta-windows-x86-release
+    - build-beta-windows-arm64-release
+    - build-beta-rpi3-release
+    - build-beta-rpi3-64-release
+    - build-beta-rpi4-release
+    - build-beta-rpi4-64-release
+    - build-beta-rpi5-release
+    - build-beta-rpi5-64-release
+  variables:
+    TARGET_BRANCH: ypu-init
+  before_script:
+    - pip3 install requests librosa
+  script:
+    - >
+      python3 script/relative_pcm_test.py
+      --gitlab_api_token ${PV_GROUP_PRIVATE_API_TOKEN}
+      --target_branch_name ${TARGET_BRANCH}
+      --project_id ${CI_PROJECT_ID}
+      --branch_pipeline_id ${CI_PIPELINE_ID}
+  artifacts:
+    paths:
+      - artifacts/
   tags:
     - pv-cicd-linux-x86-docker
   rules:

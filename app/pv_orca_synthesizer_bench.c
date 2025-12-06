@@ -82,6 +82,13 @@ int main(int argc, char *argv[]) {
 
     PV_DUMP_START(dump_path)
 
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("ypu initialization failed with '%s'", pv_status_to_string(status));
+        exit(EXIT_FAILURE);
+    }
+
     FILE *f = pv_fopen(model_path, "rb");
     if (!f) {
         return PV_STATUS_IO_ERROR;
@@ -89,7 +96,7 @@ int main(int argc, char *argv[]) {
 
     pv_orca_phonemizer_param_t *phonemizer_param = NULL;
     pv_orca_synthesizer_param_t *synthesizer_param = NULL;
-    pv_status_t status = pv_orca_internal_param_load(f, &phonemizer_param, &synthesizer_param);
+    status = pv_orca_internal_param_load(ypu, f, &phonemizer_param, &synthesizer_param);
     if (status != PV_STATUS_SUCCESS) {
         fclose(f);
         (void) fprintf(stderr, "Could not load Orca parameters: `%s`", pv_status_to_string(status));
@@ -99,6 +106,7 @@ int main(int argc, char *argv[]) {
     pv_orca_stream_state_t *stream_state = NULL;
     int32_t eos_punctuation_indices[1] = {-1};
     status = pv_orca_stream_state_init(
+            ypu,
             synthesizer_param,
             1,
             eos_punctuation_indices,
@@ -121,6 +129,7 @@ int main(int argc, char *argv[]) {
 
     pv_orca_synthesizer_t *orca_synthesizer = NULL;
     status = pv_orca_synthesizer_init(
+            ypu,
             synthesizer_param,
             stream_state,
             &orca_synthesizer);
@@ -169,6 +178,7 @@ int main(int argc, char *argv[]) {
             float start = (float) clock() / CLOCKS_PER_SEC;
 
             status = pv_orca_synthesizer_forward(
+                    ypu,
                     orca_synthesizer,
                     synthesize_params,
                     false,
@@ -217,10 +227,12 @@ int main(int argc, char *argv[]) {
     printf("\n*************************************************\n");
 
     (void) fclose(f);
-    pv_orca_synthesizer_delete(orca_synthesizer);
-    pv_orca_synthesizer_param_delete(synthesizer_param);
+    pv_orca_synthesizer_delete(ypu, orca_synthesizer);
+    pv_orca_synthesizer_param_delete(ypu, synthesizer_param);
     pv_orca_phonemizer_param_delete(phonemizer_param);
     pv_orca_synthesize_params_delete(synthesize_params);
+
+    pv_ypu_delete(ypu);
 
     PV_DUMP_END()
     return EXIT_SUCCESS;

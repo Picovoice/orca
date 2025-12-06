@@ -9,6 +9,7 @@
 #include "orca/normalizer/pv_normalizer_token.h"
 #include "orca/normalizer/pv_normalizer_util.h"
 #include "util/pv_file.h"
+#include "ypu/pv_ypu.h"
 
 typedef struct {
     bool add_eos_punctuation;

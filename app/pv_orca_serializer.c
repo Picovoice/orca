@@ -13,7 +13,7 @@
 
 extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
 extern const pv_orca_synthesizer_param_t PV_ORCA_SYNTHESIZER_PARAM;
-extern const pv_offline_token_classifier_param_t PV_HIPPO_CLASSIFIER_PARAM;
+extern const pv_offline_token_classifier_param_t *PV_HIPPO_CLASSIFIER(void);
 extern const uint8_t PV_DICT[];
 extern const int32_t PV_DICT_LENGTH;
 extern const uint8_t PV_NOUN_GENDER_DICT[];
@@ -23,7 +23,6 @@ extern const int32_t PV_LEXICON_LENGTH;
 extern const uint8_t PV_HETERONYM_TREE[];
 extern const int32_t PV_HETERONYM_TREE_LENGTH;
 
-static const char *HIPPO_TMP_PATH = "hippo.tmp";
 static const int32_t PV_ORCA_MAXIMUM_CHARACTER_LIMIT = 2000;
 
 void usage(const char *program) {
@@ -71,47 +70,37 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        pv_remove(output_path);
+        LOG_ERROR("ypu initialization failed with '%s'", pv_status_to_string(status));
+        exit(EXIT_FAILURE);
+    }
+
+    FILE *f = fopen(output_path, "wb");
+    if (!f) {
+        pv_remove(output_path);
+        LOG_ERROR("failed with '%s'", pv_status_to_string(PV_STATUS_IO_ERROR));
+        exit(EXIT_FAILURE);
+    }
+
     if (!only_test_helpers) {
-        pv_status_t status = pv_orca_internal_param_serialize(
-                &PV_ORCA_PHONEMIZER_PARAM,
-                &PV_ORCA_SYNTHESIZER_PARAM,
-                output_path);
+        pv_orca_internal_param_t orca_param = {
+            .phonemizer_param = (pv_orca_phonemizer_param_t *) &PV_ORCA_PHONEMIZER_PARAM,
+            .synthesizer_param = (pv_orca_synthesizer_param_t *) &PV_ORCA_SYNTHESIZER_PARAM,
+        };
+
+        status = pv_serialized_serialize_file(
+            pv_orca_internal_param_serialized_vtable(),
+            ypu,
+            false,
+            f,
+            &orca_param);
         if (status != PV_STATUS_SUCCESS) {
             LOG_ERROR("orca param serialization failed with `%s`", pv_status_to_string(status));
             exit(EXIT_FAILURE);
         }
-    }
-
-    pv_status_t status = pv_offline_token_classifier_param_serialize(
-            &PV_HIPPO_CLASSIFIER_PARAM,
-            PV_HIPPO_MAGIC_TOKEN,
-            PV_HIPPO_VERSION,
-            666,
-            HIPPO_TMP_PATH);
-    if (status != PV_STATUS_SUCCESS) {
-        pv_remove(output_path);
-        LOG_ERROR("hippo param serialization failed with '%s'", pv_status_to_string(status));
-        exit(EXIT_FAILURE);
-    }
-
-    int32_t num_content_bytes = 0;
-    void *content = NULL;
-    status = pv_file_load(HIPPO_TMP_PATH, &num_content_bytes, &content);
-    pv_remove(HIPPO_TMP_PATH);
-    if (status != PV_STATUS_SUCCESS) {
-        pv_remove(output_path);
-        LOG_ERROR("failed with '%s'", pv_status_to_string(status));
-        exit(EXIT_FAILURE);
-    }
-
-    const char *open_mode = only_test_helpers ? "wb" : "ab";
-
-    FILE *f = fopen(output_path, open_mode);
-    if (!f) {
-        free(content);
-        pv_remove(output_path);
-        LOG_ERROR("failed with '%s'", pv_status_to_string(PV_STATUS_IO_ERROR));
-        exit(EXIT_FAILURE);
     }
 
     if (!only_test_helpers) {
@@ -131,7 +120,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    status = pv_serialized_section_pack(pv_language_info_serialized_context(), language_info_normalizer, f);
+    status = pv_serialized_serialize_file(
+        pv_language_info_serialized_vtable(),
+        NULL,
+        true,
+        f,
+        language_info_normalizer);
     pv_language_info_delete(language_info_normalizer);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to write language info to '%s'", output_path);
@@ -139,12 +133,22 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    size_t num_write = fwrite(content, 1, num_content_bytes, f);
-    free(content);
-    if (num_write != (size_t) num_content_bytes) {
+    pv_offline_token_classifier_param_serialized_context_t hippo_context = {
+        .ypu = ypu,
+        .product = PV_HIPPO_MAGIC_TOKEN,
+        .version = PV_HIPPO_VERSION
+    };
+
+    status = pv_serialized_serialize_file(
+        pv_offline_token_classifier_param_serialized_vtable(),
+        &hippo_context,
+        false,
+        f,
+        PV_HIPPO_CLASSIFIER());
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("failed to serialize hippo to '%s'", output_path);
         (void) fclose(f);
         pv_remove(output_path);
-        LOG_ERROR("failed with '%s'", pv_status_to_string(PV_STATUS_IO_ERROR));
         exit(EXIT_FAILURE);
     }
 
@@ -152,10 +156,16 @@ int main(int argc, char *argv[]) {
     status = pv_language_info_load_json(language_info_hippo_path, &language_info_hippo, true, true);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to load language info with '%s'", pv_status_to_string(status));
+        (void) fclose(f);
         exit(EXIT_FAILURE);
     }
 
-    status = pv_serialized_section_pack(pv_language_info_serialized_context(), language_info_hippo, f);
+    status = pv_serialized_serialize_file(
+        pv_language_info_serialized_vtable(),
+        NULL,
+        true,
+        f,
+        language_info_hippo);
     pv_language_info_delete(language_info_hippo);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to write language info to '%s'", output_path);
@@ -163,7 +173,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    num_write = fwrite(PV_LEXICON, sizeof(uint8_t), PV_LEXICON_LENGTH, f);
+    size_t num_write = fwrite(PV_LEXICON, sizeof(uint8_t), PV_LEXICON_LENGTH, f);
     if (num_write != (size_t) PV_LEXICON_LENGTH) {
         (void) fclose(f);
         pv_remove(output_path);
@@ -215,6 +225,8 @@ int main(int argc, char *argv[]) {
     }
 
     (void) fclose(f);
+
+    pv_ypu_delete(ypu);
 
     return EXIT_SUCCESS;
 }

@@ -63,6 +63,18 @@ static const q7_t TEST_TRANSFORMER_FFN_CONV_1_BIAS[] = {
     5, -5, 9, -1, -5, -18, 8, 16, -6, -13, -15, -11, 12, 12, -6, -18, 17, -15, 14, -6, -1, 1, -9, 5, -1, -3, 1, -10, 3, 
     -10, 14, 10};
 
+static const pv_ypu_config_mem_t TEST_TRANSFORMER_FFN_CONV_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_TRANSFORMER_FFN_CONV_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_TRANSFORMER_FFN_CONV_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_TRANSFORMER_FFN_CONV_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_TRANSFORMER_FFN_CONV_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_TRANSFORMER_FFN_CONV_1_BIAS,
+};
+
 static const pv_cnn_param_t TEST_TRANSFORMER_FFN_CONV_1_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -70,8 +82,8 @@ static const pv_cnn_param_t TEST_TRANSFORMER_FFN_CONV_1_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = TEST_TRANSFORMER_FFN_CONV_1_WEIGHT,
-        .bias = TEST_TRANSFORMER_FFN_CONV_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_TRANSFORMER_FFN_CONV_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_TRANSFORMER_FFN_CONV_1_BIAS_CONFIG,
 };
 
 static const q7_t TEST_TRANSFORMER_FFN_CONV_2_WEIGHT[] = {
@@ -130,6 +142,18 @@ static const q7_t TEST_TRANSFORMER_FFN_CONV_2_WEIGHT[] = {
 static const q7_t TEST_TRANSFORMER_FFN_CONV_2_BIAS[] = {
     -3, -4, -2, -2, 6, -1, 4, -3, 4, -6, -4, -8, -4, -3, -1, 4};
 
+static const pv_ypu_config_mem_t TEST_TRANSFORMER_FFN_CONV_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_TRANSFORMER_FFN_CONV_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_TRANSFORMER_FFN_CONV_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_TRANSFORMER_FFN_CONV_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_TRANSFORMER_FFN_CONV_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_TRANSFORMER_FFN_CONV_2_BIAS,
+};
+
 static const pv_cnn_param_t TEST_TRANSFORMER_FFN_CONV_2_PARAM = {
         .input_channels = 32,
         .output_channels = 16,
@@ -137,8 +161,8 @@ static const pv_cnn_param_t TEST_TRANSFORMER_FFN_CONV_2_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = TEST_TRANSFORMER_FFN_CONV_2_WEIGHT,
-        .bias = TEST_TRANSFORMER_FFN_CONV_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_TRANSFORMER_FFN_CONV_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_TRANSFORMER_FFN_CONV_2_BIAS_CONFIG,
 };
 
 static const pv_transformer_ffn_param_t TEST_TRANSFORMER_FFN_PARAM = {

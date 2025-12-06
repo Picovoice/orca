@@ -15,13 +15,13 @@ typedef struct {
 
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_transformer_param_serialize)(const pv_transformer_param_t *param, FILE *file);
+pv_status_t PV_MOCKABLE(pv_transformer_param_serialize)(pv_ypu_t *ypu, const pv_transformer_param_t *param, FILE *file);
 
 #endif
 
-void PV_MOCKABLE(pv_transformer_param_delete)(pv_transformer_param_t *param);
+void PV_MOCKABLE(pv_transformer_param_delete)(pv_ypu_t *ypu, pv_transformer_param_t *param);
 
-pv_status_t PV_MOCKABLE(pv_transformer_param_load)(FILE *f, pv_transformer_param_t **param);
+pv_status_t PV_MOCKABLE(pv_transformer_param_load)(pv_ypu_t *ypu, FILE *f, pv_transformer_param_t **param);
 
 bool PV_MOCKABLE(pv_transformer_param_is_equal)(
         const pv_transformer_param_t *object,
@@ -30,19 +30,19 @@ bool PV_MOCKABLE(pv_transformer_param_is_equal)(
 typedef struct pv_transformer pv_transformer_t;
 
 pv_status_t PV_MOCKABLE(pv_transformer_init)(
+        pv_ypu_t *ypu,
         const pv_transformer_param_t *param,
-        pv_buffer_t *buffer_text_encoder_transf_attn_1,
-        pv_buffer_t *buffer_text_encoder_transf_attn_2,
-        pv_buffer_t *buffer_text_encoder_transf_attn_score,
-        pv_buffer_t *buffer_text_encoder_transf_ffn,
         pv_transformer_t **object);
 
-void PV_MOCKABLE(pv_transformer_delete)(pv_transformer_t *object);
+void PV_MOCKABLE(pv_transformer_delete)(pv_ypu_t *ypu, pv_transformer_t *object);
 
 pv_status_t PV_MOCKABLE(pv_transformer_forward)(
+        pv_ypu_t *ypu,
         pv_transformer_t *object,
         int32_t n,
-        const float *x,
-        float *y);
+        pv_ypu_mem_t *x,
+        pv_ypu_mem_t *y,
+        int32_t x_offset,
+        int32_t y_offset);
 
 #endif // PV_TRANSFORMER_H

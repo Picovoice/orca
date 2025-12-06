@@ -4,7 +4,6 @@
 #include "core/pv_error_messages.h"
 #include "math/pv_math.h"
 #include "orca/pv_cnn.h"
-#include "orca/pv_cnn_matmul.h"
 #include "orca/pv_orca_util.h"
 #include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
@@ -13,33 +12,18 @@
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
+#include "ypu/mock/pv_ypu_mock.h"
 
 #endif
 
-static pv_status_t q7_to_float(const int32_t n, const q7_t *x, float **x_float) {
-    PV_ASSERT(n > 0);
-    PV_ASSERT(x);
-    PV_ASSERT(x_float);
-
-    *x_float = NULL;
-
-    float *x_float_internal = malloc(n * sizeof(float));
-    if (!x_float_internal) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    for (int32_t i = 0; i < n; i++) {
-        x_float_internal[i] = (float) x[i] / 128.f;
-    }
-
-    *x_float = x_float_internal;
-
-    return PV_STATUS_SUCCESS;
-}
-
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_cnn_param_serialize_buffer)(const pv_cnn_param_t *param, size_t *length, void **buffer) {
+pv_status_t PV_MOCKABLE(pv_cnn_param_serialize_buffer)(
+        pv_ypu_t *ypu,
+        const pv_cnn_param_t *param,
+        size_t *length,
+        void **buffer) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
 
     int32_t num_bias_params = param->output_channels;
@@ -56,7 +40,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_param_serialize_buffer)(const pv_cnn_param_t *par
             (sizeof(q7_t) * num_weight_params);
     *buffer = NULL;
 
-    void *b = malloc(*length);
+    void *b = pv_ypu_host_alloc(ypu, *length);
     PV_CHECK_ALLOC(b);
     *buffer = b;
 
@@ -78,122 +62,132 @@ pv_status_t PV_MOCKABLE(pv_cnn_param_serialize_buffer)(const pv_cnn_param_t *par
     memcpy(b, &(param->dilation), sizeof(int32_t));
     b += sizeof(int32_t);
 
-    memcpy(b, param->bias, sizeof(q7_t) * num_bias_params);
+    memcpy(b, param->bias->data, sizeof(q7_t) * num_bias_params);
     b += sizeof(q7_t) * num_bias_params;
 
-    memcpy(b, param->weight, sizeof(q7_t) * num_weight_params);
+    memcpy(b, param->weight->data, sizeof(q7_t) * num_weight_params);
 
     return PV_STATUS_SUCCESS;
 }
 
-pv_status_t PV_MOCKABLE(pv_cnn_param_serialize)(const pv_cnn_param_t *param, FILE *file) {
+pv_status_t PV_MOCKABLE(pv_cnn_param_serialize)(pv_ypu_t *ypu, const pv_cnn_param_t *param, FILE *file) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(file);
 
     size_t length = 0;
     void *buffer = NULL;
-    const pv_status_t status = pv_cnn_param_serialize_buffer(param, &length, &buffer);
+    const pv_status_t status = pv_cnn_param_serialize_buffer(ypu, param, &length, &buffer);
     PV_CHECK_STATUS(status);
 
     const size_t count = fwrite(buffer, 1, length, file);
-    free(buffer);
+    pv_ypu_host_free(ypu, buffer);
 
     return (count == length) ? PV_STATUS_SUCCESS : PV_STATUS_IO_ERROR;
 }
 
 #endif
 
-pv_status_t PV_MOCKABLE(pv_cnn_param_load)(FILE *f, pv_cnn_param_t **param) {
+pv_status_t PV_MOCKABLE(pv_cnn_param_load)(pv_ypu_t *ypu, FILE *f, pv_cnn_param_t **param) {
+    PV_ASSERT(ypu);
     PV_ASSERT(f);
     PV_ASSERT(param);
 
     *param = NULL;
 
-    pv_cnn_param_t *p = calloc(1, sizeof(pv_cnn_param_t));
+    pv_cnn_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_cnn_param_t));
     PV_CHECK_ALLOC(p);
+
+    memset(p, 0, sizeof(pv_cnn_param_t));
 
     size_t count = pv_fread(&(p->input_channels), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->input_channels <= 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->output_channels), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->output_channels <= 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->kernel_size), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->kernel_size <= 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->stride), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->stride < 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->padding), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->padding < 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->dilation), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->dilation < 0) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     const int32_t num_bias_params = p->output_channels;
     const int32_t num_weight_params = p->input_channels * p->output_channels * p->kernel_size;
 
-    p->bias = malloc(sizeof(q7_t) * num_bias_params);
+    p->bias = pv_ypu_config_mem_alloc(
+            ypu,
+            sizeof(q7_t) * num_bias_params,
+            PV_YPU_DEVICE_MEM_FLAG_STATIC);
     if (!(p->bias)) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    count = pv_fread((q7_t *) (p->bias), sizeof(q7_t), num_bias_params, f);
+    count = pv_fread(p->bias->data, sizeof(q7_t), num_bias_params, f);
     if (count != (size_t) num_bias_params) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
 
-    p->weight = malloc(sizeof(q7_t) * num_weight_params);
+    p->weight = pv_ypu_config_mem_alloc(
+            ypu,
+            sizeof(q7_t) * num_weight_params,
+            PV_YPU_DEVICE_MEM_FLAG_STATIC);
     if (!(p->weight)) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    count = pv_fread((q7_t *) (p->weight), sizeof(q7_t), num_weight_params, f);
+    count = pv_fread(p->weight->data, sizeof(q7_t), num_weight_params, f);
     if (count != (size_t) num_weight_params) {
-        pv_cnn_param_delete(p);
+        pv_cnn_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
 
@@ -203,12 +197,13 @@ pv_status_t PV_MOCKABLE(pv_cnn_param_load)(FILE *f, pv_cnn_param_t **param) {
 }
 
 
-void PV_MOCKABLE(pv_cnn_param_delete)(pv_cnn_param_t *param) {
-    if (param) {
-        free((q7_t *) (param->weight));
-        free((q7_t *) (param->bias));
+void PV_MOCKABLE(pv_cnn_param_delete)(pv_ypu_t *ypu, pv_cnn_param_t *param) {
+    PV_ASSERT(ypu);
 
-        free(param);
+    if (param) {
+        pv_ypu_config_mem_free(ypu, param->weight);
+        pv_ypu_config_mem_free(ypu, param->bias);
+        pv_ypu_host_free(ypu, param);
     }
 }
 
@@ -230,19 +225,12 @@ bool PV_MOCKABLE(pv_cnn_param_is_equal)(
         return false;
     }
 
-    const int32_t num_bias_params = object->output_channels;
-    const int32_t num_weight_params = object->input_channels * object->output_channels * object->kernel_size;
-
-    for (int32_t i = 0; i < num_bias_params; i++) {
-        if (object->bias[i] != other->bias[i]) {
-            return false;
-        }
+    if (!pv_ypu_config_mem_is_equal(object->bias, other->bias)) {
+        return false;
     }
 
-    for (int32_t i = 0; i < num_weight_params; i++) {
-        if (object->weight[i] != other->weight[i]) {
-            return false;
-        }
+    if (!pv_ypu_config_mem_is_equal(object->weight, other->weight)) {
+        return false;
     }
 
     return true;
@@ -261,9 +249,11 @@ int32_t PV_MOCKABLE(pv_cnn_param_receptive_field)(const pv_cnn_param_t *param) {
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_serialize_buffer)(
+        pv_ypu_t *ypu,
         const pv_cnn_depthwise_param_t *param,
         size_t *length,
         void **buffer) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(length);
     PV_ASSERT(buffer);
@@ -281,7 +271,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_serialize_buffer)(
             (sizeof(q7_t) * num_weight_params); // weight
     *buffer = NULL;
 
-    void *b = malloc(*length);
+    void *b = pv_ypu_host_alloc(ypu, *length);
     PV_CHECK_ALLOC(b);
     *buffer = b;
 
@@ -300,113 +290,126 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_serialize_buffer)(
     memcpy(b, &(param->dilation), sizeof(int32_t));
     b += sizeof(int32_t);
 
-    memcpy(b, param->bias, sizeof(q7_t) * num_bias_params);
+    memcpy(b, param->bias->data, sizeof(q7_t) * num_bias_params);
     b += sizeof(q7_t) * num_bias_params;
 
-    memcpy(b, param->weight, sizeof(q7_t) * num_weight_params);
+    memcpy(b, param->weight->data, sizeof(q7_t) * num_weight_params);
 
     return PV_STATUS_SUCCESS;
 }
 
 
-pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_serialize)(const pv_cnn_depthwise_param_t *param, FILE *file) {
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_serialize)(
+        pv_ypu_t *ypu,
+        const pv_cnn_depthwise_param_t *param,
+        FILE *file) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(file);
 
     size_t length = 0;
     void *buffer = NULL;
-    const pv_status_t status = pv_cnn_depthwise_param_serialize_buffer(param, &length, &buffer);
+    const pv_status_t status = pv_cnn_depthwise_param_serialize_buffer(ypu, param, &length, &buffer);
     PV_CHECK_STATUS(status);
 
     const size_t count = fwrite(buffer, 1, length, file);
-    free(buffer);
+    pv_ypu_host_free(ypu, buffer);
 
     return (count == length) ? PV_STATUS_SUCCESS : PV_STATUS_IO_ERROR;
 }
 
 #endif
 
-pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_load)(FILE *f, pv_cnn_depthwise_param_t **param) {
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_load)(pv_ypu_t *ypu, FILE *f, pv_cnn_depthwise_param_t **param) {
+    PV_ASSERT(ypu);
     PV_ASSERT(f);
     PV_ASSERT(param);
 
     *param = NULL;
 
-    pv_cnn_depthwise_param_t *p = calloc(1, sizeof(pv_cnn_depthwise_param_t));
+    pv_cnn_depthwise_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_cnn_depthwise_param_t));
     PV_CHECK_ALLOC(p);
+
+    memset(p, 0, sizeof(pv_cnn_depthwise_param_t));
 
     size_t count = pv_fread(&(p->num_channels), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->num_channels <= 0) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->kernel_size), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->kernel_size <= 0) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->stride), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->stride < 0) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->padding), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->padding < 0) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     count = pv_fread(&(p->dilation), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->dilation < 0) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
     const int32_t num_bias_params = p->num_channels;
     const int32_t num_weight_params = p->num_channels * p->kernel_size;
 
-    p->bias = malloc(sizeof(q7_t) * num_bias_params);
+    p->bias = pv_ypu_config_mem_alloc(
+            ypu,
+            sizeof(q7_t) * num_bias_params,
+            PV_YPU_DEVICE_MEM_FLAG_STATIC);
     if (!p->bias) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    count = pv_fread((q7_t *) (p->bias), sizeof(q7_t), num_bias_params, f);
+    count = pv_fread(p->bias->data, sizeof(q7_t), num_bias_params, f);
     if (count != (size_t) num_bias_params) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
 
-    p->weight = malloc(sizeof(q7_t) * num_weight_params);
+    p->weight = pv_ypu_config_mem_alloc(
+            ypu,
+            sizeof(q7_t) * num_weight_params,
+            PV_YPU_DEVICE_MEM_FLAG_STATIC);
     if (!p->weight) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    count = pv_fread((q7_t *) (p->weight), sizeof(q7_t), num_weight_params, f);
+    count = pv_fread(p->weight->data, sizeof(q7_t), num_weight_params, f);
     if (count != (size_t) num_weight_params) {
-        pv_cnn_depthwise_param_delete(p);
+        pv_cnn_depthwise_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
 
@@ -416,12 +419,13 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_param_load)(FILE *f, pv_cnn_depthwise_p
 }
 
 
-void PV_MOCKABLE(pv_cnn_depthwise_param_delete)(pv_cnn_depthwise_param_t *param) {
-    if (param) {
-        free((q7_t *) param->weight);
-        free((q7_t *) param->bias);
+void PV_MOCKABLE(pv_cnn_depthwise_param_delete)(pv_ypu_t *ypu, pv_cnn_depthwise_param_t *param) {
+    PV_ASSERT(ypu);
 
-        free(param);
+    if (param) {
+        pv_ypu_config_mem_free(ypu, param->weight);
+        pv_ypu_config_mem_free(ypu, param->bias);
+        pv_ypu_host_free(ypu, param);
     }
 }
 
@@ -439,19 +443,12 @@ bool PV_MOCKABLE(pv_cnn_depthwise_param_is_equal)(
         return false;
     }
 
-    const int32_t num_bias_params = object->num_channels;
-    const int32_t num_weight_params = object->num_channels * object->kernel_size;
-
-    for (int32_t i = 0; i < num_bias_params; i++) {
-        if (object->bias[i] != other->bias[i]) {
-            return false;
-        }
+    if (!pv_ypu_config_mem_is_equal(object->bias, other->bias)) {
+        return false;
     }
 
-    for (int32_t i = 0; i < num_weight_params; i++) {
-        if (object->weight[i] != other->weight[i]) {
-            return false;
-        }
+    if (!pv_ypu_config_mem_is_equal(object->weight, other->weight)) {
+        return false;
     }
 
     return true;
@@ -460,243 +457,11 @@ bool PV_MOCKABLE(pv_cnn_depthwise_param_is_equal)(
 struct pv_cnn {
     const pv_cnn_param_t *param;
 
-    q7_t *transposed_weight;
-    float *bias_float;
+    pv_ypu_mem_t *weight;
+    pv_ypu_mem_t *bias;
+    pv_ypu_mem_t *transposed_weight;
+    pv_ypu_mem_t *bias_float;
 };
-
-static pv_status_t pv_cnn_forward_float_to_float(pv_cnn_t *object, int32_t n, const float *x, float *y) {
-    PV_ASSERT(object);
-    PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
-
-    const int32_t in_channels = pv_cnn_input_channels(object);
-    const int32_t out_channels = pv_cnn_output_channels(object);
-    const int32_t kernel_size = pv_cnn_kernel_size(object);
-    const int32_t padding = pv_cnn_padding(object);
-    const int32_t padding_numel = padding * in_channels;
-
-    const float *bias_float = object->bias_float;
-    const q7_t *weight = pv_cnn_get_weight(object);
-
-    PV_ORCA_PROFILER_START("cnn_preprocess");
-
-    float inverse_scale = 0.f;
-    q510_t *x_q510 = calloc((n * in_channels) + (2 * padding_numel), sizeof(q510_t));
-    if (!x_q510) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-    pv_orca_util_scale_and_quantize_activation(n * in_channels, padding_numel, x, x_q510, &inverse_scale);
-
-    int32_t *buffer = calloc(n * out_channels, sizeof(int32_t));
-    if (!buffer) {
-        free(x_q510);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    PV_ORCA_PROFILER_STOP("cnn_preprocess");
-
-    switch (kernel_size) {
-        case 1:
-            pv_cnn_kernel_1_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 3:
-            pv_cnn_kernel_3_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 5:
-            pv_cnn_kernel_5_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 7:
-            pv_cnn_kernel_7_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        default:
-            PV_ERROR_REPORT(
-                    &pv_error_msg_invalid_argument_internal,
-                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                    PV_ERROR_ARGS_PRIVATE("kernel_size"));
-            free(buffer);
-            free(x_q510);
-            return PV_STATUS_RUNTIME_ERROR;
-    }
-
-    PV_ORCA_PROFILER_START("cnn_bias_add");
-    for (int32_t frame = 0; frame < n; frame++) {
-        const int32_t frame_offset = frame * out_channels;
-        for (int32_t oc = 0; oc < out_channels; oc++) {
-            y[frame_offset + oc] = ((float) buffer[frame_offset + oc] * inverse_scale) + bias_float[oc];
-        }
-    }
-    PV_ORCA_PROFILER_STOP("cnn_bias_add");
-
-    free(buffer);
-    free(x_q510);
-    return PV_STATUS_SUCCESS;
-}
-
-static pv_status_t pv_cnn_forward_float_to_q510(pv_cnn_t *object, int32_t n, const float *x, q510_t *y) {
-    PV_ASSERT(object);
-    PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
-
-    const int32_t in_channels = pv_cnn_input_channels(object);
-    const int32_t out_channels = pv_cnn_output_channels(object);
-    const int32_t kernel_size = pv_cnn_kernel_size(object);
-    const int32_t padding = pv_cnn_padding(object);
-    const int32_t padding_numel = padding * in_channels;
-
-    const q7_t *bias = object->param->bias;
-    const q7_t *weight = pv_cnn_get_weight(object);
-
-    PV_ORCA_PROFILER_START("cnn_preprocess");
-
-    q510_t *x_q510 = calloc((n * in_channels) + (2 * padding_numel), sizeof(q510_t));
-    if (!x_q510) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    for (int32_t i = padding_numel; i < (n * in_channels) + padding_numel; i++) {
-        x_q510[i] = pv_float_to_q510(x[i - padding_numel]);
-    }
-
-    int32_t *buffer = calloc(n * out_channels, sizeof(int32_t));
-    if (!buffer) {
-        free(x_q510);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    PV_ORCA_PROFILER_STOP("cnn_preprocess");
-
-    switch (kernel_size) {
-        case 1:
-            pv_cnn_kernel_1_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 3:
-            pv_cnn_kernel_3_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 5:
-            pv_cnn_kernel_5_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        case 7:
-            pv_cnn_kernel_7_q510(in_channels, out_channels, weight, n, x_q510, buffer);
-            break;
-        default:
-            PV_ERROR_REPORT(
-                    &pv_error_msg_invalid_argument_internal,
-                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                    PV_ERROR_ARGS_PRIVATE("kernel_size"));
-            free(buffer);
-            free(x_q510);
-            return PV_STATUS_RUNTIME_ERROR;
-    }
-
-    PV_ORCA_PROFILER_START("cnn_bias_add");
-    for (int32_t frame = 0; frame < n; frame++) {
-        const int32_t frame_offset = frame * out_channels;
-        for (int32_t oc = 0; oc < out_channels; oc++) {
-            buffer[frame_offset + oc] += ((int32_t) bias[oc]) << 10;
-            y[frame_offset + oc] = pv_int32_to_int16(((buffer[frame_offset + oc] + (1 << 6)) >> 7));
-        }
-    }
-    PV_ORCA_PROFILER_STOP("cnn_bias_add");
-
-    free(buffer);
-    free(x_q510);
-    return PV_STATUS_SUCCESS;
-}
-
-static pv_status_t pv_cnn_forward_q510_to_float(pv_cnn_t *object, int32_t n, const q510_t *x, float *y) {
-    PV_ASSERT(object);
-    PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
-
-    const int32_t in_channels = pv_cnn_input_channels(object);
-    const int32_t out_channels = pv_cnn_output_channels(object);
-    const int32_t kernel_size = pv_cnn_kernel_size(object);
-
-    const float *bias_float = object->bias_float;
-    const q7_t *weight = pv_cnn_get_weight(object);
-
-    PV_ORCA_PROFILER_START("cnn_preprocess");
-
-    int32_t *buffer = calloc(n * out_channels, sizeof(int32_t));
-    if (!buffer) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    PV_ORCA_PROFILER_STOP("cnn_preprocess");
-
-    switch (kernel_size) {
-        case 1:
-            pv_cnn_kernel_1_q510(in_channels, out_channels, weight, n, x, buffer);
-            break;
-        case 3:
-            pv_cnn_kernel_3_q510(in_channels, out_channels, weight, n, x, buffer);
-            break;
-        case 5:
-            pv_cnn_kernel_5_q510(in_channels, out_channels, weight, n, x, buffer);
-            break;
-        case 7:
-            pv_cnn_kernel_7_q510(in_channels, out_channels, weight, n, x, buffer);
-            break;
-        default:
-            PV_ERROR_REPORT(
-                    &pv_error_msg_invalid_argument_internal,
-                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                    PV_ERROR_ARGS_PRIVATE("kernel_size"));
-            free(buffer);
-            return PV_STATUS_RUNTIME_ERROR;
-    }
-
-    PV_ORCA_PROFILER_START("cnn_bias_add");
-    for (int32_t frame = 0; frame < n; frame++) {
-        const int32_t frame_offset = frame * out_channels;
-        for (int32_t oc = 0; oc < out_channels; oc++) {
-            y[frame_offset + oc] = ((float) buffer[frame_offset + oc] / 131072.f) + bias_float[oc];
-        }
-    }
-    PV_ORCA_PROFILER_STOP("cnn_bias_add");
-
-    free(buffer);
-    return PV_STATUS_SUCCESS;
-}
-
-pv_status_t PV_MOCKABLE(pv_cnn_transpose_weight)(pv_cnn_t *object, q7_t **weight) {
-    PV_ASSERT(object);
-    PV_ASSERT(weight);
-
-    int32_t in_channels = pv_cnn_input_channels(object);
-    int32_t out_channels = pv_cnn_output_channels(object);
-    int32_t kernel_size = pv_cnn_kernel_size(object);
-    const q7_t *orig_weight = object->param->weight;
-
-    q7_t *transposed = calloc((out_channels * in_channels * kernel_size), sizeof(q7_t));
-    if (!transposed) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    if (kernel_size > 1) {
-        for (int32_t oc = 0; oc < out_channels; oc++) {
-            for (int32_t ke = 0; ke < kernel_size; ke++) {
-                for (int32_t ic = 0; ic < in_channels; ic++) {
-                    transposed[(oc * kernel_size * in_channels) + (ke * in_channels) + ic] =
-                            orig_weight[(oc * in_channels * kernel_size) + (ic * kernel_size) + ke];
-                }
-            }
-        }
-    } else {
-        for (int32_t oc = 0; oc < out_channels; oc++) {
-            for (int32_t ic = 0; ic < in_channels; ic++) {
-                transposed[(ic * out_channels) + oc] = orig_weight[(oc * in_channels) + ic];
-            }
-        }
-    }
-
-    *weight = transposed;
-
-    return PV_STATUS_SUCCESS;
-}
 
 int32_t PV_MOCKABLE(pv_cnn_output_channels)(const pv_cnn_t *object) {
     PV_ASSERT(object);
@@ -734,25 +499,26 @@ int32_t PV_MOCKABLE(pv_cnn_stride)(const pv_cnn_t *object) {
     return object->param->stride;
 }
 
-const q7_t *PV_MOCKABLE(pv_cnn_get_weight)(const pv_cnn_t *object) {
+pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_get_weight)(const pv_cnn_t *object) {
     PV_ASSERT(object);
 
     if (object->transposed_weight) {
-        return (const q7_t *) object->transposed_weight;
+        return object->transposed_weight;
     } else {
-        return object->param->weight;
+        return object->weight;
     }
 }
 
 pv_status_t PV_MOCKABLE(pv_cnn_init)(
+        pv_ypu_t *ypu,
         const pv_cnn_param_t *param,
         pv_cnn_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
-    PV_ASSERT(object);
 
     *object = NULL;
 
-    pv_cnn_t *o = calloc(1, sizeof(pv_cnn_t));
+    pv_cnn_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_cnn_t));
     if (!o) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -760,6 +526,8 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
                 PV_ERROR_ARGS_PRIVATE("o"));
         return PV_STATUS_OUT_OF_MEMORY;
     }
+
+    memset(o, 0, sizeof(pv_cnn_t));
 
     o->param = param;
 
@@ -771,30 +539,97 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
                         "output_channels",
                         o->param->output_channels,
                         4));
-        pv_cnn_delete(o);
+        pv_cnn_delete(ypu, o);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
+    int32_t in_channels = param->input_channels;
+    int32_t out_channels = param->output_channels;
+    int32_t kernel_size = param->kernel_size;
+
+    o->weight = pv_ypu_mem_from_config(ypu, param->weight);
+    if (!o->weight) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->weight"));
+        pv_cnn_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    o->bias = pv_ypu_mem_from_config(ypu, param->bias);
+    if (!o->bias) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->bias"));
+        pv_cnn_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    o->bias_float = pv_ypu_mem_alloc(
+            ypu,
+            out_channels * (int32_t) sizeof(float),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
+    if (!o->bias_float) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->bias_float"));
+        pv_cnn_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_elementwise_args_t args = {
+            .output = o->bias_float,
+            .input = o->bias,
+            .length = out_channels,
+            .output_offset = 0,
+            .input_offset = 0,
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_Q7,
+            &args);
+    if (status != PV_STATUS_SUCCESS) {
+        pv_cnn_delete(ypu, o);
+        return status;
+    }
+
     if (param->kernel_size > 1) {
-        pv_status_t status = pv_cnn_transpose_weight(o, &(o->transposed_weight));
+        o->transposed_weight = pv_ypu_mem_alloc(
+                ypu,
+                out_channels * in_channels * kernel_size * (int32_t) sizeof(q7_t),
+                PV_YPU_DEVICE_MEM_FLAG_NONE);
+        if (!o->transposed_weight) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_alloc,
+                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                    PV_ERROR_ARGS_PRIVATE("o->transposed_weight"));
+            pv_cnn_delete(ypu, o);
+            return PV_STATUS_OUT_OF_MEMORY;
+        }
+
+        pv_ypu_op_transpose_args_t args = {
+                .output = o->transposed_weight,
+                .input = o->weight,
+                .m = out_channels,
+                .n = in_channels,
+                .k = kernel_size,
+                .output_offset = 0,
+                .input_offset = 0,
+        };
+
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_TRANSPOSE_Q7,
+                &args);
         if (status != PV_STATUS_SUCCESS) {
-            PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                    pv_cnn_transpose_weight,
-                    pv_status_to_string(status));
-            pv_cnn_delete(o);
             return status;
         }
     } else {
         o->transposed_weight = NULL;
-    }
-
-    pv_status_t status = q7_to_float(param->output_channels, param->bias, &(o->bias_float));
-    if (status != PV_STATUS_SUCCESS) {
-        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                q7_to_float,
-                pv_status_to_string(status));
-        pv_cnn_delete(o);
-        return status;
     }
 
     *object = o;
@@ -802,145 +637,412 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_cnn_delete)(pv_cnn_t *object) {
+void PV_MOCKABLE(pv_cnn_delete)(pv_ypu_t *ypu, pv_cnn_t *object) {
+    PV_ASSERT(ypu);
+
     if (object) {
         if (object->transposed_weight) {
-            free(object->transposed_weight);
+            pv_ypu_mem_free(ypu, object->transposed_weight);
         }
 
-        free(object->bias_float);
+        pv_ypu_mem_free(ypu, object->weight);
+        pv_ypu_mem_free(ypu, object->bias);
+        pv_ypu_mem_free(ypu, object->bias_float);
 
-        free(object);
+        pv_ypu_host_free(ypu, object);
     }
 }
 
-pv_status_t PV_MOCKABLE(pv_cnn_forward)(pv_cnn_t *object, int32_t n, const float *x, float *y) {
+pv_status_t PV_MOCKABLE(pv_cnn_forward)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem,
+        int32_t x_offset,
+        int32_t y_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
+    PV_ASSERT(x_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
 
-    return pv_cnn_forward_float_to_float(object, n, x, y);
+    const int32_t in_channels = pv_cnn_input_channels(object);
+    const int32_t out_channels = pv_cnn_output_channels(object);
+    const int32_t kernel_size = pv_cnn_kernel_size(object);
+    const int32_t padding = pv_cnn_padding(object);
+    const int32_t padding_numel = padding * in_channels;
+
+    pv_ypu_mem_t *x_q510_ypu_mem = pv_ypu_buffer_get(
+            ypu,
+            ((n * in_channels) + (2 * padding_numel)) * (int32_t) sizeof(q510_t),
+            false);
+    if (!x_q510_ypu_mem) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *inverse_scale = pv_ypu_buffer_get(
+            ypu,
+            sizeof(float),
+            false);
+    if (!inverse_scale) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args0 = {
+            .output = x_q510_ypu_mem,
+            .size_bytes = ((n * in_channels) + (2 * padding_numel)) * (int32_t) sizeof(q510_t),
+            .output_offset = 0,
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu, PV_YPU_OPERATOR_MEMSET, &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_quantize_args_t args1 = {
+            .output = x_q510_ypu_mem,
+            .scale = inverse_scale,
+            .input = x_ypu_mem,
+            .m = 1,
+            .n = n * in_channels,
+            .output_offset = padding_numel * (int32_t) sizeof(q510_t),
+            .scale_offset = 0,
+            .input_offset = x_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_QUANTIZE_Q510,
+            &args1);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_conv1d_args_t args2 = {
+            .output = y_ypu_mem,
+            .lhs = pv_cnn_get_weight(object),
+            .rhs = x_q510_ypu_mem,
+            .n = n,
+            .out_channels = out_channels,
+            .in_channels = in_channels,
+            .kernel_size = kernel_size,
+            .output_offset = y_offset,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_Q1417_Q7_Q510,
+            &args2);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args3 = {
+            .output = y_ypu_mem,
+            .input = y_ypu_mem,
+            .length = n * out_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_I32,
+            &args3);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args4 = {
+            .output = y_ypu_mem,
+            .lhs = y_ypu_mem,
+            .rhs = inverse_scale,
+            .m = n * out_channels,
+            .n = 1,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULMV,
+            &args4);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args5 = {
+            .output = y_ypu_mem,
+            .lhs = y_ypu_mem,
+            .rhs = object->bias_float,
+            .m = n,
+            .n = out_channels,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_ADDMV,
+            &args5);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_buffer_release(ypu, inverse_scale);
+    pv_ypu_buffer_release(ypu, x_q510_ypu_mem);
+
+    return PV_STATUS_SUCCESS;
 }
 
-pv_status_t PV_MOCKABLE(pv_cnn_forward_to_q510)(pv_cnn_t *object, int32_t n, const float *x, q510_t *y) {
+pv_status_t PV_MOCKABLE(pv_cnn_forward_to_q510)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem,
+        int32_t x_offset,
+        int32_t y_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
+    PV_ASSERT(x_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
 
-    return pv_cnn_forward_float_to_q510(object, n, x, y);
+    const int32_t in_channels = pv_cnn_input_channels(object);
+    const int32_t out_channels = pv_cnn_output_channels(object);
+    const int32_t kernel_size = pv_cnn_kernel_size(object);
+    const int32_t padding = pv_cnn_padding(object);
+    const int32_t padding_numel = padding * in_channels;
+
+    pv_ypu_mem_t *x_q510_ypu_mem = pv_ypu_buffer_get(
+            ypu,
+            ((n * in_channels) + (2 * padding_numel)) * (int32_t) sizeof(q510_t),
+            false);
+    if (!x_q510_ypu_mem) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *buffer_ypu_mem = pv_ypu_buffer_get(
+            ypu,
+            n * out_channels * (int32_t) sizeof(int32_t),
+            false);
+    if (!buffer_ypu_mem) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args0 = {
+            .output = x_q510_ypu_mem,
+            .size_bytes = ((n * in_channels) + (2 * padding_numel)) * (int32_t) sizeof(q510_t),
+            .output_offset = 0};
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args1 = {
+            .output = x_q510_ypu_mem,
+            .input = x_ypu_mem,
+            .length = n * in_channels,
+            .output_offset = padding_numel * (int32_t) sizeof(q510_t),
+            .input_offset = x_offset};
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_Q510_F32,
+            &args1);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_conv1d_args_t args2 = {
+            .output = buffer_ypu_mem,
+            .lhs = pv_cnn_get_weight(object),
+            .rhs = x_q510_ypu_mem,
+            .n = n,
+            .out_channels = out_channels,
+            .in_channels = in_channels,
+            .kernel_size = kernel_size,
+            .output_offset = 0,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_Q1417_Q7_Q510,
+            &args2);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args3 = {
+            .output = buffer_ypu_mem,
+            .lhs = buffer_ypu_mem,
+            .rhs = object->bias,
+            .m = n,
+            .n = out_channels,
+            .output_offset = 0,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_ADDMV_Q1417_Q1417_Q7,
+            &args3);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args4 = {
+            .output = y_ypu_mem,
+            .input = buffer_ypu_mem,
+            .length = n * out_channels,
+            .output_offset = y_offset,
+            .input_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_Q510_Q1417,
+            &args4);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_buffer_release(ypu, buffer_ypu_mem);
+    pv_ypu_buffer_release(ypu, x_q510_ypu_mem);
+
+    return PV_STATUS_SUCCESS;
 }
 
-pv_status_t PV_MOCKABLE(pv_cnn_forward_from_q510)(pv_cnn_t *object, int32_t n, const q510_t *x, float *y) {
+pv_status_t PV_MOCKABLE(pv_cnn_forward_from_q510)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem,
+        int32_t x_offset,
+        int32_t y_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
+    PV_ASSERT(x_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
 
-    return pv_cnn_forward_q510_to_float(object, n, x, y);
+    const int32_t in_channels = pv_cnn_input_channels(object);
+    const int32_t out_channels = pv_cnn_output_channels(object);
+    const int32_t kernel_size = pv_cnn_kernel_size(object);
+
+    const float inverse_scale = 1.0f / (1024.0f * 128.0f);
+
+    pv_ypu_op_conv1d_args_t args0 = {
+            .output = y_ypu_mem,
+            .lhs = pv_cnn_get_weight(object),
+            .rhs = x_ypu_mem,
+            .n = n,
+            .out_channels = out_channels,
+            .in_channels = in_channels,
+            .kernel_size = kernel_size,
+            .output_offset = y_offset,
+            .lhs_offset = x_offset,
+            .rhs_offset = 0,
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_Q1417_Q7_Q510,
+            &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args1 = {
+            .output = y_ypu_mem,
+            .input = y_ypu_mem,
+            .length = n * out_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_I32,
+            &args1);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_scalar_args_t args2 = {
+            .output = y_ypu_mem,
+            .input = y_ypu_mem,
+            .scalar.f32 = inverse_scale,
+            .length = n * out_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULSV,
+            &args2);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args3 = {
+            .output = y_ypu_mem,
+            .lhs = y_ypu_mem,
+            .rhs = object->bias_float,
+            .m = n,
+            .n = out_channels,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_ADDMV,
+            &args3);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    return PV_STATUS_SUCCESS;
 }
 
 struct pv_cnn_depthwise {
     const pv_cnn_depthwise_param_t *param;
 
-    q7_t *transposed_weight;
-    float *bias_float;
+    pv_ypu_mem_t *weight;
+    pv_ypu_mem_t *bias;
+    pv_ypu_mem_t *transposed_weight;
+    pv_ypu_mem_t *bias_float;
 };
 
-static pv_status_t pv_cnn_depthwise_transpose_weight(pv_cnn_depthwise_t *object, q7_t **weight) {
-    PV_ASSERT(object);
-    PV_ASSERT(weight);
-
-    *weight = NULL;
-
-    int32_t kernel_size = pv_cnn_depthwise_kernel_size(object);
-    if (kernel_size == 1) {  // weight_T = weight
-        return PV_STATUS_SUCCESS;
-    }
-
-    int32_t num_channels = pv_cnn_depthwise_num_channels(object);
-    const q7_t *orig_weight = object->param->weight;
-
-    q7_t *transposed = calloc((num_channels * kernel_size), sizeof(q7_t));
-    if (!transposed) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    for (int32_t ke = 0; ke < kernel_size; ke++) {
-        for (int32_t nc = 0; nc < num_channels; nc++) {
-            transposed[(ke * num_channels) + nc] = orig_weight[(nc * kernel_size) + ke];
-        }
-    }
-
-    *weight = transposed;
-
-    return PV_STATUS_SUCCESS;
-}
-
-static pv_status_t pv_cnn_depthwise_forward_q510(pv_cnn_depthwise_t *object, int32_t n, const float *x, float *y) {
-    PV_ASSERT(object);
-    PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
-    PV_ORCA_PROFILER_START("cnn_depthwise");
-
-    int32_t num_channels = pv_cnn_depthwise_num_channels(object);
-    int32_t kernel_size = object->param->kernel_size;
-
-    const q7_t *weight = pv_cnn_depthwise_get_weight(object);
-    const float *bias_float = object->bias_float;
-
-    int32_t padding = object->param->padding;
-    const int32_t padding_numel = padding * num_channels;
-
-    float inverse_scale = 0.f;
-    q510_t *x_q510 = calloc((n * num_channels) + (2 * padding_numel), sizeof(q510_t));
-    if (!x_q510) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-    pv_orca_util_scale_and_quantize_activation(n * num_channels, padding_numel, x, x_q510, &inverse_scale);
-
-    int32_t *buffer = calloc(n * num_channels, sizeof(int32_t));
-    if (!buffer) {
-        free(x_q510);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    for (int32_t frame = 0; frame < n; frame++) {
-        const int32_t frame_offset = frame * num_channels;
-        const q7_t *w = weight;
-
-        for (int32_t ke = 0; ke < kernel_size; ke++) {
-            const int32_t channel_offset = ke * num_channels;
-
-            for (int32_t nc = 0; nc < num_channels; nc++) {
-                buffer[frame_offset + nc] +=
-                        (int32_t) x_q510[frame_offset + channel_offset + nc] * (int32_t) *w++;
-            }
-        }
-
-        for (int32_t nc = 0; nc < num_channels; nc++) {
-            y[frame_offset + nc] = ((float) buffer[frame_offset + nc] * inverse_scale) + bias_float[nc];
-        }
-    }
-
-    free(x_q510);
-    free(buffer);
-
-    PV_ORCA_PROFILER_STOP("cnn_depthwise");
-    return PV_STATUS_SUCCESS;
-}
-
 pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
+        pv_ypu_t *ypu,
         const pv_cnn_depthwise_param_t *param,
         pv_cnn_depthwise_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(object);
 
     *object = NULL;
 
-    pv_cnn_depthwise_t *o = calloc(1, sizeof(pv_cnn_depthwise_t));
+    pv_cnn_depthwise_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_cnn_depthwise_t));
     if (!o) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -949,24 +1051,97 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(o, 0, sizeof(pv_cnn_depthwise_t));
+
     o->param = param;
 
-    pv_status_t status = pv_cnn_depthwise_transpose_weight(o, &(o->transposed_weight));  // [kernel_size, num_channels]
+    int32_t kernel_size = pv_cnn_depthwise_kernel_size(o);
+    int32_t num_channels = pv_cnn_depthwise_num_channels(o);
+
+    o->weight = pv_ypu_mem_from_config(ypu, param->weight);
+    if (!o->weight) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->weight"));
+        pv_cnn_depthwise_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    o->bias = pv_ypu_mem_from_config(ypu, param->bias);
+    if (!o->bias) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->bias"));
+        pv_cnn_depthwise_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    o->bias_float = pv_ypu_mem_alloc(
+            ypu,
+            num_channels * (int32_t) sizeof(float),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
+    if (!o->bias_float) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->bias_float"));
+        pv_cnn_depthwise_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_elementwise_args_t args = {
+            .output = o->bias_float,
+            .input = o->bias,
+            .length = num_channels,
+            .output_offset = 0,
+            .input_offset = 0,
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_Q7,
+            &args);
     if (status != PV_STATUS_SUCCESS) {
-        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                pv_cnn_depthwise_transpose_weight,
-                pv_status_to_string(status));
-        pv_cnn_depthwise_delete(o);
+        pv_cnn_depthwise_delete(ypu, o);
         return status;
     }
 
-    status = q7_to_float(param->num_channels, param->bias, &(o->bias_float));
-    if (status != PV_STATUS_SUCCESS) {
-        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                q7_to_float,
-                pv_status_to_string(status));
-        pv_cnn_depthwise_delete(o);
-        return status;
+    if (param->kernel_size > 1) {
+        o->transposed_weight = pv_ypu_mem_alloc(
+                ypu,
+                num_channels * kernel_size * (int32_t) sizeof(q7_t),
+                PV_YPU_DEVICE_MEM_FLAG_NONE);
+        if (!o->transposed_weight) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_alloc,
+                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                    PV_ERROR_ARGS_PRIVATE("o->transposed_weight"));
+            pv_cnn_depthwise_delete(ypu, o);
+            return PV_STATUS_OUT_OF_MEMORY;
+        }
+
+        pv_ypu_op_transpose_args_t args = {
+                .output = o->transposed_weight,
+                .input = o->weight,
+                .m = 1,
+                .n = num_channels,
+                .k = kernel_size,
+                .output_offset = 0,
+                .input_offset = 0,
+        };
+
+        status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_TRANSPOSE_Q7,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            pv_cnn_depthwise_delete(ypu, o);
+            return status;
+        }
+    } else {
+        o->transposed_weight = NULL;
     }
 
     *object = o;
@@ -974,15 +1149,19 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_cnn_depthwise_delete)(pv_cnn_depthwise_t *object) {
+void PV_MOCKABLE(pv_cnn_depthwise_delete)(pv_ypu_t *ypu, pv_cnn_depthwise_t *object) {
+    PV_ASSERT(ypu);
+
     if (object) {
         if (object->transposed_weight) {
-            free(object->transposed_weight);
+            pv_ypu_mem_free(ypu, object->transposed_weight);
         }
 
-        free(object->bias_float);
+        pv_ypu_mem_free(ypu, object->weight);
+        pv_ypu_mem_free(ypu, object->bias);
+        pv_ypu_mem_free(ypu, object->bias_float);
 
-        free(object);
+        pv_ypu_host_free(ypu, object);
     }
 }
 
@@ -1004,21 +1183,178 @@ int32_t PV_MOCKABLE(pv_cnn_depthwise_stride)(const pv_cnn_depthwise_t *object) {
     return object->param->stride;
 }
 
-const q7_t *PV_MOCKABLE(pv_cnn_depthwise_get_weight)(const pv_cnn_depthwise_t *object) {
+pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_depthwise_get_weight)(const pv_cnn_depthwise_t *object) {
     PV_ASSERT(object);
 
     if (object->transposed_weight) {
-        return (const q7_t *) object->transposed_weight;
+        return object->transposed_weight;
     } else {
-        return object->param->weight;
+        return object->weight;
     }
 }
 
-pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward)(pv_cnn_depthwise_t *object, int32_t n, const float *x, float *y) {
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward)(
+        pv_ypu_t *ypu,
+        pv_cnn_depthwise_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem,
+        int32_t x_offset,
+        int32_t y_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
-    PV_ASSERT(n);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
+    PV_ASSERT(n > 0);
+    PV_ASSERT(x_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
+    PV_ASSERT(x_offset >= 0);
+    PV_ASSERT(y_offset >= 0);
 
-    return pv_cnn_depthwise_forward_q510(object, n, x, y);
+    int32_t num_channels = pv_cnn_depthwise_num_channels(object);
+    int32_t kernel_size = object->param->kernel_size;
+
+    int32_t padding = object->param->padding;
+    const int32_t padding_numel = padding * num_channels;
+
+    const int32_t x_q510_size_bytes = ((n * num_channels) + (2 * padding_numel)) * (int32_t) sizeof(q510_t);
+    pv_ypu_mem_t *x_q510_ypu_mem = pv_ypu_buffer_get(
+            ypu,
+            x_q510_size_bytes,
+            false);
+    if (!x_q510_ypu_mem) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *inverse_scale = pv_ypu_buffer_get(
+            ypu,
+            sizeof(float),
+            false);
+    if (!inverse_scale) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args0 = {
+            .output = x_q510_ypu_mem,
+            .size_bytes = x_q510_size_bytes,
+            .output_offset = 0,
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_memset_args_t args1 = {
+            .output = y_ypu_mem,
+            .size_bytes = n * num_channels * (int32_t) sizeof(float),
+            .output_offset = y_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args1);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_quantize_args_t args2 = {
+            .output = x_q510_ypu_mem,
+            .scale = inverse_scale,
+            .input = x_ypu_mem,
+            .m = 1,
+            .n = n * num_channels,
+            .output_offset = padding_numel * (int32_t) sizeof(q510_t),
+            .scale_offset = 0,
+            .input_offset = x_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_QUANTIZE_Q510,
+            &args2);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_conv1d_depthwise_args_t args3 = {
+            .output = y_ypu_mem,
+            .lhs = pv_cnn_depthwise_get_weight(object),
+            .rhs = x_q510_ypu_mem,
+            .n = n,
+            .num_channels = num_channels,
+            .kernel_size = kernel_size,
+            .output_offset = y_offset,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_DEPTHWISE_Q1417_Q7_Q510,
+            &args3);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args4 = {
+            .output = y_ypu_mem,
+            .input = y_ypu_mem,
+            .length = n * num_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_I32,
+            &args4);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args5 = {
+            .output = y_ypu_mem,
+            .lhs = y_ypu_mem,
+            .rhs = inverse_scale,
+            .m = n * num_channels,
+            .n = 1,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULMV,
+            &args5);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args6 = {
+            .output = y_ypu_mem,
+            .lhs = y_ypu_mem,
+            .rhs = object->bias_float,
+            .m = n,
+            .n = num_channels,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_ADDMV,
+            &args6);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_buffer_release(ypu, inverse_scale);
+    pv_ypu_buffer_release(ypu, x_q510_ypu_mem);
+
+    return PV_STATUS_SUCCESS;
 }

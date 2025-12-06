@@ -38,7 +38,7 @@ include:
 build-prod-linux:
   stage: build-prod
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     TOOLCHAIN_VER: 1.0.0
     TOOLCHAIN_NAME: x86_64-unknown-linux-gnu
@@ -53,6 +53,7 @@ build-prod-linux:
       - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86-docker
+    - pv-cicd-gpu
   cache:
     - !reference [ .build-prod-props, cache ]
   when: manual
@@ -93,6 +94,7 @@ build-prod-windows-x86:
       - build/release/artifacts/
   tags:
     - pv-cicd-windows-x86
+    - pv-cicd-gpu
     - pv-cicd-c
   when: manual
 
@@ -134,7 +136,7 @@ build-prod-rpi3:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-armv7-docker
+    - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
   cache:
     - !reference [ .build-prod-props, cache ]
@@ -158,7 +160,7 @@ build-prod-rpi3-64:
     paths:
       - build/release/artifacts/
   tags:
-    - pv-cicd-rpi4-arm64-docker
+    - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
   cache:
     - !reference [ .build-prod-props, cache ]
@@ -263,7 +265,7 @@ build-prod-rpi5-64:
 build-prod-wasm:
   stage: build-prod
   interruptible: true
-  image: registry.gitlab.com/picovoice/zoo-dev/base:2025-02-27
+  image: registry.gitlab.com/picovoice/ypu/ypu:2025-10-08
   variables:
     PLATFORM_NAME: wasm
   before_script:

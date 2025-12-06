@@ -1,1 +1,1 @@
-fetch_peer_module(hippo "57a41f4bc01d939ff3f9c1b33bc64c28daf2af7d")
+fetch_peer_module(hippo "f8c2d6c839fa818c1e6a3d9e1387ce3a6eebf099")

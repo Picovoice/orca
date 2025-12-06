@@ -11,7 +11,7 @@
 void usage(const char *program) {
     (void) fprintf(
             stderr,
-            "usage: %s -a ACCESS_KEY -m MODEL_PATH "
+            "usage: %s -a ACCESS_KEY -m MODEL_PATH [-y DEVICE] "
 
 #ifdef __PV_DUMP__
 
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
 
     const char *access_key = NULL;
     const char *model_path = NULL;
+    const char *device = "cpu:1";
 
 #ifdef __PV_DUMP__
 
@@ -60,11 +61,11 @@ int main(int argc, char *argv[]) {
 
 #ifdef __PV_DUMP__
 
-    const char *SHORT_OPTIONS = "a:m:d:t:o:r:s:v:";
+    const char *SHORT_OPTIONS = "a:m:y:d:t:o:r:s:v:";
 
 #else
 
-    const char *SHORT_OPTIONS = "a:m:t:o:r:s:v:";
+    const char *SHORT_OPTIONS = "a:m:y:t:o:r:s:v:";
 
 #endif
 
@@ -76,6 +77,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'm':
                 model_path = optarg;
+                break;
+            case 'y':
+                device = optarg;
                 break;
 
 #ifdef __PV_DUMP__
@@ -117,7 +121,7 @@ int main(int argc, char *argv[]) {
     int32_t message_stack_depth = 0;
 
     pv_orca_t *orca = NULL;
-    pv_status_t status = pv_orca_init(access_key, model_path, &orca);
+    pv_status_t status = pv_orca_init(access_key, model_path, device, &orca);
     if (status != PV_STATUS_SUCCESS) {
         (void) fprintf(stderr, "Could not create Orca object: `%s`", pv_status_to_string(status));
         handle_error(message_stack, message_stack_depth);

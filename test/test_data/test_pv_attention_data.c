@@ -50,6 +50,18 @@ static const q7_t TEST_ATTENTION_CONV_Q_WEIGHT[] = {
 static const q7_t TEST_ATTENTION_CONV_Q_BIAS[] = {
     32, 25, -1, -30, 0, -4, -30, -31, -4, -15, -24, 2, -24, 10, -3, 8};
 
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_Q_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_Q_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_Q_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_Q_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_Q_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_Q_BIAS,
+};
+
 static const pv_cnn_param_t TEST_ATTENTION_CONV_Q_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -57,8 +69,8 @@ static const pv_cnn_param_t TEST_ATTENTION_CONV_Q_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_ATTENTION_CONV_Q_WEIGHT,
-        .bias = TEST_ATTENTION_CONV_Q_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_Q_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_Q_BIAS_CONFIG,
 };
 
 static const q7_t TEST_ATTENTION_CONV_K_WEIGHT[] = {
@@ -76,6 +88,18 @@ static const q7_t TEST_ATTENTION_CONV_K_WEIGHT[] = {
 static const q7_t TEST_ATTENTION_CONV_K_BIAS[] = {
     -1, -13, 25, -2, -10, 3, -15, -4, 29, -24, -11, -1, -16, -21, -4, -17};
 
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_K_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_K_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_K_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_K_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_K_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_K_BIAS,
+};
+
 static const pv_cnn_param_t TEST_ATTENTION_CONV_K_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -83,8 +107,8 @@ static const pv_cnn_param_t TEST_ATTENTION_CONV_K_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_ATTENTION_CONV_K_WEIGHT,
-        .bias = TEST_ATTENTION_CONV_K_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_K_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_K_BIAS_CONFIG,
 };
 
 static const q7_t TEST_ATTENTION_CONV_V_WEIGHT[] = {
@@ -102,6 +126,18 @@ static const q7_t TEST_ATTENTION_CONV_V_WEIGHT[] = {
 static const q7_t TEST_ATTENTION_CONV_V_BIAS[] = {
     15, -19, -27, 15, -2, -11, -10, 11, -25, -1, 29, 4, 9, 16, -6, -3};
 
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_V_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_V_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_V_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_V_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_V_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_V_BIAS,
+};
+
 static const pv_cnn_param_t TEST_ATTENTION_CONV_V_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -109,8 +145,8 @@ static const pv_cnn_param_t TEST_ATTENTION_CONV_V_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_ATTENTION_CONV_V_WEIGHT,
-        .bias = TEST_ATTENTION_CONV_V_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_V_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_V_BIAS_CONFIG,
 };
 
 static const q7_t TEST_ATTENTION_CONV_O_WEIGHT[] = {
@@ -128,6 +164,18 @@ static const q7_t TEST_ATTENTION_CONV_O_WEIGHT[] = {
 static const q7_t TEST_ATTENTION_CONV_O_BIAS[] = {
     6, -10, 8, 21, -20, 18, 27, 7, 10, 15, -17, 21, -5, -13, 29, -16};
 
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_O_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_O_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_O_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_ATTENTION_CONV_O_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_ATTENTION_CONV_O_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_ATTENTION_CONV_O_BIAS,
+};
+
 static const pv_cnn_param_t TEST_ATTENTION_CONV_O_PARAM = {
         .input_channels = 16,
         .output_channels = 16,
@@ -135,8 +183,8 @@ static const pv_cnn_param_t TEST_ATTENTION_CONV_O_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_ATTENTION_CONV_O_WEIGHT,
-        .bias = TEST_ATTENTION_CONV_O_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_O_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_ATTENTION_CONV_O_BIAS_CONFIG,
 };
 
 static const pv_attention_param_t TEST_ATTENTION_PARAM = {

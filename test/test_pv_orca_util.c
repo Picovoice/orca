@@ -11,6 +11,21 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
+
+static pv_status_t test_pv_util_setup(void) {
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    return PV_STATUS_SUCCESS;
+}
+
+static void test_pv_util_teardown(void) {
+    pv_ypu_delete(ypu);
+}
+
 static void test_pv_orca_util_expand_tokens_to_frames(void) {
     int32_t num_tokens = 3;
     int32_t hidden_channels = 2;
@@ -20,30 +35,96 @@ static void test_pv_orca_util_expand_tokens_to_frames(void) {
     float logs_enc[] = {0.3f, 0.4f, 0.25f, 0.1f, 0.2f, 0.2f};
     float target_means[] = {0.1f, 0.2f, 0.1f, 0.2f, 0.3f, 0.05f, 0.3f, 0.05f, 0.3f, 0.05f, 0.1f, 0.1f};
     float target_logs[] = {0.3f, 0.4f, 0.3f, 0.4f, 0.25f, 0.1f, 0.25f, 0.1f, 0.25f, 0.1f, 0.2f, 0.2f};
-    float *means = calloc(num_frames * hidden_channels, sizeof(float));
-    pv_test_true(means, "Failed to allocate `means`");
-    if (!means) {
+
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(mean_enc),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
         return;
     }
-    float *logs = calloc(num_frames * hidden_channels, sizeof(float));
-    pv_test_true(logs, "Failed to allocate `logs`");
-    if (!logs) {
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(logs_enc),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
         return;
     }
-    pv_orca_util_expand_tokens_to_frames(
+
+    pv_ypu_mem_t *means = pv_ypu_mem_alloc(
+        ypu,
+        num_frames * hidden_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(means != NULL, "Failed to allocate means");
+    if (means == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *logs = pv_ypu_mem_alloc(
+        ypu,
+        num_frames * hidden_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(logs != NULL, "Failed to allocate logs");
+    if (logs == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        mean_enc,
+        0,
+        sizeof(mean_enc));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_ypu_mem_copy_to(
+        ypu,
+        m1,
+        logs_enc,
+        0,
+        sizeof(logs_enc));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_orca_util_expand_tokens_to_frames(
+            ypu,
             num_tokens,
             hidden_channels,
             durations,
-            mean_enc,
-            logs_enc,
+            m0,
+            m1,
             means,
-            logs);
+            logs,
+            0,
+            0,
+            0,
+            0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_orca_util_expand_tokens_to_frames failed with %s",
+        pv_status_to_string(status));
+
+    float *h0 = pv_ypu_mem_get_host_view(ypu, means, true);
+    float *h1 = pv_ypu_mem_get_host_view(ypu, logs, true);
     for (int32_t n = 0; n < num_frames; n++) {
-        pv_test_true(means[n] == target_means[n], "mean mismatch, got %f, expected %f", means[n], target_means[n]);
-        pv_test_true(logs[n] == target_logs[n], "logs mismatch, got %f, expected %f", logs[n], target_logs[n]);
+        pv_test_true(h0[n] == target_means[n], "mean mismatch, got %f, expected %f", h0[n], target_means[n]);
+        pv_test_true(h1[n] == target_logs[n], "logs mismatch, got %f, expected %f", h1[n], target_logs[n]);
     }
-    free(means);
-    free(logs);
+    pv_ypu_mem_release_host_view(ypu, means, false);
+    pv_ypu_mem_release_host_view(ypu, logs, false);
+
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
+    pv_ypu_mem_free(ypu, means);
+    pv_ypu_mem_free(ypu, logs);
 }
 
 static void test_pv_orca_util_split_channels(void) {
@@ -68,7 +149,81 @@ static void test_pv_orca_util_split_channels(void) {
 
     float y0[n * half_channels];
     float y1[n * half_channels];
-    pv_orca_util_split_channels(n, num_channels, x, y0, y1);
+
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(x),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(y0),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m2 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(y1),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m2 != NULL, "Failed to allocate m2");
+    if (m2 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        x,
+        0,
+        sizeof(x));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_orca_util_split_channels(
+        ypu,
+        n,
+        num_channels,
+        m0,
+        m1,
+        m2,
+        0,
+        0,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_orca_util_split_channels failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_ypu_mem_copy_from(
+        ypu,
+        m1,
+        y0,
+        0,
+        sizeof(y0));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_from failed with %s",
+        pv_status_to_string(status));
+
+    pv_ypu_mem_copy_from(
+        ypu,
+        m2,
+        y1,
+        0,
+        sizeof(y1));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_from failed with %s",
+        pv_status_to_string(status));
 
     for (int32_t i = 0; i < n; i++) {
         for (int32_t j = 0; j < half_channels; j++) {
@@ -84,6 +239,10 @@ static void test_pv_orca_util_split_channels(void) {
                     y1_target[(i * half_channels) + j]);
         }
     }
+
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
+    pv_ypu_mem_free(ypu, m2);
 }
 
 static void test_pv_orca_util_concatenate_channel_wise(void) {
@@ -123,9 +282,85 @@ static void test_pv_orca_util_fused_tanh_sigmoid_multiply(void) {
 
     float y_target[] = {0.0548f, 0.1744f};
 
-    pv_orca_util_fused_tanh_sigmoid_multiply(n, num_channels, x, y);
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(x),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(y),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        x,
+        0,
+        sizeof(x));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_ypu_mem_copy_to(
+        ypu,
+        m1,
+        y,
+        0,
+        sizeof(y));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_orca_util_fused_tanh_sigmoid_multiply(
+        ypu,
+        n,
+        num_channels,
+        m0,
+        m1,
+        0,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_orca_util_fused_tanh_sigmoid_multiply failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_ypu_mem_copy_from(
+        ypu,
+        m0,
+        x,
+        0,
+        sizeof(x));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_from failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_ypu_mem_copy_from(
+        ypu,
+        m1,
+        y,
+        0,
+        sizeof(y));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_from failed with %s",
+        pv_status_to_string(status));
 
     pv_test_close_float_array(y, y_target, n * (num_channels / 2), 0.01f, 0.01f, "y mismatch");
+
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
 }
 
 static void test_pv_orca_clip_int32(void) {
@@ -181,8 +416,8 @@ static const pv_test_case_t PV_ORCA_UTIL_TEST_CASES[] = {
 
 const pv_test_suite_t PV_ORCA_UTIL_TEST_SUITE = {
         .name = "orca_util",
-        .setup = NULL,
-        .teardown = NULL,
+        .setup = test_pv_util_setup,
+        .teardown = test_pv_util_teardown,
         .num_test_cases = PV_ARRAY_LEN(PV_ORCA_UTIL_TEST_CASES),
         .test_cases = PV_ORCA_UTIL_TEST_CASES,
 };

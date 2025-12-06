@@ -2,10 +2,9 @@
 #include <string.h>
 
 #include "core/pv_error_messages.h"
-#include "orca/pv_buffer_int32.h"
-#include "orca/pv_orca_stream_state.h"
-#include "orca/pv_orca_internal.h"
 #include "core/pv_type.h"
+#include "orca/pv_orca_internal.h"
+#include "orca/pv_orca_stream_state.h"
 
 #ifdef __PV_MOCKS__
 
@@ -19,29 +18,21 @@ static const int32_t PV_ORCA_STREAM_MAX_NUM_PHONEMES_KEPT = 400;
 static const int32_t PV_ORCA_STREAM_NUM_PHONEMES_REMOVE_FALLBACK = 200;
 
 static pv_status_t cache_z_prior(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
         int32_t num_frames,
-        const float *buffer_z_prior) {
+        pv_ypu_mem_t *buffer_z_prior) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(num_frames > 0);
     PV_ASSERT(buffer_z_prior);
 
     if (object->is_flush) {
-        pv_buffer_free(object->cached_z_prior);
         return PV_STATUS_SUCCESS;
     }
 
     const pv_orca_stream_config_t *config = object->config;
-    const int32_t num_channels = pv_buffer_dimension(object->buffer_z_prior_concat);
-
-    float *cached_z_prior = pv_buffer_get(object->cached_z_prior, 2 * config->receptive_field_flow, true);
-    if (!cached_z_prior) {
-        PV_ERROR_REPORT(
-                &pv_error_msg_alloc,
-                PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE("pv_buffer_get"));
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
+    const int32_t num_channels = object->num_channels;
 
     int32_t buffer_z_prior_offset = ((num_frames - (2 * config->receptive_field_flow)) * num_channels);
     int32_t length_cached_z_prior = 2 * config->receptive_field_flow * num_channels;
@@ -51,38 +42,42 @@ static pv_status_t cache_z_prior(
         length_cached_z_prior -= -buffer_z_prior_offset;
         buffer_z_prior_offset = 0;
     }
-    memcpy(
-            cached_z_prior + cached_z_prior_offset,
-            buffer_z_prior + buffer_z_prior_offset,
-            length_cached_z_prior * sizeof(float));
+
+    pv_ypu_op_memcpy_args_t args = {
+            .output = object->cached_z_prior,
+            .input = buffer_z_prior,
+            .size_bytes = length_cached_z_prior * (int32_t) sizeof(float),
+            .output_offset = cached_z_prior_offset * (int32_t) sizeof(float),
+            .input_offset = buffer_z_prior_offset * (int32_t) sizeof(float),
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMCPY,
+            &args);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
 
     return PV_STATUS_SUCCESS;
 }
 
 static pv_status_t cache_z(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
         int32_t num_frames,
-        const float *buffer_z) {
+        pv_ypu_mem_t *buffer_z) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(num_frames > 0);
     PV_ASSERT(buffer_z);
 
     if (object->is_flush) {
-        pv_buffer_free(object->cached_z);
         return PV_STATUS_SUCCESS;
     }
 
     const pv_orca_stream_config_t *config = object->config;
-    const int32_t num_channels = pv_buffer_dimension(object->buffer_z_concat);
-
-    float *cached_z = pv_buffer_get(object->cached_z, 2 * config->receptive_field_vocoder, true);
-    if (!cached_z) {
-        PV_ERROR_REPORT(
-                &pv_error_msg_alloc,
-                PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE("pv_buffer_get"));
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
+    const int32_t num_channels = object->num_channels;
 
     int32_t buffer_z_offset =
             ((num_frames - config->receptive_field_flow - (2 * config->receptive_field_vocoder)) *
@@ -94,15 +89,28 @@ static pv_status_t cache_z(
         length_cached_z_prior -= -buffer_z_offset;
         buffer_z_offset = 0;
     }
-    memcpy(
-            cached_z + cached_z_offset,
-            buffer_z + buffer_z_offset,
-            length_cached_z_prior * sizeof(float));
+
+    pv_ypu_op_memcpy_args_t args = {
+            .output = object->cached_z,
+            .input = buffer_z,
+            .size_bytes = length_cached_z_prior * (int32_t) sizeof(float),
+            .output_offset = cached_z_offset * (int32_t) sizeof(float),
+            .input_offset = buffer_z_offset * (int32_t) sizeof(float),
+    };
+
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMCPY,
+            &args);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
 
     return PV_STATUS_SUCCESS;
 }
 
 static pv_status_t pv_orca_stream_config_init(
+        pv_ypu_t *ypu,
         const pv_orca_synthesizer_param_t *synthesizer_param,
         const int32_t num_eos_punctuation_indices,
         int32_t *eos_punctuation_indices,
@@ -110,6 +118,7 @@ static pv_status_t pv_orca_stream_config_init(
         int32_t *fallback_cutoff_characters_indices,
         int32_t word_boundary_index,
         const pv_orca_stream_config_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(synthesizer_param);
     PV_ASSERT(num_eos_punctuation_indices > 0);
     PV_ASSERT(eos_punctuation_indices);
@@ -119,10 +128,12 @@ static pv_status_t pv_orca_stream_config_init(
 
     *object = NULL;
 
-    pv_orca_stream_config_t *o = calloc(1, sizeof(pv_orca_stream_config_t));
+    pv_orca_stream_config_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_orca_stream_config_t));
     if (!o) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
+
+    memset(o, 0, sizeof(pv_orca_stream_config_t));
 
     o->num_eos_punctuation_indices = num_eos_punctuation_indices;
     o->eos_punctuation_indices = eos_punctuation_indices;
@@ -153,11 +164,13 @@ static pv_status_t pv_orca_stream_config_init(
     return PV_STATUS_SUCCESS;
 }
 
-static void pv_orca_stream_config_delete(pv_orca_stream_config_t *object) {
+static void pv_orca_stream_config_delete(pv_ypu_t *ypu, pv_orca_stream_config_t *object) {
+    PV_ASSERT(ypu);
+
     if (object) {
         free(object->eos_punctuation_indices);
         free(object->fallback_cutoff_characters_indices);
-        free(object);
+        pv_ypu_host_free(ypu, object);
     }
 }
 
@@ -203,6 +216,7 @@ static pv_status_t pv_orca_stream_state_set_synthesize_params(
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_init)(
+        pv_ypu_t *ypu,
         const pv_orca_synthesizer_param_t *synthesizer_param,
         const int32_t num_eos_punctuation_indices,
         int32_t *eos_punctuation_indices,
@@ -211,6 +225,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_init)(
         const int32_t word_boundary_index,
         const int32_t text_buffer_size,
         pv_orca_stream_state_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(synthesizer_param);
     PV_ASSERT(num_eos_punctuation_indices > 0);
     PV_ASSERT(eos_punctuation_indices);
@@ -221,12 +236,15 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_init)(
 
     *object = NULL;
 
-    pv_orca_stream_state_t *o = calloc(1, sizeof(pv_orca_stream_state_t));
+    pv_orca_stream_state_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_orca_stream_state_t));
     if (!o) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(o, 0, sizeof(pv_orca_stream_state_t));
+
     pv_status_t status = pv_orca_stream_config_init(
+            ypu,
             synthesizer_param,
             num_eos_punctuation_indices,
             eos_punctuation_indices,
@@ -235,43 +253,39 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_init)(
             word_boundary_index,
             &(o->config));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
+        pv_orca_stream_state_delete(ypu, o);
         return status;
     }
 
     const int32_t num_channels = synthesizer_param->text_encoder_param->conv_post_param->output_channels / 2;
 
-    status = pv_buffer_init(num_channels, &(o->cached_z_prior));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
-        return status;
+    o->cached_z_prior = pv_ypu_mem_alloc(
+            ypu,
+            2 * o->config->receptive_field_flow * num_channels * (int32_t) sizeof(float),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
+    if (o->cached_z_prior == NULL) {
+        pv_orca_stream_state_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    status = pv_buffer_init(num_channels, &(o->buffer_z_prior_concat));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
-        return status;
-    }
-
-    status = pv_buffer_init(num_channels, &(o->cached_z));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
-        return status;
-    }
-
-    status = pv_buffer_init(num_channels, &(o->buffer_z_concat));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
-        return status;
+    o->cached_z = pv_ypu_mem_alloc(
+            ypu,
+            2 * o->config->receptive_field_vocoder * num_channels * (int32_t) sizeof(float),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
+    if (o->cached_z_prior == NULL) {
+        pv_orca_stream_state_delete(ypu, o);
+        return PV_STATUS_OUT_OF_MEMORY;
     }
 
     status = pv_buffer_int32_init(text_buffer_size, &(o->buffer_encoded_phonemes));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_stream_state_delete(o);
+        pv_orca_stream_state_delete(ypu, o);
         return status;
     }
 
     o->synthesize_params = NULL;
+
+    o->num_channels = num_channels;
 
     pv_orca_stream_state_reset(o);
 
@@ -301,11 +315,6 @@ void PV_MOCKABLE(pv_orca_stream_state_reset)(pv_orca_stream_state_t *object) {
 
     object->start_index_flow = 0;
     object->end_index_flow = 0;
-
-    pv_buffer_free(object->buffer_z_concat);
-    pv_buffer_free(object->cached_z);
-    pv_buffer_free(object->buffer_z_prior_concat);
-    pv_buffer_free(object->cached_z_prior);
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_open)(
@@ -354,15 +363,15 @@ void PV_MOCKABLE(pv_orca_stream_state_close)(pv_orca_stream_state_t *object) {
     }
 }
 
-void PV_MOCKABLE(pv_orca_stream_state_delete)(pv_orca_stream_state_t *object) {
+void PV_MOCKABLE(pv_orca_stream_state_delete)(pv_ypu_t *ypu, pv_orca_stream_state_t *object) {
+    PV_ASSERT(ypu);
+
     if (object) {
-        pv_buffer_delete(object->buffer_z_concat);
-        pv_buffer_delete(object->cached_z);
-        pv_buffer_delete(object->buffer_z_prior_concat);
-        pv_buffer_delete(object->cached_z_prior);
+        pv_ypu_mem_free(ypu, object->cached_z);
+        pv_ypu_mem_free(ypu, object->cached_z_prior);
         pv_buffer_int32_delete(object->buffer_encoded_phonemes);
-        pv_orca_stream_config_delete((pv_orca_stream_config_t *) object->config);
-        free(object);
+        pv_orca_stream_config_delete(ypu, (pv_orca_stream_config_t *) object->config);
+        pv_ypu_host_free(ypu, object);
     }
 }
 
@@ -553,17 +562,21 @@ bool PV_MOCKABLE(pv_orca_stream_state_is_sufficient_context)(const pv_orca_strea
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z_prior)(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
-        int32_t num_frames,
-        const float *buffer_z_prior,
+        pv_ypu_mem_t **buffer_z_prior,
         int32_t *num_frames_to_flow) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
-    PV_ASSERT(num_frames > 0);
     PV_ASSERT(buffer_z_prior);
+    PV_ASSERT(*buffer_z_prior);
     PV_ASSERT(num_frames_to_flow);
+    PV_ASSERT(*num_frames_to_flow > 0);
+
+    int32_t num_frames = *num_frames_to_flow;
 
     if (object->is_first_chunk) {
-        pv_status_t status = cache_z_prior(object, num_frames, buffer_z_prior);
+        pv_status_t status = cache_z_prior(ypu, object, num_frames, *buffer_z_prior);
         if (status != PV_STATUS_SUCCESS) {
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                     cache_z_prior,
@@ -574,12 +587,15 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z_prior)(
         return PV_STATUS_SUCCESS;
     }
 
-    const int32_t cached_z_prior_length = pv_buffer_length(object->cached_z_prior);
-    const int32_t num_channels = pv_buffer_dimension(object->buffer_z_prior_concat);
+    const int32_t cached_z_prior_length = 2 * object->config->receptive_field_flow;
+    const int32_t num_channels = object->num_channels;
 
     *num_frames_to_flow += cached_z_prior_length;
 
-    float *buffer_z_prior_concat = pv_buffer_get(object->buffer_z_prior_concat, *num_frames_to_flow, false);
+    pv_ypu_mem_t *buffer_z_prior_concat = pv_ypu_buffer_get(
+            ypu,
+            *num_frames_to_flow * num_channels * (int32_t) sizeof(float),
+            false);
     if (!buffer_z_prior_concat) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -588,16 +604,39 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z_prior)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    memcpy(
-            buffer_z_prior_concat,
-            pv_buffer_get(object->cached_z_prior, cached_z_prior_length, false),
-            cached_z_prior_length * num_channels * sizeof(float));
-    memcpy(
-            buffer_z_prior_concat + (cached_z_prior_length * num_channels),
-            buffer_z_prior,
-            num_frames * num_channels * sizeof(float));
+    pv_ypu_op_memcpy_args_t args0 = {
+            .output = buffer_z_prior_concat,
+            .input = object->cached_z_prior,
+            .size_bytes = cached_z_prior_length * num_channels * (int32_t) sizeof(float),
+            .output_offset = 0,
+            .input_offset = 0,
+    };
 
-    pv_status_t status = cache_z_prior(object, num_frames, buffer_z_prior);
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMCPY,
+            &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    pv_ypu_op_memcpy_args_t args1 = {
+            .output = buffer_z_prior_concat,
+            .input = *buffer_z_prior,
+            .size_bytes = num_frames * num_channels * (int32_t) sizeof(float),
+            .output_offset = cached_z_prior_length * num_channels * (int32_t) sizeof(float),
+            .input_offset = 0,
+    };
+
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMCPY,
+            &args1);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = cache_z_prior(ypu, object, num_frames, *buffer_z_prior);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 cache_z_prior,
@@ -605,23 +644,29 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z_prior)(
         return status;
     }
 
+    pv_ypu_buffer_release(ypu, *buffer_z_prior);
+    *buffer_z_prior = buffer_z_prior_concat;
+
     return PV_STATUS_SUCCESS;
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z)(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
         int32_t num_frames,
-        const float *buffer_z,
+        pv_ypu_mem_t **buffer_z,
         int32_t *num_frames_to_voc) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(num_frames > 0);
     PV_ASSERT(buffer_z);
+    PV_ASSERT(*buffer_z);
     PV_ASSERT(num_frames_to_voc);
 
     const pv_orca_stream_config_t *config = object->config;
 
     if (object->is_first_chunk) {
-        pv_status_t status = cache_z(object, num_frames, buffer_z);
+        pv_status_t status = cache_z(ypu, object, num_frames, *buffer_z);
         if (status != PV_STATUS_SUCCESS) {
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                     cache_z,
@@ -638,8 +683,8 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z)(
         return PV_STATUS_SUCCESS;
     }
 
-    const int32_t cached_z_length = pv_buffer_length(object->cached_z);
-    const int32_t num_channels = pv_buffer_dimension(object->buffer_z_concat);
+    const int32_t cached_z_length = 2 * object->config->receptive_field_vocoder;
+    const int32_t num_channels = object->num_channels;
 
     if (object->is_flush) {
         *num_frames_to_voc = num_frames - config->receptive_field_flow + cached_z_length;
@@ -647,7 +692,10 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z)(
         *num_frames_to_voc = num_frames - (2 * config->receptive_field_flow) + cached_z_length;
     }
 
-    float *buffer_z_concat = pv_buffer_get(object->buffer_z_concat, *num_frames_to_voc, false);
+    pv_ypu_mem_t *buffer_z_concat = pv_ypu_buffer_get(
+            ypu,
+            *num_frames_to_voc * num_channels * (int32_t) sizeof(float),
+            false);
     if (!buffer_z_concat) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -656,30 +704,66 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    memcpy(
-            buffer_z_concat,
-            pv_buffer_get(object->cached_z, cached_z_length, false),
-            cached_z_length * num_channels * sizeof(float));
+    pv_ypu_op_memcpy_args_t args0 = {
+            .output = buffer_z_concat,
+            .input = object->cached_z,
+            .size_bytes = cached_z_length * num_channels * (int32_t) sizeof(float),
+            .output_offset = 0,
+            .input_offset = 0,
+    };
 
-    if (object->is_flush) {
-        memcpy(
-                buffer_z_concat + (cached_z_length * num_channels),
-                buffer_z + (config->receptive_field_flow * num_channels),
-                (num_frames - config->receptive_field_flow) * num_channels * sizeof(float));
-    } else {
-        memcpy(
-                buffer_z_concat + (cached_z_length * num_channels),
-                buffer_z + (config->receptive_field_flow * num_channels),
-                (num_frames - (2 * config->receptive_field_flow)) * num_channels * sizeof(float));
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMCPY,
+            &args0);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
     }
 
-    pv_status_t status = cache_z(object, num_frames, buffer_z);
+    if (object->is_flush) {
+        pv_ypu_op_memcpy_args_t args1 = {
+                .output = buffer_z_concat,
+                .input = *buffer_z,
+                .size_bytes = (num_frames - config->receptive_field_flow) * num_channels * (int32_t) sizeof(float),
+                .output_offset = cached_z_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = config->receptive_field_flow * num_channels * (int32_t) sizeof(float),
+        };
+
+        status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args1);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    } else {
+        pv_ypu_op_memcpy_args_t args1 = {
+                .output = buffer_z_concat,
+                .input = *buffer_z,
+                .size_bytes = (num_frames - (2 * config->receptive_field_flow)) * num_channels * (int32_t) sizeof(float),
+                .output_offset = cached_z_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = config->receptive_field_flow * num_channels * (int32_t) sizeof(float),
+        };
+
+        status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args1);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    }
+
+    status = cache_z(ypu, object, num_frames, *buffer_z);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 cache_z,
                 pv_status_to_string(status));
         return status;
     }
+
+    pv_ypu_buffer_release(ypu, *buffer_z);
+    *buffer_z = buffer_z_concat;
 
     return PV_STATUS_SUCCESS;
 }

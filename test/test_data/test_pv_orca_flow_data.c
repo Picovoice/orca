@@ -11,6 +11,18 @@ static const q7_t FLOW_0_CONV_PRE_WEIGHT[] = {
 static const q7_t FLOW_0_CONV_PRE_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_CONV_PRE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_CONV_PRE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_CONV_PRE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_CONV_PRE_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_CONV_PRE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_CONV_PRE_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_CONV_PRE_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -18,8 +30,8 @@ static const pv_cnn_param_t FLOW_0_CONV_PRE_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_0_CONV_PRE_WEIGHT,
-        .bias = FLOW_0_CONV_PRE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_CONV_PRE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_CONV_PRE_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_0_CONV_POST_WEIGHT[] = {
@@ -29,6 +41,18 @@ static const q7_t FLOW_0_CONV_POST_WEIGHT[] = {
 static const q7_t FLOW_0_CONV_POST_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_CONV_POST_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_CONV_POST_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_CONV_POST_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_CONV_POST_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_CONV_POST_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_CONV_POST_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_CONV_POST_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -36,8 +60,8 @@ static const pv_cnn_param_t FLOW_0_CONV_POST_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_0_CONV_POST_WEIGHT,
-        .bias = FLOW_0_CONV_POST_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_CONV_POST_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_CONV_POST_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT[] = {
@@ -66,6 +90,18 @@ static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT[] = {
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -73,8 +109,8 @@ static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_PARAM = {
         .stride = 1,
         .padding = 2,
         .dilation = 1,
-        .weight = FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT,
-        .bias = FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT[] = {
@@ -87,6 +123,18 @@ static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT[] = {
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -94,8 +142,8 @@ static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT,
-        .bias = FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS_CONFIG,
 };
 
 static const pv_wavenet_resblock_param_t FLOW_0_WAVENET_RESBLOCKS_0_PARAM = {
@@ -129,6 +177,18 @@ static const q7_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT[] = {
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -136,8 +196,8 @@ static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_PARAM = {
         .stride = 1,
         .padding = 2,
         .dilation = 1,
-        .weight = FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT,
-        .bias = FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT[] = {
@@ -147,6 +207,18 @@ static const q7_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT[] = {
 static const q7_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -154,8 +226,8 @@ static const pv_cnn_param_t FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT,
-        .bias = FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_0_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS_CONFIG,
 };
 
 static const pv_wavenet_resblock_param_t FLOW_0_WAVENET_RESBLOCKS_1_PARAM = {
@@ -183,6 +255,18 @@ static const q7_t FLOW_1_CONV_PRE_WEIGHT[] = {
 static const q7_t FLOW_1_CONV_PRE_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_CONV_PRE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_CONV_PRE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_CONV_PRE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_CONV_PRE_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_CONV_PRE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_CONV_PRE_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_CONV_PRE_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -190,8 +274,8 @@ static const pv_cnn_param_t FLOW_1_CONV_PRE_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_1_CONV_PRE_WEIGHT,
-        .bias = FLOW_1_CONV_PRE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_CONV_PRE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_CONV_PRE_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_1_CONV_POST_WEIGHT[] = {
@@ -201,6 +285,18 @@ static const q7_t FLOW_1_CONV_POST_WEIGHT[] = {
 static const q7_t FLOW_1_CONV_POST_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_CONV_POST_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_CONV_POST_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_CONV_POST_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_CONV_POST_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_CONV_POST_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_CONV_POST_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_CONV_POST_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -208,8 +304,8 @@ static const pv_cnn_param_t FLOW_1_CONV_POST_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_1_CONV_POST_WEIGHT,
-        .bias = FLOW_1_CONV_POST_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_CONV_POST_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_CONV_POST_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT[] = {
@@ -238,6 +334,18 @@ static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT[] = {
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -245,8 +353,8 @@ static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_PARAM = {
         .stride = 1,
         .padding = 2,
         .dilation = 1,
-        .weight = FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT,
-        .bias = FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT[] = {
@@ -259,6 +367,18 @@ static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT[] = {
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -266,8 +386,8 @@ static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT,
-        .bias = FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_0_ENC_CONV_SKIP_BIAS_CONFIG,
 };
 
 static const pv_wavenet_resblock_param_t FLOW_1_WAVENET_RESBLOCKS_0_PARAM = {
@@ -301,6 +421,18 @@ static const q7_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT[] = {
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_PARAM = {
         .input_channels = 8,
         .output_channels = 16,
@@ -308,8 +440,8 @@ static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_PARAM = {
         .stride = 1,
         .padding = 2,
         .dilation = 1,
-        .weight = FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT,
-        .bias = FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_BIAS_CONFIG,
 };
 
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT[] = {
@@ -320,6 +452,18 @@ static const q7_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT[] = {
 static const q7_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS_CONFIG = {
+    .size_bytes = sizeof(FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS,
+};
+
 static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_PARAM = {
         .input_channels = 8,
         .output_channels = 8,
@@ -327,8 +471,8 @@ static const pv_cnn_param_t FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT,
-        .bias = FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &FLOW_1_WAVENET_RESBLOCKS_1_ENC_CONV_SKIP_BIAS_CONFIG,
 };
 
 static const pv_wavenet_resblock_param_t FLOW_1_WAVENET_RESBLOCKS_1_PARAM = {

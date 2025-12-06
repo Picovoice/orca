@@ -26,6 +26,10 @@
 
 #include "orca/mock/pv_orca_mock.h"
 
+#else
+
+#include "ypu/pv_ypu_impl_cpu_internal.h"
+
 #endif
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -33,7 +37,6 @@
 static const char *MODEL_PATH = "param/orca_params_en_female.pv";
 extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
 extern const pv_orca_synthesizer_param_t PV_ORCA_SYNTHESIZER_PARAM;
-static pv_orca_t *orca_object = NULL;
 static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
 static const char *DEFAULT_SENTENCE = "Orca performance test";
@@ -111,35 +114,7 @@ static int compare_int64(const void *a, const void *b) {
 }
 
 static pv_status_t test_performance_pv_orca_setup(void) {
-    char *model_path = pv_test_module_res_path(MODEL_PATH);
-    if (!model_path) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
- 
-    char *access_key = NULL;
-    pv_status_t status = pv_access_serialize(&BYPASS_ACCESS, &access_key);
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    pv_https_client_factory_t *factory = NULL;
-    status = get_https_client_factory_usage_success(&factory);
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    status = pv_orca_internal_init(
-            access_key,
-            factory,
-            model_path,
-            &orca_object);
-    free(access_key);
-    free(model_path);
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    status = pv_orca_synthesize_params_init(&synthesize_params_object);
+    pv_status_t status = pv_orca_synthesize_params_init(&synthesize_params_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -181,7 +156,6 @@ static pv_status_t test_performance_pv_orca_setup(void) {
 
 static void test_performance_pv_orca_teardown(void) {
     pv_orca_synthesize_params_delete(synthesize_params_object);
-    pv_orca_delete(orca_object);
 
     free(test_durations);
 
@@ -218,7 +192,7 @@ static void test_performance_pv_orca_teardown(void) {
     }
 }
 
-static void test_memory_helper(const char *ypu_device) {
+static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
     pv_orca_t *object = NULL;
 
     cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY, YPU_MACHINE);
@@ -256,6 +230,7 @@ static void test_memory_helper(const char *ypu_device) {
             access_key,
             factory,
             model_path,
+            ypu,
             &object);
     free(access_key);
     free(model_path);
@@ -285,7 +260,7 @@ static void test_memory_helper(const char *ypu_device) {
 
     for (int32_t i = 0; i < memory_test_iterations; i++) {
         status = pv_orca_synthesize(
-                orca_object,
+                object,
                 DEFAULT_SENTENCE,
                 synthesize_params_object,
                 &num_samples,
@@ -326,12 +301,56 @@ static void test_memory_helper(const char *ypu_device) {
     pv_orca_delete(object);
 }
 
-static void test_performance_helper(const char *ypu_device) {
+static void test_performance_helper(pv_ypu_t *ypu, const char *ypu_device) {
+    static pv_orca_t *object = NULL;
+
     cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(RESULTS, YPU_MACHINE);
     cJSON *results_device = cJSON_CreateObject();
     cJSON_AddItemToObject(results_machine, ypu_device, results_device);
     cJSON *results_orca = cJSON_CreateObject();
     cJSON_AddItemToObject(results_device, "orca", results_orca);
+
+    char *model_path = pv_test_module_res_path(MODEL_PATH);
+    pv_test_true(model_path != NULL, "Failed to get model_path");
+    if (!model_path) {
+        return;
+    }
+ 
+    char *access_key = NULL;
+    pv_status_t status = pv_access_serialize(&BYPASS_ACCESS, &access_key);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "`pv_access_serialize` failed with `%s`",
+        pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    pv_https_client_factory_t *factory = NULL;
+    status = get_https_client_factory_usage_success(&factory);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "`get_https_client_factory_usage_success` failed with `%s`",
+        pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    status = pv_orca_internal_init(
+            access_key,
+            factory,
+            model_path,
+            ypu,
+            &object);
+    free(access_key);
+    free(model_path);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "`pv_orca_internal_init` failed with `%s`",
+        pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
 
     int32_t iterations = 1;
     int64_t duration_usec = 0;
@@ -349,7 +368,7 @@ static void test_performance_helper(const char *ypu_device) {
         for (int32_t i = 0; i < iterations; i++) {
             int32_t num_samples = 0;
             pv_status_t status = pv_orca_synthesize(
-                    orca_object,
+                    object,
                     DEFAULT_SENTENCE,
                     synthesize_params_object,
                     &num_samples,
@@ -383,7 +402,7 @@ static void test_performance_helper(const char *ypu_device) {
         for (int32_t j = 0; j < iterations; j++) {
             int32_t num_samples = 0;
             pv_status_t status = pv_orca_synthesize(
-                    orca_object,
+                    object,
                     DEFAULT_SENTENCE,
                     synthesize_params_object,
                     &num_samples,
@@ -435,19 +454,225 @@ static void test_performance_helper(const char *ypu_device) {
         median_frame_usec);
 
     cJSON_AddNumberToObject(results_orca, "test_sentence", median_frame_usec);
+
+    pv_orca_delete(object);
+}
+
+#ifdef __PV_YPU_CPU_SUPPORT__
+
+static void test_performance_pv_orca_cpu_impl(void) {
+    if (pv_getenv("YPU_IGNORE_CPU", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    int32_t max_threads = 1;
+    pv_status_t status = pv_ypu_cpu_utils_get_max_threads(&max_threads);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_cpu_utils_get_max_threads should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+#if defined(__PV_TARGET_PLATFORM_ANDROID__) || defined(__PV_TARGET_PLATFORM_IOS__) || defined(__PV_TARGET_PLATFORM_WASM__)
+
+    max_threads = pv_min_int32(max_threads, 2);
+
+#else
+
+    max_threads = pv_min_int32(max_threads / 2, 8);
+
+#endif
+
+    for (int32_t i = 1; i <= max_threads; i *= 2) {
+        pv_ypu_t *ypu = NULL;
+        status = pv_ypu_init_cpu(i, &ypu);
+        pv_test_true(
+                status == PV_STATUS_SUCCESS,
+                "pv_ypu_init_cpu should have returned with %s, got %s",
+                pv_status_to_string(PV_STATUS_SUCCESS),
+                pv_status_to_string(status));
+        if (status != PV_STATUS_SUCCESS) {
+            return;
+        }
+
+        char ypu_device[8];
+        snprintf(ypu_device, sizeof(ypu_device), "cpu:%d", i);
+        test_performance_helper(ypu, ypu_device);
+    }
 }
 
 static void test_memory_pv_orca_cpu_impl(void) {
-    test_memory_helper("cpu:1");
+    if (pv_getenv("YPU_IGNORE_CPU", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_cpu should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_memory_helper(ypu, "cpu:1");
 }
 
-static void test_performance_pv_orca_cpu_impl(void) {
-    test_performance_helper("cpu:1");
+#endif
+
+#ifdef __PV_YPU_CUDA_SUPPORT__
+
+static void test_performance_pv_orca_cuda_impl(void) {
+    if (pv_getenv("YPU_IGNORE_CUDA", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_cuda(0, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_cuda should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_performance_helper(ypu, "cuda");
 }
+
+#endif
+
+#ifdef __PV_YPU_MCU_SUPPORT__
+
+static void test_performance_pv_orca_mcu_impl(void) {
+    if (pv_getenv("YPU_IGNORE_MCU", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_memory_t *memory = NULL;
+    pv_status_t status = pv_memory_init(&memory);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_memory_init should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    status = pv_ypu_init_mcu(memory, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_mcu should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_performance_helper(ypu, "mcu");
+}
+
+#endif
+
+#ifdef __PV_YPU_DIRECTX_SUPPORT__
+
+static void test_performance_pv_orca_directx_impl(void) {
+    if (pv_getenv("YPU_IGNORE_DIRECTX", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_directx(0, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_directx should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_performance_helper(ypu, "directx");
+}
+
+#endif
+
+#ifdef __PV_YPU_METAL_SUPPORT__
+
+static void test_performance_pv_orca_metal_impl(void) {
+    if (pv_getenv("YPU_IGNORE_METAL", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_metal(0, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_metal should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_performance_helper(ypu, "metal");
+}
+
+#endif
 
 static const pv_test_case_t PERFORMANCE_PV_ORCA_TEST_CASES[] = {
-        {"memory", test_memory_pv_orca_cpu_impl},
-        {"cpu", test_performance_pv_orca_cpu_impl},
+
+#ifdef __PV_YPU_CPU_SUPPORT__
+
+#if !defined(__PV_TARGET_PLATFORM_WASM__) || defined(__PV_WASM_PTHREAD__)
+
+        {"cpu memory", test_memory_pv_orca_cpu_impl},
+
+#endif
+
+        {"cpu performance", test_performance_pv_orca_cpu_impl},
+
+#endif
+
+
+#ifdef __PV_YPU_CUDA_SUPPORT__
+
+        {"cuda", test_performance_pv_orca_cuda_impl},
+
+#endif
+
+#ifdef __PV_YPU_MCU_SUPPORT__
+
+        {"mcu", test_performance_pv_orca_mcu_impl},
+
+#endif
+
+#ifdef __PV_YPU_DIRECTX_SUPPORT__
+
+        {"directx", test_performance_pv_orca_directx_impl},
+
+#endif
+
+#ifdef __PV_YPU_METAL_SUPPORT__
+
+        {"metal", test_performance_pv_orca_metal_impl},
+
+#endif
+
 };
 
 const pv_test_suite_t PERFORMANCE_PV_ORCA_TEST_SUITE = {
