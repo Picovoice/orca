@@ -38,14 +38,26 @@ static const q7_t TEST_CNN_DEPTHWISE_BIAS[] = {
     -29, 27, -15, 9, -64, 96, -94, 71, 60, -45, 40, -36, -55, 87, 12, 9, 32, -20, -58, -43, 31, 68, 29, 12, -44, -78, 
     -77, 1, 60, -60, 45, 31, -20};
 
+static const pv_ypu_config_mem_t TEST_CNN_DEPTHWISE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CNN_DEPTHWISE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CNN_DEPTHWISE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CNN_DEPTHWISE_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CNN_DEPTHWISE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CNN_DEPTHWISE_BIAS,
+};
+
 static const pv_cnn_depthwise_param_t TEST_CNN_DEPTHWISE_PARAM = {
         .num_channels = 192,
         .kernel_size = 3,
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = TEST_CNN_DEPTHWISE_WEIGHT,
-        .bias = TEST_CNN_DEPTHWISE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CNN_DEPTHWISE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CNN_DEPTHWISE_BIAS_CONFIG,
 };
 
 const float TEST_CNN_DEPTHWISE_INPUT[3840] = {

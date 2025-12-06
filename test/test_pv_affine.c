@@ -9,13 +9,20 @@
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
+#include "ypu/mock/pv_ypu_mock.h"
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_affine_t *affine_object = NULL;
 
 static pv_status_t test_pv_affine_setup(void) {
-    pv_status_t status = pv_affine_init(&TEST_AFFINE_PARAM, &affine_object);
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = pv_affine_init(ypu, &TEST_AFFINE_PARAM, &affine_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -24,17 +31,49 @@ static pv_status_t test_pv_affine_setup(void) {
 }
 
 static void test_pv_affine_teardown(void) {
-    pv_affine_delete(affine_object);
-    affine_object = NULL;
+    pv_affine_delete(ypu, affine_object);
+    pv_ypu_delete(ypu);
 }
 
 static void test_pv_affine_forward(void) {
-    pv_test_true(affine_object != NULL, "failed to create tmp file");
-
     int32_t num_channels = pv_affine_num_channels(affine_object);
-    float *buffer = calloc(TEST_AFFINE_SEQUENCE_LENGTH, num_channels * sizeof(float));
 
-    pv_affine_forward(affine_object, TEST_AFFINE_SEQUENCE_LENGTH, TEST_AFFINE_INPUT, buffer);
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(TEST_AFFINE_INPUT),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        TEST_AFFINE_SEQUENCE_LENGTH * num_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        TEST_AFFINE_INPUT,
+        0,
+        sizeof(TEST_AFFINE_INPUT));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_affine_forward(ypu, affine_object, TEST_AFFINE_SEQUENCE_LENGTH, m0, m1, 0, 0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_affine_forward failed with %s",
+        pv_status_to_string(status));
+
+    float *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_test_close_float_array(
             buffer,
             TEST_AFFINE_TARGET,
@@ -42,8 +81,10 @@ static void test_pv_affine_forward(void) {
             0.00001f,
             0.00002f,
             "failed to forward affine");
+    pv_ypu_mem_release_host_view(ypu, m1, true);
 
-    free(buffer);
+    pv_ypu_mem_free(ypu, m1);
+    pv_ypu_mem_free(ypu, m0);
 }
 
 static const pv_test_case_t PV_AFFINE_TEST_CASES[] = {

@@ -1,9 +1,9 @@
 #include <string.h>
 
 #include "core/pv_error_messages.h"
+#include "math/pv_math.h"
 #include "orca/pv_orca_util.h"
 #include "orca/pv_profiler.h"
-#include "math/pv_math.h"
 
 #ifdef __PV_MOCKS__
 
@@ -13,21 +13,32 @@
 
 #define EULER_NUMBER_F (2.71828182846)
 
-void PV_MOCKABLE(pv_orca_util_expand_tokens_to_frames)(
+pv_status_t PV_MOCKABLE(pv_orca_util_expand_tokens_to_frames)(
+        pv_ypu_t *ypu,
         int32_t num_tokens,
         int32_t num_channels,
         const int32_t *durations,
-        const float *means_enc,
-        const float *logs_enc,
-        float *means,
-        float *logs) {
+        pv_ypu_mem_t *means_enc_ypu_mem,
+        pv_ypu_mem_t *logs_enc_ypu_mem,
+        pv_ypu_mem_t *means_ypu_mem,
+        pv_ypu_mem_t *logs_ypu_mem,
+        int32_t means_enc_offset,
+        int32_t logs_enc_offset,
+        int32_t means_offset,
+        int32_t logs_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(num_tokens);
     PV_ASSERT(num_channels);
     PV_ASSERT(durations);
-    PV_ASSERT(means_enc);
-    PV_ASSERT(logs_enc);
-    PV_ASSERT(means);
-    PV_ASSERT(logs);
+    PV_ASSERT(means_enc_ypu_mem);
+    PV_ASSERT(logs_enc_ypu_mem);
+    PV_ASSERT(means_ypu_mem);
+    PV_ASSERT(logs_ypu_mem);
+
+    float *means_enc = pv_ypu_mem_get_host_view(ypu, means_enc_ypu_mem, true) + means_enc_offset;
+    float *logs_enc = pv_ypu_mem_get_host_view(ypu, logs_enc_ypu_mem, true) + logs_enc_offset;
+    float *means = pv_ypu_mem_get_host_view(ypu, means_ypu_mem, true) + means_offset;
+    float *logs = pv_ypu_mem_get_host_view(ypu, logs_ypu_mem, true) + logs_offset;
 
     int32_t cumulative_duration = 0;
 
@@ -46,32 +57,72 @@ void PV_MOCKABLE(pv_orca_util_expand_tokens_to_frames)(
                 ss[k] = logs_enc_i[k];
             }
         }
+
         cumulative_duration += durations[i];
     }
+
+    pv_ypu_mem_release_host_view(ypu, means_enc_ypu_mem, true);
+    pv_ypu_mem_release_host_view(ypu, logs_enc_ypu_mem, true);
+    pv_ypu_mem_release_host_view(ypu, means_ypu_mem, true);
+    pv_ypu_mem_release_host_view(ypu, logs_ypu_mem, true);
+
+    return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_orca_util_split_channels)(
+pv_status_t PV_MOCKABLE(pv_orca_util_split_channels)(
+        pv_ypu_t *ypu,
         int32_t n,
         int32_t input_channels,
-        const float *x,
-        float *y0,
-        float *y1) {
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y0_ypu_mem,
+        pv_ypu_mem_t *y1_ypu_mem,
+        int32_t x_offset,
+        int32_t y0_offset,
+        int32_t y1_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(n);
-    PV_ASSERT(x);
+    PV_ASSERT(x_ypu_mem);
     PV_ASSERT(input_channels > 0);
     PV_ASSERT(input_channels % 2 == 0);
-    PV_ASSERT(y0);
-    PV_ASSERT(y1);
+    PV_ASSERT(y0_ypu_mem);
+    PV_ASSERT(y1_ypu_mem);
 
     int32_t half_channels = input_channels / 2;
     for (int32_t i = 0; i < n; i++) {
-        const float *xx = x + (i * (input_channels));
-        float *yy0 = y0 + (i * half_channels);
-        float *yy1 = y1 + (i * half_channels);
+        pv_ypu_op_memcpy_args_t args0 = {
+                .output = y0_ypu_mem,
+                .input = x_ypu_mem,
+                .size_bytes = half_channels * (int32_t) sizeof(float),
+                .output_offset = y0_offset + i * half_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + i * input_channels * (int32_t) sizeof(float),
+        };
 
-        memcpy(yy0, xx, half_channels * sizeof(float));
-        memcpy(yy1, xx + half_channels, half_channels * sizeof(float));
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args0);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+
+        pv_ypu_op_memcpy_args_t args1 = {
+                .output = y1_ypu_mem,
+                .input = x_ypu_mem,
+                .size_bytes = half_channels * (int32_t) sizeof(float),
+                .output_offset = y1_offset + i * half_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (i * input_channels + half_channels) * (int32_t) sizeof(float),
+        };
+
+        status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args1);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
     }
+
+    return PV_STATUS_SUCCESS;
 }
 
 void PV_MOCKABLE(pv_orca_util_concatenate_channel_wise)(
@@ -101,67 +152,101 @@ float sigmoid_float(float x) {
     return (1 / (1 + powf((float) EULER_NUMBER_F, -x)));
 }
 
-void PV_MOCKABLE(pv_orca_util_fused_tanh_sigmoid_multiply)(
+pv_status_t PV_MOCKABLE(pv_orca_util_fused_tanh_sigmoid_multiply)(
+        pv_ypu_t *ypu,
         int32_t n,
         int32_t num_channels,
-        const float *x,
-        float *y) {
+        pv_ypu_mem_t *x_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem,
+        int32_t x_offset,
+        int32_t y_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(n);
     PV_ASSERT(num_channels % 2 == 0);
-    PV_ASSERT(x);
-    PV_ASSERT(y);
+    PV_ASSERT(x_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
     PV_ORCA_PROFILER_START("fused_tanh_sigmoid_multiply");
+
+    pv_ypu_mem_t *buffer = pv_ypu_buffer_get(
+            ypu,
+            num_channels * (int32_t) sizeof(float),
+            false);
+    if (buffer == NULL) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
 
     int32_t out_channels = num_channels / 2;
 
-#ifndef __ORCA_FLOAT_MODE__
-
-    q15_t activation_tanh = 0;
-    q15_t activation_sigmoid = 0;
-
-#endif
-
     for (int32_t i = 0; i < n; i++) {
-        const float *xx = x + (i * num_channels);
+        pv_ypu_op_elementwise_args_t args0 = {
+                .output = buffer,
+                .input = x_ypu_mem,
+                .length = out_channels,
+                .output_offset = 0,
+                .input_offset = x_offset + i * num_channels * (int32_t) sizeof(float),
+        };
 
-        const float *input_tanh = xx;
-        const float *input_sigmoid = xx + out_channels;
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_TANH,
+                &args0);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
 
-        float *yy = y + (i * out_channels);
+        pv_ypu_op_elementwise_args_t args1 = {
+                .output = buffer,
+                .input = x_ypu_mem,
+                .length = out_channels,
+                .output_offset = out_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (i * num_channels + out_channels) * (int32_t) sizeof(float),
+        };
 
-        for (int32_t j = 0; j < out_channels; j++) {
+        status = pv_ypu_operator_execute(ypu, PV_YPU_OPERATOR_SIGMOID, &args1);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
 
-#ifdef __ORCA_FLOAT_MODE__
+        pv_ypu_op_pairwise_args_t args2 = {
+                .output = y_ypu_mem,
+                .lhs = buffer,
+                .rhs = buffer,
+                .length = out_channels,
+                .output_offset = y_offset + (i * out_channels) * (int32_t) sizeof(float),
+                .lhs_offset = 0,
+                .rhs_offset = out_channels * (int32_t) sizeof(float),
+        };
 
-            yy[j] = tanhf(input_tanh[j]) * sigmoid_float(input_sigmoid[j]);
-
-#else
-
-            pv_tanh_scalar(pv_float_to_q510(input_tanh[j]), &activation_tanh);
-            pv_sigmoid_scalar(pv_float_to_q510(input_sigmoid[j]), &activation_sigmoid);
-            yy[j] = pv_q15_to_float(activation_tanh) * pv_q15_to_float(activation_sigmoid);
-
-#endif
-
+        status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MUL,
+                &args2);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
         }
     }
     PV_ORCA_PROFILER_STOP("fused_tanh_sigmoid_multiply");
+
+    pv_ypu_buffer_release(ypu, buffer);
+
+    return PV_STATUS_SUCCESS;
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_util_sample_latents)(
+        pv_ypu_t *ypu,
         int32_t n,
         int32_t num_channels,
         float noise_scale,
         int64_t random_state,
-        const float *means,
-        const float *logs,
-        float *y) {
+        pv_ypu_mem_t *means_ypu_mem,
+        pv_ypu_mem_t *logs_ypu_mem,
+        pv_ypu_mem_t *y_ypu_mem) {
     PV_ASSERT(n);
     PV_ASSERT(num_channels);
     PV_ASSERT(noise_scale > 0);
-    PV_ASSERT(means);
-    PV_ASSERT(logs);
-    PV_ASSERT(y);
+    PV_ASSERT(means_ypu_mem);
+    PV_ASSERT(logs_ypu_mem);
+    PV_ASSERT(y_ypu_mem);
 
     uint64_t *state = (uint64_t *) &random_state;
 
@@ -175,6 +260,10 @@ pv_status_t PV_MOCKABLE(pv_orca_util_sample_latents)(
         return status;
     }
 
+    float *y = pv_ypu_mem_get_host_view(ypu, y_ypu_mem, true);
+    float *means = pv_ypu_mem_get_host_view(ypu, means_ypu_mem, true);
+    float *logs = pv_ypu_mem_get_host_view(ypu, logs_ypu_mem, true);
+
     for (int32_t i = 0; i < n; i++) {
         const int32_t frame_offset = i * num_channels;
 
@@ -184,6 +273,10 @@ pv_status_t PV_MOCKABLE(pv_orca_util_sample_latents)(
             y[frame_offset + j] = means[frame_offset + j] + random_factor;
         }
     }
+
+    pv_ypu_mem_release_host_view(ypu, logs_ypu_mem, true);
+    pv_ypu_mem_release_host_view(ypu, means_ypu_mem, true);
+    pv_ypu_mem_release_host_view(ypu, y_ypu_mem, true);
 
     pv_orca_util_rand_normal_delete(rand_normal);
 
@@ -229,8 +322,8 @@ float PV_MOCKABLE(pv_orca_util_rand_normal_sample)(pv_orca_util_rand_normal_t *o
     float ru2 = 0.0f;
     float rr = 0.0f;
     while (rr >= 1.0 || rr == 0.0) {
-        ru1 =  (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
-        ru2 =  (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
+        ru1 = (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
+        ru2 = (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
         rr = ru1 * ru1 + ru2 * ru2;
     }
 

@@ -22,9 +22,9 @@ from automation.gitlab_runner import (
     PARALLEL_TEST_PLATFORMS,
     run_command,
     run_jni_test,
-    run_napi_test,
     run_unit_test,
     test_build,
+    test_napi,
     run_windows_ucrt_test,
     update_environment,
 )
@@ -54,6 +54,11 @@ def test_jni_orca(platform_name, build_mode, access_key):
     platform_dir = os.path.join(root_dir, "platform")
     shared_res_dir = os.path.join(os.path.abspath(PEER_MODULE_DIR), "zoo-dev", "res")
 
+    if platform_name == Platforms.WINDOWS and platform.machine() == 'AMD64':
+        shutil.copy(
+            os.path.join(buildPath, '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+            os.path.join(platform_dir, 'java'))
+
     cmd = f'./gradlew test -DaccessKey="{access_key}" ' \
           f'-DbuildPath="{buildPath}" ' \
           f'-DsharedResDirectory="{shared_res_dir}" ' \
@@ -74,20 +79,20 @@ def test_jni_orca(platform_name, build_mode, access_key):
     return res
 
 
-def test_napi_orca(platform_name, access_key):
-    test_platforms = [Platforms.LINUX, Platforms.MAC, Platforms.WINDOWS]
-    if platform_name not in test_platforms:
-        return 0
+def test_napi_orca(platform_name, build_mode, access_key):
+    root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    build_path = os.path.join(root_dir, "build", build_mode, platform.machine())
+    node_test_dir = os.path.join(root_dir, 'platform', 'node')
 
-    os.environ['ELECTRON_RUN_AS_NODE'] = '1'
-    cmd = f'yarn && yarn test --access_key={access_key} --platform={platform_name.value}'
-    cmd2 = f'yarn test-electron --access_key={access_key} --platform={platform_name.value}'
+    if platform_name == Platforms.WINDOWS and platform.machine() == 'AMD64':
+        shutil.copy(
+            os.path.join(build_path, '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+            node_test_dir)
 
-    node_test_dir = os.path.join(os.path.dirname(__file__), '..', 'platform', 'node')
-    if platform_name == Platforms.WINDOWS and platform.machine() == "ARM64":
-        res = run_napi_test(cmd, node_test_dir=node_test_dir)
-    else:
-        res = run_napi_test(cmd, node_test_dir=node_test_dir) or run_napi_test(cmd2, node_test_dir=node_test_dir)
+    res = test_napi(
+        platform_name=platform_name,
+        access_key=access_key,
+        node_test_dir=node_test_dir)
 
     return res
 
@@ -106,7 +111,7 @@ def run_mem_usage_orca(build_mode, access_key):
     model_file = os.path.join(module_res_dir, "param", "orca_params_en_male.pv")
     output_file = os.path.join(module_res_dir, "output.wav")
 
-    command = f"{build_path}/pv_orca_app -a {access_key} -m {model_file} -t '{input_text}' -o {output_file}"
+    command = f"{build_path}/pv_orca_app -a {access_key} -m {model_file} -y cpu:1 -t '{input_text}' -o {output_file}"
     mem_usage = get_mem_usage_bytes(command)
 
     os.remove(output_file)
@@ -150,6 +155,8 @@ def test_unittest_orca(
 
             dependencies_build_dirs = [
                 os.path.join(build_dir, '_deps', 'zoo-dev-build', 'src'),
+                os.path.join(build_dir, '_deps', 'ypu-build'),
+                os.path.join(build_dir, '_deps', 'model-build'),
                 os.path.join(build_dir, '_deps', 'hippo-build'),
             ]
             for dep_build_dir in dependencies_build_dirs:
@@ -294,10 +301,10 @@ def test_unittest_orca(
 
         res = 0
         selenium_script = os.path.join(peer_dir, 'script', 'wasm', 'selenium_runner.py')
-        for arg in ["", "--no_simd"]:
+        for arg in ["", "--no_pthread"]:
             if res == 0:
-                if arg != "--no_simd":
-                    logging.info(f"running unit test in browser (simd) ...")
+                if arg != "--no_pthread":
+                    logging.info(f"running unit test in browser (pthread) ...")
                 else:
                     logging.info(f"running unit test in browser ...")
                 results = []
@@ -317,7 +324,7 @@ def test_unittest_orca(
                         f"--build_mode {build_mode} --root_path {peer_dir} --test_type integration")
                     results.append(res_integration_test)
 
-                if TestTypes.PERFORMANCE in test_types:
+                if TestTypes.PERFORMANCE in test_types and arg == "":
                     res_performance_test = run_command(
                         f"python3 {selenium_script} {arg} "
                         f"--build_mode {build_mode} --root_path {peer_dir} --test_type performance",
@@ -354,6 +361,12 @@ def test_unittest_orca(
 
     elif platform_name == Platforms.WINDOWS:
         results = []
+
+        if platform.machine() == 'AMD64':
+            shutil.copy(
+                os.path.join(root_dir, 'build', build_mode, platform.machine(), '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+                os.path.join(root_dir, 'build', build_mode, platform.machine()))
+
         if TestTypes.UNIT in test_types:
             res_unit_test = run_unit_test(
                 f"{root_dir}/build/{build_mode}/{platform.machine()}/"
@@ -403,7 +416,7 @@ def test_unittest_orca(
                     f"pv_orca_test_app res -i -d dump_{build_mode}", platform_name)
                 results.append(res_integration_test)
 
-            if TestTypes.PERFORMANCE in test_types:
+            if TestTypes.PERFORMANCE in test_types and arch == 'arm64':
                 res_performance_test = run_unit_test(
                     f"{root_dir}/build/{build_mode}/{arch}/"
                     f"pv_orca_test_app res -p -d dump_{build_mode}",
@@ -536,20 +549,22 @@ def main():
                         logging.error(f"Check symbols failed with: {e}")
                         sys.exit(1)
 
-            logging.info(f"Running JNI and NAPI  tests ...")
-            for build in args.builds:
-                res = test_jni_orca(
-                    platform_name=args.platform,
-                    build_mode=build,
-                    access_key=args.access_key)
-                if res != 0:
-                    sys.exit(res)
+            if not args.enable_asan:
+                logging.info(f"Running JNI and NAPI  tests ...")
+                for build in args.builds:
+                    res = test_jni_orca(
+                        platform_name=args.platform,
+                        build_mode=build,
+                        access_key=args.access_key)
+                    if res != 0:
+                        sys.exit(res)
 
-                res = test_napi_orca(
-                    platform_name=args.platform,
-                    access_key=args.access_key)
-                if res != 0:
-                    sys.exit(res)
+                    res = test_napi_orca(
+                        platform_name=args.platform,
+                        build_mode=build,
+                        access_key=args.access_key)
+                    if res != 0:
+                        sys.exit(res)
 
             logging.info(f"Running {' and '.join(map(lambda x: x.value, test_types))} tests ...")
             for build in args.builds:

@@ -1,4 +1,4 @@
-import { ACCESS_KEY } from "./napi_test_utils";
+import { ACCESS_KEY, DEVICE_STRING } from "./napi_test_utils";
 import { promises as fs } from 'fs';
 
 const orca = require('bindings')('pv_orca');
@@ -14,7 +14,8 @@ async function deleteFile(filePath: string) {
 test("Orca", () => {
     const initResult = orca.init(
         ACCESS_KEY,
-        "../../res/param/orca_params_en_female.pv");
+        "../../res/param/orca_params_en_female.pv",
+        DEVICE_STRING);
 
     expect(initResult.status).toEqual(0)
     expect(initResult.handle).not.toEqual(0)
@@ -23,6 +24,9 @@ test("Orca", () => {
 
     const sampleRate = orca.sample_rate(initResult.handle).sample_rate
     expect(sampleRate).toBeGreaterThan(0)
+
+    const hardwareDevices = orca.list_hardware_devices()
+    expect(hardwareDevices.hardware_devices.length).toBeGreaterThan(0)
 
     const validCharacters = orca.valid_characters(initResult.handle).valid_characters
     expect(validCharacters.length).toBeGreaterThan(0)
@@ -106,7 +110,8 @@ test("Orca", () => {
 test("NAPI Error", () => {
     const initResult = orca.init(
         ACCESS_KEY,
-        "../../res/param/orca_params_en_female.pv");
+        "../../res/param/orca_params_en_female.pv",
+        DEVICE_STRING);
     expect(initResult.status).toEqual(0)
     expect(initResult.handle).not.toEqual(0)
 
@@ -126,7 +131,8 @@ test("Message Stack", () => {
     try {
         const res = orca.init(
             "invalid",
-            "../../res/param/orca_params_en_female.pv");
+            "../../res/param/orca_params_en_female.pv",
+            DEVICE_STRING);
         expect(res).toBeNull();
     } catch (e) {
         const errObject = orca.get_error_stack();

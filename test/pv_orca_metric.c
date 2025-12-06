@@ -8,7 +8,7 @@
 #include "core/pv_error_messages.h"
 #include "core/pv_language_json.h"
 #include "core/pv_type.h"
-#include "feature/pv_filterbank.h"
+#include "model/pv_filterbank.h"
 #include "io/pv_log.h"
 #include "model/pv_online_token_classifier.h"
 #include "orca/pv_orca_metric_internal.h"
@@ -44,18 +44,20 @@ struct pv_orca_metric {
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_orca_metric_classifier_param_serialize)(
+        pv_ypu_t *ypu,
         const pv_online_token_classifier_param_t *param,
         const char *language_info_path,
         const char *param_path) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(language_info_path);
     PV_ASSERT(param_path);
 
     pv_status_t status = pv_online_token_classifier_param_serialize(
+            ypu,
             param,
             ORCA_METRIC_CLASSIFIER_MAGIC_TOKEN,
             ORCA_METRIC_CLASSIFIER_VERSION,
-            666,
             param_path);
     PV_CHECK_STATUS(status);
 
@@ -83,7 +85,12 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_classifier_param_serialize)(
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
-    status = pv_serialized_section_pack(pv_language_info_serialized_context(), language_info, f);
+    status = pv_serialized_serialize_file(
+        pv_language_info_serialized_vtable(),
+        NULL,
+        true,
+        f,
+        language_info);
     pv_language_info_delete(language_info);
     (void) fclose(f);
 
@@ -93,9 +100,11 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_classifier_param_serialize)(
 #endif
 
 pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
+        pv_ypu_t *ypu,
         const char *model_path,
         int32_t sample_rate,
         pv_orca_metric_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(model_path);
     PV_ASSERT(sample_rate > 0);
     PV_ASSERT(object);
@@ -133,7 +142,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                 PV_ERROR_ARGS_PRIVATE(
                         "pv_filterbank_init",
                         pv_status_to_string(status)));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return status;
     }
 
@@ -145,16 +154,15 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                 PV_ERROR_ARGS_PRIVATE(
                         "pv_fopen",
                         pv_status_to_string(status)));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return PV_STATUS_IO_ERROR;
     }
 
-    int32_t variant_int32 = 0;
     status = pv_online_token_classifier_param_load2(
+            ypu,
             f,
             ORCA_METRIC_CLASSIFIER_MAGIC_TOKEN,
             ORCA_METRIC_CLASSIFIER_VERSION,
-            &variant_int32,
             &(o->classifier_param));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
@@ -164,13 +172,15 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                         pv_status_to_string(status),
                         "pv_online_token_classifier_param_load2"));
         (void) fclose(f);
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return status;
     }
 
-    status = pv_serialized_section_unpack(
+    status = pv_serialized_deserialize_file(
+            pv_language_info_serialized_vtable(),
+            NULL,
+            true,
             f,
-            pv_language_info_serialized_context(),
             (void **) &(o->language_info));
     (void) fclose(f);
     if (status != PV_STATUS_SUCCESS) {
@@ -178,9 +188,9 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                        "pv_serialized_section_unpack",
+                        "pv_serialized_deserialize_file",
                         pv_status_to_string(status)));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return status;
     }
 
@@ -195,11 +205,11 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                         pv_language_info_language_code(o->language_info),
                         "classifier",
                         "language_info"));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
-    status = pv_online_token_classifier_init(memory, o->classifier_param, &(o->classifier));
+    status = pv_online_token_classifier_init(ypu, o->classifier_param, &(o->classifier));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
                 &pv_error_msg_module_init_internal,
@@ -207,7 +217,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                 PV_ERROR_ARGS_PRIVATE(
                         "pv_online_token_classifier_init",
                         pv_status_to_string(status)));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return status;
     }
 
@@ -219,7 +229,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
                 PV_ERROR_ARGS_PRIVATE(
                         "pv_resampler_init",
                         pv_status_to_string(status)));
-        pv_orca_metric_delete(o);
+        pv_orca_metric_delete(ypu, o);
         return status;
     }
 
@@ -232,13 +242,15 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_orca_metric_delete)(pv_orca_metric_t *object) {
+void PV_MOCKABLE(pv_orca_metric_delete)(pv_ypu_t *ypu, pv_orca_metric_t *object) {
+    PV_ASSERT(ypu);
+
     if (object) {
         pv_resampler_delete(object->resampler);
 
-        pv_online_token_classifier_delete(object->classifier);
+        pv_online_token_classifier_delete(ypu, object->classifier);
 
-        pv_online_token_classifier_param_delete(object->classifier_param);
+        pv_online_token_classifier_param_delete(ypu, object->classifier_param);
 
         pv_language_info_delete(object->language_info);
 
@@ -249,6 +261,7 @@ void PV_MOCKABLE(pv_orca_metric_delete)(pv_orca_metric_t *object) {
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_metric_get_posterior_frame)(
+        pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         const int16_t *pcm,
         q31_t *posterior) {
@@ -256,18 +269,29 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_get_posterior_frame)(
     PV_ASSERT(pcm);
     PV_ASSERT(posterior);
 
-    pv_memory_t *memory = object->memory;
     pv_filterbank_t *feature_factory = object->feature_factory;
     const int32_t feature_length = 2 * PV_FILTERBANK_LENGTH;
 
-    q510_t *feature = pv_memory_allocate(memory, sizeof(q510_t) * feature_length, false);
-    if (!feature) {
+    pv_ypu_mem_t *posterior_ypu_mem = pv_ypu_buffer_get(
+        ypu,
+        object->classifier_param->softmax_param->output_length * sizeof(q31_t),
+        false);
+    if (!posterior_ypu_mem) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    pv_ypu_mem_t *feature_ypu_mem = pv_ypu_buffer_get(
+        ypu,
+        feature_length * sizeof(q510_t),
+        false);
+    if (!feature_ypu_mem) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    q510_t *feature = pv_ypu_mem_get_host_view(ypu, feature_ypu_mem, false);
+
     pv_status_t status = pv_filterbank_compute(feature_factory, pcm, feature);
     if (status != PV_STATUS_SUCCESS) {
-        pv_memory_free(memory, feature);
         return status;
     }
     status = pv_filterbank_compute(
@@ -275,17 +299,22 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_get_posterior_frame)(
             pcm + ORCA_METRIC_CLASSIFIER_FRAME_SHIFT,
             feature + PV_FILTERBANK_LENGTH);
     if (status != PV_STATUS_SUCCESS) {
-        pv_memory_free(memory, feature);
         return status;
     }
 
-    pv_online_token_classifier_preprocess(object->classifier, feature, 2);
+    pv_ypu_mem_release_host_view(ypu, feature_ypu_mem, true);
 
-    status = pv_online_token_classifier_process(object->classifier, feature, posterior);
-    pv_memory_free(memory, feature);
+    pv_online_token_classifier_preprocess(ypu, object->classifier, feature_ypu_mem, 2);
+
+    status = pv_online_token_classifier_process(ypu, object->classifier, feature_ypu_mem, posterior_ypu_mem);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
+
+    pv_ypu_mem_copy_from(ypu, posterior_ypu_mem, posterior, 0, object->classifier_param->softmax_param->output_length * sizeof(q31_t));
+
+    pv_ypu_buffer_release(ypu, feature_ypu_mem);
+    pv_ypu_buffer_release(ypu, posterior_ypu_mem);
 
     return PV_STATUS_SUCCESS;
 }
@@ -528,12 +557,14 @@ static pv_status_t phoneme_sequence_string_to_padded_aos(
 
 
 pv_status_t PV_MOCKABLE(pv_orca_metric_process)(
+        pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         int32_t pcm_length,
         const int16_t *pcm,
         int32_t num_target_char_labels,
         const char **target_char_labels,
         float *phoneme_error_rate) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(pcm_length > 0);
     PV_ASSERT(pcm);
@@ -601,7 +632,11 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_process)(
             memcpy(pcm_chunk, pcm_src + (i * object->frame_length), object->frame_length * sizeof(int16_t));
         }
 
-        pv_status_t status = pv_orca_metric_get_posterior_frame(object, pcm_chunk, &posteriors[i * posterior_size]);
+        pv_status_t status = pv_orca_metric_get_posterior_frame(
+            ypu,
+            object,
+            pcm_chunk,
+            &posteriors[i * posterior_size]);
         if (status != PV_STATUS_SUCCESS) {
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                     pv_orca_metric_get_posterior_frame,
@@ -699,6 +734,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_process)(
 
 
 pv_status_t PV_MOCKABLE(pv_orca_metric_pcm_frame_level_error_evaluation)(
+        pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         int32_t pcm_length,
         const int16_t *pcm,
@@ -706,6 +742,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_pcm_frame_level_error_evaluation)(
         float threshold_worst_case,
         float threshold_average_case,
         bool *passed) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(pcm_length > 0);
     PV_ASSERT(pcm);
@@ -772,7 +809,11 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_pcm_frame_level_error_evaluation)(
             memcpy(pcm_chunk, pcm_src + (i * object->frame_length), object->frame_length * sizeof(int16_t));
         }
 
-        pv_status_t status = pv_orca_metric_get_posterior_frame(object, pcm_chunk, &posteriors[i * posterior_size]);
+        pv_status_t status = pv_orca_metric_get_posterior_frame(
+            ypu,
+            object,
+            pcm_chunk,
+            &posteriors[i * posterior_size]);
         if (status != PV_STATUS_SUCCESS) {
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                     pv_orca_metric_get_posterior_frame,

@@ -20,7 +20,9 @@ EXPECTED_ORCA_SYMBOLS = {
         'pv_orca_stream_close',
         'pv_orca_pcm_delete',
         'pv_orca_word_alignments_delete',
-        'pv_orca_version'
+        'pv_orca_version',
+        'pv_orca_list_hardware_devices',
+        'pv_orca_free_hardware_devices',
     ]
 }
 
@@ -39,6 +41,7 @@ EXPECTED_ORCA_SYMBOLS_JNI = {
         'Java_ai_picovoice_orca_OrcaNative_streamSynthesize',
         'Java_ai_picovoice_orca_OrcaNative_streamFlush',
         'Java_ai_picovoice_orca_OrcaNative_streamClose',
+        'Java_ai_picovoice_orca_OrcaNative_listHardwareDevices',
     ]
 }
 EXPECTED_ORCA_SYMBOLS_JNI['libpv_orca_jni'] += EXPECTED_ORCA_SYMBOLS['libpv_orca']

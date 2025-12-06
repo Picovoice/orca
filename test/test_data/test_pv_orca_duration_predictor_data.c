@@ -68,6 +68,18 @@ static const q7_t DP_CONV_1_BIAS[] = {
     -29, -56, -28, -32, -93, -114, -53, -54, -80, 32, -6, -102, 26, -126, 27, 5, 17, 6, -28, -2, -51, -22, -13, 20, 40, 
     114, -52, -46, -69, -43, -45, 127};
 
+static const pv_ypu_config_mem_t DP_CONV_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DP_CONV_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_1_BIAS,
+};
+
 static const pv_cnn_param_t DP_CONV_1_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -75,8 +87,8 @@ static const pv_cnn_param_t DP_CONV_1_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = DP_CONV_1_WEIGHT,
-        .bias = DP_CONV_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DP_CONV_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_CONV_1_BIAS_CONFIG,
 };
 
 static const q7_t DP_CONV_2_WEIGHT[] = {
@@ -201,6 +213,18 @@ static const q7_t DP_CONV_2_BIAS[] = {
     102, 18, -13, -66, 59, 93, -28, 4, 15, -18, -23, -54, 124, -85, -128, 83, 3, -1, 43, -99, -41, -76, 89, 53, 104, 6, 
     66, 96, 31, -19, -83, -80};
 
+static const pv_ypu_config_mem_t DP_CONV_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DP_CONV_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_2_BIAS,
+};
+
 static const pv_cnn_param_t DP_CONV_2_PARAM = {
         .input_channels = 32,
         .output_channels = 32,
@@ -208,8 +232,8 @@ static const pv_cnn_param_t DP_CONV_2_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = DP_CONV_2_WEIGHT,
-        .bias = DP_CONV_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DP_CONV_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_CONV_2_BIAS_CONFIG,
 };
 
 static const q7_t DP_LAYER_NORM_1_WEIGHT[] = {
@@ -219,10 +243,22 @@ static const q7_t DP_LAYER_NORM_1_BIAS[] = {
     57, -61, -29, -122, -18, 20, -76, 16, -57, -69, 49, -8, 67, 56, 62, -64, 33, 117, 28, 54, 79, 39, -42, -1, 37, -14, 
     4, 43, 13, -18, 40, 122};
 
+static const pv_ypu_config_mem_t DP_LAYER_NORM_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DP_LAYER_NORM_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_LAYER_NORM_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DP_LAYER_NORM_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_LAYER_NORM_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_LAYER_NORM_1_BIAS,
+};
+
 static const pv_layer_norm_param_t DP_LAYER_NORM_1_PARAM = {
         .num_channels = 32,
-        .weight = DP_LAYER_NORM_1_WEIGHT,
-        .bias = DP_LAYER_NORM_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DP_LAYER_NORM_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_LAYER_NORM_1_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -233,10 +269,22 @@ static const q7_t DP_LAYER_NORM_2_BIAS[] = {
     -24, -128, -15, 19, -66, -53, 15, 11, -105, -128, -47, 10, 12, 6, -50, 29, 103, -113, 57, -36, -41, 85, -26, 79, 
     -44, 4, 70, 41, -8, -8, 28, -19};
 
+static const pv_ypu_config_mem_t DP_LAYER_NORM_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DP_LAYER_NORM_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_LAYER_NORM_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DP_LAYER_NORM_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_LAYER_NORM_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_LAYER_NORM_2_BIAS,
+};
+
 static const pv_layer_norm_param_t DP_LAYER_NORM_2_PARAM = {
         .num_channels = 32,
-        .weight = DP_LAYER_NORM_2_WEIGHT,
-        .bias = DP_LAYER_NORM_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DP_LAYER_NORM_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_LAYER_NORM_2_BIAS_CONFIG,
         .eps = 1e-05f,
 };
 
@@ -306,6 +354,18 @@ static const q7_t DP_CONV_PROJ_BIAS[] = {
     74, 32, -3, 15, 105, 114, 16, 82, -39, 35, 88, 36, -37, -64, 77, -38, -49, 37, 100, 65, 108, 65, 76, 89, 107, -23, 
     48, 127, 127, 98, 127, 115, 127, 69, 104, 65, 107, 127, 13, 29, 42, 71, 49, 52, 74, 127, -39, 104, 22, 13};
 
+static const pv_ypu_config_mem_t DP_CONV_PROJ_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_PROJ_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_PROJ_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DP_CONV_PROJ_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_CONV_PROJ_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_CONV_PROJ_BIAS,
+};
+
 static const pv_cnn_param_t DP_CONV_PROJ_PARAM = {
         .input_channels = 32,
         .output_channels = 50,
@@ -313,8 +373,8 @@ static const pv_cnn_param_t DP_CONV_PROJ_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DP_CONV_PROJ_WEIGHT,
-        .bias = DP_CONV_PROJ_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DP_CONV_PROJ_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_CONV_PROJ_BIAS_CONFIG,
 };
 
 static const float DP_AFFINE_PRE_SCALE[] = {
@@ -327,11 +387,23 @@ static const float DP_AFFINE_PRE_BIAS[] = {
     0.7421875f, 0.3203125f, 0.609375f, 0.6796875f, 0.0625f, -0.0546875f, 0.34375f, 0.125f, 0.125f, -0.328125f, 
     0.2578125f, -0.1875f, 0.578125f};
 
+static const pv_ypu_config_mem_t DP_AFFINE_PRE_SCALE_CONFIG = {
+    .size_bytes = sizeof(DP_AFFINE_PRE_SCALE),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_AFFINE_PRE_SCALE,
+};
+
+static const pv_ypu_config_mem_t DP_AFFINE_PRE_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_AFFINE_PRE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_AFFINE_PRE_BIAS,
+};
+
 static const pv_affine_param_t DP_AFFINE_PRE_PARAM = {
         .num_channels = 32,
         .scale_offset = 1,
-        .scale = DP_AFFINE_PRE_SCALE,
-        .bias = DP_AFFINE_PRE_BIAS,
+        .scale = (pv_ypu_config_mem_t *) &DP_AFFINE_PRE_SCALE_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_AFFINE_PRE_BIAS_CONFIG,
 };
 
 static const float DP_AFFINE_POST_SCALE[] = {
@@ -347,11 +419,23 @@ static const float DP_AFFINE_POST_BIAS[] = {
     -0.1484375f, -0.2109375f, -0.296875f, -0.2421875f, 0.4453125f, -0.3125f, 0.34375f, -0.5234375f, -0.609375f, 
     0.3125f, 0.421875f};
 
+static const pv_ypu_config_mem_t DP_AFFINE_POST_SCALE_CONFIG = {
+    .size_bytes = sizeof(DP_AFFINE_POST_SCALE),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_AFFINE_POST_SCALE,
+};
+
+static const pv_ypu_config_mem_t DP_AFFINE_POST_BIAS_CONFIG = {
+    .size_bytes = sizeof(DP_AFFINE_POST_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DP_AFFINE_POST_BIAS,
+};
+
 static const pv_affine_param_t DP_AFFINE_POST_PARAM = {
         .num_channels = 50,
         .scale_offset = 1,
-        .scale = DP_AFFINE_POST_SCALE,
-        .bias = DP_AFFINE_POST_BIAS,
+        .scale = (pv_ypu_config_mem_t *) &DP_AFFINE_POST_SCALE_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DP_AFFINE_POST_BIAS_CONFIG,
 };
 
 static const pv_orca_duration_predictor_param_t DP_PARAM = {

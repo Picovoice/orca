@@ -691,6 +691,18 @@ static const q7_t TEST_CNN_K1_BIAS[] = {
     -8, 27, -7, 0, -15, 40, -7, -29, 49, -29, 8, -1, 18, -10, 15, 12, 12, -6, -10, -28, 14, 21, -16, -15, 30, -21, 14, 
     -6, 29, -29, -10, 9, 0, 41, 45, -26, 34, -14, -24, -24, -61, 15};
 
+static const pv_ypu_config_mem_t TEST_CNN_K1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(TEST_CNN_K1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CNN_K1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t TEST_CNN_K1_BIAS_CONFIG = {
+    .size_bytes = sizeof(TEST_CNN_K1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) TEST_CNN_K1_BIAS,
+};
+
 static const pv_cnn_param_t TEST_CNN_K1_PARAM = {
         .input_channels = 192,
         .output_channels = 96,
@@ -698,8 +710,8 @@ static const pv_cnn_param_t TEST_CNN_K1_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = TEST_CNN_K1_WEIGHT,
-        .bias = TEST_CNN_K1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &TEST_CNN_K1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &TEST_CNN_K1_BIAS_CONFIG,
 };
 
 const float TEST_CNN_K1_INPUT[3840] = {

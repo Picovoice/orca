@@ -13,9 +13,15 @@
 #endif
 
 static pv_embed_t *embed_object = NULL;
+static pv_ypu_t *ypu = NULL;
 
 static pv_status_t test_pv_embed_setup(void) {
-    pv_status_t status = pv_embed_init(&TEST_EMBED_PARAM, &embed_object);
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = pv_embed_init(ypu, &TEST_EMBED_PARAM, &embed_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -24,17 +30,35 @@ static pv_status_t test_pv_embed_setup(void) {
 }
 
 static void test_pv_embed_teardown(void) {
-    pv_embed_delete(embed_object);
-    embed_object = NULL;
+    pv_embed_delete(ypu, embed_object);
+    pv_ypu_delete(ypu);
 }
 
 static void test_pv_embed_forward(void) {
-    pv_test_true(embed_object != NULL, "failed to create tmp file");
-
     int32_t dimension = pv_embed_dimension(embed_object);
-    float *buffer = calloc(TEST_EMBED_SEQUENCE_LENGTH, dimension * sizeof(float));
 
-    pv_embed_forward(embed_object, TEST_EMBED_SEQUENCE_LENGTH, TEST_EMBED_INPUT, buffer);
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        TEST_EMBED_SEQUENCE_LENGTH * dimension * sizeof(int32_t),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_status_t status = status = pv_embed_forward(
+        ypu,
+        embed_object,
+        TEST_EMBED_SEQUENCE_LENGTH,
+        TEST_EMBED_INPUT,
+        m1,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_embed_forward failed with %s",
+        pv_status_to_string(status));
+
+    float *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_test_close_float_array(
             buffer,
             TEST_EMBED_TARGET,
@@ -42,8 +66,9 @@ static void test_pv_embed_forward(void) {
             0.0001f,
             0.0f,
             "failed to forward embed");
+    pv_ypu_mem_release_host_view(ypu, m1, true);
 
-    free(buffer);
+    pv_ypu_mem_free(ypu, m1);
 }
 
 static const pv_test_case_t PV_EMBED_TEST_CASES[] = {

@@ -56,6 +56,18 @@ static const q7_t DEC_BACKBONE_CONV_PRE_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONV_PRE_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONV_PRE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONV_PRE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONV_PRE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONV_PRE_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONV_PRE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONV_PRE_BIAS,
+};
+
 static const pv_cnn_param_t DEC_BACKBONE_CONV_PRE_PARAM = {
         .input_channels = 16,
         .output_channels = 32,
@@ -63,8 +75,8 @@ static const pv_cnn_param_t DEC_BACKBONE_CONV_PRE_PARAM = {
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONV_PRE_WEIGHT,
-        .bias = DEC_BACKBONE_CONV_PRE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONV_PRE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONV_PRE_BIAS_CONFIG,
 };
 
 static const q7_t DEC_BACKBONE_LAYER_NORM_1_WEIGHT[] = {
@@ -73,10 +85,22 @@ static const q7_t DEC_BACKBONE_LAYER_NORM_1_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_LAYER_NORM_1_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_LAYER_NORM_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_LAYER_NORM_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_LAYER_NORM_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_LAYER_NORM_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_LAYER_NORM_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_LAYER_NORM_1_BIAS,
+};
+
 static const pv_layer_norm_param_t DEC_BACKBONE_LAYER_NORM_1_PARAM = {
         .num_channels = 32,
-        .weight = DEC_BACKBONE_LAYER_NORM_1_WEIGHT,
-        .bias = DEC_BACKBONE_LAYER_NORM_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_LAYER_NORM_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_LAYER_NORM_1_BIAS_CONFIG,
         .eps = 1e-05,
 };
 
@@ -86,10 +110,22 @@ static const q7_t DEC_BACKBONE_LAYER_NORM_2_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_LAYER_NORM_2_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_LAYER_NORM_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_LAYER_NORM_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_LAYER_NORM_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_LAYER_NORM_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_LAYER_NORM_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_LAYER_NORM_2_BIAS,
+};
+
 static const pv_layer_norm_param_t DEC_BACKBONE_LAYER_NORM_2_PARAM = {
         .num_channels = 32,
-        .weight = DEC_BACKBONE_LAYER_NORM_2_WEIGHT,
-        .bias = DEC_BACKBONE_LAYER_NORM_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_LAYER_NORM_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_LAYER_NORM_2_BIAS_CONFIG,
         .eps = 1e-05,
 };
 
@@ -105,14 +141,26 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS,
+};
+
 static const pv_cnn_depthwise_param_t DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_PARAM = {
         .num_channels = 32,
         .kernel_size = 3,
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_BIAS_CONFIG,
 };
 
 static const q7_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT[] = {
@@ -121,10 +169,22 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS,
+};
+
 static const pv_layer_norm_param_t DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_PARAM = {
         .num_channels = 32,
-        .weight = DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_BIAS_CONFIG,
         .eps = 1e-05,
 };
 
@@ -196,6 +256,18 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS,
+};
+
 static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_PARAM = {
         .input_channels = 32,
         .output_channels = 64,
@@ -203,8 +275,8 @@ static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_BIAS_CONFIG,
 };
 
 static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT[] = {
@@ -273,6 +345,18 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS,
+};
+
 static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_PARAM = {
         .input_channels = 64,
         .output_channels = 32,
@@ -280,12 +364,18 @@ static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_2_BIAS_CONFIG,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_0_SCALE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_0_SCALE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_0_SCALE_WEIGHT,
 };
 
 static const pv_convnext_param_t DEC_BACKBONE_CONVNEXTS_0_PARAM = {
-        .scale_param = DEC_BACKBONE_CONVNEXTS_0_SCALE_WEIGHT,
+        .scale_param = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_0_SCALE_WEIGHT_CONFIG,
         .conv_depthwise_param = &DEC_BACKBONE_CONVNEXTS_0_CONV_DEPTHWISE_PARAM,
         .layer_norm_param = &DEC_BACKBONE_CONVNEXTS_0_LAYER_NORM_PARAM,
         .conv_1_param = &DEC_BACKBONE_CONVNEXTS_0_CONV_PROJ_1_PARAM,
@@ -304,14 +394,26 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS,
+};
+
 static const pv_cnn_depthwise_param_t DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_PARAM = {
         .num_channels = 32,
         .kernel_size = 3,
         .stride = 1,
         .padding = 1,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_BIAS_CONFIG,
 };
 
 static const q7_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT[] = {
@@ -320,10 +422,22 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS,
+};
+
 static const pv_layer_norm_param_t DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_PARAM = {
         .num_channels = 32,
-        .weight = DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_BIAS_CONFIG,
         .eps = 1e-05,
 };
 
@@ -394,6 +508,18 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS,
+};
+
 static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_PARAM = {
         .input_channels = 32,
         .output_channels = 64,
@@ -401,8 +527,8 @@ static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_BIAS_CONFIG,
 };
 
 static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT[] = {
@@ -472,6 +598,18 @@ static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT[] = {
 static const q7_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS,
+};
+
 static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_PARAM = {
         .input_channels = 64,
         .output_channels = 32,
@@ -479,12 +617,18 @@ static const pv_cnn_param_t DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT,
-        .bias = DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_2_BIAS_CONFIG,
+};
+
+static const pv_ypu_config_mem_t DEC_BACKBONE_CONVNEXTS_1_SCALE_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_BACKBONE_CONVNEXTS_1_SCALE_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_BACKBONE_CONVNEXTS_1_SCALE_WEIGHT,
 };
 
 static const pv_convnext_param_t DEC_BACKBONE_CONVNEXTS_1_PARAM = {
-        .scale_param = DEC_BACKBONE_CONVNEXTS_1_SCALE_WEIGHT,
+        .scale_param = (pv_ypu_config_mem_t *) &DEC_BACKBONE_CONVNEXTS_1_SCALE_WEIGHT_CONFIG,
         .conv_depthwise_param = &DEC_BACKBONE_CONVNEXTS_1_CONV_DEPTHWISE_PARAM,
         .layer_norm_param = &DEC_BACKBONE_CONVNEXTS_1_LAYER_NORM_PARAM,
         .conv_1_param = &DEC_BACKBONE_CONVNEXTS_1_CONV_PROJ_1_PARAM,
@@ -1712,6 +1856,18 @@ static const q7_t DEC_CONV_PROJ_BIAS[] = {
     11, 21, -6, -12, -9, -22, 2, 17, 4, -3, -10, 14, -3, -10, 14, -13, -18, 8, -21, 4, 6, 1, -18, -2, -18, -1, -21, 21, 
     -19, 9, -6, -14, 16, -23, 16, 1, -8, 19, 4, -13, 20, 6};
 
+static const pv_ypu_config_mem_t DEC_CONV_PROJ_WEIGHT_CONFIG = {
+    .size_bytes = sizeof(DEC_CONV_PROJ_WEIGHT),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_CONV_PROJ_WEIGHT,
+};
+
+static const pv_ypu_config_mem_t DEC_CONV_PROJ_BIAS_CONFIG = {
+    .size_bytes = sizeof(DEC_CONV_PROJ_BIAS),
+    .flags = PV_YPU_DEVICE_MEM_FLAG_STATIC,
+    .data = (void *) DEC_CONV_PROJ_BIAS,
+};
+
 static const pv_cnn_param_t DEC_CONV_PROJ_PARAM = {
         .input_channels = 32,
         .output_channels = 1026,
@@ -1719,8 +1875,8 @@ static const pv_cnn_param_t DEC_CONV_PROJ_PARAM = {
         .stride = 1,
         .padding = 0,
         .dilation = 1,
-        .weight = DEC_CONV_PROJ_WEIGHT,
-        .bias = DEC_CONV_PROJ_BIAS,
+        .weight = (pv_ypu_config_mem_t *) &DEC_CONV_PROJ_WEIGHT_CONFIG,
+        .bias = (pv_ypu_config_mem_t *) &DEC_CONV_PROJ_BIAS_CONFIG,
 };
 
 static const pv_orca_vocoder_param_t DEC_PARAM = {

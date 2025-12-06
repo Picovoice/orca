@@ -12,10 +12,16 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_orca_duration_predictor_t *orca_duration_predictor_object = NULL;
 
 static pv_status_t test_pv_orca_duration_predictor_setup(void) {
-    pv_status_t status = pv_orca_duration_predictor_init(&DP_PARAM, &orca_duration_predictor_object);
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = pv_orca_duration_predictor_init(ypu, &DP_PARAM, &orca_duration_predictor_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -24,22 +30,55 @@ static pv_status_t test_pv_orca_duration_predictor_setup(void) {
 }
 
 static void test_pv_orca_duration_predictor_teardown(void) {
-    pv_orca_duration_predictor_delete(orca_duration_predictor_object);
-    orca_duration_predictor_object = NULL;
+    pv_orca_duration_predictor_delete(ypu, orca_duration_predictor_object);
+    pv_ypu_delete(ypu);
 }
 
 
 static void test_pv_orca_duration_predictor_forward(void) {
-    pv_test_true(orca_duration_predictor_object != NULL, "failed to create tmp file");
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(TEST_ORCA_DURATION_PREDICTOR_INPUT),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
 
-    int32_t *buffer = calloc(TEST_ORCA_DURATION_PREDICTOR_SEQUENCE_LENGTH, sizeof(int32_t));
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        TEST_ORCA_DURATION_PREDICTOR_SEQUENCE_LENGTH * sizeof(int32_t),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
 
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        TEST_ORCA_DURATION_PREDICTOR_INPUT,
+        0,
+        sizeof(TEST_ORCA_DURATION_PREDICTOR_INPUT));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    int32_t *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_orca_duration_predictor_forward(
-            orca_duration_predictor_object,
-            1.0f,
-            TEST_ORCA_DURATION_PREDICTOR_SEQUENCE_LENGTH,
-            TEST_ORCA_DURATION_PREDICTOR_INPUT,
-            buffer);
+        ypu,
+        orca_duration_predictor_object,
+        1.0f,
+        TEST_ORCA_DURATION_PREDICTOR_SEQUENCE_LENGTH,
+        m0,
+        buffer,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_orca_duration_predictor_forward failed with %s",
+        pv_status_to_string(status));
+
     pv_test_close_int32_array(
             buffer,
             TEST_ORCA_DURATION_PREDICTOR_TARGET,
@@ -47,7 +86,10 @@ static void test_pv_orca_duration_predictor_forward(void) {
             0.02f,
             0,
             "failed to forward orca_duration_predictor");
-    free(buffer);
+    pv_ypu_mem_release_host_view(ypu, m1, true);
+
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
 }
 
 #ifdef __PV_MOCKS__
@@ -60,7 +102,7 @@ static void test_pv_duration_predictor_param_load_failure_helper(pv_status_t exp
     }
 
     pv_orca_duration_predictor_param_t *param = NULL;
-    pv_status_t status = pv_orca_duration_predictor_param_load(dummy_file, &param);
+    pv_status_t status = pv_orca_duration_predictor_param_load(ypu, dummy_file, &param);
     pv_test_true(
             status == expected,
             "param load error, got `%s` expected `%s`",

@@ -389,7 +389,8 @@ JNIEXPORT jlong JNICALL Java_ai_picovoice_orca_OrcaNative_init(
         JNIEnv *env,
         jobject j_object,
         jstring j_access_key,
-        jstring j_model_path) {
+        jstring j_model_path,
+        jstring j_device) {
     (void) j_object;
 
     if (!j_access_key) {
@@ -399,6 +400,11 @@ JNIEXPORT jlong JNICALL Java_ai_picovoice_orca_OrcaNative_init(
 
     if (!j_model_path) {
         pv_throw_exception(env, PV_STATUS_INVALID_ARGUMENT, "Model path is 'NULL'.", false);
+        return 0;
+    }
+
+    if (!j_device) {
+        pv_throw_exception(env, PV_STATUS_INVALID_ARGUMENT, "Device is 'NULL'.", false);
         return 0;
     }
 
@@ -424,14 +430,26 @@ JNIEXPORT jlong JNICALL Java_ai_picovoice_orca_OrcaNative_init(
 
     LOG_DEBUG("Orca model path : '%s'", model_path);
 
+    const char *device = (*env)->GetStringUTFChars(env, j_device, NULL);
+    if (!device) {
+        pv_throw_exception(
+                env,
+                PV_STATUS_OUT_OF_MEMORY,
+                "Failed to transfer device string.",
+                false);
+        return 0;
+    }
+
     pv_orca_t *handle = NULL;
     const pv_status_t status = pv_orca_init(
             access_key,
             model_path,
+            device,
             &handle);
 
     (*env)->ReleaseStringUTFChars(env, j_access_key, access_key);
     (*env)->ReleaseStringUTFChars(env, j_model_path, model_path);
+    (*env)->ReleaseStringUTFChars(env, j_device, device);
 
     if (status != PV_STATUS_SUCCESS) {
         pv_throw_exception(env, status, "Initialization failed", true);
@@ -847,4 +865,46 @@ JNIEXPORT void JNICALL Java_ai_picovoice_orca_OrcaNative_setSdk(
     pv_set_sdk(sdk);
 
     (*env)->ReleaseStringUTFChars(env, j_sdk, sdk);
+}
+
+JNIEXPORT jobjectArray JNICALL Java_ai_picovoice_orca_OrcaNative_listHardwareDevices(JNIEnv *env, jobject j_object) {
+    (void) env;
+    (void) j_object;
+
+    char **hardware_devices = NULL;
+    int32_t num_hardware_devices = 0;
+    const pv_status_t status = pv_orca_list_hardware_devices(&hardware_devices, &num_hardware_devices);
+    if (status != PV_STATUS_SUCCESS) {
+        pv_throw_exception(env, status, "listHardwareDevices failed", true);
+        return NULL;
+    }
+
+    jobjectArray j_hd_array = (*env)->NewObjectArray(env, num_hardware_devices, (*env)->FindClass(env, "java/lang/String"), (*env)->NewStringUTF(env, ""));
+    if (!j_hd_array) {
+        pv_orca_free_hardware_devices(hardware_devices, num_hardware_devices);
+        pv_throw_exception(
+                env,
+                PV_STATUS_OUT_OF_MEMORY,
+                "Unable to create `HardwareDeviceArray` object",
+                false);
+        return NULL;
+    }
+
+    for (int32_t i = 0; i < num_hardware_devices; i++) {
+        jstring j_hd = (*env)->NewStringUTF(env, hardware_devices[i]);
+        if (!j_hd) {
+            pv_orca_free_hardware_devices(hardware_devices, num_hardware_devices);
+            pv_throw_exception(
+                    env,
+                    PV_STATUS_OUT_OF_MEMORY,
+                    "Unable to create `String` object",
+                    false);
+            return NULL;
+        }
+
+        (*env)->SetObjectArrayElement(env, j_hd_array, i, j_hd);
+    }
+
+    pv_orca_free_hardware_devices(hardware_devices, num_hardware_devices);
+    return j_hd_array;
 }

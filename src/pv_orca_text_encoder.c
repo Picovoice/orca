@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "orca/pv_buffer.h"
 #include "orca/pv_orca_text_encoder.h"
 #include "orca/pv_orca_util.h"
 #include "orca/pv_profiler.h"
@@ -17,14 +16,18 @@
 
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_serialize)(const pv_orca_text_encoder_param_t *param, FILE *file) {
+pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_serialize)(
+        pv_ypu_t *ypu,
+        const pv_orca_text_encoder_param_t *param,
+        FILE *file) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(file);
 
-    pv_status_t status = pv_embed_param_serialize(param->embed_param, file);
+    pv_status_t status = pv_embed_param_serialize(ypu, param->embed_param, file);
     PV_CHECK_STATUS(status);
 
-    status = pv_cnn_param_serialize(param->conv_post_param, file);
+    status = pv_cnn_param_serialize(ypu, param->conv_post_param, file);
     PV_CHECK_STATUS(status);
 
     size_t count = fwrite(&(param->num_transformers), sizeof(int32_t), 1, file);
@@ -33,7 +36,7 @@ pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_serialize)(const pv_orca_text
     }
 
     for (int32_t i = 0; i < param->num_transformers; i++) {
-        status = pv_transformer_param_serialize(param->transformers_param[i], file);
+        status = pv_transformer_param_serialize(ypu, param->transformers_param[i], file);
         if (status != PV_STATUS_SUCCESS) {
             return status;
         }
@@ -44,47 +47,52 @@ pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_serialize)(const pv_orca_text
 
 #endif
 
-pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_load)(FILE *f, pv_orca_text_encoder_param_t **param) {
+pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_load)(pv_ypu_t *ypu, FILE *f, pv_orca_text_encoder_param_t **param) {
+    PV_ASSERT(ypu);
     PV_ASSERT(f);
     PV_ASSERT(param);
 
     *param = NULL;
 
-    pv_orca_text_encoder_param_t *p = calloc(1, sizeof(pv_orca_text_encoder_param_t));
+    pv_orca_text_encoder_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_orca_text_encoder_param_t));
     PV_CHECK_ALLOC(p);
 
-    pv_status_t status = pv_embed_param_load(f, (pv_embed_param_t **) &(p->embed_param));
+    memset(p, 0, sizeof(pv_orca_text_encoder_param_t));
+
+    pv_status_t status = pv_embed_param_load(ypu, f, (pv_embed_param_t **) &(p->embed_param));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_param_delete(p);
+        pv_orca_text_encoder_param_delete(ypu, p);
         return status;
     }
 
-    status = pv_cnn_param_load(f, (pv_cnn_param_t **) &(p->conv_post_param));
+    status = pv_cnn_param_load(ypu, f, (pv_cnn_param_t **) &(p->conv_post_param));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_param_delete(p);
+        pv_orca_text_encoder_param_delete(ypu, p);
         return status;
     }
 
     size_t count = pv_fread(&(p->num_transformers), sizeof(int32_t), 1, f);
     if (count != 1) {
-        pv_orca_text_encoder_param_delete(p);
+        pv_orca_text_encoder_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
     }
     if (p->num_transformers <= 0) {
-        pv_orca_text_encoder_param_delete(p);
+        pv_orca_text_encoder_param_delete(ypu, p);
         return PV_STATUS_INVALID_ARGUMENT;
     }
 
-    p->transformers_param = calloc(p->num_transformers, sizeof(pv_transformer_param_t *));
+    p->transformers_param = pv_ypu_host_alloc(ypu, p->num_transformers * (int32_t) sizeof(pv_transformer_param_t *));
     if (!(p->transformers_param)) {
-        pv_orca_text_encoder_param_delete(p);
+        pv_orca_text_encoder_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(p->transformers_param, 0, p->num_transformers * (int32_t) sizeof(pv_transformer_param_t *));
+
     for (int32_t i = 0; i < p->num_transformers; i++) {
-        status = pv_transformer_param_load(f, (pv_transformer_param_t **) &(p->transformers_param[i]));
+        status = pv_transformer_param_load(ypu, f, (pv_transformer_param_t **) &(p->transformers_param[i]));
         if (status != PV_STATUS_SUCCESS) {
-            pv_orca_text_encoder_param_delete(p);
+            pv_orca_text_encoder_param_delete(ypu, p);
             return status;
         }
     }
@@ -95,20 +103,22 @@ pv_status_t PV_MOCKABLE(pv_orca_text_encoder_param_load)(FILE *f, pv_orca_text_e
 }
 
 
-void PV_MOCKABLE(pv_orca_text_encoder_param_delete)(pv_orca_text_encoder_param_t *param) {
+void PV_MOCKABLE(pv_orca_text_encoder_param_delete)(pv_ypu_t *ypu, pv_orca_text_encoder_param_t *param) {
+    PV_ASSERT(ypu);
+
     if (param) {
         if (param->transformers_param) {
             for (int32_t i = param->num_transformers - 1; i >= 0; i--) {
-                pv_transformer_param_delete((pv_transformer_param_t *) (param->transformers_param[i]));
+                pv_transformer_param_delete(ypu, (pv_transformer_param_t *) (param->transformers_param[i]));
             }
 
-            free((pv_transformer_param_t **) (param->transformers_param));
+            pv_ypu_host_free(ypu, (pv_transformer_param_t **) (param->transformers_param));
         }
 
-        pv_cnn_param_delete((pv_cnn_param_t *) (param->conv_post_param));
-        pv_embed_param_delete((pv_embed_param_t *) (param->embed_param));
+        pv_cnn_param_delete(ypu, (pv_cnn_param_t *) (param->conv_post_param));
+        pv_embed_param_delete(ypu, (pv_embed_param_t *) (param->embed_param));
 
-        free(param);
+        pv_ypu_host_free(ypu, param);
     }
 }
 
@@ -165,101 +175,60 @@ struct pv_orca_text_encoder {
     pv_transformer_t **transformers;
 
     int32_t num_hidden_channels;
-
-    pv_buffer_t *buffer_text_encoder_transf_attn_1;
-    pv_buffer_t *buffer_text_encoder_transf_attn_2;
-    pv_buffer_t *buffer_text_encoder_transf_attn_score;
-    pv_buffer_t *buffer_text_encoder_transf_ffn;
-    pv_buffer_t *buffer_stats;
 };
 
 pv_status_t PV_MOCKABLE(pv_orca_text_encoder_init)(
+        pv_ypu_t *ypu,
         const pv_orca_text_encoder_param_t *param,
         pv_orca_text_encoder_t **object) {
+    PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(object);
 
     *object = NULL;
 
-    pv_orca_text_encoder_t *o = calloc(1, sizeof(pv_orca_text_encoder_t));
+    pv_orca_text_encoder_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_orca_text_encoder_t));
     if (!o) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(o, 0, sizeof(pv_orca_text_encoder_t));
+
     o->param = param;
 
-    pv_status_t status = pv_embed_init(param->embed_param, &(o->embed));
+    pv_status_t status = pv_embed_init(ypu, param->embed_param, &(o->embed));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
+        pv_orca_text_encoder_delete(ypu, o);
         return status;
     }
 
-    status = pv_cnn_init(param->conv_post_param, &(o->conv_post));
+    status = pv_cnn_init(ypu, param->conv_post_param, &(o->conv_post));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
+        pv_orca_text_encoder_delete(ypu, o);
         return status;
     }
 
-    o->transformers = calloc(param->num_transformers, sizeof(pv_transformer_t *));
+    o->transformers = pv_ypu_host_alloc(
+            ypu,
+            param->num_transformers * (int32_t) sizeof(pv_transformer_t *));
     if (!(o->transformers)) {
-        pv_orca_text_encoder_delete(o);
+        pv_orca_text_encoder_delete(ypu, o);
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(o->transformers, 0, param->num_transformers * (int32_t) sizeof(pv_transformer_t *));
+
     o->num_hidden_channels = o->param->embed_param->output_channels;
 
-    PV_ASSERT(o->num_hidden_channels == pv_cnn_input_channels(o->conv_post));
-    PV_ASSERT(o->num_hidden_channels == param->transformers_param[0]->attention_param->num_channels);
-
-    status = pv_buffer_init(o->num_hidden_channels, &(o->buffer_text_encoder_transf_attn_1));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
-        return status;
-    }
-
-    status = pv_buffer_init(o->num_hidden_channels, &(o->buffer_text_encoder_transf_attn_2));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
-        return status;
-    }
-
-    int32_t num_heads = param->transformers_param[0]->attention_param->num_heads;
-    status = pv_buffer_init(num_heads, &(o->buffer_text_encoder_transf_attn_score));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
-        return status;
-    }
-
-
-    int32_t num_ffn_channels = param->transformers_param[0]->ffn_param->conv_1_param->output_channels;
-    status = pv_buffer_init(num_ffn_channels, &(o->buffer_text_encoder_transf_ffn));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
-        return status;
-    }
-
     for (int32_t i = 0; i < param->num_transformers; i++) {
-        PV_ASSERT(num_heads == param->transformers_param[i]->attention_param->num_heads);
-        PV_ASSERT(o->num_hidden_channels == param->transformers_param[i]->attention_param->num_channels);
         status = pv_transformer_init(
+                ypu,
                 param->transformers_param[i],
-                o->buffer_text_encoder_transf_attn_1,
-                o->buffer_text_encoder_transf_attn_2,
-                o->buffer_text_encoder_transf_attn_score,
-                o->buffer_text_encoder_transf_ffn,
                 &(o->transformers[i]));
         if (status != PV_STATUS_SUCCESS) {
-            pv_orca_text_encoder_delete(o);
+            pv_orca_text_encoder_delete(ypu, o);
             return status;
         }
-    }
-
-    int32_t output_channels = pv_cnn_output_channels(o->conv_post);
-    PV_ASSERT(output_channels % 2 == 0);
-    status = pv_buffer_init(output_channels, &(o->buffer_stats));
-    if (status != PV_STATUS_SUCCESS) {
-        pv_orca_text_encoder_delete(o);
-        return status;
     }
 
     *object = o;
@@ -267,25 +236,21 @@ pv_status_t PV_MOCKABLE(pv_orca_text_encoder_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_orca_text_encoder_delete)(pv_orca_text_encoder_t *object) {
-    if (object) {
-        pv_buffer_delete(object->buffer_stats);
-        pv_buffer_delete(object->buffer_text_encoder_transf_ffn);
-        pv_buffer_delete(object->buffer_text_encoder_transf_attn_score);
-        pv_buffer_delete(object->buffer_text_encoder_transf_attn_2);
-        pv_buffer_delete(object->buffer_text_encoder_transf_attn_1);
+void PV_MOCKABLE(pv_orca_text_encoder_delete)(pv_ypu_t *ypu, pv_orca_text_encoder_t *object) {
+    PV_ASSERT(ypu);
 
+    if (object) {
         if (object->transformers) {
             for (int32_t i = object->param->num_transformers - 1; i >= 0; i--) {
-                pv_transformer_delete(object->transformers[i]);
+                pv_transformer_delete(ypu, object->transformers[i]);
             }
-            free(object->transformers);
+            pv_ypu_host_free(ypu, object->transformers);
         }
 
-        pv_cnn_delete(object->conv_post);
-        pv_embed_delete(object->embed);
+        pv_cnn_delete(ypu, object->conv_post);
+        pv_embed_delete(ypu, object->embed);
 
-        free(object);
+        pv_ypu_host_free(ypu, object);
     }
 }
 
@@ -296,12 +261,17 @@ int32_t PV_MOCKABLE(pv_orca_text_encoder_output_channels)(const pv_orca_text_enc
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_text_encoder_forward)(
+        pv_ypu_t *ypu,
         pv_orca_text_encoder_t *object,
         int32_t num_tokens,
         const int32_t *tokens,
-        float *encoded_tokens,
-        float *means,
-        float *logs) {
+        pv_ypu_mem_t *encoded_tokens,
+        pv_ypu_mem_t *means,
+        pv_ypu_mem_t *logs,
+        int32_t encoded_tokens_offset,
+        int32_t means_offset,
+        int32_t logs_offset) {
+    PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(num_tokens > 0);
     PV_ASSERT(tokens);
@@ -310,36 +280,69 @@ pv_status_t PV_MOCKABLE(pv_orca_text_encoder_forward)(
     PV_ASSERT(logs);
     PV_ORCA_PROFILER_START("text_encoder");
 
-    pv_status_t status = pv_embed_forward(object->embed, num_tokens, tokens, encoded_tokens);
+    pv_status_t status = pv_embed_forward(
+            ypu,
+            object->embed,
+            num_tokens,
+            tokens,
+            encoded_tokens,
+            encoded_tokens_offset);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
 
     const int32_t num_transformers = object->param->num_transformers;
     for (int32_t i = 0; i < num_transformers; i++) {
-        status = pv_transformer_forward(object->transformers[i], num_tokens, encoded_tokens, encoded_tokens);
+        status = pv_transformer_forward(
+                ypu,
+                object->transformers[i],
+                num_tokens,
+                encoded_tokens,
+                encoded_tokens,
+                encoded_tokens_offset,
+                encoded_tokens_offset);
         if (status != PV_STATUS_SUCCESS) {
             return status;
         }
     }
-    pv_buffer_free(object->buffer_text_encoder_transf_attn_1);
-    pv_buffer_free(object->buffer_text_encoder_transf_attn_2);
-    pv_buffer_free(object->buffer_text_encoder_transf_attn_score);
-    pv_buffer_free(object->buffer_text_encoder_transf_ffn);
 
-    float *buffer_stats = pv_buffer_get(object->buffer_stats, num_tokens, false);
+    int32_t output_channels = pv_cnn_output_channels(object->conv_post);
+
+    pv_ypu_mem_t *buffer_stats = pv_ypu_buffer_get(
+            ypu,
+            num_tokens * output_channels * (int32_t) sizeof(float),
+            false);
     if (!buffer_stats) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    status = pv_cnn_forward(object->conv_post, num_tokens, encoded_tokens, buffer_stats);
+
+    status = pv_cnn_forward(
+            ypu,
+            object->conv_post,
+            num_tokens,
+            encoded_tokens,
+            buffer_stats,
+            encoded_tokens_offset,
+            0);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
 
-    int32_t output_channels = pv_cnn_output_channels(object->conv_post);
-    pv_orca_util_split_channels(num_tokens, output_channels, buffer_stats, means, logs);
+    status = pv_orca_util_split_channels(
+            ypu,
+            num_tokens,
+            output_channels,
+            buffer_stats,
+            means,
+            logs,
+            0,
+            means_offset,
+            logs_offset);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
 
-    pv_buffer_free(object->buffer_stats);
+    pv_ypu_buffer_release(ypu, buffer_stats);
 
     PV_ORCA_PROFILER_STOP("text_encoder");
 

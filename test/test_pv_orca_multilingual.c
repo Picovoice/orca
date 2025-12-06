@@ -15,7 +15,6 @@
 
 #endif
 
-
 static pv_status_t test_pv_orca_setup_helper(
         const char *param_name,
         pv_orca_t **orca_object,
@@ -37,10 +36,17 @@ static pv_status_t test_pv_orca_setup_helper(
         return status;
     }
 
+    pv_ypu_t *ypu = NULL;
+    status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
     status = pv_orca_internal_init(
             access_key,
             factory,
             model_path,
+            ypu,
             orca_object);
     free(access_key);
     free(model_path);
@@ -86,7 +92,9 @@ static void test_pv_orca_multilingual_init_success(void) {
         pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
         pv_status_t status = test_pv_orca_setup_helper(model_path, &orca_object, &synthesize_params_object);
-        pv_test_true(status == PV_STATUS_SUCCESS, "Failed to set up orca related objects using function `test_pv_orca_setup_helper`");
+        pv_test_true(
+                status == PV_STATUS_SUCCESS,
+                "Failed to set up orca related objects using function `test_pv_orca_setup_helper`");
         if (status != PV_STATUS_SUCCESS) {
             return;
         }

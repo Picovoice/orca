@@ -42,6 +42,12 @@ typedef struct pv_orca pv_orca_t;
  *
  * @param access_key AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
  * @param model_path Absolute path to the file containing Orca's model parameters.
+ * @param device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+ * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device.
+ * To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index
+ * of the target GPU. If set to `cpu`, the engine will run on the CPU with the default number of threads.
+ * To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the
+ * desired number of threads.
  * @param[out] object Constructed instance of Orca.
  * @return Status code. Returns `PV_STATUS_OUT_OF_MEMORY`, `PV_STATUS_IO_ERROR`, `PV_STATUS_INVALID_ARGUMENT`,
  * `PV_STATUS_RUNTIME_ERROR`, `PV_STATUS_ACTIVATION_ERROR`, `PV_STATUS_ACTIVATION_LIMIT_REACHED`,
@@ -50,6 +56,7 @@ typedef struct pv_orca pv_orca_t;
 PV_API pv_status_t PV_MOCKABLE(pv_orca_init)(
         const char *access_key,
         const char *model_path,
+        const char *device,
         pv_orca_t **object);
 
 /**
@@ -338,6 +345,30 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_word_alignments_delete)(
  * @return Version.
  */
 PV_API const char *PV_MOCKABLE(pv_orca_version)(void);
+
+/**
+* Gets a list of hardware devices that can be specified when calling `pv_orca_init`
+*
+* @param[out] hardware_devices Array of available hardware devices. Devices are NULL terminated strings.
+*                              The array must be freed using `pv_orca_free_hardware_devices`.
+* @param[out] num_hardware_devices The number of devices in the `hardware_devices` array.
+* @return Status code. Returns `PV_STATUS_OUT_OF_MEMORY`, `PV_STATUS_INVALID_ARGUMENT`, `PV_STATUS_INVALID_STATE`,
+* `PV_STATUS_RUNTIME_ERROR`, `PV_STATUS_ACTIVATION_ERROR`, `PV_STATUS_ACTIVATION_LIMIT_REACHED`,
+* `PV_STATUS_ACTIVATION_THROTTLED`, or `PV_STATUS_ACTIVATION_REFUSED` on failure.
+*/
+PV_API pv_status_t PV_MOCKABLE(pv_orca_list_hardware_devices)(
+    char ***hardware_devices,
+    int32_t *num_hardware_devices);
+
+/**
+* Frees memory allocated by `pv_orca_list_hardware_devices`.
+*
+* @param[out] hardware_devices Array of available hardware devices allocated by `pv_orca_list_hardware_devices`.
+* @param[out] num_hardware_devices The number of devices in the `hardware_devices` array.
+*/
+PV_API void PV_MOCKABLE(pv_orca_free_hardware_devices)(
+    char **hardware_devices,
+    int32_t num_hardware_devices);
 
 #ifdef __cplusplus
 }

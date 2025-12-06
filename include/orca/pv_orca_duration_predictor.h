@@ -6,6 +6,7 @@
 #include "orca/pv_embed.h"
 #include "orca/pv_transformer.h"
 #include "util/pv_file.h"
+#include "ypu/pv_ypu.h"
 
 typedef struct {
     const pv_cnn_param_t *conv_1_param;
@@ -20,14 +21,18 @@ typedef struct {
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_param_serialize)(
+        pv_ypu_t *ypu,
         const pv_orca_duration_predictor_param_t *param,
         FILE *file);
 
 #endif
 
-void PV_MOCKABLE(pv_orca_duration_predictor_param_delete)(pv_orca_duration_predictor_param_t *param);
+void PV_MOCKABLE(pv_orca_duration_predictor_param_delete)(pv_ypu_t *ypu, pv_orca_duration_predictor_param_t *param);
 
-pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_param_load)(FILE *f, pv_orca_duration_predictor_param_t **param);
+pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_param_load)(
+        pv_ypu_t *ypu,
+        FILE *f,
+        pv_orca_duration_predictor_param_t **param);
 
 bool PV_MOCKABLE(pv_orca_duration_predictor_param_is_equal)(
         const pv_orca_duration_predictor_param_t *object,
@@ -39,18 +44,26 @@ int32_t PV_MOCKABLE(pv_orca_duration_predictor_param_receptive_field)(
 typedef struct pv_orca_duration_predictor pv_orca_duration_predictor_t;
 
 pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_init)(
+        pv_ypu_t *ypu,
         const pv_orca_duration_predictor_param_t *param,
         pv_orca_duration_predictor_t **object);
 
-void PV_MOCKABLE(pv_orca_duration_predictor_delete)(pv_orca_duration_predictor_t *object);
+void PV_MOCKABLE(pv_orca_duration_predictor_delete)(pv_ypu_t *ypu, pv_orca_duration_predictor_t *object);
 
 pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
+        pv_ypu_t *ypu,
         pv_orca_duration_predictor_t *object,
         float speech_rate,
         int32_t n,
-        const float *x,
-        int32_t *durations_token);
+        pv_ypu_mem_t *x,
+        int32_t *durations_token,
+        int32_t x_offset);
 
-int32_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(int32_t num_channels, float *x, float speech_rate);
+int32_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
+        pv_ypu_t *ypu,
+        int32_t num_channels,
+        pv_ypu_mem_t *x,
+        float speech_rate,
+        int32_t x_offset);
 
 #endif // PV_ORCA_DURATION_PREDICTOR_H

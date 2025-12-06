@@ -6,7 +6,54 @@ endif ()
 
 include(peer-module.cmake)
 include(peer/zoo-dev.cmake)
+include(peer/ypu.cmake)
+include(peer/model.cmake)
 include(peer/hippo.cmake)
+
+set(PV_YPU_DIRECTX_SUPPORT "OFF" CACHE BOOL "Enable support for YPU DirectX backend")
+set(PV_YPU_MCU_SUPPORT "OFF" CACHE BOOL "Enable support for YPU MCU backend")
+
+set(RELEASE_OPERATORS
+  add
+  add_q510
+  addmv
+  addmv_q1417_q1417_q7
+  addsv
+  attention
+  cat
+  conv1d_depthwise_q1417_q7_q510
+  conv1d_q1417_q7_q510
+  conv1d_transposed_depthwise_q1417_q7_q510
+  convert_f32_i32
+  convert_f32_q7
+  convert_q510_f32
+  convert_q510_q1417
+  divsv
+  dot_add_iadd_q510_q510_q7_q7
+  dot_add_q510_q510_q7_q7
+  exp
+  flip
+  gelu_approx
+  gelu_approx_q510
+  layer_norm_f32_f32_q7_q7
+  lstmcell_q510
+  memcpy
+  memset
+  mul
+  mulmv
+  mulsv
+  quantize_q510
+  relu
+  sigmoid
+  softmax_q31_q510
+  sub
+  sub_mul_q510
+  subsv
+  sum
+  tanh
+  transpose_q7)
+
+set(ENV{PV_YPU_RELEASE_OPERATORS} "${RELEASE_OPERATORS}") 
 
 include ("${zoo-dev_SOURCE_DIR}/preload.cmake")
 
@@ -19,6 +66,8 @@ endif ()
 include("${zoo-dev_SOURCE_DIR}/config.cmake")
 pv_util_func_hash_gen_add_dir(MODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_peer_subdirectory(zoo-dev)
+add_peer_subdirectory(ypu)
+add_peer_subdirectory(model)
 add_peer_subdirectory(hippo)
 
 set(MODULE_VERSION 1.2.X)
@@ -70,12 +119,10 @@ pv_module_register(
     include/orca/pv_orca_vocoder.h
     include/orca/pv_affine.h
     include/orca/pv_cnn.h
-    include/orca/pv_cnn_matmul.h
     include/orca/pv_cnn_transposed.h
     include/orca/pv_attention.h
     include/orca/pv_buffer.h
     include/orca/pv_buffer_int32.h
-    include/orca/pv_buffer_q510.h
     include/orca/pv_embed.h
     include/orca/pv_convnext.h
     include/orca/pv_convnext_transposed.h
@@ -104,9 +151,7 @@ pv_module_register(
     src/pv_attention.c
     src/pv_buffer.c
     src/pv_buffer_int32.c
-    src/pv_buffer_q510.c
     src/pv_cnn.c
-    src/pv_cnn_matmul.c
     src/pv_cnn_transposed.c
     src/pv_embed.c
     src/pv_convnext.c
@@ -130,6 +175,7 @@ pv_module_register(
     ${pv_orca_additional_sources}
   PV_DEPENDENCIES
     pv_core
+    pv_nn
     pv_dump
     pv_hippo_private
     pv_io
@@ -139,6 +185,7 @@ pv_module_register(
     pv_file
     pv_resampler_private
     pv_util
+    pv_ypu
     ${pv_orca_additional_pv_deps}
   PV_PRIVATE_DEPENDENCIES
     pv_feature
@@ -441,6 +488,10 @@ if (NOT PV_BUILD_SIMULATED_MCU)
     list(APPEND TEST_DEPENDENCIES "pv_cjson")
 endif ()
 
+if (PV_TARGET_FILE_SYSTEM AND (NOT ${PV_HOST_PLATFORM} STREQUAL "wasm"))
+  list(APPEND TEST_DEPENDENCIES "pv_audio")
+endif ()
+
 pv_module_register_tests(
   MODULE_NAME pv_orca
   UNIT_TEST_SOURCES
@@ -494,15 +545,10 @@ pv_module_copy_test_resource_dirs(
   TEST_RESOURCE_DIRS ${ORCA_TEST_RESOURCES}
 )
 
-option(ORCA_FLOAT_MODE "Use floats precision for some ORCA algorithms" OFF)
 option(PV_PROFILING_MODE "enable profiling of code" OFF)
 
 option(ORCA_LOG_LEVEL_VERBOSE "enable verbose printouts specific to Orca" OFF)
 option(ORCA_PHONEMIZER_LOG_DEBUG "enable debug printouts specific to Orca phonemizer" OFF)
-
-if(ORCA_FLOAT_MODE)
-  add_definitions(-D__ORCA_FLOAT_MODE__)
-endif()
 
 if(PV_PROFILING_MODE)
   add_definitions(-D__PV_PROFILING_MODE__)

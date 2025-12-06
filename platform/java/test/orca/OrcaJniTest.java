@@ -21,6 +21,8 @@ public class OrcaJniTest {
 
     private final String modelPath = moduleResPath.resolve("param/orca_params_en_female.pv").toString();
 
+    private final String device = "cpu:1";
+
     private long libraryHandle;
 
     @BeforeAll
@@ -73,13 +75,13 @@ public class OrcaJniTest {
 
      @Test
      void basicInit() throws OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
      }
 
      @Test
      void basicMessageStack() {
          try {
-             libraryHandle = OrcaNative.init("invalid", modelPath);
+             libraryHandle = OrcaNative.init("invalid", modelPath, device);
              assertEquals(0, libraryHandle);
          } catch (OrcaException e) {
              assertTrue(e.getMessageStack().length > 0);
@@ -88,26 +90,31 @@ public class OrcaJniTest {
 
      @Test
      void getSampleRate() throws OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
          assertTrue(OrcaNative.getSampleRate(libraryHandle) > 0);
      }
 
      @Test
      void getValidCharacters() throws OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
          String[] characters = OrcaNative.getValidCharacters(libraryHandle);
          assertTrue(characters.length > 0);
      }
 
      @Test
      void getMaxCharacterLimit() throws OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
          assertTrue(OrcaNative.getMaxCharacterLimit(libraryHandle) > 0);
      }
 
      @Test
+     void listHardwareDevices() throws OrcaException {
+        assertTrue(OrcaNative.listHardwareDevices().length > 0);
+     }
+
+     @Test
      void testJniError() throws OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
          try {
              OrcaAudio audioObject = OrcaNative.synthesize(libraryHandle, null, 1.0f, 77);
              assertNull(audioObject);
@@ -119,7 +126,7 @@ public class OrcaJniTest {
 
      @Test
      void synthesize() throws Exception, OrcaException {
-         libraryHandle = OrcaNative.init(accessKey, modelPath);
+         libraryHandle = OrcaNative.init(accessKey, modelPath, device);
          OrcaAudio audioObject = OrcaNative.synthesize(
                  libraryHandle,
                  "Orca!",
@@ -135,7 +142,7 @@ public class OrcaJniTest {
         File tempFile = File.createTempFile("temp", ".tmp");
         String tempFileLocation = tempFile.getAbsolutePath();
 
-        libraryHandle = OrcaNative.init(accessKey, modelPath);
+        libraryHandle = OrcaNative.init(accessKey, modelPath, device);
         OrcaAudio audioObject = OrcaNative.synthesizeToFile(
                 libraryHandle,
                 "Orca!",
@@ -152,7 +159,7 @@ public class OrcaJniTest {
 
     @Test
     void streamSynthesize() throws Exception, OrcaException {
-        libraryHandle = OrcaNative.init(accessKey, modelPath);
+        libraryHandle = OrcaNative.init(accessKey, modelPath, device);
         long streamHandle = OrcaNative.streamOpen(libraryHandle, 1.0f, 77);
         short[] pcmOne = OrcaNative.streamSynthesize(streamHandle, "Orca!");
         assertTrue(pcmOne.length == 0);

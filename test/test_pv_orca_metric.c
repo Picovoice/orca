@@ -22,9 +22,15 @@ static const int32_t NUM_TARGET_PHONEMES = 9;
 static const float PHONEME_ERROR_RATE_REFERENCE = 0.0f;
 static const int32_t SAMPLING_RATE = 16000;
 
+static pv_ypu_t *ypu = NULL;
 static pv_orca_metric_t *orca_metric_object = NULL;
 
 static pv_status_t test_pv_orca_metric_setup(void) {
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
     char *model_path = pv_test_module_res_path(CLASSIFIER_MODEL_PATH);
     pv_test_true(
             model_path != NULL,
@@ -34,7 +40,7 @@ static pv_status_t test_pv_orca_metric_setup(void) {
         return PV_STATUS_IO_ERROR;
     }
 
-    pv_status_t status = pv_orca_metric_init(model_path, SAMPLING_RATE, &orca_metric_object);
+    status = pv_orca_metric_init(ypu, model_path, SAMPLING_RATE, &orca_metric_object);
     free(model_path);
     if (status != PV_STATUS_SUCCESS) {
         return status;
@@ -44,12 +50,13 @@ static pv_status_t test_pv_orca_metric_setup(void) {
 }
 
 static void test_pv_orca_metric_teardown(void) {
-    pv_orca_metric_delete(orca_metric_object);
+    pv_orca_metric_delete(ypu, orca_metric_object);
 }
 
 static void test_pv_orca_metric_process(void) {
     float per = 0.f;
     pv_status_t status = pv_orca_metric_process(
+            ypu,
             orca_metric_object,
             SHUT_OFF_LIGHTS_LENGTH,
             SHUT_OFF_LIGHTS,

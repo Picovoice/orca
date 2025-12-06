@@ -14,10 +14,16 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_orca_vocoder_t *orca_vocoder_object = NULL;
 
 static pv_status_t test_pv_orca_vocoder_setup(void) {
-    pv_status_t status = pv_orca_vocoder_init(&DEC_PARAM, &orca_vocoder_object);
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = pv_orca_vocoder_init(ypu, &DEC_PARAM, &orca_vocoder_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -26,13 +32,11 @@ static pv_status_t test_pv_orca_vocoder_setup(void) {
 }
 
 static void test_pv_orca_vocoder_teardown(void) {
-    pv_orca_vocoder_delete(orca_vocoder_object);
-    orca_vocoder_object = NULL;
+    pv_orca_vocoder_delete(ypu, orca_vocoder_object);
+    pv_ypu_delete(ypu);
 }
 
 static void test_pv_orca_vocoder_forward(void) {
-    pv_test_true(orca_vocoder_object != NULL, "failed to create tmp file");
-
     const int32_t num_samples = TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT;
 
     int16_t *pcm = calloc(TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT, sizeof(int16_t));
@@ -40,7 +44,38 @@ static void test_pv_orca_vocoder_forward(void) {
         return;
     }
 
-    pv_orca_vocoder_forward(orca_vocoder_object, TEST_ORCA_VOCODER_SEQUENCE_LENGTH, TEST_ORCA_VOCODER_INPUT, pcm);
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(TEST_ORCA_VOCODER_INPUT),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        TEST_ORCA_VOCODER_INPUT,
+        0,
+        sizeof(TEST_ORCA_VOCODER_INPUT));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_orca_vocoder_forward(
+        ypu,
+        orca_vocoder_object,
+        TEST_ORCA_VOCODER_SEQUENCE_LENGTH,
+        m0,
+        pcm,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_orca_vocoder_forward failed with %s",
+        pv_status_to_string(status));
+    
 
     float max_difference = 100;
     int32_t start = PV_ORCA_ISTFT_LINEAR_FADE_IN_SAMPLES;
@@ -58,6 +93,7 @@ static void test_pv_orca_vocoder_forward(void) {
     }
 
     free(pcm);
+    pv_ypu_mem_free(ypu, m0);
 }
 
 #ifdef __PV_MOCKS__
@@ -86,7 +122,7 @@ static void test_pv_orca_vocoder_param_load_failure_helper(pv_status_t expected)
     }
 
     pv_orca_vocoder_param_t *param = NULL;
-    pv_status_t status = pv_orca_vocoder_param_load(dummy_file, &param);
+    pv_status_t status = pv_orca_vocoder_param_load(ypu, dummy_file, &param);
     pv_test_true(
             status == expected,
             "param load error, got `%s` expected `%s`",
@@ -94,7 +130,7 @@ static void test_pv_orca_vocoder_param_load_failure_helper(pv_status_t expected)
             pv_status_to_string(expected));
     free(dummy_file);
     if (param) {
-        pv_orca_vocoder_param_delete(param);
+        pv_orca_vocoder_param_delete(ypu, param);
     }
 }
 

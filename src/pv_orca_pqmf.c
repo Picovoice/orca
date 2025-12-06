@@ -20,7 +20,7 @@ static const int32_t PQMF_SYNTHESIS_FILTER_KERNEL_SIZE = PQMF_NUM_TAPS + 1;
 static const int32_t PQMF_NUM_PADDING = 31;
 
 // generated with `script/orca/generate_pqmf_helper_data.py`
-static const int16_t PQMF_SYNTHESIS_FILTER[252] = {  // shape: [num_subbands, kernel_size]
+static const int16_t PQMF_SYNTHESIS_FILTER[252] = { // shape: [num_subbands, kernel_size]
         1, 3, 2, -1, -2, 6, 30, 65, 84, 59, -10, -77, -60, 93, 330, 487,
         377, -44, -569, -800, -418, 501, 1370, 1348, -89, -2605, -4906, -5275, -2537, 3113, 9956, 15475,
         17577, 15648, 10813, 5275, 1151, -518, -50, 1348, 2419, 2520, 1783, 800, 134, -9, 214, 487,
@@ -45,7 +45,7 @@ pv_status_t PV_MOCKABLE(pv_orca_pqmf_synthesis)(
         float *y) {
     PV_ASSERT(num_subbands);
     PV_ASSERT(n);
-    PV_ASSERT(x);  // [num_subbands, n]
+    PV_ASSERT(x); // [num_subbands, n]
     PV_ASSERT(y);
     PV_ORCA_PROFILER_START("pqmf");
 

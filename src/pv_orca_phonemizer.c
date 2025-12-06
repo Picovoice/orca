@@ -1442,8 +1442,9 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
                         return status;
                     }
                 }
-            } else if (pv_heteronym_tree_is_heteronym(object->heteronym_tree,
-                                                       pv_lexicon_encode(object->lexicon, current->verbalized))) {
+            } else if (pv_heteronym_tree_is_heteronym(
+                               object->heteronym_tree,
+                               pv_lexicon_encode(object->lexicon, current->verbalized))) {
                 status = pv_orca_phonemizer_get_phonemes_heteronym(
                         object,
                         i,

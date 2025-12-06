@@ -8,6 +8,7 @@
 #include "orca/pv_orca_duration_predictor.h"
 #include "orca/pv_orca_flow.h"
 #include "orca/pv_orca_vocoder.h"
+#include "ypu/pv_ypu.h"
 
 #define PV_ORCA_WINDOW_SHIFT (256)
 
@@ -18,13 +19,17 @@
 
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_orca_synthesizer_param_serialize)(const pv_orca_synthesizer_param_t *param, FILE *f);
+pv_status_t PV_MOCKABLE(pv_orca_synthesizer_param_serialize)(
+        pv_ypu_t *ypu,
+        const pv_orca_synthesizer_param_t *param,
+        FILE *f);
 
 #endif
 
-void PV_MOCKABLE(pv_orca_synthesizer_param_delete)(pv_orca_synthesizer_param_t *param);
+void PV_MOCKABLE(pv_orca_synthesizer_param_delete)(pv_ypu_t *ypu, pv_orca_synthesizer_param_t *param);
 
 pv_status_t PV_MOCKABLE(pv_orca_synthesizer_param_load)(
+        pv_ypu_t *ypu,
         FILE *f,
         const char *version,
         pv_orca_synthesizer_param_t **param);
@@ -36,15 +41,17 @@ bool PV_MOCKABLE(pv_orca_synthesizer_param_is_equal)(
 typedef struct pv_orca_synthesizer pv_orca_synthesizer_t;
 
 pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
+        pv_ypu_t *ypu,
         const pv_orca_synthesizer_param_t *param,
         pv_orca_stream_state_t *stream_state,
         pv_orca_synthesizer_t **object);
 
-void PV_MOCKABLE(pv_orca_synthesizer_delete)(pv_orca_synthesizer_t *object);
+void PV_MOCKABLE(pv_orca_synthesizer_delete)(pv_ypu_t *ypu, pv_orca_synthesizer_t *object);
 
 int32_t PV_MOCKABLE(pv_orca_synthesizer_sample_rate)(const pv_orca_synthesizer_t *object);
 
 pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
+        pv_ypu_t *ypu,
         pv_orca_synthesizer_t *object,
         const pv_orca_synthesize_params_t *synthesize_params,
         bool no_random_latents,

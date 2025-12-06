@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include "core/pv_language.h"
-#include "orca/pv_buffer.h"
 #include "orca/pv_buffer_int32.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_phonemizer.h"
@@ -12,6 +11,7 @@
 #include "orca/pv_orca_duration_predictor.h"
 #include "orca/pv_orca_flow.h"
 #include "orca/pv_orca_vocoder.h"
+#include "ypu/pv_ypu.h"
 
 typedef struct {
     const int32_t sample_rate;
@@ -55,6 +55,8 @@ typedef struct pv_orca_stream_state {
 
     pv_orca_synthesize_params_t *synthesize_params;
 
+    int32_t num_channels;
+
     int32_t num_characters_to_report;
 
     pv_buffer_int32_t *buffer_encoded_phonemes;
@@ -74,14 +76,12 @@ typedef struct pv_orca_stream_state {
     int32_t start_index_flow;
     int32_t end_index_flow;
 
-    pv_buffer_t *cached_z_prior;
-    pv_buffer_t *buffer_z_prior_concat;
-
-    pv_buffer_t *cached_z;
-    pv_buffer_t *buffer_z_concat;
+    pv_ypu_mem_t *cached_z_prior;
+    pv_ypu_mem_t *cached_z;
 } pv_orca_stream_state_t;
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_init)(
+        pv_ypu_t *ypu,
         const pv_orca_synthesizer_param_t *synthesizer_param,
         const int32_t num_eos_punctuation_indices,
         int32_t *eos_punctuation_indices,
@@ -101,7 +101,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_open)(
 
 void PV_MOCKABLE(pv_orca_stream_state_close)(pv_orca_stream_state_t *object);
 
-void PV_MOCKABLE(pv_orca_stream_state_delete)(pv_orca_stream_state_t *object);
+void PV_MOCKABLE(pv_orca_stream_state_delete)(pv_ypu_t *ypu, pv_orca_stream_state_t *object);
 
 void PV_MOCKABLE(pv_orca_stream_state_count_num_characters)(pv_orca_stream_state_t *object, const char *text);
 
@@ -132,15 +132,16 @@ void PV_MOCKABLE(pv_orca_stream_state_update_chunk_state)(pv_orca_stream_state_t
 bool PV_MOCKABLE(pv_orca_stream_state_is_sufficient_context)(const pv_orca_stream_state_t *object);
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z_prior)(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
-        int32_t num_frames,
-        const float *buffer_z_prior,
+        pv_ypu_mem_t **buffer_z_prior,
         int32_t *num_frames_to_flow);
 
 pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_z)(
+        pv_ypu_t *ypu,
         pv_orca_stream_state_t *object,
         int32_t num_frames,
-        const float *buffer_z,
+        pv_ypu_mem_t **buffer_z,
         int32_t *num_frames_to_voc);
 
 void PV_MOCKABLE(pv_orca_stream_state_update_pcm_chunk)(

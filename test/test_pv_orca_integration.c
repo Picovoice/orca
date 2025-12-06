@@ -14,6 +14,13 @@
 #include "tokenizer/pv_tokenizer.h"
 #include "test/pv_test.h"
 
+#if !defined(__PV_TARGET_NO_FILE_SYSTEM__) && !defined(__PV_TARGET_PLATFORM_WASM__)
+
+#include "audio/pv_audio_file.h"
+#include "audio/pv_container_wav.h"
+
+#endif
+
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
@@ -25,7 +32,8 @@
 
 static const float ORCA_INTELLIGIBILITY_THRESHOLD = 0.65f;
 
-pv_tokenizer_t *TOKENIZERS[NUM_TOKENIZERS] = {NULL};
+static pv_ypu_t *ypu = NULL;
+static pv_tokenizer_t *TOKENIZERS[NUM_TOKENIZERS] = {NULL};
 
 const char *TOKENIZER_PATH_ARRAY[NUM_TOKENIZERS] = {
         "normalizer/tokenizers/tokenizer-gemma-2b-372.bin",
@@ -101,6 +109,7 @@ static pv_status_t test_pv_orca_setup_helper(
             access_key,
             factory,
             model_path,
+            pv_ypu_clone(ypu),
             orca_object);
     free(access_key);
     free(model_path);
@@ -145,6 +154,7 @@ static pv_status_t test_pv_orca_metric_classifier_setup_helper(
     }
 
     status = pv_orca_metric_init(
+            ypu,
             metric_classifier_path_resolved,
             sample_rate,
             metric);
@@ -162,6 +172,11 @@ static pv_status_t test_pv_orca_metric_classifier_setup_helper(
 }
 
 static pv_status_t test_pv_orca_integration_setup(void) {
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
     for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
         const char *tokenizer_bin_filename = TOKENIZER_PATH_ARRAY[i];
 
@@ -174,7 +189,7 @@ static pv_status_t test_pv_orca_integration_setup(void) {
             return PV_STATUS_IO_ERROR;
         }
 
-        pv_status_t status = pv_tokenizer_init(f_tokenizer, &(TOKENIZERS[i]));
+        status = pv_tokenizer_init(f_tokenizer, &(TOKENIZERS[i]));
         (void) fclose(f_tokenizer);
         pv_test_true(status == PV_STATUS_SUCCESS, "Failed to load tokenizer: `%s`",
                      pv_status_to_string(status));
@@ -190,6 +205,8 @@ static void test_pv_orca_integration_teardown(void) {
     for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
         pv_tokenizer_delete(TOKENIZERS[i]);
     }
+
+    pv_ypu_delete(ypu);
 }
 
 typedef struct pv_orca_sentences_helper {
@@ -673,6 +690,7 @@ static pv_status_t test_pv_orca_integration_batch_stream_pcm_match_helper(
         } else {
             bool passed = false;
             status = pv_orca_metric_pcm_frame_level_error_evaluation(
+                    ypu,
                     metric,
                     num_samples,
                     pcm,
@@ -821,6 +839,7 @@ static pv_status_t test_pv_orca_integration_pcm_frame_level_error_helper(
     LOG_INFO("        %s", "`test_pv_orca_integration_pcm_frame_level_error_helper`");
     bool passed = false;
     pv_status_t status = pv_orca_metric_pcm_frame_level_error_evaluation(
+            ypu,
             metric,
             num_samples,
             pcm,
@@ -833,7 +852,7 @@ static pv_status_t test_pv_orca_integration_pcm_frame_level_error_helper(
             "Unexpected error occured at function `pv_orca_metric_pcm_frame_level_error_evaluation()`, the status is `%s`",
             pv_status_to_string(status));
     if (status != PV_STATUS_SUCCESS) {
-        pv_orca_metric_delete(metric);
+        pv_orca_metric_delete(ypu, metric);
         return status;
     }
 
@@ -881,6 +900,7 @@ static pv_status_t test_pv_orca_integration_intelligibility_helper(
     }
 
     pv_status_t status = pv_orca_metric_process(
+            ypu,
             metric,
             num_samples,
             pcm,
@@ -948,7 +968,7 @@ static void test_pv_orca_integration_speaker_suite(
     if (!test_sentences_path) {
         pv_orca_synthesize_params_delete(synthesize_params_object);
         pv_orca_delete(orca_object);
-        pv_orca_metric_delete(metric);
+        pv_orca_metric_delete(ypu, metric);
         return;
     }
 
@@ -959,7 +979,7 @@ static void test_pv_orca_integration_speaker_suite(
     if (status != PV_STATUS_SUCCESS) {
         pv_orca_synthesize_params_delete(synthesize_params_object);
         pv_orca_delete(orca_object);
-        pv_orca_metric_delete(metric);
+        pv_orca_metric_delete(ypu, metric);
         return;
     }
 
@@ -1002,7 +1022,7 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             return;
         }
@@ -1034,7 +1054,7 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS || status_random_seed != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             if (status == PV_STATUS_SUCCESS) {
                 pv_orca_pcm_delete(pcm);
@@ -1064,7 +1084,7 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             pv_orca_pcm_delete(pcm);
             pv_orca_word_alignments_delete(num_alignments, alignments);
@@ -1086,7 +1106,7 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             pv_orca_pcm_delete(pcm);
             pv_orca_word_alignments_delete(num_alignments, alignments);
@@ -1106,7 +1126,7 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             pv_orca_pcm_delete(pcm);
             pv_orca_word_alignments_delete(num_alignments, alignments);
@@ -1130,12 +1150,66 @@ static void test_pv_orca_integration_speaker_suite(
         if (status != PV_STATUS_SUCCESS) {
             pv_orca_synthesize_params_delete(synthesize_params_object);
             pv_orca_delete(orca_object);
-            pv_orca_metric_delete(metric);
+            pv_orca_metric_delete(ypu, metric);
             pv_orca_sentences_helper_delete(test_cases_helper);
             pv_orca_pcm_delete(pcm);
             pv_orca_word_alignments_delete(num_alignments, alignments);
             return;
         }
+
+#if !defined(__PV_TARGET_NO_FILE_SYSTEM__) && !defined(__PV_TARGET_PLATFORM_WASM__)
+
+        int32_t sample_rate = 0;
+        pv_orca_sample_rate(orca_object, &sample_rate);
+
+        char filename[256];
+        static int32_t file_index = 0;
+        sprintf(filename, "pcm/%03d.wav", file_index++);
+
+        char *path = pv_test_module_res_path(filename);
+
+        pv_writer_wav_t *output_file = NULL;
+        status = pv_writer_wav_init(
+            path,
+            sample_rate,
+            &output_file);
+        free(path);
+        pv_test_true(
+                status == PV_STATUS_SUCCESS,
+                "`pv_writer_wav_init` failed; expected `%s` got `%s`",
+                pv_status_to_string(PV_STATUS_SUCCESS),
+                pv_status_to_string(status));
+        if (status != PV_STATUS_SUCCESS) {
+            pv_orca_synthesize_params_delete(synthesize_params_object);
+            pv_orca_delete(orca_object);
+            pv_orca_metric_delete(ypu, metric);
+            pv_orca_sentences_helper_delete(test_cases_helper);
+            pv_orca_pcm_delete(pcm);
+            pv_orca_word_alignments_delete(num_alignments, alignments);
+            return;
+        }
+
+        status = pv_writer_wav_write(
+            output_file,
+            num_samples,
+            pcm);
+        pv_writer_wav_delete(output_file);
+        pv_test_true(
+                status == PV_STATUS_SUCCESS,
+                "`pv_writer_wav_write` failed; expected `%s` got `%s`",
+                pv_status_to_string(PV_STATUS_SUCCESS),
+                pv_status_to_string(status));
+        if (status != PV_STATUS_SUCCESS) {
+            pv_orca_synthesize_params_delete(synthesize_params_object);
+            pv_orca_delete(orca_object);
+            pv_orca_metric_delete(ypu, metric);
+            pv_orca_sentences_helper_delete(test_cases_helper);
+            pv_orca_pcm_delete(pcm);
+            pv_orca_word_alignments_delete(num_alignments, alignments);
+            return;
+        }
+
+#endif
 
         memset(text_raw, '\0', 1024);
         memset(text_truth_original_phonemes, '\0', 8192);
@@ -1156,7 +1230,7 @@ static void test_pv_orca_integration_speaker_suite(
 
     pv_orca_synthesize_params_delete(synthesize_params_object);
     pv_orca_delete(orca_object);
-    pv_orca_metric_delete(metric);
+    pv_orca_metric_delete(ypu, metric);
     pv_orca_sentences_helper_delete(test_cases_helper);
 }
 
@@ -1210,6 +1284,58 @@ static void test_pv_orca_integration_en_female(void) {
             "metric/orca_metric_classifier_params_en.pv",
             0.f);
 }
+
+#ifdef __PV_YPU_CUDA_SUPPORT__
+
+static void test_pv_orca_integration_en_cuda(void) {
+    pv_ypu_t *prev = ypu;
+    pv_status_t status = pv_ypu_init_cuda(0, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "`pv_ypu_init_cuda` failed; expected `%s` got `%s`",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_pv_orca_integration_speaker_suite(
+            "test_data/integration_sentences/en/sentences_en_male.csv",
+            "param/orca_params_en_male.pv",
+            "metric/orca_metric_classifier_params_en.pv",
+            0.f);
+
+    pv_ypu_delete(ypu);
+    ypu = prev;
+}
+
+#endif
+
+#ifdef __PV_YPU_METAL_SUPPORT__
+
+static void test_pv_orca_integration_en_metal(void) {
+    pv_ypu_t *prev = ypu;
+    pv_status_t status = pv_ypu_init_metal(0, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "`pv_ypu_init_metal` failed; expected `%s` got `%s`",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_pv_orca_integration_speaker_suite(
+            "test_data/integration_sentences/en/sentences_en_male.csv",
+            "param/orca_params_en_male.pv",
+            "metric/orca_metric_classifier_params_en.pv",
+            0.f);
+
+    pv_ypu_delete(ypu);
+    ypu = prev;
+}
+
+#endif
 
 static void test_pv_orca_integration_large_en_female(void) {
     test_pv_orca_integration_speaker_suite(
@@ -1431,6 +1557,18 @@ static const pv_test_case_t PV_ORCA_INTEGRATION_TEST_CASES[] = {
 
         {"orca_integration_large_pt_female", test_pv_orca_integration_large_pt_female},
         {"orca_integration_large_pt_male", test_pv_orca_integration_large_pt_male},
+
+#endif
+
+#ifdef __PV_YPU_CUDA_SUPPORT__
+
+        {"orca_integration_en_cuda", test_pv_orca_integration_en_cuda},
+
+#endif
+
+#ifdef __PV_YPU_METAL_SUPPORT__
+
+        {"orca_integration_en_metal", test_pv_orca_integration_en_metal},
 
 #endif
 

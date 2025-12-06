@@ -12,10 +12,16 @@
 
 #endif
 
+static pv_ypu_t *ypu = NULL;
 static pv_vocos_backbone_t *vocos_backbone_object = NULL;
 
 static pv_status_t test_pv_vocos_backbone_setup(void) {
-    pv_status_t status = pv_vocos_backbone_init(&DEC_BACKBONE_0_PARAM, &vocos_backbone_object);
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
+    status = pv_vocos_backbone_init(ypu, &DEC_BACKBONE_0_PARAM, &vocos_backbone_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -24,21 +30,56 @@ static pv_status_t test_pv_vocos_backbone_setup(void) {
 }
 
 static void test_pv_vocos_backbone_teardown(void) {
-    pv_vocos_backbone_delete(vocos_backbone_object);
-    vocos_backbone_object = NULL;
+    pv_vocos_backbone_delete(ypu, vocos_backbone_object);
+    pv_ypu_delete(ypu);
 }
 
 static void test_pv_vocos_backbone_forward(void) {
-    pv_test_true(vocos_backbone_object != NULL, "failed to create tmp file");
-
     int32_t num_channels = pv_vocos_backbone_output_channels(vocos_backbone_object);
-    float *buffer = calloc(TEST_VOCOS_BACKBONE_SEQUENCE_LENGTH, num_channels * sizeof(float));
 
-    pv_vocos_backbone_forward(
-            vocos_backbone_object,
-            TEST_VOCOS_BACKBONE_SEQUENCE_LENGTH,
-            TEST_VOCOS_BACKBONE_INPUT,
-            buffer);
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+        ypu,
+        sizeof(TEST_VOCOS_BACKBONE_INPUT),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
+        return;
+    }
+
+    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
+        ypu,
+        TEST_VOCOS_BACKBONE_SEQUENCE_LENGTH * num_channels * sizeof(float),
+        PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m1 != NULL, "Failed to allocate m1");
+    if (m1 == NULL) {
+        return;
+    }
+
+    pv_status_t status = pv_ypu_mem_copy_to(
+        ypu,
+        m0,
+        TEST_VOCOS_BACKBONE_INPUT,
+        0,
+        sizeof(TEST_VOCOS_BACKBONE_INPUT));
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_ypu_mem_copy_to failed with %s",
+        pv_status_to_string(status));
+
+    status = pv_vocos_backbone_forward(
+        ypu,
+        vocos_backbone_object,
+        TEST_VOCOS_BACKBONE_SEQUENCE_LENGTH,
+        m0,
+        m1,
+        0,
+        0);
+    pv_test_true(
+        status == PV_STATUS_SUCCESS,
+        "pv_vocos_backbone_forward failed with %s",
+        pv_status_to_string(status));
+
+    float *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_test_close_float_array(
             buffer,
             TEST_VOCOS_BACKBONE_TARGET,
@@ -46,8 +87,10 @@ static void test_pv_vocos_backbone_forward(void) {
             0.02f,
             0.001f,
             "failed to forward vocos_backbone");
+    pv_ypu_mem_release_host_view(ypu, m1, true);
 
-    free(buffer);
+    pv_ypu_mem_free(ypu, m0);
+    pv_ypu_mem_free(ypu, m1);
 }
 
 #ifdef __PV_MOCKS__
@@ -81,9 +124,9 @@ static size_t pv_fread_invalid_ret_value(void *ptr, size_t size, size_t nmemb, F
     return 99;
 }
 
-static void *calloc_return_null(size_t arg0, size_t arg1) {
-    (void) arg0;
-    (void) arg1;
+static void *pv_ypu_host_alloc_return_null(pv_ypu_t *ypu, int32_t size_bytes) {
+    (void) ypu;
+    (void) size_bytes;
     return NULL;
 }
 
@@ -95,7 +138,7 @@ static void test_pv_vocos_backbone_param_load_failure_helper(pv_status_t expecte
     }
 
     pv_vocos_backbone_param_t *param = NULL;
-    pv_status_t status = pv_vocos_backbone_param_load(dummy_file, &param);
+    pv_status_t status = pv_vocos_backbone_param_load(ypu, dummy_file, &param);
     pv_test_true(
             status == expected,
             "param load error, got `%s` expected `%s`",
@@ -134,11 +177,11 @@ static void test_pv_vocos_backbone_param_load_failure_4(void) {
 
 static void test_pv_vocos_backbone_param_load_failure_5(void) {
     PV_SET_MOCK_CUSTOM_FUNC(pv_fread, pv_fread_valid)
-    void *(*custom_funcs[])(size_t arg0, size_t arg1) = {
-            calloc_real,
-            calloc_return_null,
+    void *(*custom_funcs[])(pv_ypu_t *, int32_t) = {
+            pv_ypu_host_alloc_real,
+            pv_ypu_host_alloc_return_null,
     };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(calloc, custom_funcs)
+    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_host_alloc, custom_funcs)
 
     test_pv_vocos_backbone_param_load_failure_helper(PV_STATUS_OUT_OF_MEMORY);
 }

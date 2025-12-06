@@ -10,6 +10,7 @@
 #endif
 
 static const char *MODEL_PATH_JA = "param/orca_params_ja_female.pv";
+static pv_ypu_t *ypu = NULL;
 static pv_orca_t *orca_object_ja = NULL;
 static pv_orca_synthesize_params_t *synthesize_params_object_ja = NULL;
 
@@ -35,10 +36,16 @@ static pv_status_t test_pv_orca_setup_helper(
         return status;
     }
 
+    status = pv_ypu_init_cpu(1, &ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        return status;
+    }
+
     status = pv_orca_internal_init(
             access_key,
             factory,
             model_path,
+            pv_ypu_clone(ypu),
             object);
     free(access_key);
     free(model_path);
@@ -70,6 +77,7 @@ static pv_status_t test_pv_orca_setup(void) {
 static void test_pv_orca_teardown(void) {
     pv_orca_synthesize_params_delete(synthesize_params_object_ja);
     pv_orca_delete(orca_object_ja);
+    pv_ypu_delete(ypu);
 }
 
 
