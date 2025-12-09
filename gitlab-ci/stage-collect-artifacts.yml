@@ -12,7 +12,7 @@ collect-artifacts:
   rules:
     - !reference [.collect-artifacts-rules, rules]
   script:
-    - python3 ${PV_PEER_MODULE_DIR}/script/automation/check_version.py --engine orca --repo_folder .
+    - python3 ${PV_PEER_MODULE_DIR}/zoo-dev/script/automation/check_version.py --engine orca --repo_folder .
   artifacts:
     when: always
     paths:

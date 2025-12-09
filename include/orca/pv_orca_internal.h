@@ -12,7 +12,7 @@
 
 #define PV_ORCA_MAGIC_TOKEN "orca"
 
-#define PV_ORCA_VERSION "1.2.X"
+#define PV_ORCA_VERSION "2.0.0"
 
 #ifdef __ORCA_LOG_LEVEL_VERBOSE__
 

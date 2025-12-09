@@ -70,7 +70,7 @@ add_peer_subdirectory(ypu)
 add_peer_subdirectory(model)
 add_peer_subdirectory(hippo)
 
-set(MODULE_VERSION 1.2.X)
+set(MODULE_VERSION 2.0.0)
 
 message(CHECK_START "Generating clean public header file for ${MODULE}")
 execute_process(

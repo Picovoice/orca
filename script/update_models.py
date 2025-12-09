@@ -1,8 +1,14 @@
 import argparse
 import os
 import subprocess
+import sys
 import tempfile
 from uuid import uuid4
+
+PEER_MODULE_DIR = os.environ.get(
+    "PV_PEER_MODULE_DIR",
+    os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(PEER_MODULE_DIR, 'zoo-dev/script'))
 
 from _util import (
     Languages,
