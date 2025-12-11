@@ -35,6 +35,7 @@ jobs:
 
     strategy:
       matrix:
+        device: [ cpu, cpu:1 ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
@@ -69,15 +70,16 @@ jobs:
           cmake --build ./build --target orca_demo_streaming
 
       - name: Test
-        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
+        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.device }} ${{ matrix.platform }} ${{ matrix.arch }}
 
   build-demo-self-hosted:
     runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-linux, pv-ios, pv-windows ]
         make_file: ["Unix Makefiles"]
+        device: [ best ]
         include:
           - machine: rpi3-32
             platform: raspberry-pi
@@ -98,6 +100,22 @@ jobs:
             platform: windows
             arch: arm64
             make_file: "MinGW Makefiles"
+          - machine: pv-linux
+            platform: linux
+            arch: x86_64
+            pv_recorder_platform: linux
+            device: gpu
+          - machine: pv-ios
+            platform: mac
+            arch: arm64
+            pv_recorder_platform: mac-arm64
+            device: gpu
+          - machine: pv-windows
+            platform: windows
+            arch: amd64
+            make_file: "MinGW Makefiles"
+            pv_recorder_platform: windows-amd64
+            device: gpu
 
     steps:
       - uses: actions/checkout@v3
@@ -113,4 +131,4 @@ jobs:
           cmake --build ./build --target orca_demo_streaming
 
       - name: Test
-        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.platform }} ${{ matrix.arch }}
+        run: python3 test/test_orca_c.py ${{secrets.PV_VALID_ACCESS_KEY}} ${{ matrix.device }} ${{ matrix.platform }} ${{ matrix.arch }}
