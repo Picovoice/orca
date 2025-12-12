@@ -25,6 +25,8 @@ from test_util import get_model_path, get_test_data, read_wav_file
 
 test_data = get_test_data()
 
+PCM_OUTLIER_THRESHOLD = 400
+PCM_OUTLIER_COUNT_THRESHOLD = 0.05
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
@@ -52,8 +54,10 @@ class OrcaTestCase(unittest.TestCase):
     def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
         pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
         self.assertEqual(len(pcm), len(ground_truth))
-        for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=12000)
+        diff_pcm = [abs(a - b) for a, b in zip(pcm, ground_truth)]
+        diff_outliers = sum(1 for d in diff_pcm if d > PCM_OUTLIER_THRESHOLD) / len(diff_pcm)
+        self.assertLessEqual(diff_outliers, PCM_OUTLIER_COUNT_THRESHOLD)
+
 
     @staticmethod
     def _get_pcm(model: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
