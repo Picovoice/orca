@@ -59,7 +59,7 @@ jobs:
       - name: Test streaming
         run: >
           python3 orca_demo_streaming.py
-          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}          
+          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text_to_stream "Hello, I am Orca!"
           --model_path ../../lib/common/orca_params_en_female.pv
           --device ${{ matrix.device }}
