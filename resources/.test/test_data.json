@@ -73,8 +73,8 @@
           "orca_params_it_male.pv"
         ],
         "random_state": 42,
-        "text": "importa quanto lentamente vai, l'importante è non fermarsi!",
-        "text_no_punctuation": "importa quanto lentamente vai l'importante è non fermarsi",
+        "text": "quanto lentamente vai, l'importante è non fermarsi!",
+        "text_no_punctuation": "quanto lentamente vai l'importante è non fermarsi",
         "text_custom_pronunciation": "Una pronuncia {personalizzata|a b d ddʒ dz dʒ dʣ e f g i j k l m n o p r rr s t ts tts tʃ tʧ u v w z ŋ ŋg ŋk ɔ ɛ ɲ ʃ ʎ}"
       },
       {
