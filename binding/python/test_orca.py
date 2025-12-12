@@ -28,6 +28,7 @@ test_data = get_test_data()
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
+    device: str
     orcas: List[Orca]
     model_paths: List[str]
 
@@ -69,6 +70,7 @@ class OrcaTestCase(unittest.TestCase):
                 orca = Orca(
                     access_key=cls.access_key,
                     model_path=get_model_path(model),
+                    device=cls.device,
                     library_path=default_library_path('../..'))
                 yield orca, model
 
@@ -265,6 +267,7 @@ class OrcaTestCase(unittest.TestCase):
             orca = Orca(
                 access_key='invalid',
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path))
             self.assertIsNone(orca)
         except OrcaError as e:
@@ -277,6 +280,7 @@ class OrcaTestCase(unittest.TestCase):
             orca = Orca(
                 access_key='invalid',
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path))
             self.assertIsNone(orca)
         except OrcaError as e:
@@ -289,6 +293,7 @@ class OrcaTestCase(unittest.TestCase):
         orca = Orca(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
+            device=self.device,
             library_path=default_library_path(relative_path))
 
         address = orca._handle
@@ -308,7 +313,9 @@ class OrcaTestCase(unittest.TestCase):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--access-key', required=True)
+    parser.add_argument('--device', required=True)
     args = parser.parse_args()
 
     OrcaTestCase.access_key = args.access_key
+    OrcaTestCase.device = args.device
     unittest.main(argv=sys.argv[:1])

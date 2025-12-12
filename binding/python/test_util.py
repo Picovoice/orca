@@ -60,7 +60,7 @@ def read_wav_file(path: str) -> Sequence[int]:
         return struct.unpack(f"{f.getnframes() - 4}h", buffer)
 
 
-def get_model_path(model_name) -> List[str]:
+def get_model_path(model_name) -> str:
     return os.path.join(os.path.dirname(__file__), "../../lib/common", model_name)
 
 

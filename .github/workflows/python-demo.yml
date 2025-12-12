@@ -26,7 +26,8 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+        device: [ cpu:1, cpu ]
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14' ]
         include:
           - os: ubuntu-latest
             install_dep: sudo apt install libportaudio2
@@ -44,6 +45,12 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
+      # ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-2.0.0-py3-none-any.whl
+      # ********************************************************
+
       - name: Install dependencies
         run: |
           ${{matrix.install_dep}}
@@ -52,9 +59,10 @@ jobs:
       - name: Test streaming
         run: >
           python3 orca_demo_streaming.py
-          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --access_key ${{secrets.PV_VALID_ACCESS_KEY}}          
           --text_to_stream "Hello, I am Orca!"
           --model_path ../../lib/common/orca_params_en_female.pv
+          --device ${{ matrix.device }}
 
       - name: Test single
         run: >
@@ -63,16 +71,31 @@ jobs:
           --text "Hello, I am Orca!"
           --output_path ./tmp.wav
           --model_path ../../lib/common/orca_params_en_female.pv
+          --device ${{ matrix.device }}
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
+        device: [ best ]
         machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
+        include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
 
     steps:
       - uses: actions/checkout@v3
+
+    # ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-2.0.0-py3-none-any.whl --force-reinstall
+      # ********************************************************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
@@ -83,6 +106,7 @@ jobs:
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
           --text_to_stream "Hello, I am Orca!"
           --model_path ../../lib/common/orca_params_en_female.pv
+          --device ${{ matrix.device }}
 
       - name: Test single
         run: >
@@ -91,3 +115,4 @@ jobs:
           --text "Hello, I am Orca!"
           --output_path ./tmp.wav
           --model_path ../../lib/common/orca_params_en_female.pv
+          --device ${{ matrix.device }}
