@@ -35,8 +35,8 @@
         </Content>
         <Content Include="..\..\..\lib\windows\amd64\*">
             <PackagePath>
-                buildTransitive/netstandard2.0/libpv_orca.dll;
-                buildTransitive/net6.0/lib/windows/amd64/libpv_orca.dll;
+                buildTransitive\netstandard2.0;
+                buildTransitive\net6.0\lib\windows\amd64;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>lib\windows\amd64\%(Filename)%(Extension)</Link>
