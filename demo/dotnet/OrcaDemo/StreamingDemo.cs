@@ -160,7 +160,7 @@ namespace OrcaDemo
             foreach (Match m in Regex.Matches(text, CustomPronPattern))
             {
                 customPronunciations.Add("{" + m.Groups[1].Value + "}");
-            };
+            }
 
             List<string> tokensRaw = new List<string>();
 

@@ -91,6 +91,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # *********** REMOVE AFTER RELEASE **********************
+    - name: Remove cached package
+      run: dotnet nuget locals all --clear
+    # ******************************************************
+
     - name: Package restore
       run: dotnet restore
 
