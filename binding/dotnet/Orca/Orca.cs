@@ -157,7 +157,7 @@ namespace Pv
         static Orca()
         {
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NET6_0_OR_GREATER
 
             NativeLibrary.SetDllImportResolver(typeof(Orca).Assembly, ImportResolver);
 
@@ -167,7 +167,7 @@ namespace Pv
 
         }
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NET6_0_OR_GREATER
 
         private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
@@ -189,6 +189,7 @@ namespace Pv
         private static extern PvStatus pv_orca_init(
             IntPtr accessKey,
             IntPtr modelPath,
+            IntPtr device,
             out IntPtr handle);
 
         [DllImport(LIBRARY, CallingConvention = CallingConvention.Cdecl)]
@@ -289,6 +290,16 @@ namespace Pv
 
         [DllImport(LIBRARY, CallingConvention = CallingConvention.Cdecl)]
         private static extern void pv_free_error_stack(IntPtr messageStack);
+
+        [DllImport(LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        private static extern PvStatus pv_orca_list_hardware_devices(
+            out IntPtr hardwareDevices,
+            out int numHardwareDevices);
+
+        [DllImport(LIBRARY, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void pv_orca_free_hardware_devices(
+            IntPtr hardwareDevices,
+            int numHardwareDevices);
 
         /// <summary>
         /// C Struct for storing phoneme alignment metadata
@@ -479,13 +490,22 @@ namespace Pv
         /// Absolute path to the file containing model parameters (`.pv`). If not set it will be set to the
         /// default location.
         /// </param>
+        /// <param name="device">
+        /// String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+        /// suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
+        /// GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
+        /// `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
+        /// argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+        /// </param>
         public static Orca Create(
             string accessKey,
-            string modelPath = null)
+            string modelPath = null,
+            string device = null)
         {
             return new Orca(
                 accessKey,
-                modelPath ?? DEFAULT_MODEL_PATH);
+                modelPath ?? DEFAULT_MODEL_PATH,
+                device ?? "best");
         }
 
         /// <summary>
@@ -496,9 +516,17 @@ namespace Pv
         /// Absolute path to the file containing model parameters (`.pv`). If not set it will be set to the
         /// default location.
         /// </param>
+        /// <param name="device">
+        /// String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+        /// suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To select a specific
+        /// GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the target GPU. If set to
+        /// `cpu`, the engine will run on the CPU with the default number of threads. To specify the number of threads, set this
+        /// argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of threads.
+        /// </param>
         private Orca(
             string accessKey,
-            string modelPath)
+            string modelPath,
+            string device)
         {
             if (string.IsNullOrEmpty(accessKey))
             {
@@ -512,16 +540,19 @@ namespace Pv
 
             IntPtr accessKeyPtr = Utils.GetPtrFromUtf8String(accessKey);
             IntPtr modelPathPtr = Utils.GetPtrFromUtf8String(modelPath);
+            IntPtr devicePtr = Utils.GetPtrFromUtf8String(device);
 
             pv_set_sdk("dotnet");
 
             PvStatus status = pv_orca_init(
                 accessKeyPtr,
                 modelPathPtr,
+                devicePtr,
                 out _libraryPointer);
 
             Marshal.FreeHGlobal(accessKeyPtr);
             Marshal.FreeHGlobal(modelPathPtr);
+            Marshal.FreeHGlobal(devicePtr);
 
             if (status != PvStatus.SUCCESS)
             {
@@ -862,6 +893,38 @@ namespace Pv
             pv_free_error_stack(messageStackRef);
 
             return messageStack;
+        }
+
+        /// <summary>
+        /// Retrieves a list of devices that Orca can use for inference. Each entry in the list can be used as
+        /// the `device` argument when creating an instance of Orca.
+        /// </summary>
+        /// <returns>List of all available devices that Orca can use for inference.</returns>
+        /// <exception cref="OrcaException">Thrown when an error occurs while retrieving the devices.</exception>
+        public static string[] GetAvailableDevices()
+        {
+            IntPtr hardwareDevicesPtr;
+            int numDevices;
+            PvStatus status = pv_orca_list_hardware_devices(
+                out hardwareDevicesPtr,
+                out numDevices);
+            if (status != PvStatus.SUCCESS)
+            {
+                throw PvStatusToException(
+                    status,
+                    "Get available devices failed",
+                    GetMessageStack());
+            }
+
+            string[] devices = new string[numDevices];
+            int elementSize = Marshal.SizeOf(typeof(IntPtr));
+            for (int i = 0; i < numDevices; i++)
+            {
+                devices[i] = Utils.GetUtf8StringFromPtr(Marshal.ReadIntPtr(hardwareDevicesPtr, i * elementSize));
+            }
+
+            pv_orca_free_hardware_devices(hardwareDevicesPtr, numDevices);
+            return devices;
         }
     }
 }

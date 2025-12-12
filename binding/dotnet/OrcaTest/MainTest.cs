@@ -30,12 +30,17 @@ namespace OrcaTest
             AppContext.BaseDirectory,
             "../../../../../..");
 
+        private static readonly int PCM_OUTLIER_THRESHOLD = 400;
+        private static readonly double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+
         private static string _accessKey;
+        private static string _device;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext _)
         {
             _accessKey = Environment.GetEnvironmentVariable("ACCESS_KEY");
+            _device = Environment.GetEnvironmentVariable("DEVICE");
         }
 
         [Serializable]
@@ -165,13 +170,12 @@ namespace OrcaTest
             }
         }
 
-        private static void ValidateAudio(short[] synthesizedPcm, short[] testPcm)
+        private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
         {
-            Assert.AreEqual(synthesizedPcm.Length, testPcm.Length);
-            for (int i = 0; i < synthesizedPcm.Length; i++)
-            {
-                Assert.AreEqual(synthesizedPcm[i], testPcm[i], 8000);
-            }
+            Assert.AreEqual(synthesizedPcm.Count(), testPcm.Count());
+            List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short) Math.Abs(a - b)).ToList();
+            double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double) diffPcm.Count;
+            Assert.IsTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
         }
 
         public void ValidatePhonemes(OrcaPhoneme[] phonemes)
@@ -237,7 +241,7 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 Assert.IsFalse(string.IsNullOrWhiteSpace(orca?.Version), "Orca did not return a valid version string.");
                 Assert.IsTrue(orca.SampleRate > 0, "Orca did not return a valid sample rate.");
@@ -257,13 +261,13 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 OrcaAudio res = orca.Synthesize(
                     text,
                     randomState: random_state);
                 List<short> expectedPcm = GetTestAudio(model);
-                ValidateAudio(res.Pcm, expectedPcm.ToArray());
+                ValidateAudio(res.Pcm.ToList(), expectedPcm);
                 ValidateAlignments(res.Words);
             }
         }
@@ -278,7 +282,7 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 OrcaAudio res = orca.Synthesize(
                     text_no_punctuation,
@@ -298,7 +302,7 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 OrcaAudio res = orca.Synthesize(
                     text_custom_pronunciation,
@@ -318,7 +322,7 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 string outputPath = "orca-temp.wav";
                 OrcaWord[] res = orca.SynthesizeToFile(
@@ -327,7 +331,7 @@ namespace OrcaTest
                     randomState: random_state);
                 List<short> expectedPcm = GetTestAudio(model);
                 List<short> synthesizedPcm = GetPcmFromFile(outputPath);
-                ValidateAudio(synthesizedPcm.ToArray(), expectedPcm.ToArray());
+                ValidateAudio(synthesizedPcm, expectedPcm);
                 ValidateAlignments(res);
             }
         }
@@ -341,7 +345,7 @@ namespace OrcaTest
             string text_alignment,
             TestWordAlignmentsJson[] alignments)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 OrcaAudio res = orca.Synthesize(
                     text_alignment,
@@ -362,7 +366,7 @@ namespace OrcaTest
             string text_custom_pronunciation)
         {
             List<short> fullPcm = new List<short>();
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 using (Orca.OrcaStream orcaStream = orca.StreamOpen(randomState: random_state))
                 {
@@ -383,7 +387,7 @@ namespace OrcaTest
             }
             Assert.IsTrue(fullPcm.Count > 0);
             List<short> expectedPcm = GetTestAudio(model, "stream");
-            ValidateAudio(fullPcm.ToArray(), expectedPcm.ToArray());
+            ValidateAudio(fullPcm, expectedPcm);
         }
 
         [TestMethod]
@@ -396,7 +400,7 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 OrcaAudio resSlow = orca.Synthesize(
                     text,
@@ -419,13 +423,32 @@ namespace OrcaTest
             string model,
             string[] text_invalid)
         {
-            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model)))
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
                 foreach (string invalidText in text_invalid)
                 {
                     Assert.ThrowsException<OrcaInvalidArgumentException>(() => orca.Synthesize(
                         invalidText));
                 }
+            }
+        }
+
+        [TestMethod]
+        public void TestInvalidDevice()
+        {
+            Assert.ThrowsException<OrcaInvalidArgumentException>(
+                () => Orca.Create(_accessKey, device: "cloud:9")
+            );
+        }
+
+        [TestMethod]
+        public void TestGetAvailableDevices()
+        {
+            string[] devices = Orca.GetAvailableDevices();
+            Assert.IsTrue(devices.Length > 0);
+            foreach (string device in devices)
+            {
+                Assert.IsFalse(string.IsNullOrEmpty(device));
             }
         }
 
@@ -467,7 +490,7 @@ namespace OrcaTest
         [TestMethod]
         public void TestSynthesizeMessageStack()
         {
-            using (Orca o = Orca.Create(_accessKey))
+            using (Orca o = Orca.Create(_accessKey, device: _device))
             {
                 var obj = typeof(Orca).GetField("_libraryPointer", BindingFlags.NonPublic | BindingFlags.Instance);
                 IntPtr address = (IntPtr)obj.GetValue(o);

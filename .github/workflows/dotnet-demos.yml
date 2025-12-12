@@ -25,6 +25,7 @@ jobs:
 
     strategy:
       matrix:
+        device: [cpu, cpu:1]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
@@ -38,6 +39,15 @@ jobs:
     - name: Package restore
       run: dotnet restore
 
+    # *********** REMOVE AFTER RELEASE **********************
+    - name: Pack binding for local ref
+      run: dotnet pack -c Release
+      working-directory: binding/dotnet
+
+    - name: Add binding to demo
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
+    # ******************************************************
+
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
 
@@ -52,6 +62,7 @@ jobs:
         --gender female
         --text "Hello, I am Orca!"
         --output_path ./tmp.wav
+        --device ${{ matrix.device }}
 
     - name: Run .NET streaming demo
       run: >
@@ -60,13 +71,22 @@ jobs:
         --language en
         --gender female
         --text_to_stream "Hello, I am Orca!"
+        --device ${{ matrix.device }}
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
+        device: [best]
         machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
+        include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
 
     steps:
     - uses: actions/checkout@v3
@@ -74,6 +94,15 @@ jobs:
     - name: Package restore
       run: dotnet restore
 
+    # *********** REMOVE AFTER RELEASE **********************
+    - name: Pack binding for local ref
+      run: dotnet pack -c Release
+      working-directory: binding/dotnet
+
+    - name: Add binding to demo
+      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
+    # ******************************************************
+
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
 
@@ -88,6 +117,7 @@ jobs:
         --gender female
         --text "Hello, I am Orca!"
         --output_path ./tmp.wav
+        --device ${{ matrix.device }}
 
     - name: Run .NET streaming demo
       run: >
@@ -96,3 +126,4 @@ jobs:
         --language en
         --gender female
         --text_to_stream "Hello, I am Orca!"
+        --device ${{ matrix.device }}
