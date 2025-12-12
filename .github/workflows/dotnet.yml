@@ -78,7 +78,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Build binding
-      run: dotnet build Orca/Orca.csproj --framework ${{ matrix.binding-framework }}
+      run: dotnet build Orca/Orca.csproj
       
     - name: Set test framework version (linux)
       if: ${{ matrix.os == 'ubuntu-latest' }}

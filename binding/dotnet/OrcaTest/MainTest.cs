@@ -173,8 +173,8 @@ namespace OrcaTest
         private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
         {
             Assert.AreEqual(synthesizedPcm.Count(), testPcm.Count());
-            List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short) Math.Abs(a - b)).ToList();
-            double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double) diffPcm.Count;
+            List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
+            double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
             Assert.IsTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
         }
 
