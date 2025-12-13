@@ -25,6 +25,7 @@ import orcaParamsFemale from './orca_params_en_female';
 import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+const DEVICE: string = Cypress.env('DEVICE');
 
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
@@ -43,12 +44,14 @@ const runInitTest = async (
   params: {
     accessKey?: string;
     model?: PvModel;
+    device?: string;
     expectFailure?: boolean;
   } = {},
 ) => {
   const {
     accessKey = ACCESS_KEY,
     model = { publicPath: `/test/orca_params_en_male.pv`, forceWrite: true },
+    device = DEVICE,
     expectFailure = false,
   } = params;
 
@@ -56,7 +59,7 @@ const runInitTest = async (
   let isFailed = false;
 
   try {
-    orca = await instance.create(accessKey, model);
+    orca = await instance.create(accessKey, model, { device });
     expect(typeof orca.version).eq('string');
     expect(orca.version.length).gt(0);
     expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
@@ -111,6 +114,13 @@ describe('Orca Binding', function() {
       });
     });
 
+    it(`should be able to handle invalid device (${testCaseString})`, async () => {
+      await runInitTest(instance, {
+        device: "cloud:9",
+        expectFailure: true,
+      });
+    });
+
     it(`should be able to init with public path (${testCaseString})`, async () => {
       await runInitTest(instance, {
         model: { publicPath, forceWrite: true },
@@ -133,6 +143,7 @@ describe('Orca Binding', function() {
       const orca = await Orca.create(
         ACCESS_KEY,
         { publicPath: publicPath, forceWrite: true },
+        { device: DEVICE }
       );
 
       // @ts-ignore
@@ -166,7 +177,8 @@ describe('Orca Binding', function() {
         const orca = await instance.create('invalidAccessKey', {
           publicPath,
           forceWrite: true,
-        });
+        },
+        { device: DEVICE });
         expect(orca).to.be.undefined;
       } catch (e: any) {
         messageStack = e.messageStack;
@@ -179,11 +191,17 @@ describe('Orca Binding', function() {
         const orca = await instance.create('invalidAccessKey', {
           publicPath,
           forceWrite: true,
-        });
+        },
+        { device: DEVICE });
         expect(orca).to.be.undefined;
       } catch (e: any) {
         expect(messageStack.length).to.be.eq(e.messageStack.length);
       }
+    });
+    it('List hardware devices', async () => {
+      const hardwareDevices: string[] = await Orca.listAvailableDevices();
+      expect(Array.isArray(hardwareDevices)).to.be.true;
+      expect(hardwareDevices).length.to.be.greaterThan(0);
     });
   }
 });
@@ -204,6 +222,7 @@ describe('Sentence Tests', function() {
                 const orca = await instance.create(
                   ACCESS_KEY,
                   { publicPath, forceWrite: true },
+                  { device: DEVICE }
                 );
 
                 try {
@@ -245,6 +264,7 @@ describe('Sentence Tests', function() {
             const orca = await instance.create(
               ACCESS_KEY,
               { publicPath, forceWrite: true },
+              { device: DEVICE }
             );
 
             const { pcm } = await orca.synthesize(testCase.text_no_punctuation);
@@ -267,6 +287,7 @@ describe('Sentence Tests', function() {
                 const orca = await instance.create(
                   ACCESS_KEY,
                   { publicPath, forceWrite: true },
+                  { device: DEVICE }
                 );
 
                 const { pcm } = await orca.synthesize(
@@ -292,6 +313,7 @@ describe('Sentence Tests', function() {
             const orca = await instance.create(
               ACCESS_KEY,
               { publicPath, forceWrite: true },
+              { device: DEVICE }
             );
 
             const { pcm } = await orca.synthesize(testCase.text_custom_pronunciation);
@@ -312,6 +334,7 @@ describe('Sentence Tests', function() {
             const orca = await instance.create(
               ACCESS_KEY,
               { publicPath, forceWrite: true },
+              { device: DEVICE }
             );
 
             const { pcm: pcmSlow } = await orca.synthesize(testCase.text, { speechRate: 0.7 });
@@ -342,6 +365,7 @@ describe('Sentence Tests', function() {
             const orca = await instance.create(
               ACCESS_KEY,
               { publicPath, forceWrite: true },
+              { device: DEVICE }
             );
 
             const maxNumChars = orca.maxCharacterLimit;
@@ -375,6 +399,7 @@ describe('Alignment Tests', function() {
           const orca = await instance.create(
             ACCESS_KEY,
             { publicPath, forceWrite: true },
+            { device: DEVICE }
           );
 
           const {
@@ -422,6 +447,7 @@ describe('Invalid Tests', function() {
           const orca = await instance.create(
             ACCESS_KEY,
             { publicPath, forceWrite: true },
+            { device: DEVICE }
           );
 
           for (const failureCase of testCase.text_invalid) {

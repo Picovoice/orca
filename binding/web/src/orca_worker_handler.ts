@@ -36,13 +36,16 @@ self.onmessage = async function(
         return;
       }
       try {
-        Orca.setWasm(event.data.wasm);
         Orca.setWasmSimd(event.data.wasmSimd);
-        Orca.setWasmLib(event.data.wasmLib);
         Orca.setWasmSimdLib(event.data.wasmSimdLib);
+        Orca.setWasmPThread(event.data.wasmPThread);
+        Orca.setWasmPThreadLib(event.data.wasmPThreadLib);
+        Orca.setSdk(event.data.sdk);
+
         orca = await Orca._init(
           event.data.accessKey,
           event.data.modelPath,
+          event.data.options
         );
         self.postMessage({
           command: 'ok',

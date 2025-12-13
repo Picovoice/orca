@@ -2,6 +2,7 @@ import { Orca, OrcaStream } from './orca';
 import { OrcaWorker, OrcaStreamWorker } from './orca_worker';
 
 import {
+  OrcaOptions,
   OrcaModel,
   OrcaSynthesizeParams,
   OrcaPhoneme,
@@ -20,24 +21,25 @@ import {
 
 import * as OrcaErrors from './orca_errors';
 
-import orcaWasm from './lib/pv_orca.wasm';
-import orcaWasmLib from './lib/pv_orca.txt';
 import orcaWasmSimd from './lib/pv_orca_simd.wasm';
 import orcaWasmSimdLib from './lib/pv_orca_simd.txt';
+import orcaWasmPThread from './lib/pv_orca_pthread.wasm';
+import orcaWasmPThreadLib from './lib/pv_orca_pthread.txt';
 
-Orca.setWasm(orcaWasm);
-Orca.setWasmLib(orcaWasmLib);
 Orca.setWasmSimd(orcaWasmSimd);
 Orca.setWasmSimdLib(orcaWasmSimdLib);
-OrcaWorker.setWasm(orcaWasm);
-OrcaWorker.setWasmLib(orcaWasmLib);
+Orca.setWasmPThread(orcaWasmPThread);
+Orca.setWasmPThreadLib(orcaWasmPThreadLib);
 OrcaWorker.setWasmSimd(orcaWasmSimd);
 OrcaWorker.setWasmSimdLib(orcaWasmSimdLib);
+OrcaWorker.setWasmPThread(orcaWasmPThread);
+OrcaWorker.setWasmPThreadLib(orcaWasmPThreadLib);
 
 export {
   Orca,
   OrcaStream,
   OrcaErrors,
+  OrcaOptions,
   OrcaModel,
   OrcaSynthesizeParams,
   OrcaPhoneme,
