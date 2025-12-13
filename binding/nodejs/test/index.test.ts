@@ -20,10 +20,17 @@ import { getAudioFile, getTestData, getModelPath } from './test_utils';
 const ACCESS_KEY = process.argv
   .filter(x => x.startsWith('--access_key='))[0]
   .split('--access_key=')[1];
+const DEVICE = process.argv
+  .filter(x => x.startsWith('--device='))[0]
+  .split('--device=')[1] ?? 'best';
+
+const PCM_OUTLIER_THRESHOLD = 400
+const PCM_OUTLIER_COUNT_THRESHOLD = 0.05
 
 const testData = getTestData();
 
-const getAudioFileName = (model: string, synthesis_type: string): string => model.replace(".pv", `_${synthesis_type}.wav`);
+const getAudioFileName = (model: string, synthesis_type: string): string =>
+  model.replace(".pv", `_${synthesis_type}.wav`);
 
 const loadPcm = (audioFile: string): any => {
   const waveFilePath = getAudioFile(audioFile);
@@ -36,9 +43,9 @@ const loadPcm = (audioFile: string): any => {
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).toBeGreaterThan(0);
   expect(pcm.length).toEqual(groundTruth.length);
-  for (let i = 0; i < pcm.length; i++) {
-    expect(Math.abs(pcm[i] - groundTruth[i])).toBeLessThanOrEqual(8000);
-  }
+  const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
+  const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
+  expect(diffOutliers).toBeLessThanOrEqual(PCM_OUTLIER_COUNT_THRESHOLD);
 };
 
 const validatePhonemes = (phonemes: OrcaPhoneme[]) => {
@@ -84,14 +91,14 @@ describe('properties', () => {
   describe.each<any>(testData.tests.sentence_tests)('$language', ({ language, models }) => {
     describe.each<any>(models)('%s', model => {
       it('version', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         expect(typeof orcaEngine.version).toEqual('string');
         expect(orcaEngine.version.length).toBeGreaterThan(0);
         orcaEngine.release();
       });
 
       it('sample rate', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         expect(orcaEngine.sampleRate).toBeGreaterThan(0);
         orcaEngine.release();
       });
@@ -105,7 +112,7 @@ describe('properties', () => {
       });
 
       it('max character limit', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         expect(orcaEngine.maxCharacterLimit).toBeGreaterThan(0);
         orcaEngine.release();
       });
@@ -117,7 +124,7 @@ describe('sentences', () => {
   describe.each<any>(testData.tests.sentence_tests)('$language', ({ language, models, random_state, text, text_no_punctuation, text_custom_pronunciation }) => {
     describe.each<any>(models)('%s', model => {
       it('synthesize', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         const { pcm, alignments } = orcaEngine.synthesize(
           text,
           { speechRate: 1, randomState: random_state },
@@ -129,7 +136,7 @@ describe('sentences', () => {
       });
 
       it('synthesize with no punctuation', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
 
         try {
           const { pcm, alignments } = orcaEngine.synthesize(text_no_punctuation);
@@ -143,7 +150,7 @@ describe('sentences', () => {
       });
 
       it('synthesize with custom punctuation', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
 
         try {
           const { pcm, alignments } = orcaEngine.synthesize(text_custom_pronunciation);
@@ -157,7 +164,7 @@ describe('sentences', () => {
       });
 
       it('synthesize to file', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         const filePath = './orca-temp.wav';
         const alignments = orcaEngine.synthesizeToFile(text, filePath);
         validateAlignments(alignments);
@@ -166,7 +173,7 @@ describe('sentences', () => {
       });
 
       it('streaming synthesis', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         const orcaStream = orcaEngine.streamOpen({ randomState: random_state });
         const fullPcm: number[] = [];
         for (const char of text) {
@@ -187,7 +194,7 @@ describe('sentences', () => {
       });
 
       it('speech rate', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
         const { pcm: pcmSlow } = orcaEngine.synthesize(text, { speechRate: 0.7 });
         const { pcm: pcmFast } = orcaEngine.synthesize(text, { speechRate: 1.3 });
         expect(pcmSlow.length).toBeGreaterThan(0);
@@ -202,7 +209,7 @@ describe('sentences', () => {
 describe('alignments', () => {
   describe.each<any>(testData.tests.alignment_tests)('$language $model', ({ language, model, random_state, text_alignment, alignments: expectedAlignments }) => {
     it('synthesize alignment', () => {
-      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+      const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
       const { pcm, alignments } = orcaEngine.synthesize(text_alignment, { randomState: random_state });
       expect(pcm.length).toBeGreaterThan(0);
       validateAlignmentsExact(alignments, expectedAlignments);
@@ -215,7 +222,7 @@ describe('invalids', () => {
   describe.each<any>(testData.tests.invalid_tests)('$language', ({ language, models, text_invalid }) => {
     describe.each<any>(models)('%s', model => {
       it('invalid input', () => {
-        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model) });
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
 
         text_invalid.forEach((sentence: string) => {
           try {
@@ -232,10 +239,15 @@ describe('invalids', () => {
 });
 
 
-describe('Defaults', () => {
+describe('basic parameter validation', () => {
   test('Empty AccessKey', () => {
     expect(() => {
       new Orca('');
+    }).toThrow(OrcaInvalidArgumentError);
+  });
+  test('Invalid device', () => {
+    expect(() => {
+      new Orca(ACCESS_KEY, { device: "cloud:9" });
     }).toThrow(OrcaInvalidArgumentError);
   });
 });
@@ -246,7 +258,7 @@ describe('manual paths', () => {
 
     let orcaEngine = new Orca(
       ACCESS_KEY,
-      { libraryPath },
+      { libraryPath, device: DEVICE },
     );
 
     let { pcm, alignments } = orcaEngine.synthesize(
@@ -261,8 +273,8 @@ describe('manual paths', () => {
   });
 });
 
-describe('error message stack', () => {
-  test('message stack cleared after read', () => {
+describe('static functions', () => {
+  test('error message stack cleared after read', () => {
     let error: string[] = [];
     try {
       new Orca('invalid');
@@ -280,5 +292,10 @@ describe('error message stack', () => {
         expect(error[i]).toEqual(e.messageStack[i]);
       }
     }
+  });
+  test('list hardware devices', () => {
+    const hardwareDevices: string[] = Orca.listAvailableDevices();
+    expect(Array.isArray(hardwareDevices)).toBeTruthy();
+    expect(hardwareDevices.length).toBeGreaterThan(0);
   });
 });

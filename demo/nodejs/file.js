@@ -18,21 +18,25 @@ const { WaveFile } = require('wavefile');
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
 
 program
-  .requiredOption(
+  .option(
     '-a, --access_key <string>',
     'AccessKey obtain from the Picovoice Console (https://console.picovoice.ai/)',
   )
-  .requiredOption(
+  .option(
     '-t, --text <string>',
     'Text to be synthesized',
   )
-  .requiredOption(
+  .option(
     '-o, --output_path <string>',
     'Absolute path to .wav file where the generated audio will be stored',
   )
-  .requiredOption(
+  .option(
     '-m, --model_file_path <string>',
     'Absolute path to Orca model',
+  )
+  .option(
+    "-y, --device <string>",
+    "Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). Default: selects best device"
   )
   .option(
     '-l, --library_file_path <string>',
@@ -41,6 +45,11 @@ program
   .option(
     '-v, --verbose',
     'Verbose mode, prints metadata',
+  )
+  .option(
+    "-z, --show_inference_devices",
+    "Print devices that are available to run Orca inference.",
+    false
   );
 
 if (process.argv.length < 4) {
@@ -48,19 +57,33 @@ if (process.argv.length < 4) {
 }
 program.parse(process.argv);
 
+const showInferenceDevices = program["show_inference_devices"];
+if (showInferenceDevices) {
+  console.log(Orca.listAvailableDevices().join('\n'));
+  process.exit();
+}
+
 function fileDemo() {
   let accessKey = program['access_key'];
   let text = program['text'];
   let outputPath = program['output_path'];
   let libraryFilePath = program['library_file_path'];
   let modelFilePath = program['model_file_path'];
+  let device = program["device"];
   let verbose = program['verbose'];
 
+  if (accessKey === undefined || text === undefined || outputPath === undefined || modelFilePath === undefined) {
+    console.error(
+      "`--access_key` `output_path`, `model_file_path`, and `--text` are required arguments"
+    );
+    return;
+  }
   let orca = new Orca(
     accessKey,
     {
-      'modelPath': modelFilePath,
-      'libraryPath': libraryFilePath,
+      modelPath: modelFilePath,
+      device: device,
+      libraryPath: libraryFilePath,
     },
   );
 
