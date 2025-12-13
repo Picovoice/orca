@@ -21,6 +21,7 @@ drwav
 dtype
 dylib
 editdistance
+Embedder
 emscripten
 finalizer
 flac
@@ -52,6 +53,7 @@ pltf
 pluginutils
 Podfile
 popleft
+pthread
 pvbase
 pvcheetah
 pvleopard
