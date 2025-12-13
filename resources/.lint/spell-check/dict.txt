@@ -15,6 +15,7 @@ Cocoapods
 Compat
 constraintlayout
 copywasm
+cuda
 cwrap
 downsample
 drwav
