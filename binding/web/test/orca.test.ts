@@ -36,11 +36,11 @@ const PCM_OUTLIER_THRESHOLD = 400
 const PCM_OUTLIER_COUNT_THRESHOLD = 0.05
 
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
-  expect(pcm.length).toBeGreaterThan(0);
-  expect(pcm.length).toEqual(groundTruth.length);
+  expect(pcm.length).gt(0);
+  expect(pcm.length).eq(groundTruth.length);
   const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
   const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
-  expect(diffOutliers).toBeLessThanOrEqual(PCM_OUTLIER_COUNT_THRESHOLD);
+  expect(diffOutliers).lte(PCM_OUTLIER_COUNT_THRESHOLD);
 };
 
 const runInitTest = async (
