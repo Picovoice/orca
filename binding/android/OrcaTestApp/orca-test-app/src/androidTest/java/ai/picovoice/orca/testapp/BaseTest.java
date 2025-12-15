@@ -117,17 +117,17 @@ public class BaseTest {
     }
 
     protected static void validatePcm(short[] synthesizedPcm, short[] groundTruth) {
-        assertEquals(groundTruth.length, pcm.length);
+        assertEquals(groundTruth.length, synthesizedPcm.length);
 
         int outlierCount = 0;
-        for (int i = 0; i < pcm.length; i++) {
-            int diff = Math.abs(pcm[i] - groundTruth[i]);
+        for (int i = 0; i < synthesizedPcm.length; i++) {
+            int diff = Math.abs(synthesizedPcm[i] - groundTruth[i]);
             if (diff > PCM_OUTLIER_THRESHOLD) {
                 outlierCount++;
             }
         }
 
-        double diffOutliers = (double) outlierCount / pcm.length;
+        double diffOutliers = (double) outlierCount / synthesizedPcm.length;
         assertTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
     }
 
