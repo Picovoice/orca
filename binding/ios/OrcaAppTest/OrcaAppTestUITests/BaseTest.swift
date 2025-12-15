@@ -67,7 +67,9 @@ extension String {
 
 class BaseTest: XCTestCase {
 
-    let accessKey = "{TESTING_ACCESS_KEY_HERE}"
+    let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
+    let device: String = "{TESTING_DEVICE_HERE}"
+
     var testData: TestData?
 
     override func setUp() async throws {

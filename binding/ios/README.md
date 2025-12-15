@@ -14,7 +14,7 @@ assistants. Orca is:
 
 ## Compatibility
 
-- iOS 13.0 or higher
+- iOS 16.0 or higher
 
 ## Installation
 

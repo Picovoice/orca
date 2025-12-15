@@ -1,5 +1,5 @@
 //
-//  Copyright 2024 Picovoice Inc.
+//  Copyright 2024-2025 Picovoice Inc.
 //  You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 //  file accompanying this source.
 //  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -135,8 +135,8 @@ public class Orca {
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try orca.getMessageStack()
-                throw orca.pvStatusToOrcaError(status, "Unable to synthesize streaming speech", messageStack)
+                let messageStack = try Orca.getMessageStack()
+                throw Orca.pvStatusToOrcaError(status, "Unable to synthesize streaming speech", messageStack)
             }
 
             let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
@@ -166,8 +166,8 @@ public class Orca {
                 &cNumSamples,
                 &cPcm)
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try orca.getMessageStack()
-                throw orca.pvStatusToOrcaError(status, "Unable to flush streaming speech", messageStack)
+                let messageStack = try Orca.getMessageStack()
+                throw Orca.pvStatusToOrcaError(status, "Unable to flush streaming speech", messageStack)
             }
 
             let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
@@ -195,6 +195,30 @@ public class Orca {
     public static func setSdk(sdk: String) {
         self.sdk = sdk
     }
+    
+    /// Lists all available devices that Orca can use for inference.
+    /// Entries in the list can be used as the `device` argument when initializing Orca.
+    ///
+    /// - Throws: OrcaError
+    /// - Returns: Array of available devices that Orca can be used for inference.
+    public static func getAvailableDevices() throws -> [String] {
+        var cHardwareDevices: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
+        var numHardwareDevices: Int32 = 0
+        let status = pv_orca_list_hardware_devices(&cHardwareDevices, &numHardwareDevices)
+        if status != PV_STATUS_SUCCESS {
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(status, "Orca getAvailableDevices failed", messageStack)
+        }
+
+        var hardwareDevices: [String] = []
+        for i in 0..<numHardwareDevices {
+            hardwareDevices.append(String(cString: cHardwareDevices!.advanced(by: Int(i)).pointee!))
+        }
+
+        pv_orca_free_hardware_devices(cHardwareDevices, numHardwareDevices)
+
+        return hardwareDevices
+    }
 
     /// Set of characters supported by Orca.
     public var validCharacters: Set<String>? {
@@ -216,30 +240,42 @@ public class Orca {
     /// - Parameters:
     ///   - accessKey: AccessKey obtained from the Picovoice Console (https://console.picovoice.ai/)
     ///   - modelPath: Absolute path to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    ///     where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: OrcaError
     public init(
         accessKey: String,
-        modelPath: String) throws {
+        modelPath: String,
+        device: String? = nil) throws {
 
         var modelPathArg = modelPath
         if !FileManager().fileExists(atPath: modelPathArg) {
             modelPathArg = try getResourcePath(modelPathArg)
         }
 
+        var deviceArg = device
+        if device == nil {
+            deviceArg = "best"
+        }
+
         pv_set_sdk(Orca.sdk)
 
         let initStatus = pv_orca_init(accessKey, modelPathArg, &handle)
         if initStatus != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(initStatus, "Orca init failed", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(initStatus, "Orca init failed", messageStack)
         }
 
         var cNumCharacters: Int32 = 0
         var cCharacters: UnsafePointer<UnsafePointer<Int8>?>?
         let validCharactersStatus = pv_orca_valid_characters(handle, &cNumCharacters, &cCharacters)
         if validCharactersStatus != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(validCharactersStatus, "Unable to get Orca valid characters", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(validCharactersStatus, "Unable to get Orca valid characters", messageStack)
         }
         var validCharacters: Set<String> = ["‘", "’", "“", "”"]
         for i in 0..<cNumCharacters {
@@ -254,16 +290,16 @@ public class Orca {
         var cSampleRate: Int32 = 0
         let sampleRateStatus = pv_orca_sample_rate(handle, &cSampleRate)
         if sampleRateStatus != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(sampleRateStatus, "Orca failed to get sample rate", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(sampleRateStatus, "Orca failed to get sample rate", messageStack)
         }
         self._sampleRate = cSampleRate
 
         var cMaxCharacterLimit: Int32 = 0
         let maxCharacterLimitStatus = pv_orca_max_character_limit(handle, &cMaxCharacterLimit)
         if maxCharacterLimitStatus != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(maxCharacterLimitStatus, "Orca failed to get max character limit", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(maxCharacterLimitStatus, "Orca failed to get max character limit", messageStack)
         }
         self._maxCharacterLimit = cMaxCharacterLimit
     }
@@ -273,14 +309,22 @@ public class Orca {
     /// - Parameters:
     ///   - accessKey: The AccessKey obtained from Picovoice Console (https://console.picovoice.ai).
     ///   - modelURL: URL to file containing model parameters.
+    ///   - device: String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+    ///     suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU
+    ///     device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}`
+    ///     is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the default
+    ///     number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+    ///     where `${NUM_THREADS}` is the desired number of threads.
     /// - Throws: OrcaError
     public convenience init(
             accessKey: String,
-            modelURL: URL) throws {
+            modelURL: URL,
+            device: String? = nil) throws {
 
         try self.init(
                 accessKey: accessKey,
-                modelPath: modelURL.path)
+                modelPath: modelURL.path,
+                device: device)
     }
 
     deinit {
@@ -340,8 +384,8 @@ public class Orca {
             &cNumAlignments,
             &cAlignments)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Unable to synthesize speech", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(status, "Unable to synthesize speech", messageStack)
         }
 
         let buffer = UnsafeBufferPointer(start: cPcm, count: Int(cNumSamples))
@@ -426,8 +470,8 @@ public class Orca {
             &cNumAlignments,
             &cAlignments)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Unable to synthesize speech to file", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(status, "Unable to synthesize speech to file", messageStack)
         }
 
         var wordArray = [OrcaWord]()
@@ -492,23 +536,23 @@ public class Orca {
 
         var status = pv_orca_synthesize_params_init(&cParams)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Unable to create Orca synthesize params object", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(status, "Unable to create Orca synthesize params object", messageStack)
         }
 
         if speechRate != nil {
             status = pv_orca_synthesize_params_set_speech_rate(cParams, Float(speechRate!))
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try getMessageStack()
-                throw pvStatusToOrcaError(status, "Unable to set Orca speech rate", messageStack)
+                let messageStack = try Orca.getMessageStack()
+                throw Orca.pvStatusToOrcaError(status, "Unable to set Orca speech rate", messageStack)
             }
         }
 
         if randomState != nil {
             status = pv_orca_synthesize_params_set_random_state(cParams, randomState!)
             if status != PV_STATUS_SUCCESS {
-                let messageStack = try getMessageStack()
-                throw pvStatusToOrcaError(status, "Unable to set Orca random state", messageStack)
+                let messageStack = try Orca.getMessageStack()
+                throw Orca.pvStatusToOrcaError(status, "Unable to set Orca random state", messageStack)
             }
         }
 
@@ -534,8 +578,8 @@ public class Orca {
             cSynthesizeParams,
             &stream)
         if status != PV_STATUS_SUCCESS {
-            let messageStack = try getMessageStack()
-            throw pvStatusToOrcaError(status, "Unable to open stream", messageStack)
+            let messageStack = try Orca.getMessageStack()
+            throw Orca.pvStatusToOrcaError(status, "Unable to open stream", messageStack)
         }
 
         return OrcaStream(orca: self, stream: stream!)
@@ -558,7 +602,7 @@ public class Orca {
             "If this is a packaged asset, ensure you have added it to your xcode project.")
     }
 
-    private func pvStatusToOrcaError(
+    private static func pvStatusToOrcaError(
         _ status: pv_status_t,
         _ message: String,
         _ messageStack: [String] = []) -> OrcaError {
@@ -591,12 +635,12 @@ public class Orca {
         }
     }
 
-    private func getMessageStack() throws -> [String] {
+    private static func getMessageStack() throws -> [String] {
         var messageStackRef: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?
         var messageStackDepth: Int32 = 0
         let status = pv_get_error_stack(&messageStackRef, &messageStackDepth)
         if status != PV_STATUS_SUCCESS {
-            throw pvStatusToOrcaError(status, "Unable to get Orca error state")
+            throw Orca.pvStatusToOrcaError(status, "Unable to get Orca error state")
         }
 
         var messageStack: [String] = []
