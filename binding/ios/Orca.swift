@@ -195,7 +195,7 @@ public class Orca {
     public static func setSdk(sdk: String) {
         self.sdk = sdk
     }
-    
+
     /// Lists all available devices that Orca can use for inference.
     /// Entries in the list can be used as the `device` argument when initializing Orca.
     ///
@@ -264,7 +264,11 @@ public class Orca {
 
         pv_set_sdk(Orca.sdk)
 
-        let initStatus = pv_orca_init(accessKey, modelPathArg, &handle)
+        let initStatus = pv_orca_init(
+                accessKey,
+                modelPathArg,
+                deviceArg,
+                &handle)
         if initStatus != PV_STATUS_SUCCESS {
             let messageStack = try Orca.getMessageStack()
             throw Orca.pvStatusToOrcaError(initStatus, "Orca init failed", messageStack)
@@ -299,7 +303,10 @@ public class Orca {
         let maxCharacterLimitStatus = pv_orca_max_character_limit(handle, &cMaxCharacterLimit)
         if maxCharacterLimitStatus != PV_STATUS_SUCCESS {
             let messageStack = try Orca.getMessageStack()
-            throw Orca.pvStatusToOrcaError(maxCharacterLimitStatus, "Orca failed to get max character limit", messageStack)
+            throw Orca.pvStatusToOrcaError(
+                    maxCharacterLimitStatus,
+                    "Orca failed to get max character limit",
+                    messageStack)
         }
         self._maxCharacterLimit = cMaxCharacterLimit
     }
