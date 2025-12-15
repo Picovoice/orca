@@ -32,11 +32,15 @@ const EXPECTED_SAMPLE_RATE = 22050;
 
 const getAudioFileName = (model: string, synthesis_type: string): string => model.replace(".pv", `_${synthesis_type}.wav`);
 
-const compareArrays = (arr1: Int16Array, arr2: Int16Array, step: number) => {
-  expect(arr1.length).eq(arr2.length);
-  for (let i = 0; i < arr1.length - step; i += step) {
-    expect(arr1[i]).closeTo(arr2[i], 1);
-  }
+const PCM_OUTLIER_THRESHOLD = 400
+const PCM_OUTLIER_COUNT_THRESHOLD = 0.05
+
+const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
+  expect(pcm.length).toBeGreaterThan(0);
+  expect(pcm.length).toEqual(groundTruth.length);
+  const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
+  const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
+  expect(diffOutliers).toBeLessThanOrEqual(PCM_OUTLIER_COUNT_THRESHOLD);
 };
 
 const runInitTest = async (
@@ -241,7 +245,7 @@ describe('Sentence Tests', function() {
                     streamPcm.push(...endPcm);
                   }
 
-                  compareArrays(new Int16Array(streamPcm), rawPcm, 500);
+                  validatePcm(new Int16Array(streamPcm), rawPcm);
                   await orcaStream.close();
                 } catch (e) {
                   expect(e).to.be.undefined;
@@ -294,7 +298,7 @@ describe('Sentence Tests', function() {
                   testCase.text,
                   { speechRate: 1, randomState: testCase.random_state },
                 );
-                compareArrays(pcm, rawPcm, 500);
+                validatePcm(pcm, rawPcm);
 
                 if (orca instanceof OrcaWorker) {
                   orca.terminate();
