@@ -51,7 +51,12 @@ public class BaseTest {
     static AssetManager assetManager;
     static String testResourcesPath;
     static JsonObject testJson;
+
     static String accessKey;
+    static String device;
+
+    private static final int PCM_OUTLIER_THRESHOLD = 400;
+    private static final double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -72,6 +77,7 @@ public class BaseTest {
         reader.close();
 
         accessKey = appContext.getString(R.string.pvTestingAccessKey);
+        device = appContext.getString(R.string.pvTestingDevice);
     }
 
     public static String getTestDataString() throws IOException {
@@ -110,13 +116,19 @@ public class BaseTest {
         return new File(resPath, String.format("wav/%s", audioFilename)).getAbsolutePath();
     }
 
-    protected static boolean compareArrays(short[] arr1, short[] arr2, int step) {
-        for (int i = 0; i < arr1.length - step; i += step) {
-            if (!(Math.abs(arr1[i] - arr2[i]) <= 500)) {
-                return false;
+    protected static void validatePcm(short[] synthesizedPcm, short[] groundTruth) {
+        assertEquals(groundTruth.length, pcm.length);
+
+        int outlierCount = 0;
+        for (int i = 0; i < pcm.length; i++) {
+            int diff = Math.abs(pcm[i] - groundTruth[i]);
+            if (diff > PCM_OUTLIER_THRESHOLD) {
+                outlierCount++;
             }
         }
-        return true;
+
+        double diffOutliers = (double) outlierCount / pcm.length;
+        assertTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
     }
 
     protected static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {

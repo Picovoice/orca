@@ -1,5 +1,5 @@
 /*
-    Copyright 2024 Picovoice Inc.
+    Copyright 2024-2025 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -18,7 +18,10 @@ class OrcaNative {
 
     static native void setSdk(String sdk);
 
-    static native long init(String accessKey, String modelPath) throws OrcaException;
+    static native long init(
+            String accessKey,
+            String modelPath,
+            String device) throws OrcaException;
 
     static native void delete(long object);
 
@@ -27,6 +30,8 @@ class OrcaNative {
     static native String[] getValidCharacters(long object) throws OrcaException;
 
     static native int getMaxCharacterLimit(long object) throws OrcaException;
+
+    static native String[] listHardwareDevices() throws OrcaException;
 
     static native OrcaAudio synthesize(
             long object,
