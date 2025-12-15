@@ -29,7 +29,8 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        node-version: [18.x, 20.x, 22.x]
+        device: [cpu:1, cpu]
+        node-version: [18.x, 20.x, 22.x, 24.x]
         include:
           - os: ubuntu-latest
             install-dep: sudo apt install libasound2-dev -y
@@ -43,32 +44,52 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+  # REMOVE AFTER RELEASE
+      - name: Install binding
+        run: yarn install && yarn build
+        working-directory: binding/nodejs
+  # REMOVE AFTER RELEASE
+
       - name: Install dependencies
         run: |
           ${{ matrix.install-dep }}
           yarn install
 
       - name: Test streaming
-        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!"
+        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -y ${{ matrix.device }} -t "Hello, I am Orca!"
 
       - name: Test file
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!" -o "./tmp.wav"
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -y ${{ matrix.device }} -t "Hello, I am Orca!" -o "./tmp.wav"
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
     strategy:
       matrix:
+        device: [best]
         machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
+        include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
 
     steps:
       - uses: actions/checkout@v3
+
+  # REMOVE AFTER RELEASE
+      - name: Install binding
+        run: yarn install && yarn build
+        working-directory: binding/nodejs
+  # REMOVE AFTER RELEASE
 
       - name: Install dependencies
         run: yarn install
 
       - name: Test streaming
-        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!"
+        run: yarn streaming -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -y ${{ matrix.device }} -t "Hello, I am Orca!"
 
       - name: Test file
-        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -t "Hello, I am Orca!" -o "./tmp.wav"
+        run: yarn file -a ${{secrets.PV_VALID_ACCESS_KEY}} -m ../../lib/common/orca_params_en_female.pv -y ${{ matrix.device }} -t "Hello, I am Orca!" -o "./tmp.wav"

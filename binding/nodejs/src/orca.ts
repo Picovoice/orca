@@ -20,6 +20,7 @@ import {
 } from './errors';
 
 import {
+  OrcaInputOptions,
   OrcaOptions,
   OrcaSynthesizeParams,
   OrcaSynthesizeResult,
@@ -38,6 +39,10 @@ type OrcaResult = OrcaSynthesizeResult & {
 type OrcaStreamResult = {
   status: PvStatus;
   pcm: Int16Array;
+};
+type OrcaHardwareDevicesResult = {
+  hardware_devices: string[];
+  status: PvStatus;
 };
 
 class Stream {
@@ -155,6 +160,12 @@ export class Orca {
    * @param {string} accessKey AccessKey obtained from Picovoice Console (https://console.picovoice.ai/).
    * @param {OrcaOptions} options Optional configuration arguments.
    * @param {string} options.modelPath The path to save and use the model from (.pv extension)
+   * @param {string} options.device String representation of the device (e.g., CPU or GPU) to use for inference.
+   * If set to `best`, the most suitable device is selected automatically. If set to `gpu`, the engine uses the
+   * first available GPU device. To select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where
+   * `${GPU_INDEX}` is the index of the target GPU. If set to `cpu`, the engine will run on the CPU with the
+   * default number of threads. To specify the number of threads, set this argument to `cpu:${NUM_THREADS}`,
+   * where `${NUM_THREADS}` is the desired number of threads.
    * @param {string} options.libraryPath the path to the Orca dynamic library (.node extension)
    */
   constructor(accessKey: string, options: OrcaOptions = {}) {
@@ -168,6 +179,7 @@ export class Orca {
 
     const {
       modelPath = path.resolve(__dirname, DEFAULT_MODEL_PATH),
+      device = 'best',
       libraryPath = getSystemLibraryPath(),
     } = options;
 
@@ -190,7 +202,7 @@ export class Orca {
     try {
       pvOrca.set_sdk('nodejs');
 
-      orcaHandleAndStatus = pvOrca.init(accessKey, modelPath);
+      orcaHandleAndStatus = pvOrca.init(accessKey, modelPath, device);
     } catch (err: any) {
       pvStatusToException(<PvStatus>err.code, err);
     }
@@ -463,6 +475,41 @@ export class Orca {
       // eslint-disable-next-line no-console
       console.warn('Orca is not initialized');
     }
+  }
+
+  /**
+   * Lists all available devices that Orca can use for inference. Each entry in the list can be used
+   * as the `device` argument when creating an instance of Orca.
+   * @param {OrcaInputOptions} options Optional configuration arguments.
+   * @param {string} options.libraryPath the path to the Orca dynamic library (.node extension)
+   *
+   * @returns List of all available devices that Orca can use for inference.
+   */
+  static listAvailableDevices(options: OrcaInputOptions = {}): string[] {
+    const {
+      libraryPath = getSystemLibraryPath(),
+    } = options;
+
+    const pvOrca = require(libraryPath); // eslint-disable-line
+
+    let orcaHardwareDevicesResult: OrcaHardwareDevicesResult | null = null;
+    try {
+      orcaHardwareDevicesResult = pvOrca.list_hardware_devices();
+    } catch (err: any) {
+      pvStatusToException(<PvStatus>err.code, err);
+    }
+
+    const status = orcaHardwareDevicesResult!.status;
+    if (status !== PvStatus.SUCCESS) {
+      const errorObject = pvOrca.get_error_stack();
+      if (errorObject.status === PvStatus.SUCCESS) {
+        pvStatusToException(status, 'Orca failed to get available devices', errorObject.message_stack);
+      } else {
+        pvStatusToException(status, 'Unable to get Orca error state');
+      }
+    }
+
+    return orcaHardwareDevicesResult!.hardware_devices;
   }
 
   private handlePvStatus(status: PvStatus, message: string): void {
