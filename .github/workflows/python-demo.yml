@@ -45,12 +45,6 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
-      # ************** REMOVE AFTER RELEASE ********************
-      - name: Build binding
-        run: |
-          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-2.0.0-py3-none-any.whl
-      # ********************************************************
-
       - name: Install dependencies
         run: |
           ${{matrix.install_dep}}
@@ -90,12 +84,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-    # ************** REMOVE AFTER RELEASE ********************
-      - name: Build binding
-        run: |
-          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-2.0.0-py3-none-any.whl --force-reinstall
-      # ********************************************************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
