@@ -50,6 +50,10 @@ jobs:
         run: sed -i '.bak' 's:{TESTING_ACCESS_KEY_HERE}:${{secrets.PV_VALID_ACCESS_KEY}}:'
           OrcaAppTestUITests/BaseTest.swift
 
+      - name: Inject Device
+        run: sed -i '.bak' 's:{TESTING_DEVICE_HERE}:best:'
+          OrcaAppTestUITests/BaseTest.swift
+
       - name: XCode Build
         run: xcrun xcodebuild build-for-testing
           -configuration Debug

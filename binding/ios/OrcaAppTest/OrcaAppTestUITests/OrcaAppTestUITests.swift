@@ -30,7 +30,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesize(orca: orca, model: model, testCase: testCase)
 
@@ -69,7 +72,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestStreaming(orca: orca, model: model, testCase: testCase)
 
@@ -87,7 +93,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestMaxCharacterLimit(orca: orca, model: model, testCase: testCase)
 
@@ -105,7 +114,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSampleRate(orca: orca, model: model, testCase: testCase)
 
@@ -123,7 +135,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestValidCharacters(orca: orca, model: model, testCase: testCase)
 
@@ -143,7 +158,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeCustomPron(orca: orca, model: model, testCase: testCase)
 
@@ -171,7 +189,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeSpeechRate(orca: orca, model: model, testCase: testCase)
 
@@ -197,7 +218,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeRandomState(orca: orca, model: model, testCase: testCase)
 
@@ -230,7 +254,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeToFile(orca: orca, model: model, testCase: testCase)
 
@@ -252,7 +279,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeQuotes(orca: orca, model: model, testCase: testCase)
 
@@ -285,7 +315,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestStreamingQuotes(orca: orca, model: model, testCase: testCase)
 
@@ -318,7 +351,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.sentence_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestSynthesizeToFileQuotes(orca: orca, model: model, testCase: testCase)
 
@@ -344,7 +380,10 @@ class OrcaAppTestUITests: BaseTest {
         for testCase in self.testData!.tests.invalid_tests {
             for model in testCase.models {
                 try XCTContext.runActivity(named: "(\(testCase.language) \(model))") { _ in
-                    let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: model))
+                    let orca = try Orca.init(
+                            accessKey: self.accessKey,
+                            modelPath: self.getModelPath(model: model),
+                            device: device)
 
                     try runTestInvalidText(orca: orca, model: model, testCase: testCase)
 
@@ -396,7 +435,10 @@ class OrcaAppTestUITests: BaseTest {
     func testAlignments() throws {
         for testCase in self.testData!.tests.alignment_tests {
             try XCTContext.runActivity(named: "(\(testCase.language) \(testCase.model))") { _ in
-                let orca = try Orca.init(accessKey: self.accessKey, modelPath: self.getModelPath(model: testCase.model))
+                let orca = try Orca.init(
+                        accessKey: self.accessKey,
+                        modelPath: self.getModelPath(model: testCase.model),
+                        device: device)
 
                 try runTestAlignments(orca: orca, model: testCase.model, testCase: testCase)
 
@@ -409,6 +451,14 @@ class OrcaAppTestUITests: BaseTest {
         XCTAssertGreaterThan(Orca.version.count, 0)
     }
 
+    func testGetAvailableDevices() throws {
+        let devices = try Orca.getAvailableDevices()
+        XCTAssert(!devices.isEmpty)
+        for device in devices {
+            XCTAssert(!device.isEmpty)
+        }
+    }
+
     func testMessageStack() throws {
         let bundle = Bundle(for: type(of: self))
         let modelPath: String = bundle.path(
@@ -418,7 +468,7 @@ class OrcaAppTestUITests: BaseTest {
 
         var first_error: String = ""
         do {
-            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath)
+            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath, device: device)
             XCTAssertNil(orca)
         } catch {
             first_error = "\(error.localizedDescription)"
@@ -426,7 +476,7 @@ class OrcaAppTestUITests: BaseTest {
         }
 
         do {
-            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath)
+            let orca: Orca = try Orca(accessKey: "invalid", modelPath: modelPath, device: device)
             XCTAssertNil(orca)
         } catch {
             XCTAssert("\(error.localizedDescription)".count == first_error.count)
@@ -440,7 +490,7 @@ class OrcaAppTestUITests: BaseTest {
                 ofType: "pv",
                 inDirectory: "test_resources/model_files")!
 
-        let orca: Orca = try Orca(accessKey: accessKey, modelPath: modelPath)
+        let orca: Orca = try Orca(accessKey: accessKey, modelPath: modelPath, device: device)
         orca.delete()
 
         do {
