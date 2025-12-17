@@ -14,6 +14,7 @@ import { Orca, OrcaWorker } from '../';
 import testData from '../cypress/fixtures/resources/.test/test_data.json';
 
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
+const DEVICE = Cypress.env('DEVICE');
 const NUM_TEST_ITERATIONS = Number(Cypress.env('NUM_TEST_ITERATIONS'));
 const PROC_PERFORMANCE_THRESHOLD_SEC = Number(Cypress.env('PROC_PERFORMANCE_THRESHOLD_SEC'));
 
@@ -28,6 +29,7 @@ async function testPerformance(
     const orca = await instance.create(
       ACCESS_KEY,
       { publicPath: publicPath, forceWrite: true },
+      { device: DEVICE }
     );
 
     let start = Date.now();

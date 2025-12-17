@@ -26,6 +26,7 @@ jobs:
     strategy:
       matrix:
         node-version: [ lts/* ]
+        device: [ cpu:1 ]
         include:
           - node-version: lts/*
             num_test_iterations: 10
@@ -38,9 +39,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: lts/*
-
-      - name: Pre-build dependencies
-        run: npm install yarn
 
       - name: Install dependencies
         run: yarn install
@@ -55,4 +53,4 @@ jobs:
         run: yarn setup-test
 
       - name: Test
-        run: yarn test-perf --env ACCESS_KEY=${{secrets.PV_VALID_ACCESS_KEY}},NUM_TEST_ITERATIONS=${{matrix.num_test_iterations}},PROC_PERFORMANCE_THRESHOLD_SEC=${{matrix.proc_performance_threshold_sec}}
+        run: yarn test-perf --env ACCESS_KEY=${{secrets.PV_VALID_ACCESS_KEY}},DEVICE=${{matrix.device}},NUM_TEST_ITERATIONS=${{matrix.num_test_iterations}},PROC_PERFORMANCE_THRESHOLD_SEC=${{matrix.proc_performance_threshold_sec}}

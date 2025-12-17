@@ -1,5 +1,5 @@
 /*
-  Copyright 2024 Picovoice Inc.
+  Copyright 2024-2025 Picovoice Inc.
 
   You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
   file accompanying this source.
@@ -57,15 +57,21 @@ export type OrcaSynthesizeResult = {
 
 export type OrcaStreamSynthesizeResult = Int16Array | null
 
+export type OrcaOptions = {
+  /** @defaultValue 'best' */
+  device?: string;
+};
+
 export type OrcaWorkerInitRequest = {
   command: 'init';
   accessKey: string;
   modelPath: string;
-  wasm: string;
-  wasmLib: string;
   wasmSimd: string;
   wasmSimdLib: string;
+  wasmPThread: string;
+  wasmPThreadLib: string;
   sdk: string;
+  options: OrcaOptions;
 };
 
 export type OrcaWorkerSynthesizeRequest = {
