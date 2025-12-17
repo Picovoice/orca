@@ -59,11 +59,12 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
         int32_t *durations_token,
         int32_t x_offset);
 
-int32_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
+pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
         pv_ypu_t *ypu,
         int32_t num_channels,
         pv_ypu_mem_t *x,
         float speech_rate,
-        int32_t x_offset);
+        int32_t x_offset,
+        int32_t *duration_token);
 
 #endif // PV_ORCA_DURATION_PREDICTOR_H
