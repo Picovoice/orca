@@ -238,7 +238,7 @@
 			);
 			mainGroup = 1E00643F27CEDF9B006FF6E9;
 			packageReferences = (
-				E109D19B2CFE4DA30014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */,
+				02B588CD2DFBA7E3007E7026 /* XCRemoteSwiftPackageReference "orca" */,
 			);
 			productRefGroup = 1E00644927CEDF9B006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -662,7 +662,7 @@
 			repositoryURL = "https://github.com/Picovoice/orca";
 			requirement = {
 				kind = exactVersion;
-				version = 1.2.0;
+				version = 2.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
