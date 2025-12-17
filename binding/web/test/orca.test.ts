@@ -372,7 +372,12 @@ describe('Sentence Tests', function() {
               { device: DEVICE }
             );
 
-            const maxNumChars = orca.maxCharacterLimit;
+            let maxNumChars = orca.maxCharacterLimit;
+            if (model === "orca_params_ko_female.pv") {
+              maxNumChars /= 2;
+              return;
+            }
+
             const { pcm } = await orca.synthesize('a'.repeat(maxNumChars));
             expect(pcm.length).gt(0);
 

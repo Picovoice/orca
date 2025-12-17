@@ -12,19 +12,19 @@
 import PvWorker from 'web-worker:./orca_worker_handler.ts';
 
 import {
-    OrcaOptions,
-    OrcaModel,
-    OrcaSynthesizeParams,
-    OrcaSynthesizeResult,
-    OrcaStreamSynthesizeResult,
-    OrcaWorkerInitResponse,
-    OrcaWorkerSynthesizeResponse,
-    OrcaWorkerReleaseResponse,
-    OrcaWorkerStreamOpenResponse,
-    OrcaWorkerStreamSynthesizeResponse,
-    OrcaWorkerStreamFlushResponse,
-    OrcaWorkerStreamCloseResponse,
-    PvStatus,
+  OrcaOptions,
+  OrcaModel,
+  OrcaSynthesizeParams,
+  OrcaSynthesizeResult,
+  OrcaStreamSynthesizeResult,
+  OrcaWorkerInitResponse,
+  OrcaWorkerSynthesizeResponse,
+  OrcaWorkerReleaseResponse,
+  OrcaWorkerStreamOpenResponse,
+  OrcaWorkerStreamSynthesizeResponse,
+  OrcaWorkerStreamFlushResponse,
+  OrcaWorkerStreamCloseResponse,
+  PvStatus,
 } from './types';
 import { loadModel } from '@picovoice/web-utils';
 
