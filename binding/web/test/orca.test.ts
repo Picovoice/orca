@@ -32,8 +32,8 @@ const EXPECTED_SAMPLE_RATE = 22050;
 
 const getAudioFileName = (model: string, synthesis_type: string): string => model.replace(".pv", `_${synthesis_type}.wav`);
 
-const PCM_OUTLIER_THRESHOLD = 400
-const PCM_OUTLIER_COUNT_THRESHOLD = 0.05
+const PCM_OUTLIER_THRESHOLD = 400;
+const PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
 
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).gt(0);
