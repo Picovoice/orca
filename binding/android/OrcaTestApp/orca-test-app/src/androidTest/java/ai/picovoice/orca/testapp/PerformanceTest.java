@@ -82,6 +82,7 @@ public class PerformanceTest extends BaseTest {
         final double procPerformanceThresholdSec = Double.parseDouble(procThresholdString);
         final Orca orca = new Orca.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .setModelPath(getModelFilepath(modelFile))
                 .build(appContext);
 

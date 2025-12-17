@@ -85,6 +85,7 @@ public class AlignmentTests extends BaseTest {
     public void Setup() throws Exception {
         orca = new Orca.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .setModelPath(getModelFilepath(modelFilename))
                 .build(appContext);
     }

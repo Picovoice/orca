@@ -96,6 +96,7 @@ public class SentenceTests extends BaseTest {
     public void Setup() throws Exception {
         orca = new Orca.Builder()
                 .setAccessKey(accessKey)
+                .setDevice(device)
                 .setModelPath(getModelFilepath(modelFilename))
                 .build(appContext);
     }
@@ -154,7 +155,7 @@ public class SentenceTests extends BaseTest {
         orcaStream.close();
         short[] testFilePcm = readAudioFile(getAudioFilepath(modelFilename, "stream"));
 
-        compareArrays(fullPcm, testFilePcm, 1);
+        validatePcm(fullPcm, testFilePcm);
     }
 
     @Test
@@ -167,7 +168,7 @@ public class SentenceTests extends BaseTest {
 
         short[] testFilePcm = readAudioFile(getAudioFilepath(modelFilename, "single"));
 
-        compareArrays(pcm.getPcm(), testFilePcm, 1);
+        validatePcm(pcm.getPcm(), testFilePcm);
     }
 
     @Test
@@ -185,7 +186,7 @@ public class SentenceTests extends BaseTest {
         short[] outputFilePcm = readAudioFile(outputFile.getAbsolutePath());
         short[] testFilePcm = readAudioFile(getAudioFilepath(modelFilename, "single"));
 
-        compareArrays(outputFilePcm, testFilePcm, 1);
+        validatePcm(outputFilePcm, testFilePcm);
         outputFile.delete();
     }
 
