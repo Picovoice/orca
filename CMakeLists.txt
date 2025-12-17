@@ -13,6 +13,8 @@ include(peer/hippo.cmake)
 set(PV_YPU_DIRECTX_SUPPORT "OFF" CACHE BOOL "Enable support for YPU DirectX backend")
 set(PV_YPU_MCU_SUPPORT "OFF" CACHE BOOL "Enable support for YPU MCU backend")
 
+include("${zoo-dev_SOURCE_DIR}/preload.cmake")
+
 set(RELEASE_OPERATORS
   add
   add_q510
@@ -53,9 +55,7 @@ set(RELEASE_OPERATORS
   tanh
   transpose_q7)
 
-set(ENV{PV_YPU_RELEASE_OPERATORS} "${RELEASE_OPERATORS}") 
-
-include ("${zoo-dev_SOURCE_DIR}/preload.cmake")
+set(ENV{PV_YPU_RELEASE_OPERATORS} "${RELEASE_OPERATORS}")
 
 project(orca LANGUAGES C CXX)
 

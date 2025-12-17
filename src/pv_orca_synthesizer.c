@@ -704,7 +704,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
     status = pv_orca_vocoder_forward(ypu, object->vocoder, num_frames_to_voc, buffer_z, pcm_internal, 0);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                pv_orca_duration_predictor_forward,
+                pv_orca_vocoder_forward,
                 pv_status_to_string(status));
         pv_ypu_host_free(ypu, encoded_phonemes_durations_internal);
         free(pcm_internal);

@@ -19,17 +19,35 @@ from _util import (
 # Keep the following in sync with GitHub test data
 TEST_SENTENCES = {
     Languages.ENGLISH.value: "It doesn't matter how slowly you go, as long as you do not stop!",
-    Languages.SPANISH.value: "No importa lo lento que vayas, ¡siempre que no te detengas!"
+    Languages.SPANISH.value: "No importa lo lento que vayas, ¡siempre que no te detengas!",
+    Languages.GERMAN.value: "Es spielt keine Rolle, wie langsam du gehst, solange du nicht stehen bleibst!",
+    Languages.FRENCH.value: "Peu importe la lenteur avec laquelle tu avances, tant que tu ne t’arrêtes pas!",
+    Languages.KOREAN.value: "아무리 천천히 가도, 멈추지만 않는다면 괜찮다!",
+    Languages.JAPANESE.value: "止まらなければ、どれだけゆっくり進んでも問題ありません。",
+    Languages.ITALIAN.value: "quanto lentamente vai, l'importante è non fermarsi!",
+    Languages.PORTUGUESE.value: "Não importa o quão devagar vai, desde que não pare!",
 }
 
 ALIGNMENT_TEST_SENTENCES = {
     Languages.ENGLISH.value: "Test alignment.",
-    Languages.SPANISH.value: "Pruebe la alineación."
+    Languages.SPANISH.value: "Pruebe la alineación.",
+    Languages.GERMAN.value: "Ausrichtung testen.",
+    Languages.FRENCH.value: "Tester l'alignement.",
+    Languages.KOREAN.value: "정렬 테스트.",
+    Languages.JAPANESE.value: "テストアライメント.",
+    Languages.ITALIAN.value: "Testare l'allineamento.",
+    Languages.PORTUGUESE.value: "Alinhamento de teste.",
 }
 
 EXACT_ALIGNMENT_TEST_MODEL_IDENTIFIER = {
     Languages.ENGLISH.value: "orca_params_en_female",
-    Languages.SPANISH.value: "orca_params_es_female"
+    Languages.SPANISH.value: "orca_params_es_female",
+    Languages.GERMAN.value: "orca_params_de_female",
+    Languages.FRENCH.value: "orca_params_fr_female",
+    Languages.KOREAN.value: "orca_params_ko_female",
+    Languages.JAPANESE.value: "orca_params_ja_female",
+    Languages.ITALIAN.value: "orca_params_it_female",
+    Languages.PORTUGUESE.value: "orca_params_pt_female",
 }
 
 RANDOM_STATE = 42

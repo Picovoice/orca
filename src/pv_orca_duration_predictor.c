@@ -428,12 +428,18 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
     const int32_t num_output_channels = pv_affine_num_channels(object->affine_post);
     for (int32_t i = 0; i < num_tokens; i++) {
         const int32_t offset = i * num_output_channels;
-        durations_token[i] = pv_orca_duration_predictor_duration(
+        int32_t duration_token = 0;
+        status = pv_orca_duration_predictor_duration(
                 ypu,
                 num_output_channels,
                 buffer_3,
                 speech_rate,
-                offset * (int32_t) sizeof(float));
+                offset * (int32_t) sizeof(float),
+                &duration_token);
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+        durations_token[i] = duration_token;
     }
 
     pv_ypu_buffer_release(ypu, buffer_3);
@@ -443,16 +449,18 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
     return PV_STATUS_SUCCESS;
 }
 
-int32_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
+pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
         pv_ypu_t *ypu,
         int32_t num_channels,
         pv_ypu_mem_t *x_ypu_mem,
         float speech_rate,
-        int32_t x_offset) {
+        int32_t x_offset,
+        int32_t *duration_token) {
     PV_ASSERT(ypu);
     PV_ASSERT(num_channels > 0);
     PV_ASSERT(x_ypu_mem);
     PV_ASSERT(speech_rate > 0);
+    PV_ASSERT(duration_token);
 
     pv_ypu_mem_t *temp = pv_ypu_buffer_get(
             ypu,
@@ -562,5 +570,6 @@ int32_t PV_MOCKABLE(pv_orca_duration_predictor_duration)(
     int32_t predicted_duration_int = (int32_t) roundf(predicted_duration_float / speech_rate);
     predicted_duration_int = predicted_duration_int < 1 ? 1 : predicted_duration_int;
 
-    return predicted_duration_int;
+    *duration_token = predicted_duration_int;
+    return PV_STATUS_SUCCESS;
 }
