@@ -472,8 +472,15 @@ Build an instance of the object:
 
 ```c
 pv_orca_t *orca = NULL;
+const char *access_key = "${ACCESS_KEY}";
 const char *model_path = "${MODEL_PATH}";
-pv_status_t status = pv_orca_init("${ACCESS_KEY}", model_path, &orca);
+const char *device = "best";
+
+pv_status_t status = pv_orca_init(
+        access_key, 
+        model_path, 
+        device, 
+        &orca);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
 }

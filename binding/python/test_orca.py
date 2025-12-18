@@ -25,9 +25,12 @@ from test_util import get_model_path, get_test_data, read_wav_file
 
 test_data = get_test_data()
 
+PCM_OUTLIER_THRESHOLD = 400
+PCM_OUTLIER_COUNT_THRESHOLD = 0.05
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
+    device: str
     orcas: List[Orca]
     model_paths: List[str]
 
@@ -51,8 +54,10 @@ class OrcaTestCase(unittest.TestCase):
     def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
         pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
         self.assertEqual(len(pcm), len(ground_truth))
-        for i in range(len(pcm)):
-            self.assertAlmostEqual(pcm[i], ground_truth[i], delta=12000)
+        diff_pcm = [abs(a - b) for a, b in zip(pcm, ground_truth)]
+        diff_outliers = sum(1 for d in diff_pcm if d > PCM_OUTLIER_THRESHOLD) / len(diff_pcm)
+        self.assertLessEqual(diff_outliers, PCM_OUTLIER_COUNT_THRESHOLD)
+
 
     @staticmethod
     def _get_pcm(model: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
@@ -69,6 +74,7 @@ class OrcaTestCase(unittest.TestCase):
                 orca = Orca(
                     access_key=cls.access_key,
                     model_path=get_model_path(model),
+                    device=cls.device,
                     library_path=default_library_path('../..'))
                 yield orca, model
 
@@ -265,6 +271,7 @@ class OrcaTestCase(unittest.TestCase):
             orca = Orca(
                 access_key='invalid',
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path))
             self.assertIsNone(orca)
         except OrcaError as e:
@@ -277,6 +284,7 @@ class OrcaTestCase(unittest.TestCase):
             orca = Orca(
                 access_key='invalid',
                 model_path=default_model_path(relative_path),
+                device=self.device,
                 library_path=default_library_path(relative_path))
             self.assertIsNone(orca)
         except OrcaError as e:
@@ -289,6 +297,7 @@ class OrcaTestCase(unittest.TestCase):
         orca = Orca(
             access_key=self.access_key,
             model_path=default_model_path(relative_path),
+            device=self.device,
             library_path=default_library_path(relative_path))
 
         address = orca._handle
@@ -308,7 +317,9 @@ class OrcaTestCase(unittest.TestCase):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--access-key', required=True)
+    parser.add_argument('--device', required=True)
     args = parser.parse_args()
 
     OrcaTestCase.access_key = args.access_key
+    OrcaTestCase.device = args.device
     unittest.main(argv=sys.argv[:1])

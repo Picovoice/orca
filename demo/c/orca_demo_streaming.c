@@ -12,6 +12,7 @@ the License.
 */
 
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,11 +93,13 @@ static void print_dl_error(const char *message) {
 }
 
 static struct option long_options[] = {
-        {"access_key",   required_argument, NULL, 'a'},
-        {"library_path", required_argument, NULL, 'l'},
-        {"model_path",   required_argument, NULL, 'm'},
-        {"text",         required_argument, NULL, 't'},
-        {"output_path",  required_argument, NULL, 'o'},
+        {"access_key",              required_argument, NULL, 'a'},
+        {"library_path",            required_argument, NULL, 'l'},
+        {"model_path",              required_argument, NULL, 'm'},
+        {"device",                  required_argument, NULL, 'y'},
+        {"show_inference_devices",  no_argument,       NULL, 'i'},
+        {"text",                    required_argument, NULL, 't'},
+        {"output_path",             required_argument, NULL, 'o'},
 };
 
 static pv_status_t num_bytes_character(unsigned char c, int32_t *num_bytes) {
@@ -129,7 +132,9 @@ static double get_time() {
 static void print_usage(const char *program_name) {
     fprintf(
             stdout,
-            "Usage: %s [-l LIBRARY_PATH -m MODEL_PATH -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]\n",
+            "Usage: %s [-l LIBRARY_PATH -m MODEL_PATH -y DEVICE -a ACCESS_KEY -t TEXT -o OUTPUT_PATH]\n"
+            " %s [-i, --show_inference_devices] -l LIBRARY_PATH\n",
+            program_name,
             program_name);
 }
 
@@ -175,6 +180,83 @@ void print_error_message(char **message_stack, int32_t message_stack_depth) {
     }
 }
 
+void print_inference_devices(const char *library_path) {
+    void *dl_handle = open_dl(library_path);
+    if (!dl_handle) {
+        fprintf(stderr, "Failed to open library at '%s'.\n", library_path);
+        exit(EXIT_FAILURE);
+    }
+
+    const char *(*pv_status_to_string_func)(pv_status_t) = load_symbol(dl_handle, "pv_status_to_string");
+    if (!pv_status_to_string_func) {
+        print_dl_error("Failed to load 'pv_status_to_string'");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_orca_list_hardware_devices_func)(char ***, int32_t *) =
+    load_symbol(dl_handle, "pv_orca_list_hardware_devices");
+    if (!pv_orca_list_hardware_devices_func) {
+        print_dl_error("failed to load `pv_orca_list_hardware_devices`");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_orca_free_hardware_devices_func)(char **, int32_t) =
+        load_symbol(dl_handle, "pv_orca_free_hardware_devices");
+    if (!pv_orca_free_hardware_devices_func) {
+        print_dl_error("failed to load `pv_orca_free_hardware_devices`");
+        exit(EXIT_FAILURE);
+    }
+
+    pv_status_t (*pv_get_error_stack_func)(char ***, int32_t *) =
+        load_symbol(dl_handle, "pv_get_error_stack");
+    if (!pv_get_error_stack_func) {
+        print_dl_error("failed to load 'pv_get_error_stack_func'");
+        exit(EXIT_FAILURE);
+    }
+
+    void (*pv_free_error_stack_func)(char **) =
+        load_symbol(dl_handle, "pv_free_error_stack");
+    if (!pv_free_error_stack_func) {
+        print_dl_error("failed to load 'pv_free_error_stack_func'");
+        exit(EXIT_FAILURE);
+    }
+
+    char **message_stack = NULL;
+    int32_t message_stack_depth = 0;
+    pv_status_t error_status = PV_STATUS_RUNTIME_ERROR;
+
+    char **hardware_devices = NULL;
+    int32_t num_hardware_devices = 0;
+    pv_status_t status = pv_orca_list_hardware_devices_func(&hardware_devices, &num_hardware_devices);
+    if (status != PV_STATUS_SUCCESS) {
+        fprintf(
+                stderr,
+                "Failed to list hardware devices with `%s`.\n",
+                pv_status_to_string_func(status));
+        error_status = pv_get_error_stack_func(&message_stack, &message_stack_depth);
+        if (error_status != PV_STATUS_SUCCESS) {
+            fprintf(
+                    stderr,
+                    ".\nUnable to get orca error state with '%s'.\n",
+                    pv_status_to_string_func(error_status));
+            exit(EXIT_FAILURE);
+        }
+
+        if (message_stack_depth > 0) {
+            fprintf(stderr, ":\n");
+            print_error_message(message_stack, message_stack_depth);
+            pv_free_error_stack_func(message_stack);
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    for (int32_t i = 0; i < num_hardware_devices; i++) {
+        fprintf(stdout, "%s\n", hardware_devices[i]);
+    }
+    pv_orca_free_hardware_devices_func(hardware_devices, num_hardware_devices);
+    close_dl(dl_handle);
+}
+
 void handle_error(
         char **message_stack,
         int32_t message_stack_depth,
@@ -201,18 +283,26 @@ void handle_error(
 int32_t picovoice_main(int32_t argc, char **argv) {
     const char *library_path = NULL;
     const char *model_path = NULL;
+    const char *device = "best";
+    bool show_inference_devices = false;
     const char *access_key = NULL;
     const char *text = NULL;
     const char *output_path = NULL;
 
     int32_t c;
-    while ((c = getopt_long(argc, argv, "l:m:a:t:o:", long_options, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "l:m:y:ia:t:o:", long_options, NULL)) != -1) {
         switch (c) {
             case 'l':
                 library_path = optarg;
                 break;
             case 'm':
                 model_path = optarg;
+                break;
+            case 'y':
+                device = optarg;
+                break;
+            case 'i':
+                show_inference_devices = true;
                 break;
             case 'a':
                 access_key = optarg;
@@ -226,6 +316,17 @@ int32_t picovoice_main(int32_t argc, char **argv) {
             default:
                 exit(EXIT_FAILURE);
         }
+    }
+
+    if (show_inference_devices) {
+        if (!library_path) {
+            fprintf(stderr, "`library_path` is required to view available inference devices.\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+
+        print_inference_devices(library_path);
+        return EXIT_SUCCESS;
     }
 
     if (!library_path || !model_path || !access_key || !text || !output_path) {
@@ -246,7 +347,7 @@ int32_t picovoice_main(int32_t argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pv_status_t (*pv_orca_init_func)(const char *, const char *, pv_orca_t **) =
+    pv_status_t (*pv_orca_init_func)(const char *, const char *, const char *, pv_orca_t **) =
             load_symbol(orca_library, "pv_orca_init");
     if (!pv_orca_init_func) {
         print_dl_error("Failed to load 'pv_orca_init'");
@@ -346,7 +447,11 @@ int32_t picovoice_main(int32_t argc, char **argv) {
     double time_before_init = get_time();
 
     pv_orca_t *orca = NULL;
-    pv_status_t orca_status = pv_orca_init_func(access_key, model_path, &orca);
+    pv_status_t orca_status = pv_orca_init_func(
+            access_key,
+            model_path,
+            device,
+            &orca);
     if (orca_status != PV_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to create an instance of Orca with `%s`", pv_status_to_string_func(orca_status));
         handle_error(

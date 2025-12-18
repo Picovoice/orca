@@ -2,10 +2,10 @@ const fs = require("fs");
 const { join, extname } = require("path");
 
 const wasmFiles = [
-  "pv_orca.wasm",
-  "pv_orca.js",
   "pv_orca_simd.wasm",
   "pv_orca_simd.js",
+  "pv_orca_pthread.wasm",
+  "pv_orca_pthread.js",
 ]
 
 console.log("Copying the WASM model...");

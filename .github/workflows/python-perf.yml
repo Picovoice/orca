@@ -67,6 +67,7 @@ jobs:
         run: >
           python3 test_orca_perf.py
           --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device cpu:1
           --num-test-iterations 10
           --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}
 
@@ -103,6 +104,7 @@ jobs:
         run: >
           python3 test_orca_perf.py
           --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device cpu:1
           --num-test-iterations 10
           --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}
 
@@ -131,5 +133,6 @@ jobs:
         run: >
           python3 test_orca_perf.py
           --access-key ${{secrets.PV_VALID_ACCESS_KEY}}
+          --device cpu:1
           --num-test-iterations 10
           --proc-performance-threshold-rtf ${{matrix.proc_performance_threshold_rtf}}

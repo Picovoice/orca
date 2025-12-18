@@ -34,6 +34,7 @@ namespace OrcaDemo
             string gender,
             string text,
             string modelPath,
+            string device,
             int tokensPerSecond,
             int? audioWaitChunks,
             int bufferSizeSecs,
@@ -44,7 +45,7 @@ namespace OrcaDemo
                 modelPath = ModelUtils.GetModelPath(language, gender);
             }
 
-            Orca orca = Orca.Create(accessKey, modelPath);
+            Orca orca = Orca.Create(accessKey, modelPath, device);
 
             PvSpeaker speaker = null;
             try
@@ -159,7 +160,7 @@ namespace OrcaDemo
             foreach (Match m in Regex.Matches(text, CustomPronPattern))
             {
                 customPronunciations.Add("{" + m.Groups[1].Value + "}");
-            };
+            }
 
             List<string> tokensRaw = new List<string>();
 
@@ -243,6 +244,8 @@ namespace OrcaDemo
             string gender = null;
             string text = null;
             string modelPath = null;
+            string device = null;
+            bool showInferenceDevices = false;
             int tokensPerSecond = 15;
             int? audioWaitChunks = null;
             int bufferSizeSecs = 20;
@@ -286,6 +289,13 @@ namespace OrcaDemo
                         modelPath = args[argIndex++];
                     }
                 }
+                else if (args[argIndex] == "--device")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        device = args[argIndex++];
+                    }
+                }
                 else if (args[argIndex] == "--tokens_per_second")
                 {
                     if (++argIndex < args.Length && int.TryParse(args[argIndex], out int tps))
@@ -323,6 +333,11 @@ namespace OrcaDemo
                     ShowAudioDevices();
                     return;
                 }
+                else if (args[argIndex] == "--show_inference_devices")
+                {
+                    showInferenceDevices = true;
+                    argIndex++;
+                }
                 else if (args[argIndex] == "-h" || args[argIndex] == "--help")
                 {
                     Console.WriteLine(HELP_STR);
@@ -332,6 +347,12 @@ namespace OrcaDemo
                 {
                     argIndex++;
                 }
+            }
+
+            if (showInferenceDevices)
+            {
+                Console.WriteLine(string.Join(Environment.NewLine, Orca.GetAvailableDevices()));
+                return;
             }
 
             if (string.IsNullOrEmpty(accessKey))
@@ -370,6 +391,7 @@ namespace OrcaDemo
                 gender,
                 text,
                 modelPath,
+                device,
                 tokensPerSecond,
                 audioWaitChunks,
                 bufferSizeSecs,
@@ -383,17 +405,20 @@ namespace OrcaDemo
         }
 
         private static readonly string HELP_STR = "Available options: \n " +
-            "\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
-            "\t--text_to_stream (required): Text to be streamed to Orca\n" +
+            "\t--access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
+            "\t--text_to_stream: Text to be streamed to Orca\n" +
             "\t--language: The language you would like to run the demo in. " +
                 $"Available languages are {string.Join(", ", languages)}\n" +
             "\t--gender: The gender of the synthesized voice. " +
                 $"Available genders are {string.Join(", ", genders)}\n" +
             "\t--model_path: Absolute path to Orca voice model (`.pv`).\n" +
+            "\t--device: Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). " +
+                "Default: automatically selects best device.\n" +
             "\t--tokens_per_second: Number of tokens per second to be streamed to Orca, simulating an LLM response\n" +
             "\t--audio_wait_chunks: Number of PCM chunks to wait before starting to play audio. Default: system-dependent\n" +
             "\t--buffer_size_secs: The size in seconds of the internal buffer used by pvspeaker to play audio\n" +
             "\t--audio_device_index: Index of input audio device.\n" +
-            "\t--show_audio_devices: Print available recording devices.\n";
+            "\t--show_audio_devices: Print available recording devices.\n" +
+            "\t--show_inference_devices: Print devices that are available to run Orca inference.\n";
     }
 }

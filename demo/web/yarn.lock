@@ -96,10 +96,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.2.tgz#1860473de7dfa1546767448f333db80cb0ff2161"
   integrity sha512-xeO57FpIu4p1Ri3Jq/EXq4ClRm86dVF2z/+kvFnyqVYRavTZmaFaUBbWCOuuTh0o/g7DSsk6kc2vrS4Vl5oPOQ==
 
-"@picovoice/orca-web@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-1.2.1.tgz#cea3e78c9d3e17623d838c7ecf62518c408764fb"
-  integrity sha512-RGlhLAWeP/OmG9RHC9gfRMCnuV6XDDJGPhMMXaUC34oWnlIH//jVtjk4Fr0SKQARY532D9Mw18pPWGUPmnzBGQ==
+"@picovoice/orca-web@2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-2.0.0.tgz#03431127d8942827ae49c3cc4f2777e7adcf82eb"
+  integrity sha512-GntE2vTni6ZT7zhl3uqPKmiljPcP6VPFqJficiiZ068oKP3nyYL/Vwx4RgOCqtOaRi51Pgp1l22pzNmBQks2hA==
   dependencies:
     "@picovoice/web-utils" "=1.4.3"
 
@@ -647,6 +647,18 @@ math-intrinsics@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"
   integrity sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==
+
+mime-db@1.52.0:
+  version "1.52.0"
+  resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.52.0.tgz#bbabcdc02859f4987301c856e3387ce5ec43bf70"
+  integrity sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==
+
+mime-types@^2.1.35:
+  version "2.1.35"
+  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.35.tgz#381a871b62a734450660ae3deee44813f70d959a"
+  integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
+  dependencies:
+    mime-db "1.52.0"
 
 mime@^1.6.0:
   version "1.6.0"

@@ -16,7 +16,7 @@ voice assistants. Orca is:
 
 ## Compatibility
 
-- Node.js 16+
+- Node.js 18+
 - Runs on Linux (x86_64), macOS (x86_64, arm64), Windows (x86_64, arm64), and Raspberry Pi (3, 4, 5).
 
 ## Installation

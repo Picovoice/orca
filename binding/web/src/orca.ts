@@ -22,11 +22,12 @@ import {
   loadModel,
 } from '@picovoice/web-utils';
 
-import createModule from "./lib/pv_orca";
 import createModuleSimd from "./lib/pv_orca_simd";
+import createModulePThread from "./lib/pv_orca_pthread";
 
 import {
   OrcaAlignment,
+  OrcaOptions,
   OrcaModel,
   OrcaPhoneme,
   OrcaStreamSynthesizeResult,
@@ -44,6 +45,7 @@ import { pvStatusToException } from './orca_errors';
 type pv_orca_init_type = (
   accessKey: number,
   modelPath: number,
+  device: number,
   object: number
 ) => Promise<number>;
 type pv_orca_delete_type = (object: number) => void;
@@ -91,6 +93,8 @@ type pv_orca_version_type = () => number;
 type pv_set_sdk_type = (sdk: number) => void;
 type pv_get_error_stack_type = (messageStack: number, messageStackDepth: number) => number;
 type pv_free_error_stack_type = (messageStack: number) => void;
+type pv_orca_list_hardware_devices_type = (hardwareDevices: number, numHardwareDevices: number) => number;
+type pv_orca_free_hardware_devices_type = (hardwareDevices: number, numHardwareDevices: number) => number;
 
 type OrcaModule = EmscriptenModule & {
   _pv_free: (address: number) => void;
@@ -113,6 +117,8 @@ type OrcaModule = EmscriptenModule & {
   _pv_set_sdk: pv_set_sdk_type;
   _pv_get_error_stack: pv_get_error_stack_type;
   _pv_free_error_stack: pv_free_error_stack_type;
+  _pv_orca_list_hardware_devices: pv_orca_list_hardware_devices_type;
+  _pv_orca_free_hardware_devices: pv_orca_free_hardware_devices_type;
 
   // em default functions
   addFunction: typeof addFunction;
@@ -137,6 +143,12 @@ type OrcaWasmOutput = {
   messageStackDepthAddress: number;
   streamPcmAddressAddress: number;
 };
+
+export interface OrcaStream {
+  synthesize(text: string): Promise<OrcaStreamSynthesizeResult>
+  flush(): Promise<OrcaStreamSynthesizeResult>;
+  close(): Promise<void>
+}
 
 /**
  * OrcaStream object that converts a stream of text to a stream of audio.
@@ -335,12 +347,6 @@ class Stream implements OrcaStream {
   }
 }
 
-export interface OrcaStream {
-  synthesize(text: string): Promise<OrcaStreamSynthesizeResult>
-  flush(): Promise<OrcaStreamSynthesizeResult>;
-  close(): Promise<void>
-}
-
 /**
  * JavaScript/WebAssembly Binding for Orca
  */
@@ -363,10 +369,11 @@ export class Orca {
   private readonly _messageStackDepthAddress: number;
   private readonly _streamPcmAddressAddress: number;
 
-  private static _wasm: string;
-  private static _wasmLib: string;
   private static _wasmSimd: string;
   private static _wasmSimdLib: string;
+  private static _wasmPThread: string;
+  private static _wasmPThreadLib: string;
+
   private static _sdk: string = 'web';
 
   private static _orcaMutex = new Mutex();
@@ -420,26 +427,6 @@ export class Orca {
   }
 
   /**
-   * Set base64 wasm file.
-   * @param wasm Base64'd wasm file to use to initialize wasm.
-   */
-  public static setWasm(wasm: string): void {
-    if (this._wasm === undefined) {
-      this._wasm = wasm;
-    }
-  }
-
-  /**
-   * Set base64 wasm file in text format.
-   * @param wasmLib Base64'd wasm file in text format.
-   */
-  public static setWasmLib(wasmLib: string): void {
-    if (this._wasmLib === undefined) {
-      this._wasmLib = wasmLib;
-    }
-  }
-
-  /**
    * Set base64 wasm file with SIMD feature.
    * @param wasmSimd Base64'd wasm file to use to initialize wasm.
    */
@@ -456,6 +443,26 @@ export class Orca {
   public static setWasmSimdLib(wasmSimdLib: string): void {
     if (this._wasmSimdLib === undefined) {
       this._wasmSimdLib = wasmSimdLib;
+    }
+  }
+
+  /**
+   * Set base64 wasm file with SIMD and pthread feature.
+   * @param wasmPThread Base64'd wasm file to use to initialize wasm.
+   */
+  public static setWasmPThread(wasmPThread: string): void {
+    if (this._wasmPThread === undefined) {
+      this._wasmPThread = wasmPThread;
+    }
+  }
+
+  /**
+   * Set base64 SIMD and thread wasm file in text format.
+   * @param wasmPThreadLib Base64'd wasm file in text format.
+   */
+  public static setWasmPThreadLib(wasmPThreadLib: string): void {
+    if (this._wasmPThreadLib === undefined) {
+      this._wasmPThreadLib = wasmPThreadLib;
     }
   }
 
@@ -476,37 +483,66 @@ export class Orca {
    * Set to a different name to use multiple models across `orca` instances.
    * @param model.forceWrite Flag to overwrite the model in storage even if it exists.
    * @param model.version Version of the model file. Increment to update the model file in storage.
+   * @param options Optional configuration arguments.
+   * @param options.device String representation of the device (e.g., CPU or GPU) to use. If set to `best`, the most
+   * suitable device is selected automatically. If set to `gpu`, the engine uses the first available GPU device. To
+   * select a specific GPU device, set this argument to `gpu:${GPU_INDEX}`, where `${GPU_INDEX}` is the index of the
+   * target GPU. If set to `cpu`, the engine will run on the CPU with the default number of threads. To specify the
+   * number of threads, set this argument to `cpu:${NUM_THREADS}`, where `${NUM_THREADS}` is the desired number of
+   * threads.
    *
    * @returns An instance of the Orca engine.
    */
   public static async create(
     accessKey: string,
     model: OrcaModel,
+    options: OrcaOptions = {}
   ): Promise<Orca> {
     const customWritePath = (model.customWritePath) ? model.customWritePath : 'orca_model';
     const modelPath = await loadModel({ ...model, customWritePath });
 
-    return Orca._init(accessKey, modelPath);
+    return Orca._init(accessKey, modelPath, options);
   }
 
   public static async _init(
     accessKey: string,
     modelPath: string,
+    options: OrcaOptions = {}
   ): Promise<Orca> {
     if (!isAccessKeyValid(accessKey)) {
       throw new OrcaErrors.OrcaInvalidArgumentError('Invalid AccessKey');
     }
 
+    let { device = 'best' } = options;
+
+    const isSimd = await simd();
+    if (!isSimd) {
+      throw new OrcaErrors.OrcaRuntimeError('Browser not supported.');
+    }
+
+    const isWorkerScope = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
+    if (
+      !isWorkerScope &&
+      (device === 'best' || (device.startsWith('cpu') && device !== 'cpu:1'))
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn('Multi-threading is not supported on main thread.');
+      device = 'cpu:1';
+    }
+
+    const sabDefined = typeof SharedArrayBuffer !== 'undefined'
+      && (device !== "cpu:1");
+
     return new Promise<Orca>((resolve, reject) => {
       Orca._orcaMutex
         .runExclusive(async () => {
-          const isSimd = await simd();
           const wasmOutput = await Orca.initWasm(
             accessKey.trim(),
             modelPath.trim(),
-            (isSimd) ? this._wasmSimd : this._wasm,
-            (isSimd) ? this._wasmSimdLib : this._wasmLib,
-            (isSimd) ? createModuleSimd : createModule);
+            device.trim(),
+            (sabDefined) ? this._wasmPThread : this._wasmSimd,
+            (sabDefined) ? this._wasmPThreadLib : this._wasmSimdLib,
+            (sabDefined) ? createModulePThread : createModuleSimd);
           return new Orca(wasmOutput);
         })
         .then((result: Orca) => {
@@ -897,6 +933,7 @@ export class Orca {
   private static async initWasm(
     accessKey: string,
     modelPath: string,
+    device: string,
     wasmBase64: string,
     wasmLibBase64: string,
     createModuleFunc: any
@@ -913,7 +950,7 @@ export class Orca {
     const pv_orca_init: pv_orca_init_type = this.wrapAsyncFunction(
       module,
       "pv_orca_init",
-      3);
+      4);
     const pv_orca_synthesize: pv_orca_synthesize_type = this.wrapAsyncFunction(
       module,
       "pv_orca_synthesize",
@@ -949,6 +986,16 @@ export class Orca {
     module.HEAPU8.set(modelPathEncoded, modelPathAddress);
     module.HEAPU8[modelPathAddress + modelPathEncoded.length] = 0;
 
+    const deviceEncoded = new TextEncoder().encode(device);
+    const deviceAddress = module._malloc((device.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
+    if (deviceAddress === 0) {
+      throw new OrcaErrors.OrcaOutOfMemoryError(
+        'malloc failed: Cannot allocate memory'
+      );
+    }
+    module.HEAP8.set(deviceEncoded, deviceAddress);
+    module.HEAPU8[deviceAddress + device.length] = 0;
+
     const sdkEncoded = new TextEncoder().encode(this._sdk);
     const sdkAddress = module._malloc((sdkEncoded.length + 1) * Uint8Array.BYTES_PER_ELEMENT);
     if (!sdkAddress) {
@@ -972,9 +1019,11 @@ export class Orca {
     const initStatus = await pv_orca_init(
       accessKeyAddress,
       modelPathAddress,
+      deviceAddress,
       objectAddressAddress);
     module._pv_free(accessKeyAddress);
     module._pv_free(modelPathAddress);
+    module._pv_free(deviceAddress);
 
     if (initStatus !== PvStatus.SUCCESS) {
       const messageStack = Orca.getMessageStack(
@@ -1140,6 +1189,111 @@ export class Orca {
     pv_free_error_stack(messageStackAddressAddress);
 
     return messageStack;
+  }
+
+  /**
+   * Lists all available devices that Orca can use for inference.
+   * Each entry in the list can be the used as the `device` argument when calling the `.create` method.
+   *
+   * @returns List of all available devices that Orca can use for inference.
+   */
+  public static async listAvailableDevices(): Promise<string[]> {
+    return new Promise<string[]>((resolve, reject) => {
+      Orca._orcaMutex
+        .runExclusive(async () => {
+          const isSimd = await simd();
+          if (!isSimd) {
+            throw new OrcaErrors.OrcaRuntimeError('Unsupported Browser');
+          }
+
+          const blob = new Blob(
+            [base64ToUint8Array(this._wasmSimdLib)],
+            { type: 'application/javascript' }
+          );
+          const module: OrcaModule = await createModuleSimd({
+            mainScriptUrlOrBlob: blob,
+            wasmBinary: base64ToUint8Array(this._wasmSimd),
+          });
+
+          const hardwareDevicesAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (hardwareDevicesAddressAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for hardwareDevices'
+            );
+          }
+
+          const numHardwareDevicesAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (numHardwareDevicesAddress === 0) {
+            throw new OrcaErrors.OrcaOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for numHardwareDevices'
+            );
+          }
+
+          const status: PvStatus = module._pv_orca_list_hardware_devices(
+            hardwareDevicesAddressAddress,
+            numHardwareDevicesAddress
+          );
+
+          const messageStackDepthAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (!messageStackDepthAddress) {
+            throw new OrcaErrors.OrcaOutOfMemoryError(
+              'malloc failed: Cannot allocate memory for messageStackDepth'
+            );
+          }
+
+          const messageStackAddressAddressAddress = module._malloc(Int32Array.BYTES_PER_ELEMENT);
+          if (!messageStackAddressAddressAddress) {
+            throw new OrcaErrors.OrcaOutOfMemoryError(
+              'malloc failed: Cannot allocate memory messageStack'
+            );
+          }
+
+          if (status !== PvStatus.SUCCESS) {
+            const messageStack = Orca.getMessageStack(
+              module._pv_get_error_stack,
+              module._pv_free_error_stack,
+              messageStackAddressAddressAddress,
+              messageStackDepthAddress,
+              module.HEAP32,
+              module.HEAPU8,
+            );
+            module._pv_free(messageStackAddressAddressAddress);
+            module._pv_free(messageStackDepthAddress);
+
+            throw pvStatusToException(
+              status,
+              'List devices failed',
+              messageStack
+            );
+          }
+          module._pv_free(messageStackAddressAddressAddress);
+          module._pv_free(messageStackDepthAddress);
+
+          const numHardwareDevices: number = module.HEAP32[numHardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT];
+          module._pv_free(numHardwareDevicesAddress);
+
+          const hardwareDevicesAddress = module.HEAP32[hardwareDevicesAddressAddress / Int32Array.BYTES_PER_ELEMENT];
+
+          const hardwareDevices: string[] = [];
+          for (let i = 0; i < numHardwareDevices; i++) {
+            const deviceAddress = module.HEAP32[hardwareDevicesAddress / Int32Array.BYTES_PER_ELEMENT + i];
+            hardwareDevices.push(arrayBufferToStringAtIndex(module.HEAPU8, deviceAddress));
+          }
+          module._pv_orca_free_hardware_devices(
+            hardwareDevicesAddress,
+            numHardwareDevices
+          );
+          module._pv_free(hardwareDevicesAddressAddress);
+
+          return hardwareDevices;
+        })
+        .then((result: string[]) => {
+          resolve(result);
+        })
+        .catch((error: any) => {
+          reject(error);
+        });
+    });
   }
 
   private static wrapAsyncFunction(module: OrcaModule, functionName: string, numArgs: number): (...args: any[]) => any {

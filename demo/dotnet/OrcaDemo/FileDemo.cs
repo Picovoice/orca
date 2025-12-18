@@ -34,6 +34,7 @@ namespace OrcaDemo
             string text,
             string outputPath,
             string modelPath,
+            string device,
             bool verbose)
         {
             if (string.IsNullOrEmpty(modelPath))
@@ -41,7 +42,7 @@ namespace OrcaDemo
                 modelPath = ModelUtils.GetModelPath(language, gender);
             }
 
-            using (Orca orca = Orca.Create(accessKey, modelPath))
+            using (Orca orca = Orca.Create(accessKey, modelPath, device))
             {
                 Console.WriteLine($"Orca version: {orca.Version}\n");
 
@@ -156,6 +157,8 @@ namespace OrcaDemo
             string text = null;
             string outputPath = null;
             string modelPath = null;
+            string device = null;
+            bool showInferenceDevices = false;
             bool verbose = false;
 
             int argIndex = 0;
@@ -196,12 +199,24 @@ namespace OrcaDemo
                         modelPath = args[argIndex++];
                     }
                 }
+                else if (args[argIndex] == "--device")
+                {
+                    if (++argIndex < args.Length)
+                    {
+                        device = args[argIndex++];
+                    }
+                }
                 else if (args[argIndex] == "--output_path")
                 {
                     if (++argIndex < args.Length)
                     {
                         outputPath = args[argIndex++];
                     }
+                }
+                else if (args[argIndex] == "--show_inference_devices")
+                {
+                    showInferenceDevices = true;
+                    argIndex++;
                 }
                 else if (args[argIndex] == "--verbose")
                 {
@@ -217,6 +232,12 @@ namespace OrcaDemo
                 {
                     argIndex++;
                 }
+            }
+
+            if (showInferenceDevices)
+            {
+                Console.WriteLine(string.Join(Environment.NewLine, Orca.GetAvailableDevices()));
+                return;
             }
 
             if (string.IsNullOrEmpty(accessKey))
@@ -264,6 +285,7 @@ namespace OrcaDemo
                 text,
                 outputPath,
                 modelPath,
+                device,
                 verbose);
         }
 
@@ -274,13 +296,16 @@ namespace OrcaDemo
         }
 
         private static readonly string HELP_STR = "Available options: \n " +
-            $"\t--access_key (required): AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
-            $"\t--text (required): Text to be synthesized\n" +
-            $"\t--output_path (required): Absolute path to .wav file where the generated audio will be stored\n" +
+            $"\t--access_key: AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)\n" +
+            $"\t--text: Text to be synthesized\n" +
+            $"\t--output_path: Absolute path to .wav file where the generated audio will be stored\n" +
             $"\t--language: The language you would like to run the demo in. " +
                 $"Available languages are {string.Join(", ", languages)}\n" +
             $"\t--gender: The gender of the synthesized voice. " +
                 $"Available genders are {string.Join(", ", genders)}\n" +
-            $"\t--model_path: Absolute path to Orca voice model (`.pv`).\n";
+            $"\t--model_path: Absolute path to Orca voice model (`.pv`).\n" +
+            "\t--device: Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). " +
+                "Default: automatically selects best device.\n" +
+            "\t--show_inference_devices: Print devices that are available to run Orca inference.\n";
     }
 }

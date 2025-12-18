@@ -294,7 +294,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -349,7 +349,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -369,7 +369,7 @@
 				DEVELOPMENT_TEAM = 65723695GD;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OrcaDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -391,7 +391,7 @@
 				DEVELOPMENT_TEAM = 65723695GD;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OrcaDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -426,31 +426,23 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		E109D19B2CFE4DA30014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../orca;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		02B588CA2DFBA7AD007E7026 /* XCRemoteSwiftPackageReference "orca" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Picovoice/orca";
 			requirement = {
 				kind = exactVersion;
-				version = 1.2.0;
+				version = 2.0.0;
 			};
 		};
-		07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Picovoice/orca";
-			requirement = {
-				kind = exactVersion;
-				version = 1.1.2;
-			};
-		};
-		E1F352FE2D00ED5C0069B0E6 /* XCRemoteSwiftPackageReference "orca" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Picovoice/orca";
-			requirement = {
-				kind = exactVersion;
-				version = 1.0.1;
-			};
-		};
+
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -463,29 +455,21 @@
 			package = 02B588CA2DFBA7AD007E7026 /* XCRemoteSwiftPackageReference "orca" */;
 			productName = Orca;
 		};
+		E109D19D2CFE4DBC0014F5AA /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E109D19B2CFE4DA30014F5AA /* XCLocalSwiftPackageReference "../../../../orca" */;
+			productName = Orca;
+		};
 		0751D6632D6D46AA001EB29D /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Orca;
 		};
-		07F723582D6D594B0002D88F /* Orca */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */;
-			productName = Orca;
-		};
-		1E7C0A412D84DA0700A5350A /* Orca */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 07F723572D6D594B0002D88F /* XCRemoteSwiftPackageReference "orca" */;
-			productName = Orca;
-		};
+
 		E109D1A22CFE4F380014F5AA /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Orca;
 		};
-		E1F352FF2D00ED5C0069B0E6 /* Orca */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E1F352FE2D00ED5C0069B0E6 /* XCRemoteSwiftPackageReference "orca" */;
-			productName = Orca;
-		};
+
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 02A1193D268D39A700A2AC99 /* Project object */;

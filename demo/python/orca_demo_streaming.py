@@ -185,7 +185,7 @@ def tokenize_text(text: str, language: str) -> Sequence[str]:
             tokens_raw = [encoder.decode([i]) for i in encoder.encode(text)]
         except:
             ALPHA_NUMERIC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
-            PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~ '
+            PUNCTUATION = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ '
             tokens_raw = [text[0]]
             for ch in text[1:]:
                 if (ch in ALPHA_NUMERIC and tokens_raw[-1][-1] not in ALPHA_NUMERIC) or ch in PUNCTUATION:
@@ -218,13 +218,15 @@ def main() -> None:
     parser.add_argument(
         "--access_key",
         "-a",
-        required=True,
         help="AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)")
     parser.add_argument(
         "--model_path",
         "-m",
-        required=True,
         help="Absolute path to Orca model")
+    parser.add_argument(
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
+             'Default: automatically selects best device')
     parser.add_argument(
         "--library_path",
         "-l",
@@ -232,7 +234,6 @@ def main() -> None:
     parser.add_argument(
         "--text_to_stream",
         "-t",
-        required=True,
         help="Text to be streamed to Orca")
     parser.add_argument(
         "--tokens_per_second",
@@ -254,6 +255,10 @@ def main() -> None:
         action="store_true",
         help="Only list available audio output devices and exit")
     parser.add_argument(
+        '--show_inference_devices',
+        action='store_true',
+        help='Print devices that are available to run Orca inference')
+    parser.add_argument(
         '--audio-device-index',
         type=int,
         default=-1,
@@ -266,8 +271,13 @@ def main() -> None:
             print("index: %d, device name: %s" % (i, devices[i]))
         exit(0)
 
+    if args.show_inference_devices:
+        print('\n'.join(pvorca.available_devices(library_path=args.library_path)))
+        exit(0)
+
     access_key = args.access_key
     model_path = args.model_path
+    device = args.device
     library_path = args.library_path
     text = args.text_to_stream
     tokens_per_second = args.tokens_per_second
@@ -275,11 +285,18 @@ def main() -> None:
     buffer_size_secs = args.buffer_size_secs
     audio_device_index = args.audio_device_index
 
+    if access_key is None or text is None or model_path is None:
+        raise ValueError("Arguments --access_key, --text, --output_path and --model_path are required.")
+
     model_file_prefix = "orca_params_"
     lang_code_idx = model_path.find(model_file_prefix) + len(model_file_prefix)
     language = model_path[lang_code_idx:lang_code_idx + 2]
 
-    orca = pvorca.create(access_key=access_key, model_path=model_path, library_path=library_path)
+    orca = pvorca.create(
+        access_key=access_key,
+        model_path=model_path,
+        device=device,
+        library_path=library_path)
 
     speaker = None
     try:

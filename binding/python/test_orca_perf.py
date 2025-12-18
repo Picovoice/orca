@@ -27,6 +27,7 @@ test_data = get_test_data()
 
 class OrcaPerformanceTestCase(unittest.TestCase):
     access_key: str
+    device: str
     num_test_iterations: int
     proc_performance_threshold_rtf: float
 
@@ -37,8 +38,9 @@ class OrcaPerformanceTestCase(unittest.TestCase):
         for model in td.models:
             orca = Orca(
                 access_key=self.access_key,
-                library_path=default_library_path('../..'),
-                model_path=get_model_path(model))
+                model_path=get_model_path(model),
+                device=self.device,
+                library_path=default_library_path('../..'))
 
             num_audio_seconds = 0
             num_proc_seconds = 0
@@ -59,11 +61,13 @@ class OrcaPerformanceTestCase(unittest.TestCase):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--access-key', required=True)
+    parser.add_argument('--device', required=True)
     parser.add_argument('--num-test-iterations', type=int, required=True)
     parser.add_argument('--proc-performance-threshold-rtf', type=float, required=True)
     args = parser.parse_args()
 
     OrcaPerformanceTestCase.access_key = args.access_key
+    OrcaPerformanceTestCase.device = args.device
     OrcaPerformanceTestCase.num_test_iterations = args.num_test_iterations
     OrcaPerformanceTestCase.proc_performance_threshold_rtf = args.proc_performance_threshold_rtf
 

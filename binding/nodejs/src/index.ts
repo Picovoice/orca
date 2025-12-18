@@ -1,5 +1,5 @@
 //
-// Copyright 2024 Picovoice Inc.
+// Copyright 2024-2025 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -34,6 +34,7 @@ import {
   OrcaSynthesizeResult,
   OrcaSynthesizeToFileResult,
   OrcaStreamSynthesizeResult,
+  OrcaInputOptions,
   OrcaOptions,
 } from './types';
 
@@ -46,6 +47,7 @@ export {
   OrcaSynthesizeResult,
   OrcaSynthesizeToFileResult,
   OrcaStreamSynthesizeResult,
+  OrcaInputOptions,
   OrcaOptions,
   OrcaActivationError,
   OrcaActivationLimitReachedError,

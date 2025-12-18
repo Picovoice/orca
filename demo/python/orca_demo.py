@@ -16,8 +16,7 @@ import struct
 import time
 import wave
 
-from pvorca import create, OrcaActivationLimitError
-from typing import List
+import pvorca
 
 
 def main() -> None:
@@ -25,39 +24,55 @@ def main() -> None:
     parser.add_argument(
         '--access_key',
         '-a',
-        required=True,
         help='AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)')
     parser.add_argument(
         '--text',
         '-t',
-        required=True,
         help='Text to be synthesized')
     parser.add_argument(
         '--output_path',
         '-o',
-        required=True,
         help='Absolute path to .wav file where the generated audio will be stored')
     parser.add_argument(
         "--model_path",
         "-m",
-        required=True,
         help="Absolute path to Orca model")
+    parser.add_argument(
+        '--device',
+        help='Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). '
+             'Default: automatically selects best device')
     parser.add_argument(
         '--library_path',
         '-l',
         help='Absolute path to dynamic library. Default: using the library provided by `pvorca`')
+    parser.add_argument(
+        '--show_inference_devices',
+        action='store_true',
+        help='Print devices that are available to run Orca inference')
     args = parser.parse_args()
+
+    if args.show_inference_devices:
+        print('\n'.join(pvorca.available_devices(library_path=args.library_path)))
+        return
 
     access_key = args.access_key
     model_path = args.model_path
+    device = args.device
     library_path = args.library_path
     output_path = args.output_path
     text = args.text
 
+    if access_key is None or text is None or output_path is None or model_path is None:
+        raise ValueError("Arguments --access_key, --text, --output_path and --model_path are required.")
+
     if not output_path.lower().endswith('.wav'):
         raise ValueError('Given argument --output_path must have WAV file extension')
 
-    orca = create(access_key=access_key, model_path=model_path, library_path=library_path)
+    orca = pvorca.create(
+        access_key=access_key,
+        model_path=model_path,
+        device=device,
+        library_path=library_path)
 
     try:
         print(f"Orca version: {orca.version}")

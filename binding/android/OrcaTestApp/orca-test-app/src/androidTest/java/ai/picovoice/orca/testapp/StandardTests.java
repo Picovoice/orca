@@ -46,11 +46,21 @@ public class StandardTests extends BaseTest {
     }
 
     @Test
+    public void testGetAvailableDevices() throws OrcaException {
+        String[] availableDevices = Orca.getAvailableDevices();
+        assertTrue(availableDevices.length > 0);
+        for (String d : availableDevices) {
+            assertTrue(d != null && d.length() > 0);
+        }
+    }
+
+    @Test
     public void testErrorStack() {
         String[] error = {};
         try {
             new Orca.Builder()
                     .setAccessKey("invalid")
+                    .setDevice(device)
                     .setModelPath(modelFile)
                     .build(appContext);
         } catch (OrcaException e) {
@@ -63,6 +73,7 @@ public class StandardTests extends BaseTest {
         try {
             new Orca.Builder()
                     .setAccessKey("invalid")
+                    .setDevice(device)
                     .setModelPath(modelFile)
                     .build(appContext);
         } catch (OrcaException e) {

@@ -21,17 +21,21 @@ const { PvSpeaker } = require('@picovoice/pvspeaker-node');
 const { Orca, OrcaActivationLimitReachedError } = require('@picovoice/orca-node');
 
 program
-  .requiredOption(
+  .option(
     '-a, --access_key <string>',
     'AccessKey obtain from the Picovoice Console (https://console.picovoice.ai/)',
   )
-  .requiredOption(
+  .option(
     '-t, --text_to_stream <string>',
     'Text to be streamed to Orca',
   )
-  .requiredOption(
+  .option(
     '-m, --model_file_path <string>',
     'Absolute path to Orca model',
+  )
+  .option(
+    "-y, --device <string>",
+    "Device to run inference on (`best`, `cpu:{num_threads}` or `gpu:{gpu_index}`). Default: selects best device"
   )
   .option(
     '-l, --library_file_path <string>',
@@ -59,13 +63,18 @@ program
   .option(
     '--show_audio_devices',
     'Only list available audio output devices and exit',
+  )
+  .option(
+    "-z, --show_inference_devices",
+    "Print devices that are available to run Orca inference.",
+    false
   );
 
 if (process.argv.length < 3) {
   program.help();
 }
 program.parse(process.argv);
- 
+
 function splitText(text, language) {
   // TODO: Update once Orca supports passing in partial bytes
   if (language === "ko" || language === "ja") {
@@ -172,23 +181,38 @@ function sleepSecs(ms) {
 async function streamingDemo() {
   let accessKey = program['access_key'];
   let modelFilePath = program['model_file_path'];
+  let device = program["device"];
   let libraryFilePath = program['library_file_path'];
   let text = program['text_to_stream'];
   let tokensPerSeconds = program['tokens_per_second'];
   let audioWaitChunks = program['audio_wait_chunks'];
   let bufferSizeSecs = Number(program['buffer_size_secs']);
   let deviceIndex = Number(program['audio_device_index']);
-  let showAudioDevices = program['show_audio_devices'];
 
-  const modelFilePrefix = "orca_params_";
-  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
-  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
+  const showInferenceDevices = program["show_inference_devices"];
+  if (showInferenceDevices) {
+    console.log(Orca.listAvailableDevices().join('\n'));
+    process.exit();
 
+  }
+
+  const showAudioDevices = program['show_audio_devices'];
   if (showAudioDevices) {
     const devices = PvSpeaker.getAvailableDevices();
     for (let i = 0; i < devices.length; i++) {
       console.log(`index: ${i}, device name: ${devices[i]}`);
     }
+    return;
+  }
+
+  const modelFilePrefix = "orca_params_";
+  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
+  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
+
+  if (accessKey === undefined || text === undefined || modelFilePath === undefined) {
+    console.error(
+      "`--access_key` `text_to_stream`, and `model_file_path` are required arguments"
+    );
     return;
   }
 
@@ -206,8 +230,9 @@ async function streamingDemo() {
     const orca = new Orca(
       accessKey,
       {
-        'modelPath': modelFilePath,
-        'libraryPath': libraryFilePath,
+        modelPath: modelFilePath,
+        device: device,
+        libraryPath: libraryFilePath,
       },
     );
     console.log(`\nOrca version: ${orca.version}`);

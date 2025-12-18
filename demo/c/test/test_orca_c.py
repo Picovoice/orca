@@ -24,14 +24,15 @@ class OrcaCTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._access_key = sys.argv[1]
-        platform = sys.argv[2]
+        cls._device = sys.argv[2]
+        platform = sys.argv[3]
         if platform == "mac":
             if pltf.machine() == "x86_64":
                 cls._arch = "x86_64"
             elif pltf.machine() == "arm64":
                 cls._arch = "arm64"
         else:
-            cls._arch = "" if len(sys.argv) != 4 else sys.argv[3]
+            cls._arch = "" if len(sys.argv) != 5 else sys.argv[4]
         cls._platform = platform
         cls._root_dir = os.path.join(os.path.dirname(__file__), "../../..")
 
@@ -45,6 +46,10 @@ class OrcaCTestCase(unittest.TestCase):
             return "so"
 
     def _get_library_file(self) -> str:
+        if self._platform == "windows":
+            if self._arch == "amd64":
+                os.environ["PATH"] += os.pathsep + os.path.join(self._root_dir, "lib", "windows", "amd64")
+
         return os.path.join(
             self._root_dir,
             "lib",
@@ -60,6 +65,7 @@ class OrcaCTestCase(unittest.TestCase):
             "-a", self._access_key,
             "-l", self._get_library_file(),
             "-m", model_path,
+            "-y", self._device,
             "-t", test_data.text,
             "-o", output_path,
         ]
@@ -103,7 +109,7 @@ class OrcaCTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3 or len(sys.argv) > 4:
-        print("Usage: test_orca_c.py ${AccessKey} ${Platform} [${Arch}]")
+    if len(sys.argv) < 4 or len(sys.argv) > 5:
+        print("Usage: test_orca_c.py ${AccessKey} ${Device} ${Platform} [${Arch}]")
         exit(1)
     unittest.main(argv=sys.argv[:1])
