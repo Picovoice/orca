@@ -794,6 +794,13 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
+### v2.0.0 - December 17th, 2025
+
+- Improved engine performance
+- Added support for running on GPU or multiple CPU cores
+- Node.js min version bumped to 18
+- iOS min version bumped to 16
+
 ### v1.2.0 - June 13th, 2025
 
 - Improved handling of heteronyms
