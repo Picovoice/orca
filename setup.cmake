@@ -1,5 +1,5 @@
 include(peer-module.cmake)
-set(SETUP_REPO ON)
+
 include(peer/zoo-dev.cmake)
 include(peer/ypu.cmake)
 include(peer/model.cmake)

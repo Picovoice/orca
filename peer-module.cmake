@@ -12,7 +12,15 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
     string(REPLACE "-" "_" cleaned_module_name ${MODULE_NAME})
     if (DEFINED ENV{PV_CICD_${cleaned_module_name}_COMMIT_HASH})
         set(EXPECTED_COMMIT $ENV{PV_CICD_${cleaned_module_name}_COMMIT_HASH})
-        message(WARNING "Overriding commit `${SELECTED_COMMIT}` for `${MODULE_NAME}` with commit `${EXPECTED_COMMIT}`")
+        message(WARNING "PVMODULE: Overriding (environment) commit `${SELECTED_COMMIT}` for `${MODULE_NAME}` with commit `${EXPECTED_COMMIT}`")
+    elseif (DEFINED PV_CMAKE_${cleaned_module_name}_COMMIT_HASH)
+        if (NOT "${PV_CMAKE_${cleaned_module_name}_COMMIT_HASH}" STREQUAL "${SELECTED_COMMIT}")
+            set(EXPECTED_COMMIT ${PV_CMAKE_${cleaned_module_name}_COMMIT_HASH})
+            message(STATUS "PVMODULE: Overriding (cmake) commit `${SELECTED_COMMIT}` for `${MODULE_NAME}` with commit `${EXPECTED_COMMIT}`")
+        endif ()
+    else ()
+        message(STATUS "PVMODULE: Setting `${EXPECTED_COMMIT}` as commit for `${MODULE_NAME}`")
+        set(PV_CMAKE_${cleaned_module_name}_COMMIT_HASH ${EXPECTED_COMMIT})
     endif ()
 
     get_filename_component(MODULE_DIR "${PV_PEER_MODULE_DIR}/${MODULE_NAME}" ABSOLUTE)
@@ -56,8 +64,8 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
         OUTPUT_VARIABLE CURRENT_COMMIT
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    if (NOT "${CURRENT_COMMIT}" STREQUAL "${EXPECTED_COMMIT}")
-        if (SETUP_REPO)
+    if (NOT "${CURRENT_COMMIT}" STREQUAL "${EXPECTED_COMMIT}" AND NOT PV_CMAKE_IS_RECURSIVE_BUILD)
+        if (NOT PV_MODULE_SKIP_SETUP_REPO)
             message(STATUS "Fetching ${EXPECTED_COMMIT} from ${MODULE_NAME}")
             execute_process(
                     COMMAND git fetch origin ${EXPECTED_COMMIT}
@@ -72,7 +80,7 @@ macro(fetch_peer_module MODULE_NAME SELECTED_COMMIT)
         endif ()
     endif ()
 
-    if (SETUP_REPO)
+    if (NOT PV_MODULE_SKIP_SETUP_REPO)
         message(STATUS "Cleaning ${MODULE_NAME} directory")
         execute_process(
                 COMMAND git clean -dfx

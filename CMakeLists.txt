@@ -4,11 +4,8 @@ if (NOT PV_PEER_MODULE_DIR)
   set(PV_PEER_MODULE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif ()
 
-include(peer-module.cmake)
-include(peer/zoo-dev.cmake)
-include(peer/ypu.cmake)
-include(peer/model.cmake)
-include(peer/hippo.cmake)
+set(PV_MODULE_SKIP_SETUP_REPO "on")
+include(setup.cmake)
 
 set(PV_YPU_DIRECTX_SUPPORT "OFF" CACHE BOOL "Enable support for YPU DirectX backend")
 set(PV_YPU_MCU_SUPPORT "OFF" CACHE BOOL "Enable support for YPU MCU backend")
