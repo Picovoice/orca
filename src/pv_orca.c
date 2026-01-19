@@ -2736,6 +2736,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_flush_internal)(
 PV_API pv_status_t PV_MOCKABLE(pv_orca_list_hardware_devices)(
         char ***hardware_devices,
         int32_t *num_hardware_devices) {
+    pv_error_prepare();
     if (!hardware_devices) {
         PV_ERROR_REPORT(
                 &pv_error_msg_invalid_argument_null,
