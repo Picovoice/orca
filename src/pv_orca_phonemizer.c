@@ -6,10 +6,10 @@
 #include "hippo/pv_hippo_internal.h"
 #include "io/pv_log.h"
 #include "lm/pv_dict.h"
-#include "orca/normalizer/pv_normalizer_language_data.h"
-#include "orca/normalizer/pv_normalizer_token.h"
-#include "orca/normalizer/pv_normalizer_util.h"
+#include "normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer_util.h"
 #include "orca/pv_orca_internal.h"
+#include "orca/pv_orca_language_data.h"
 #include "orca/pv_orca_phonemizer.h"
 #include "util/pv_check_status.h"
 

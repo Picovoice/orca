@@ -66,6 +66,7 @@ add_peer_subdirectory(zoo-dev)
 add_peer_subdirectory(ypu)
 add_peer_subdirectory(model)
 add_peer_subdirectory(hippo)
+add_peer_subdirectory(normalizer)
 
 set(MODULE_VERSION 2.0.X)
 
@@ -78,7 +79,6 @@ message(CHECK_PASS "done")
 
 include(cmake/speakers.cmake)
 include(cmake/languages.cmake)
-include(normalizer.cmake)
 
 set(pv_orca_additional_sources "")
 set(pv_orca_additional_system_include_dirs "")
@@ -108,6 +108,7 @@ pv_module_register(
     include/orca/pv_orca_istft.h
     include/orca/pv_orca_fft.h
     include/orca/pv_orca_flow.h
+    include/orca/pv_orca_language_data.h
     include/orca/pv_orca_metric_internal.h
     include/orca/pv_orca_phonemizer.h
     include/orca/pv_orca_pqmf.h
@@ -130,7 +131,6 @@ pv_module_register(
     include/orca/pv_vocos_backbone.h
     include/orca/pv_wavenet_resblock.h
     include/orca/pv_profiler.h
-    include/orca/normalizer/pv_normalizer_language_data.h
   SOURCES
     src/pv_orca.c
     src/pv_orca_synthesizer.c
@@ -161,14 +161,14 @@ pv_module_register(
     src/pv_vocos_backbone.c
     src/pv_wavenet_resblock.c
     test/pv_orca_metric.c
-    src/normalizer/de/pv_normalizer_data_de/pv_normalizer_word_character_data_de.c
-    src/normalizer/en/pv_normalizer_data_en/pv_normalizer_word_character_data_en.c
-    src/normalizer/es/pv_normalizer_data_es/pv_normalizer_word_character_data_es.c
-    src/normalizer/fr/pv_normalizer_data_fr/pv_normalizer_word_character_data_fr.c
-    src/normalizer/it/pv_normalizer_data_it/pv_normalizer_word_character_data_it.c
-    src/normalizer/ja/pv_normalizer_data_ja/pv_normalizer_word_character_data_ja.c
-    src/normalizer/ko/pv_normalizer_data_ko/pv_normalizer_word_character_data_ko.c
-    src/normalizer/pt/pv_normalizer_data_pt/pv_normalizer_word_character_data_pt.c
+    src/language_data/pv_orca_word_character_data_de.c
+    src/language_data/pv_orca_word_character_data_en.c
+    src/language_data/pv_orca_word_character_data_es.c
+    src/language_data/pv_orca_word_character_data_fr.c
+    src/language_data/pv_orca_word_character_data_it.c
+    src/language_data/pv_orca_word_character_data_ja.c
+    src/language_data/pv_orca_word_character_data_ko.c
+    src/language_data/pv_orca_word_character_data_pt.c
     ${pv_orca_additional_sources}
   PV_DEPENDENCIES
     pv_core
@@ -234,10 +234,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_en.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_en}
 )
 
@@ -251,10 +251,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_en.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_en}
 )
 
@@ -268,10 +268,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_de.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_de}
 )
 
@@ -285,10 +285,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_de.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_de}
 )
 
@@ -302,10 +302,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_fr.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_fr}
 )
 
@@ -319,10 +319,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_fr.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_fr}
 )
 
@@ -336,10 +336,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_es.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_es}
 )
 
@@ -353,10 +353,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_es.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_es}
 )
 
@@ -370,10 +370,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_it.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_it}
 )
 
@@ -387,10 +387,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_it.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_it}
 )
 
@@ -404,10 +404,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_pt.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_pt}
 )
 
@@ -421,10 +421,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_pt.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param _16.c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param _16.c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_pt}
 )
 
@@ -438,10 +438,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_ko.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_ko}
 )
 
@@ -455,10 +455,10 @@ pv_module_build_app_additional_sources(
     src/dict/pv_noun_gender_dict_ja.c
   PV_DEPENDENCIES pv_language_json pv_model_offline pv_hippo
   ADDITIONAL_SOURCES_TEMPLATES
-    "src/model/pv_orca_synthesizer_param .c"
-    "src/dict/pv_dict .c"
-    "src/dict/pv_lexicon .c"
-    "src/dict/pv_heteronym_tree .c"
+    "${PROJECT_SOURCE_DIR}/src/model/pv_orca_synthesizer_param .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_dict .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_lexicon .c"
+    "${PROJECT_SOURCE_DIR}/src/dict/pv_heteronym_tree .c"
   SOURCE_IDENTIFIER_LIST ${speaker_identifier_list_ja}
 )
 
@@ -469,7 +469,7 @@ pv_module_build_app_additional_sources(
     app/pv_orca_metric_serializer.c
     test/pv_orca_metric.c
   ADDITIONAL_SOURCES_TEMPLATES
-    "test/model/pv_orca_metric_classifier .c"
+    "${PROJECT_SOURCE_DIR}/test/model/pv_orca_metric_classifier .c"
   SOURCE_IDENTIFIER_LIST ${orca_language_code_list}
 )
 
@@ -528,15 +528,14 @@ pv_module_register_tests(
 )
 
 pv_module_build_tests(MODULE_NAME pv_orca)
-pv_module_build_test_app(
-  MODULE_NAME pv_orca
-  SUB_MODULES pv_normalizer
-)
+pv_module_build_test_app(MODULE_NAME pv_orca)
 
 set(ORCA_TEST_RESOURCES
   "${PROJECT_SOURCE_DIR}/res"
   "${zoo-dev_SOURCE_DIR}/res/phonebook"
-  "${zoo-dev_SOURCE_DIR}/res/hippo")
+  "${zoo-dev_SOURCE_DIR}/res/hippo"
+  "${zoo-dev_SOURCE_DIR}/res/tokenizer"
+)
 pv_module_copy_test_resource_dirs(
   MODULE_NAME pv_orca
   TEST_RESOURCE_DIRS ${ORCA_TEST_RESOURCES}

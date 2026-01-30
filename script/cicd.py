@@ -151,13 +151,13 @@ def test_unittest_orca(
             if not disable_mocks:
                 shutil.copy(os.path.join(build_dir, 'libpv_orca_mock_tree_shared.so'), dst_path)
                 shutil.copy(os.path.join(build_dir, 'libpv_orca_real_pv_orca_mock_tree.so'), dst_path)
-                shutil.copy(os.path.join(build_dir, 'libpv_normalizer_real_pv_orca_mock_tree.so'), dst_path)
 
             dependencies_build_dirs = [
                 os.path.join(build_dir, '_deps', 'zoo-dev-build', 'src'),
                 os.path.join(build_dir, '_deps', 'ypu-build'),
                 os.path.join(build_dir, '_deps', 'model-build'),
                 os.path.join(build_dir, '_deps', 'hippo-build'),
+                os.path.join(build_dir, '_deps', 'normalizer-build'),
             ]
             for dep_build_dir in dependencies_build_dirs:
                 for module in os.listdir(dep_build_dir):

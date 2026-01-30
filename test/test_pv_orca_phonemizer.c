@@ -4,7 +4,7 @@
 #include "core/pv_language_json.h"
 #include "core/pv_language_internal.h"
 #include "hippo/pv_hippo_internal.h"
-#include "orca/normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer_token.h"
 #include "orca/pv_orca_phonemizer.h"
 #include "test/pv_test.h"
 

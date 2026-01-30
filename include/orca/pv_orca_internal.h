@@ -6,7 +6,7 @@
 #include "hippo/pv_hippo.h"
 #include "io/pv_log.h"
 #include "io/pv_serialized.h"
-#include "orca/normalizer/pv_normalizer.h"
+#include "normalizer/pv_normalizer.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_synthesizer.h"
 

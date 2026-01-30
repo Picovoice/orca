@@ -88,8 +88,8 @@ def main(access_key, test_resource_folder) -> None:
         cmd_large = None
         if Languages.JAPANESE.value == language:
             tokenizer_data_path = os.path.join(
-                os.path.dirname(__file__),
-                f'../res/normalizer/tokenizer_data/ipadic.bin'
+                PEER_MODULE_DIR,
+                f'normalizer/res/tokenizer_data/ipadic.bin'
             )
             cmd = [
                 os.path.abspath(serializer_path),

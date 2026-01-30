@@ -12,12 +12,13 @@
 #include "io/pv_log.h"
 #include "lm/pv_dict.h"
 #include "lm/pv_noun_gender_dict.h"
-#include "orca/normalizer/pv_normalizer.h"
-#include "orca/normalizer/pv_normalizer_language_data.h"
-#include "orca/normalizer/pv_normalizer_stream.h"
-#include "orca/normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer.h"
+#include "normalizer/pv_normalizer_stream.h"
+#include "normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer_util.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_internal.h"
+#include "orca/pv_orca_language_data.h"
 #include "orca/pv_orca_phonemizer.h"
 #include "orca/pv_orca_stream_state.h"
 #include "orca/pv_orca_synthesizer.h"
@@ -65,48 +66,18 @@ static pv_status_t pv_orca_get_eos_punctuation_indices(
 
     const char **eos_punctuation_characters = NULL;
 
-    switch (language) {
-        case PV_NORMALIZER_LANGUAGE_EN: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_EN_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_EN_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_DE: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_DE_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_DE_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_FR: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_FR_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_FR_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_ES: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_ES_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_ES_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_IT: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_IT_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_IT_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_PT: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_PT_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_PT_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_KO: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_KO_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_KO_EOS_PUNCTUATIONS;
-        } break;
-        case PV_NORMALIZER_LANGUAGE_JA: {
-            *num_eos_punctuation_indices = PV_ORCA_STREAM_JA_NUM_EOS_PUNCTUATIONS;
-            eos_punctuation_characters = PV_ORCA_STREAM_JA_EOS_PUNCTUATIONS;
-        } break;
-        default:
-            PV_ERROR_REPORT(
-                    &pv_error_msg_invalid_argument_internal,
-                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                    PV_ERROR_ARGS_PRIVATE("language"));
-            return PV_STATUS_INVALID_ARGUMENT;
+    pv_status_t status = pv_normalizer_util_get_eos_punctuations(
+            language,
+            num_eos_punctuation_indices,
+            &eos_punctuation_characters);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_normalizer_util_get_eos_punctuations,
+                pv_status_to_string(status));
+        return status;
     }
 
-    pv_status_t status = pv_orca_phonemizer_get_punctuation_end_indices(
+    status = pv_orca_phonemizer_get_punctuation_end_indices(
             phonemizer,
             *num_eos_punctuation_indices,
             eos_punctuation_characters,

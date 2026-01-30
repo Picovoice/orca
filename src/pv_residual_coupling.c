@@ -393,12 +393,14 @@ pv_status_t PV_MOCKABLE(pv_residual_coupling_forward)(
         return status;
     }
 
-    pv_ypu_op_pairwise_broadcast_args_t args2 = {
+    pv_ypu_op_cat_args_t args2 = {
             .output = y_ypu_mem,
             .lhs = buffer_x0,
             .rhs = buffer_x1,
             .m = n,
-            .n = half_channels,
+            .n0 = 1,
+            .n1 = 1,
+            .k = half_channels,
             .output_offset = y_offset,
             .lhs_offset = 0,
             .rhs_offset = 0,

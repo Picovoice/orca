@@ -12,14 +12,14 @@
 #include "../../gatekeeper/test/test_pv_gatekeeper_usage_helper.h"
 #include "gatekeeper/pv_gatekeeper_usage_animal.h"
 #include "hippo/pv_hippo_internal.h"
-#include "orca/normalizer/pv_normalizer_token.h"
-#include "orca/normalizer/pv_normalizer_util.h"
+#include "normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer_util.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_stream_state.h"
 #include "orca/pv_orca_synthesizer.h"
 #include "orca/pv_orca_util.h"
-#include "orca/normalizer/pv_normalizer_data/pv_normalizer_shared_data.h"
+#include "normalizer/pv_normalizer_data/pv_normalizer_shared_data.h"
 #include "util/pv_string.h"
 
 #ifdef __PV_MOCKS__
