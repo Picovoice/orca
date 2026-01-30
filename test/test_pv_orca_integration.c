@@ -6,7 +6,7 @@
 #include "../../gatekeeper/test/test_pv_gatekeeper_usage_helper.h"
 #include "core/pv_error_messages.h"
 #include "gatekeeper/pv_gatekeeper_usage_animal.h"
-#include "orca/normalizer/pv_normalizer_util.h"
+#include "normalizer/pv_normalizer_util.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_metric_internal.h"
@@ -36,9 +36,9 @@ static pv_ypu_t *ypu = NULL;
 static pv_tokenizer_t *TOKENIZERS[NUM_TOKENIZERS] = {NULL};
 
 const char *TOKENIZER_PATH_ARRAY[NUM_TOKENIZERS] = {
-        "normalizer/tokenizers/tokenizer-gemma-2b-372.bin",
-        "normalizer/tokenizers/tokenizer-llama-2-13b-267.bin",
-        "normalizer/tokenizers/tokenizer-mistral-7b-instruct-v0.1-225.bin",
+        "tokenizer/tokenizer-gemma-2b-372.bin",
+        "tokenizer/tokenizer-llama-2-13b-267.bin",
+        "tokenizer/tokenizer-mistral-7b-instruct-v0.1-225.bin",
 };
 
 typedef struct pcm_chunk_node pcm_chunk_node_t;
@@ -180,7 +180,7 @@ static pv_status_t test_pv_orca_integration_setup(void) {
     for (int32_t i = 0; i < PV_ARRAY_LEN(TOKENIZER_PATH_ARRAY); ++i) {
         const char *tokenizer_bin_filename = TOKENIZER_PATH_ARRAY[i];
 
-        char *tokenizer_bin_path = pv_test_module_res_path(tokenizer_bin_filename);
+        char *tokenizer_bin_path = pv_test_shared_res_path(tokenizer_bin_filename);
 
         FILE *f_tokenizer = pv_fopen(tokenizer_bin_path, "rb");
         pv_test_true(f_tokenizer, "Failed to load tokenizer file `%s`", tokenizer_bin_path);

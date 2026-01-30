@@ -6,8 +6,8 @@
 #include "lm/pv_dict.h"
 #include "lm/pv_heteronym_tree.h"
 #include "model/pv_offline_token_classifier.h"
-#include "orca/normalizer/pv_normalizer_token.h"
-#include "orca/normalizer/pv_normalizer_util.h"
+#include "normalizer/pv_normalizer_token.h"
+#include "normalizer/pv_normalizer_util.h"
 #include "util/pv_file.h"
 #include "ypu/pv_ypu.h"
 

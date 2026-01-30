@@ -1,3 +1,0 @@
-[submodule "lib/mecab"]
-	path = lib/mecab
-	url = ../mecab.git
