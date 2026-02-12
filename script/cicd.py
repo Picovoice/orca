@@ -56,7 +56,7 @@ def test_jni_orca(platform_name, build_mode, access_key):
 
     if platform_name == Platforms.WINDOWS and platform.machine() == 'AMD64':
         shutil.copy(
-            os.path.join(buildPath, '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+            os.path.join(buildPath, '_deps', 'ypu-build', 'pv_ypu_impl_cuda_orca.dll'),
             os.path.join(platform_dir, 'java'))
 
     cmd = f'./gradlew test -DaccessKey="{access_key}" ' \
@@ -86,7 +86,7 @@ def test_napi_orca(platform_name, build_mode, access_key):
 
     if platform_name == Platforms.WINDOWS and platform.machine() == 'AMD64':
         shutil.copy(
-            os.path.join(build_path, '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+            os.path.join(build_path, '_deps', 'ypu-build', 'pv_ypu_impl_cuda_orca.dll'),
             node_test_dir)
 
     res = test_napi(
@@ -364,7 +364,7 @@ def test_unittest_orca(
 
         if platform.machine() == 'AMD64':
             shutil.copy(
-                os.path.join(root_dir, 'build', build_mode, platform.machine(), '_deps', 'ypu-build', 'pv_ypu_impl_cuda.dll'),
+                os.path.join(root_dir, 'build', build_mode, platform.machine(), '_deps', 'ypu-build', 'pv_ypu_impl_cuda_orca.dll'),
                 os.path.join(root_dir, 'build', build_mode, platform.machine()))
 
         if TestTypes.UNIT in test_types:
