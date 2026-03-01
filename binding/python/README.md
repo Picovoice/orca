@@ -82,7 +82,7 @@ Orca:
 pcm, alignments = orca.synthesize(text='${TEXT}')
 
 # Save the generated audio to a WAV file directly
-alignments = orca.synthesize_to_file(text='${TEXT}', path='${OUTPUT_PATH}')
+alignments = orca.synthesize_to_file(text='${TEXT}', output_path='${OUTPUT_PATH}')
 ```
 
 Replace `${TEXT}` with the text to be synthesized and `${OUTPUT_PATH}` with the path to save the generated audio as a
