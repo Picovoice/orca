@@ -18,6 +18,7 @@
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
+#include "model/mock/pv_model_online_mock.h"
 
 #endif
 
@@ -43,7 +44,7 @@ struct pv_orca_metric {
 
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_orca_metric_classifier_param_serialize)(
+pv_status_t pv_orca_metric_classifier_param_serialize(
         pv_ypu_t *ypu,
         const pv_online_token_classifier_param_t *param,
         const char *language_info_path,
@@ -99,7 +100,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_classifier_param_serialize)(
 
 #endif
 
-pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
+pv_status_t pv_orca_metric_init(
         pv_ypu_t *ypu,
         const char *model_path,
         int32_t sample_rate,
@@ -242,7 +243,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_orca_metric_delete)(pv_ypu_t *ypu, pv_orca_metric_t *object) {
+void pv_orca_metric_delete(pv_ypu_t *ypu, pv_orca_metric_t *object) {
     PV_ASSERT(ypu);
 
     if (object) {
@@ -260,7 +261,7 @@ void PV_MOCKABLE(pv_orca_metric_delete)(pv_ypu_t *ypu, pv_orca_metric_t *object)
     }
 }
 
-pv_status_t PV_MOCKABLE(pv_orca_metric_get_posterior_frame)(
+pv_status_t pv_orca_metric_get_posterior_frame(
         pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         const int16_t *pcm,
@@ -556,7 +557,7 @@ static pv_status_t phoneme_sequence_string_to_padded_aos(
 }
 
 
-pv_status_t PV_MOCKABLE(pv_orca_metric_process)(
+pv_status_t pv_orca_metric_process(
         pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         int32_t pcm_length,
@@ -733,7 +734,7 @@ pv_status_t PV_MOCKABLE(pv_orca_metric_process)(
 }
 
 
-pv_status_t PV_MOCKABLE(pv_orca_metric_pcm_frame_level_error_evaluation)(
+pv_status_t pv_orca_metric_pcm_frame_level_error_evaluation(
         pv_ypu_t *ypu,
         pv_orca_metric_t *object,
         int32_t pcm_length,

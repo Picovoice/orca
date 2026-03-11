@@ -2,8 +2,9 @@
 #define PV_CONVNEXT_TRANSPOSED_H
 
 #include "core/pv_type.h"
+#include "orca/pv_buffer.h"
 #include "orca/pv_cnn.h"
-#include "orca/pv_cnn_transposed.h"
+#include "orca/pv_cnn_transposed_depthwise.h"
 #include "orca/pv_layer_norm.h"
 #include "ypu/pv_ypu.h"
 
@@ -23,7 +24,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_param_serialize)(
 
 #endif
 
-void PV_MOCKABLE(pv_convnext_transposed_param_delete)(pv_ypu_t *ypu, pv_convnext_transposed_param_t *param);
+void PV_MOCKABLE(pv_convnext_transposed_param_delete)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_param_t *param);
 
 pv_status_t PV_MOCKABLE(pv_convnext_transposed_param_load)(
         pv_ypu_t *ypu,
@@ -41,18 +44,20 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_init)(
         const pv_convnext_transposed_param_t *param,
         pv_convnext_transposed_t **object);
 
-void PV_MOCKABLE(pv_convnext_transposed_delete)(pv_ypu_t *ypu, pv_convnext_transposed_t *object);
+void PV_MOCKABLE(pv_convnext_transposed_delete)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_t *object);
 
 pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
         pv_ypu_t *ypu,
         pv_convnext_transposed_t *object,
         int32_t n,
         pv_ypu_mem_t *x,
-        pv_ypu_mem_t *y,
-        int32_t x_offset,
-        int32_t y_offset);
+        pv_ypu_mem_t *y);
 
-int32_t PV_MOCKABLE(pv_convnext_transposed_num_output_frames)(const pv_convnext_transposed_t *object, int32_t n);
+int32_t PV_MOCKABLE(pv_convnext_transposed_num_output_frames)(
+        const pv_convnext_transposed_t *object,
+        int32_t n);
 
 int32_t PV_MOCKABLE(pv_convnext_transposed_output_channels)(const pv_convnext_transposed_t *object);
 

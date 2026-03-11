@@ -10,8 +10,9 @@
 #include "io/pv_dump.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_internal.h"
+#include "orca/pv_profiler.h"
 
-#define MAX_NUM_CHUNKS (100)
+#define MAX_NUM_CHUNKS (600)
 
 typedef struct pcm_chunk_list pcm_chunk_list_t;
 
@@ -359,6 +360,8 @@ int main(int argc, char *argv[]) {
                 process_time,
                 rtf);
     }
+
+    PV_ORCA_PROFILER_PRINT_DATA;
 
     PV_DUMP_END()
     return EXIT_SUCCESS;

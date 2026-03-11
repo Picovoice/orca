@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio/pv_audio_file.h"
-#include "audio/pv_container_wav.h"
 #include "core/pv_error_messages.h"
 #include "gatekeeper/pv_gatekeeper.h"
 #include "gatekeeper/pv_gatekeeper_usage_animal.h"
@@ -27,6 +25,13 @@
 #include "util/pv_file.h"
 #include "util/pv_time.h"
 
+#if !defined(__PV_TARGET_NO_FILE_INTERFACE__) && !defined(__PV_TARGET_NO_FILE_SYSTEM__)
+
+#include "audio/pv_audio_file.h"
+#include "audio/pv_container_wav.h"
+
+#endif
+
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
@@ -38,8 +43,6 @@ static const float PV_ORCA_MIN_SPEECH_RATE = 0.7f;
 static const float PV_ORCA_MAX_SPEECH_RATE = 1.3f;
 
 static const int64_t PV_ORCA_DEFAULT_RANDOM_STATE = -1;
-
-static const int32_t PV_ORCA_STREAM_STATE_TEXT_BUFFER_SIZE = 2000;
 
 #if defined(__PV_TARGET_PLATFORM_WINDOWS__) && defined(__PV_CPU_AVX2_SUPPORT__)
 
@@ -278,7 +281,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
     pv_orca_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_orca_t));
     if (!o) {
         PV_ERROR_REPORT(
-                &pv_error_msg_alloc,
+                &pv_error_msg_ypu_host_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("o"));
         pv_ypu_delete(ypu);
@@ -398,7 +401,7 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
     void *buffer = pv_ypu_host_alloc(ypu, length);
     if (!buffer) {
         PV_ERROR_REPORT(
-                &pv_error_msg_alloc,
+                &pv_error_msg_ypu_host_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE("o"));
         (void) fclose(f);
@@ -558,7 +561,6 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
             num_fallback_cutoff_characters_indices,
             fallback_cutoff_characters_indices,
             pv_orca_phonemizer_get_word_boundary_index(o->phonemizer),
-            PV_ORCA_STREAM_STATE_TEXT_BUFFER_SIZE,
             &(o->stream_state));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
@@ -571,7 +573,11 @@ pv_status_t PV_MOCKABLE(pv_orca_internal_init)(
         return status;
     }
 
-    status = pv_orca_synthesizer_init(ypu, o->synthesizer_param, o->stream_state, &(o->synthesizer));
+    status = pv_orca_synthesizer_init(
+            ypu,
+            o->synthesizer_param,
+            o->stream_state,
+            &(o->synthesizer));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT(
                 &pv_error_msg_module_init_internal,
@@ -1136,8 +1142,6 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemize_text)(
     *encoded_phonemes = NULL;
     *text_tokens_num_encoded_phonemes = NULL;
 
-    PV_ORCA_PROFILER_START("pv_orca_phonemize_text");
-
     bool preserve_word_boundary = true;
     bool remove_unknown_characters = false;
     pv_normalizer_token_list_t *text_token_list_internal = NULL;
@@ -1158,16 +1162,16 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemize_text)(
 #ifdef __ORCA_LOG_LEVEL_VERBOSE__
 
     ORCA_LOG_VERBOSE_SIMPLE("Normalized text tokens:");
-    pv_normalizer_token_t *current_ = text_token_list_internal->head;
-    while (current_) {
+    pv_normalizer_token_t *current = text_token_list_internal->head;
+    while (current) {
         ORCA_LOG_VERBOSE(
                 "Token: string=`%s`, original=`%s`, verbalized=`%s`, pron=`%s`, tag=`%d`",
-                current_->string,
-                current_->original_string,
-                current_->verbalized,
-                current_->pronunciation,
-                current_->tag);
-        current_ = current_->next;
+                current->string,
+                current->original_string,
+                current->verbalized,
+                current->pronunciation,
+                current->tag);
+        current = current->next;
     }
 
 #endif
@@ -1250,8 +1254,6 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemize_text)(
     *num_encoded_phonemes = num_encoded_phonemes_internal;
     *encoded_phonemes = encoded_phonemes_internal;
     *text_tokens_num_encoded_phonemes = text_tokens_num_encoded_phonemes_internal;
-
-    PV_ORCA_PROFILER_STOP("pv_orca_phonemize_text");
 
     return PV_STATUS_SUCCESS;
 }
@@ -1428,19 +1430,22 @@ pv_status_t PV_MOCKABLE(pv_orca_create_word_alignments)(
     int32_t index_merged = 0;
     bool merge_alignments = false;
 
-    int32_t num_phonemes =
-            pv_language_info_num_phonemes(object->language_info) *
-            object->phonemizer_param->num_phoneme_multiplier;
+    const int32_t multiplier = object->phonemizer_param->num_phoneme_multiplier;
+    PV_ASSERT(multiplier == 1);
+    // Old Orca code had bug below, and we fix it but only for multiplier == 1 case because no need to handle
+    // other cases since multiplier is fixed in config and not subjected to change.
+    (void) multiplier;
+
+    int32_t num_phonemes = pv_language_info_num_phonemes(object->language_info);
 
     int32_t start_frame_word = 0;
     int32_t end_frame_word = 0;
 
-    int32_t start_frame_phoneme = 0;
-    int32_t end_frame_phoneme = 0;
+    int32_t curr_frame_phoneme = 0;
 
     int32_t token_index = 0;
     for (int32_t word_index = 0; word_index < num_text_tokens; word_index++) {
-        start_frame_word = end_frame_word;
+        start_frame_word = curr_frame_phoneme;
 
         int32_t num_true_phonemes = 0;
         int32_t token_index_dry_run = token_index;
@@ -1448,8 +1453,7 @@ pv_status_t PV_MOCKABLE(pv_orca_create_word_alignments)(
             int32_t encoded_phoneme_index = encoded_phonemes[token_index_dry_run];
 
             bool special_character = (encoded_phoneme_index >= num_phonemes);
-            int32_t multiplier = object->phonemizer_param->num_phoneme_multiplier;
-            if (!special_character && ((encoded_phoneme_index % multiplier) == 0)) {
+            if (!special_character) {
                 num_true_phonemes += 1;
             }
             token_index_dry_run += 1;
@@ -1469,94 +1473,73 @@ pv_status_t PV_MOCKABLE(pv_orca_create_word_alignments)(
             return PV_STATUS_OUT_OF_MEMORY;
         }
 
-        int32_t prev_phoneme_index = -1;
         int32_t num_added_phonemes = 0;
         for (int32_t encoded_index = 0; encoded_index < text_tokens_num_encoded_phonemes[word_index]; encoded_index++) {
+            int32_t encoded_phoneme = encoded_phonemes[token_index];
+            int32_t encoded_phoneme_duration = encoded_phonemes_durations[token_index];
 
-            bool last_phoneme_in_word = (encoded_index == (text_tokens_num_encoded_phonemes[word_index] - 1));
-            bool special_character = (encoded_phonemes[token_index] >= num_phonemes);
-            if (special_character && !last_phoneme_in_word) { // special token
-                end_frame_phoneme += encoded_phonemes_durations[token_index];
+            bool special_character = (encoded_phoneme >= num_phonemes);
+            if (special_character) {
+                curr_frame_phoneme += encoded_phoneme_duration;
                 token_index += 1;
                 continue;
             }
 
-            if (prev_phoneme_index == -1) {
-                prev_phoneme_index = encoded_phoneme_to_phoneme(object, encoded_phonemes[token_index]);
-                end_frame_phoneme += encoded_phonemes_durations[token_index];
-                token_index += 1;
-                continue;
+            int32_t phoneme_index = encoded_phoneme_to_phoneme(object, encoded_phoneme);
+
+            const char *phoneme_string = NULL;
+            status = pv_language_info_phoneme_index_to_string(
+                    object->language_info,
+                    phoneme_index,
+                    &phoneme_string);
+            if (status != PV_STATUS_SUCCESS) {
+                PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                        pv_language_info_phoneme_index_to_string,
+                        pv_status_to_string(status));
+                free(indices_merged);
+                for (int32_t k = 0; k < num_added_phonemes; k++) {
+                    pv_orca_phoneme_alignment_delete(phonemes[k]);
+                }
+                free(phonemes);
+                for (int32_t k = 0; k < word_index; k++) {
+                    pv_orca_word_alignment_delete(aligns[k]);
+                }
+                free(aligns);
+                return status;
             }
 
-            int32_t phoneme_index = encoded_phoneme_to_phoneme(object, encoded_phonemes[token_index]);
+            float start_second_phoneme = pv_orca_frame_to_sec(curr_frame_phoneme, sample_rate);
+            curr_frame_phoneme += encoded_phoneme_duration;
+            float end_second_phoneme = pv_orca_frame_to_sec(curr_frame_phoneme, sample_rate);
 
-            bool skip_possible =
-                    (encoded_phonemes[token_index] % object->phonemizer_param->num_phoneme_multiplier) != 0;
-            if ((phoneme_index != prev_phoneme_index) || last_phoneme_in_word || !skip_possible) {
-                if (last_phoneme_in_word) {
-                    end_frame_phoneme += encoded_phonemes_durations[token_index];
+            status = pv_orca_phoneme_alignment_init(
+                    phoneme_string,
+                    start_second_phoneme,
+                    end_second_phoneme,
+                    &phonemes[num_added_phonemes]);
+            if (status != PV_STATUS_SUCCESS) {
+                PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                        pv_orca_phoneme_alignment_init,
+                        pv_status_to_string(status));
+                free(indices_merged);
+                for (int32_t k = 0; k < encoded_index; k++) {
+                    pv_orca_phoneme_alignment_delete(phonemes[k]);
                 }
-
-                const char *phoneme = NULL;
-                status = pv_language_info_phoneme_index_to_string(object->language_info, prev_phoneme_index, &phoneme);
-                if (status != PV_STATUS_SUCCESS) {
-                    PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                            pv_language_info_phoneme_index_to_string,
-                            pv_status_to_string(status));
-                    free(indices_merged);
-                    for (int32_t k = 0; k < num_added_phonemes; k++) {
-                        pv_orca_phoneme_alignment_delete(phonemes[k]);
-                    }
-                    free(phonemes);
-                    for (int32_t k = 0; k < word_index; k++) {
-                        pv_orca_word_alignment_delete(aligns[k]);
-                    }
-                    free(aligns);
-                    return status;
+                free(phonemes);
+                for (int32_t k = 0; k < word_index; k++) {
+                    pv_orca_word_alignment_delete(aligns[k]);
                 }
-
-                float start_second_phoneme = pv_orca_frame_to_sec(start_frame_phoneme, sample_rate);
-                float end_second_phoneme = pv_orca_frame_to_sec(end_frame_phoneme, sample_rate);
-
-                status = pv_orca_phoneme_alignment_init(
-                        phoneme,
-                        start_second_phoneme,
-                        end_second_phoneme,
-                        &phonemes[num_added_phonemes]);
-                if (status != PV_STATUS_SUCCESS) {
-                    PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                            pv_orca_phoneme_alignment_init,
-                            pv_status_to_string(status));
-                    free(indices_merged);
-                    for (int32_t k = 0; k < encoded_index; k++) {
-                        pv_orca_phoneme_alignment_delete(phonemes[k]);
-                    }
-                    free(phonemes);
-                    for (int32_t k = 0; k < word_index; k++) {
-                        pv_orca_word_alignment_delete(aligns[k]);
-                    }
-                    free(aligns);
-                    return status;
-                }
-
-                num_added_phonemes += 1;
-                start_frame_phoneme = end_frame_phoneme;
+                free(aligns);
+                return status;
             }
 
-            if (!last_phoneme_in_word) {
-                int32_t multiplier = object->phonemizer_param->num_phoneme_multiplier;
-                if ((encoded_phonemes[token_index] % multiplier) == 0) {
-                    prev_phoneme_index = encoded_phoneme_to_phoneme(object, encoded_phonemes[token_index]);
-                }
-                end_frame_phoneme += encoded_phonemes_durations[token_index];
-            }
-
+            num_added_phonemes += 1;
             token_index += 1;
         }
 
         PV_ASSERT(num_added_phonemes == num_true_phonemes);
 
-        end_frame_word = end_frame_phoneme;
+        end_frame_word = curr_frame_phoneme;
 
         float start_second_word = pv_orca_frame_to_sec(start_frame_word, sample_rate);
         float end_second_word = pv_orca_frame_to_sec(end_frame_word, sample_rate);
@@ -2260,7 +2243,7 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_stream_open)(
     s->orca = object;
     s->stream_state = object->stream_state;
 
-    pv_status_t status = pv_orca_stream_state_open(s->stream_state, synthesize_params);
+    pv_status_t status = pv_orca_stream_state_open(object->ypu, s->stream_state, synthesize_params);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_stream_state_open,
@@ -2274,7 +2257,7 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_stream_open)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_normalizer_stream_open,
                 pv_status_to_string(status));
-        pv_orca_stream_state_close(s->stream_state);
+        pv_orca_stream_state_close(object->ypu, s->stream_state);
         free(s);
         return status;
     }
@@ -2292,7 +2275,7 @@ PV_API void PV_MOCKABLE(pv_orca_stream_close)(pv_orca_stream_t *object) {
 
     if (object) {
         pv_normalizer_stream_close(object->normalizer_stream);
-        pv_orca_stream_state_close(object->stream_state);
+        pv_orca_stream_state_close(object->orca->ypu, object->stream_state);
         for (int32_t i = 0; i < object->prev_verbalized_token_count; i++) {
             pv_normalizer_token_delete(object->prev_verbalized_tokens[i]);
         }
@@ -2437,6 +2420,9 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
         return PV_STATUS_SUCCESS;
     }
 
+    int32_t new_num_encoded_phonemes = 0;
+    int32_t *new_encoded_phonemes = NULL;
+
     if ((new_token_list_to_phonemize != NULL) && (new_token_list_to_phonemize->size > 0)) {
         pv_status_t status = pv_orca_phonemizer_remove_invalid_custom_pronunciation_tokens(
                 object->orca->phonemizer,
@@ -2482,8 +2468,8 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
             allow_append_eos = object->stream_state->is_flush ? true : false;
         }
 
-        int32_t new_num_encoded_phonemes = 0;
-        int32_t *new_encoded_phonemes = NULL;
+        new_num_encoded_phonemes = 0;
+        new_encoded_phonemes = NULL;
         int32_t *text_tokens_num_encoded_phonemes = NULL;
         status = pv_orca_phonemizer_phonemize(
                 object->orca->phonemizer,
@@ -2503,6 +2489,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
             }
             free(text_tokens);
             free(text_tokens_num_encoded_phonemes);
+            free(new_encoded_phonemes);
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                     pv_orca_phonemizer_phonemize,
                     pv_status_to_string(status));
@@ -2514,63 +2501,38 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
         free(text_tokens_num_encoded_phonemes);
         if (status != PV_STATUS_SUCCESS) {
             PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                    pv_orca_phonemizer_phonemize,
+                    pv_orca_stream_append_token_arrays,
                     pv_status_to_string(status));
-            return status;
-        }
-
-        if (new_num_encoded_phonemes > 0) {
-            status = pv_orca_stream_state_append_encoded_phonemes(
-                    state,
-                    new_num_encoded_phonemes,
-                    new_encoded_phonemes);
             free(new_encoded_phonemes);
-            if (status != PV_STATUS_SUCCESS) {
-                PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                        pv_orca_stream_state_append_encoded_phonemes,
-                        pv_status_to_string(status));
-                return status;
-            }
+            return status;
         }
     }
 
     free(new_token_list_to_phonemize);
 
-#ifdef __ORCA_LOG_LEVEL_VERBOSE__
-
-    ORCA_LOG_VERBOSE(
-            "Num encoded phonemes `%d`",
-            pv_buffer_int32_length(state->buffer_encoded_phonemes));
-    for (int32_t i = 0; i < pv_buffer_int32_length(state->buffer_encoded_phonemes); i++) {
-        ORCA_LOG_VERBOSE_INLINE("%d ", pv_buffer_int32_get(state->buffer_encoded_phonemes)[i]);
-        if (i == (pv_buffer_int32_length(state->buffer_encoded_phonemes) - 1)) {
-            ORCA_LOG_VERBOSE_INLINE_SIMPLE("\n");
+    if (new_num_encoded_phonemes == 0) {
+        if (state->is_flush) {
+            bool no_synthesis_N_domain = (
+                    (pv_buffer_length(state->cached_N_domain) == 0) &&
+                    (state->num_processed_chunks_N_domain != 0 ||
+                     (pv_buffer_length(state->buffer_N_domain_concat) == 0)));
+            bool no_synthesis_T_domain = (
+                    (pv_buffer_ypu_length(state->cached_T_domain) == 0) &&
+                    (state->num_processed_chunks_T_domain != 0 ||
+                     (pv_buffer_ypu_length(state->buffer_T_domain_concat) == 0)));
+            if (no_synthesis_N_domain && no_synthesis_T_domain) {
+                free(new_encoded_phonemes);
+                return PV_STATUS_SUCCESS;
+            }
+        } else {
+            free(new_encoded_phonemes);
+            return PV_STATUS_SUCCESS;
         }
-    }
-
-#endif
-
-    if (pv_buffer_int32_length(state->buffer_encoded_phonemes) == 0) {
-        ORCA_LOG_VERBOSE_SIMPLE("[RETURN] No phonemes to synthesize audio");
-        return PV_STATUS_SUCCESS;
-    }
-
-    bool is_sufficient_context = pv_orca_stream_state_is_sufficient_context(state);
-    if (!is_sufficient_context && !state->is_flush) {
-        ORCA_LOG_VERBOSE_SIMPLE("[RETURN] Not enough context to synthesize audio");
-        return PV_STATUS_SUCCESS;
     }
 
     if (no_synthesis) {
         ORCA_LOG_VERBOSE_SIMPLE("[RETURN] No synthesis requested.");
-        int32_t num_encoded_phonemes_to_dp = 0;
-        int32_t num_encoded_phonemes_to_flow = 0;
-        pv_orca_stream_state_update_chunk_state(state);
-        pv_orca_stream_state_update_encoder_state(
-                state,
-                pv_buffer_int32_length(state->buffer_encoded_phonemes),
-                &num_encoded_phonemes_to_dp,
-                &num_encoded_phonemes_to_flow);
+        free(new_encoded_phonemes);
         return PV_STATUS_SUCCESS;
     }
 
@@ -2584,12 +2546,13 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
             object->orca->synthesizer,
             state->synthesize_params,
             no_random_latents,
-            pv_buffer_int32_length(state->buffer_encoded_phonemes),
-            (const int32_t *) (pv_buffer_int32_get(state->buffer_encoded_phonemes)),
+            new_num_encoded_phonemes,
+            (const int32_t *) new_encoded_phonemes,
             &encoded_phonemes_durations,
             &num_samples_internal,
             &pcm_internal);
     pv_ypu_host_free(object->orca->ypu, encoded_phonemes_durations); // only used in non-streaming version
+    free(new_encoded_phonemes);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_synthesizer_forward,
@@ -2607,8 +2570,6 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
         free(pcm_internal);
         return status;
     }
-
-    pv_orca_stream_state_update_chunk_state(state);
 
     *num_samples = num_samples_internal;
     *pcm = pcm_internal;
@@ -2694,7 +2655,7 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_flush_internal)(
         return status;
     }
 
-    pv_orca_stream_state_refresh(object->stream_state);
+    pv_orca_stream_state_refresh(object->orca->ypu, object->stream_state);
     pv_normalizer_stream_reset(object->normalizer_stream);
 
     *num_samples = num_samples_internal;

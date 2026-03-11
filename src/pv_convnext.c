@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "core/pv_error_messages.h"
 #include "core/pv_type.h"
 #include "io/pv_dump.h"
-#include "model/pv_activation.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_convnext.h"
 #include "orca/pv_profiler.h"
@@ -13,28 +13,63 @@
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
-#include "ypu/mock/pv_ypu_mock.h"
 
 #endif
 
 #ifdef __PV_BUILD_APPS__
 
-pv_status_t PV_MOCKABLE(pv_convnext_param_serialize)(pv_ypu_t *ypu, const pv_convnext_param_t *param, FILE *file) {
+pv_status_t PV_MOCKABLE(pv_convnext_param_serialize)(
+        pv_ypu_t *ypu,
+        const pv_convnext_param_t *param,
+        FILE *file) {
     PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(file);
 
-    pv_status_t status = pv_cnn_depthwise_param_serialize(ypu, param->conv_depthwise_param, file);
-    PV_CHECK_STATUS(status);
+    pv_status_t status = pv_cnn_depthwise_param_serialize(
+            ypu,
+            param->conv_depthwise_param,
+            file);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_depthwise_param_serialize,
+                pv_status_to_string(status));
+        return status;
+    }
 
-    status = pv_layer_norm_param_serialize(ypu, param->layer_norm_param, file);
-    PV_CHECK_STATUS(status);
+    status = pv_layer_norm_param_serialize(
+            ypu,
+            param->layer_norm_param,
+            true,
+            file);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_param_serialize,
+                pv_status_to_string(status));
+        return status;
+    }
 
-    status = pv_cnn_param_serialize(ypu, param->conv_1_param, file);
-    PV_CHECK_STATUS(status);
+    status = pv_cnn_param_serialize(
+            ypu,
+            param->conv_1_param,
+            file);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_param_serialize,
+                pv_status_to_string(status));
+        return status;
+    }
 
-    status = pv_cnn_param_serialize(ypu, param->conv_2_param, file);
-    PV_CHECK_STATUS(status);
+    status = pv_cnn_param_serialize(
+            ypu,
+            param->conv_2_param,
+            file);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_param_serialize,
+                pv_status_to_string(status));
+        return status;
+    }
 
     const size_t length = sizeof(float) * param->conv_2_param->output_channels;
     const size_t count = fwrite(param->scale_param->data, 1, length, file);
@@ -47,52 +82,88 @@ pv_status_t PV_MOCKABLE(pv_convnext_param_serialize)(pv_ypu_t *ypu, const pv_con
 
 #endif
 
-pv_status_t PV_MOCKABLE(pv_convnext_param_load)(pv_ypu_t *ypu, FILE *f, pv_convnext_param_t **param) {
+pv_status_t PV_MOCKABLE(pv_convnext_param_load)(
+        pv_ypu_t *ypu,
+        FILE *f,
+        pv_convnext_param_t **param) {
     PV_ASSERT(ypu);
     PV_ASSERT(f);
     PV_ASSERT(param);
 
     *param = NULL;
 
-    pv_convnext_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_convnext_param_t));
-    PV_CHECK_ALLOC(p);
+    pv_convnext_param_t *p = pv_ypu_host_alloc(
+            ypu,
+            sizeof(pv_convnext_param_t));
+    if (!p) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_host_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("p"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
 
     memset(p, 0, sizeof(pv_convnext_param_t));
 
-    pv_status_t status = pv_cnn_depthwise_param_load(ypu, f, (pv_cnn_depthwise_param_t **) &(p->conv_depthwise_param));
+    pv_status_t status = pv_cnn_depthwise_param_load(
+            ypu,
+            f,
+            (pv_cnn_depthwise_param_t **) &(p->conv_depthwise_param));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_depthwise_param_load,
+                pv_status_to_string(status));
         pv_convnext_param_delete(ypu, p);
         return status;
     }
 
-    status = pv_layer_norm_param_load(ypu, f, (pv_layer_norm_param_t **) &(p->layer_norm_param));
+    status = pv_layer_norm_param_load(
+            ypu,
+            f,
+            true,
+            (pv_layer_norm_param_t **) &(p->layer_norm_param));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_param_load,
+                pv_status_to_string(status));
         pv_convnext_param_delete(ypu, p);
         return status;
     }
 
-    status = pv_cnn_param_load(ypu, f, (pv_cnn_param_t **) &(p->conv_1_param));
+    status = pv_cnn_param_load(
+            ypu,
+            f,
+            (pv_cnn_param_t **) &(p->conv_1_param));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_param_load,
+                pv_status_to_string(status));
         pv_convnext_param_delete(ypu, p);
         return status;
     }
 
-    status = pv_cnn_param_load(ypu, f, (pv_cnn_param_t **) &(p->conv_2_param));
+    status = pv_cnn_param_load(
+            ypu,
+            f,
+            (pv_cnn_param_t **) &(p->conv_2_param));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_param_load,
+                pv_status_to_string(status));
         pv_convnext_param_delete(ypu, p);
         return status;
     }
 
     const size_t length = p->conv_2_param->output_channels;
     p->scale_param = pv_ypu_config_mem_alloc(
-            ypu,
-            (int32_t) (sizeof(float) * length),
-            PV_YPU_DEVICE_MEM_FLAG_STATIC);
+                ypu,
+                (int32_t) (sizeof(float) * length),
+                PV_YPU_DEVICE_MEM_FLAG_STATIC);
     if (!p->scale_param) {
         pv_convnext_param_delete(ypu, p);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    const size_t count = pv_fread(p->scale_param->data, sizeof(float), length, f);
+    const size_t count = pv_fread((q7_t *) (p->scale_param->data), sizeof(float), length, f);
     if (count != length) {
         pv_convnext_param_delete(ypu, p);
         return PV_STATUS_IO_ERROR;
@@ -104,7 +175,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_param_load)(pv_ypu_t *ypu, FILE *f, pv_convn
 }
 
 
-void PV_MOCKABLE(pv_convnext_param_delete)(pv_ypu_t *ypu, pv_convnext_param_t *param) {
+void PV_MOCKABLE(pv_convnext_param_delete)(
+        pv_ypu_t *ypu,
+        pv_convnext_param_t *param) {
     PV_ASSERT(ypu);
 
     if (param) {
@@ -170,8 +243,14 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
 
     *object = NULL;
 
-    pv_convnext_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_convnext_t));
+    pv_convnext_t *o = pv_ypu_host_alloc(
+            ypu,
+            sizeof(pv_convnext_t));
     if (!o) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_host_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o"));
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
@@ -184,6 +263,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
             param->conv_depthwise_param,
             &(o->conv_depthwise));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_depthwise_init,
+                pv_status_to_string(status));
         pv_convnext_delete(ypu, o);
         return status;
     }
@@ -193,6 +275,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
             param->layer_norm_param,
             &(o->layer_norm));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_init,
+                pv_status_to_string(status));
         pv_convnext_delete(ypu, o);
         return status;
     }
@@ -202,6 +287,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
             param->conv_1_param,
             &(o->conv_1));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_init,
+                pv_status_to_string(status));
         pv_convnext_delete(ypu, o);
         return status;
     }
@@ -211,6 +299,9 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
             param->conv_2_param,
             &(o->conv_2));
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_init,
+                pv_status_to_string(status));
         pv_convnext_delete(ypu, o);
         return status;
     }
@@ -218,9 +309,13 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
     o->scale = pv_ypu_mem_from_config(
             ypu,
             param->scale_param);
-    if (o->scale == NULL) {
+    if (!o->scale) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("o->scale"));
         pv_convnext_delete(ypu, o);
-        return status;
+        return PV_STATUS_OUT_OF_MEMORY;
     }
 
     *object = o;
@@ -228,14 +323,19 @@ pv_status_t PV_MOCKABLE(pv_convnext_init)(
     return PV_STATUS_SUCCESS;
 }
 
-void PV_MOCKABLE(pv_convnext_delete)(pv_ypu_t *ypu, pv_convnext_t *object) {
+void PV_MOCKABLE(pv_convnext_delete)(
+        pv_ypu_t *ypu,
+        pv_convnext_t *object) {
     PV_ASSERT(ypu);
 
     if (object) {
         pv_cnn_delete(ypu, object->conv_2);
         pv_cnn_delete(ypu, object->conv_1);
+
         pv_layer_norm_delete(ypu, object->layer_norm);
+
         pv_cnn_depthwise_delete(ypu, object->conv_depthwise);
+
         pv_ypu_mem_free(ypu, object->scale);
         pv_ypu_host_free(ypu, object);
     }
@@ -245,22 +345,21 @@ pv_status_t PV_MOCKABLE(pv_convnext_forward)(
         pv_ypu_t *ypu,
         pv_convnext_t *object,
         int32_t n,
-        pv_ypu_mem_t *x_ypu_mem,
-        pv_ypu_mem_t *y_ypu_mem,
-        int32_t x_offset,
-        int32_t y_offset) {
+        pv_ypu_mem_t *x_ypu) {
     PV_ASSERT(ypu);
     PV_ASSERT(object);
     PV_ASSERT(n);
-    PV_ASSERT(x_ypu_mem);
-    PV_ASSERT(y_ypu_mem);
-    PV_ORCA_PROFILER_START("convnext");
+    PV_ASSERT(x_ypu);
 
-    pv_ypu_mem_t *buffer_1 = pv_ypu_buffer_get(
+    pv_ypu_mem_t *buffer_1_ypu = pv_ypu_buffer_get(
             ypu,
-            object->param->conv_depthwise_param->num_channels * n * (int32_t) sizeof(float),
+            object->param->conv_depthwise_param->num_channels * n * ((int32_t) sizeof(float)),
             false);
-    if (!buffer_1) {
+    if (!buffer_1_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_1"));
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
@@ -268,11 +367,15 @@ pv_status_t PV_MOCKABLE(pv_convnext_forward)(
             ypu,
             object->conv_depthwise,
             n,
-            x_ypu_mem,
-            buffer_1,
-            x_offset,
+            x_ypu,
+            buffer_1_ypu,
+            0,
             0);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_depthwise_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
 
@@ -280,99 +383,118 @@ pv_status_t PV_MOCKABLE(pv_convnext_forward)(
             ypu,
             object->layer_norm,
             n,
-            buffer_1,
-            buffer_1,
-            0,
-            0);
+            buffer_1_ypu,
+            buffer_1_ypu);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
 
-    pv_ypu_mem_t *buffer_2 = pv_ypu_buffer_get(
+    pv_ypu_mem_t *buffer_2_ypu = pv_ypu_buffer_get(
             ypu,
-            object->param->conv_1_param->output_channels * n * (int32_t) sizeof(q510_t),
+            object->param->conv_1_param->output_channels * n * ((int32_t) sizeof(float)),
             false);
-    if (!buffer_2) {
+    if (!buffer_2_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_2"));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    PV_ORCA_PROFILER_START("convnext_kernel_1");
-    status = pv_cnn_forward_to_q510(
+    status = pv_cnn_forward(
             ypu,
             object->conv_1,
             n,
-            buffer_1,
-            buffer_2,
+            buffer_1_ypu,
+            buffer_2_ypu,
             0,
             0);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_2_ypu);
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("convnext_kernel_1");
 
-    PV_ORCA_PROFILER_START("convnext_gelu");
-
-    pv_activation_gelu_q510_approx(
+    PV_ORCA_PROFILER_START("\t\tconvnext_gelu");
+    pv_ypu_op_elementwise_args_t gelu_args = {
+            .output = buffer_2_ypu,
+            .input = buffer_2_ypu,
+            .length = n * pv_cnn_output_channels(object->conv_1),
+            .output_offset = 0,
+            .input_offset = 0
+    };
+    status = pv_ypu_operator_execute(
             ypu,
-            n * pv_cnn_output_channels(object->conv_1),
-            buffer_2,
-            0);
+            PV_YPU_OPERATOR_GELU_APPROX,
+            &gelu_args);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_GELU_APPROX),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_2_ypu);
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
+        return status;
+    }
+    PV_ORCA_PROFILER_STOP("\t\tconvnext_gelu");
 
-    PV_ORCA_PROFILER_STOP("convnext_gelu");
-
-    PV_ORCA_PROFILER_START("convnext_kernel_1");
-    status = pv_cnn_forward_from_q510(
+    status = pv_cnn_forward(
             ypu,
             object->conv_2,
             n,
-            buffer_2,
-            buffer_1,
+            buffer_2_ypu,
+            buffer_1_ypu,
             0,
             0);
+    pv_ypu_buffer_release(ypu, buffer_2_ypu);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("convnext_kernel_1");
 
     const int32_t num_channels = pv_cnn_output_channels(object->conv_2);
 
-    pv_ypu_op_pairwise_broadcast_args_t args0 = {
-            .output = buffer_1,
-            .lhs = buffer_1,
+    pv_ypu_op_pairwise_broadcast_args_t mulmv_iadd_args = {
+            .output = x_ypu,
+            .lhs = buffer_1_ypu,
             .rhs = object->scale,
             .m = n,
             .n = num_channels,
             .output_offset = 0,
             .lhs_offset = 0,
-            .rhs_offset = 0,
+            .rhs_offset = 0
     };
-
     status = pv_ypu_operator_execute(
             ypu,
-            PV_YPU_OPERATOR_MULMV,
-            &args0);
+            PV_YPU_OPERATOR_MULMV_IADD,
+            &mulmv_iadd_args);
+    pv_ypu_buffer_release(ypu, buffer_1_ypu);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULMV_IADD),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
         return status;
     }
 
-    pv_ypu_op_pairwise_args_t args1 = {
-            .output = y_ypu_mem,
-            .lhs = x_ypu_mem,
-            .rhs = buffer_1,
-            .length = n * num_channels,
-            .output_offset = y_offset,
-            .lhs_offset = x_offset,
-            .rhs_offset = 0,
-    };
-
-    status = pv_ypu_operator_execute(ypu, PV_YPU_OPERATOR_ADD, &args1);
-    if (status != PV_STATUS_SUCCESS) {
-        return status;
-    }
-
-    pv_ypu_buffer_release(ypu, buffer_2);
-    pv_ypu_buffer_release(ypu, buffer_1);
-
-    PV_ORCA_PROFILER_STOP("convnext");
     return PV_STATUS_SUCCESS;
 }

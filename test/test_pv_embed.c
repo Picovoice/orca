@@ -37,28 +37,28 @@ static void test_pv_embed_teardown(void) {
 static void test_pv_embed_forward(void) {
     int32_t dimension = pv_embed_dimension(embed_object);
 
-    pv_ypu_mem_t *m1 = pv_ypu_mem_alloc(
-        ypu,
-        TEST_EMBED_SEQUENCE_LENGTH * dimension * sizeof(int32_t),
-        PV_YPU_DEVICE_MEM_FLAG_NONE);
-    pv_test_true(m1 != NULL, "Failed to allocate m1");
-    if (m1 == NULL) {
+    pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
+            ypu,
+            TEST_EMBED_SEQUENCE_LENGTH * dimension * sizeof(int32_t),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
+    pv_test_true(m0 != NULL, "Failed to allocate m0");
+    if (m0 == NULL) {
         return;
     }
 
     pv_status_t status = status = pv_embed_forward(
-        ypu,
-        embed_object,
-        TEST_EMBED_SEQUENCE_LENGTH,
-        TEST_EMBED_INPUT,
-        m1,
-        0);
+            ypu,
+            embed_object,
+            TEST_EMBED_SEQUENCE_LENGTH,
+            TEST_EMBED_INPUT,
+            m0,
+            0);
     pv_test_true(
-        status == PV_STATUS_SUCCESS,
-        "pv_embed_forward failed with %s",
-        pv_status_to_string(status));
+            status == PV_STATUS_SUCCESS,
+            "pv_embed_forward failed with %s",
+            pv_status_to_string(status));
 
-    float *buffer = pv_ypu_mem_get_host_view(ypu, m1, true);
+    float *buffer = pv_ypu_mem_get_host_view(ypu, m0, true);
     pv_test_close_float_array(
             buffer,
             TEST_EMBED_TARGET,
@@ -66,13 +66,13 @@ static void test_pv_embed_forward(void) {
             0.0001f,
             0.0f,
             "failed to forward embed");
-    pv_ypu_mem_release_host_view(ypu, m1, true);
+    pv_ypu_mem_release_host_view(ypu, m0, true);
 
-    pv_ypu_mem_free(ypu, m1);
+    pv_ypu_mem_free(ypu, m0);
 }
 
 static const pv_test_case_t PV_EMBED_TEST_CASES[] = {
-        {"embed forward",          test_pv_embed_forward},
+        {"embed forward", test_pv_embed_forward},
 };
 
 const pv_test_suite_t PV_EMBED_TEST_SUITE = {

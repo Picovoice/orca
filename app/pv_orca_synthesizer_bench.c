@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
             eos_punctuation_indices,
             1,
             eos_punctuation_indices,
-            -1,
             200,
             &stream_state);
     if (status != PV_STATUS_SUCCESS) {

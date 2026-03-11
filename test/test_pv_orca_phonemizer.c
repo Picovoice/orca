@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "core/pv_language_json.h"
 #include "core/pv_language_internal.h"
+#include "core/pv_language_json.h"
 #include "hippo/pv_hippo_internal.h"
 #include "normalizer/pv_normalizer_token.h"
 #include "orca/pv_orca_phonemizer.h"
@@ -98,17 +98,59 @@ static const pv_normalizer_token_t *TOKENS_NO_EOS_PUNC[] =
 static const pv_normalizer_token_t *TOKEN_COMMA[] = {&token6};
 
 static const int32_t PHONEME_TOKENS[] = {
-        97, 44, 45, 64, 65, 54, 55, 4, 5, 40, 41, 96, 44, 45, 20, 21, 60, 61, 70, 71, 22, 23, 38, 39, 56, 57,
-        96, 84, 85, 96, 70, 71, 22, 23, 38, 39, 96, 84, 85, 96, 82, 83, 96, 56, 57, 4, 5, 42, 43, 60, 61, 10,
-        11, 42, 43, 74, 75, 96, 30, 31, 0, 1, 30, 31, 0, 1, 96, 88, 89, 98};
+        49, // <BOS>.
+        22, 32, 27, 2, 20, // NEURAL.
+        48, // <WB>.
+        22, 10, 30, 35, 11, 19, 28, // NETWORKS.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        35, 11, 19, // WORK.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        41, // <,>.
+        48, // <WB>.
+        28, 2, 21, 30, 5, 21, 37, // SOMETIMES.
+        48, // <WB>.
+        15, 0, 15, 0, // HAHA.
+        48, // <WB>.
+        44, // <!>.
+        50}; // <EOS>.
 static const int32_t PHONEME_TOKENS_NO_EOS_TOKEN[] = {
-        97, 44, 45, 64, 65, 54, 55, 4, 5, 40, 41, 96, 44, 45, 20, 21, 60, 61, 70, 71, 22, 23, 38, 39, 56, 57,
-        96, 84, 85, 96, 70, 71, 22, 23, 38, 39, 96, 84, 85, 96, 82, 83, 96, 56, 57, 4, 5, 42, 43, 60, 61, 10,
-        11, 42, 43, 74, 75, 96, 30, 31, 0, 1, 30, 31, 0, 1, 96, 88, 89};
+        49, // <BOS>.
+        22, 32, 27, 2, 20, // NEURAL.
+        48, // <WB>.
+        22, 10, 30, 35, 11, 19, 28, // NETWORKS.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        35, 11, 19, // WORK.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        41, // <,>.
+        48, // <WB>.
+        28, 2, 21, 30, 5, 21, 37, // SOMETIMES.
+        48, // <WB>.
+        15, 0, 15, 0, // HAHA.
+        48, // <WB>.
+        44}; // <!>.
 static const int32_t PHONEME_TOKENS_NO_EOS_PUNC[] = {
-        97, 44, 45, 64, 65, 54, 55, 4, 5, 40, 41, 96, 44, 45, 20, 21, 60, 61, 70, 71, 22, 23, 38, 39, 56, 57,
-        96, 84, 85, 96, 70, 71, 22, 23, 38, 39, 96, 84, 85, 96, 82, 83, 96, 56, 57, 4, 5, 42, 43, 60, 61, 10,
-        11, 42, 43, 74, 75};
+        49, // <BOS>.
+        22, 32, 27, 2, 20, // NEURAL.
+        48, // <WB>.
+        22, 10, 30, 35, 11, 19, 28, // NETWORKS.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        35, 11, 19, // WORK.
+        48, // <WB>.
+        42, // <">.
+        48, // <WB>.
+        41, // <,>.
+        48, // <WB>.
+        28, 2, 21, 30, 5, 21, 37}; // SOMETIMES.
 
 static struct phonemize_args {
     pv_orca_phonemizer_t *object;
@@ -145,7 +187,7 @@ static const pv_orca_phonemizer_param_t DEFAULT_PHONEMIZER_PARAM = {
         .add_bos_phoneme = true,
         .add_eos_phoneme = true,
         .add_word_boundary_phoneme = true,
-        .num_phoneme_multiplier = 2,
+        .num_phoneme_multiplier = 1,
 };
 
 static pv_status_t test_pv_orca_phonemizer_setup(void) {
@@ -710,7 +752,7 @@ static void test_pv_orca_phonemizer_phonemize_2(void) {
     };
     const pv_normalizer_token_t *tokens[] = {&token};
 
-    const int32_t target[] = {97, 30, 31, 20, 21, 40, 41, 48, 49, 98};
+    const int32_t target[] = {49, 15, 10, 20, 24, 50};
 
     int32_t num_encoded_phonemes = 0;
     int32_t *encoded_phonemes = NULL;
@@ -765,9 +807,11 @@ static void test_pv_orca_phonemizer_phonemize_heteronym_1(void) {
     const pv_normalizer_token_t *tokens[] = {&token10, &random_token, &heteronym_token};
 
     const int32_t target[] = {
-            18, 19, 4, 5, 96,
-            16, 17, 0, 1, 40, 41, 26, 27, 4, 5, 44, 45, 96,
-            54, 55, 34, 35, 72, 73, 66, 67, 56, 57
+            9, 2, // THE.
+            48, // <WB>.
+            8, 0, 20, 13, 2, 22, // DOLPHIN.
+            48, // <WB>.
+            27, 17, 36, 33, 28, // REUSE.
     };
 
     int32_t num_encoded_phonemes = 0;
@@ -815,7 +859,11 @@ static void test_pv_orca_phonemizer_phonemize_heteronym_2(void) {
 
     const pv_normalizer_token_t *tokens[] = {&token10, &heteronym_token};
 
-    const int32_t target[] = {18, 19, 4, 5, 96, 24, 25, 36, 37, 32, 33, 16, 17};
+    const int32_t target[] = {
+            9, 2, // THE.
+            48, // <WB>.
+            12, 18, 16, 8, // AGED.
+    };
 
     int32_t num_encoded_phonemes = 0;
     int32_t *encoded_phonemes = NULL;
@@ -852,7 +900,9 @@ static void test_pv_orca_phonemizer_phonemize_heteronym_2(void) {
     free(text_tokens_num_encoded_phonemes);
 
     const pv_normalizer_token_t *tokens2[] = {&heteronym_token};
-    const int32_t target2[] = {24, 25, 36, 37, 16, 17};
+    const int32_t target2[] = {
+            12, 18, 8, // AGED.
+    };
 
     num_encoded_phonemes = 0;
     encoded_phonemes = NULL;
@@ -895,7 +945,7 @@ static void test_pv_orca_phonemizer_phonemize_no_eos_token(void) {
             .add_bos_phoneme = true,
             .add_eos_phoneme = false,
             .add_word_boundary_phoneme = true,
-            .num_phoneme_multiplier = 2,
+            .num_phoneme_multiplier = 1,
     };
 
     pv_orca_phonemizer_t *orca_phonemizer = NULL;
@@ -954,7 +1004,7 @@ static void test_pv_orca_phonemizer_phonemize_no_eos_punc(void) {
             .add_bos_phoneme = true,
             .add_eos_phoneme = false,
             .add_word_boundary_phoneme = true,
-            .num_phoneme_multiplier = 2,
+            .num_phoneme_multiplier = 1,
     };
 
     pv_orca_phonemizer_t *orca_phonemizer = NULL;

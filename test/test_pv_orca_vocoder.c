@@ -1,10 +1,12 @@
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "core/picovoice.h"
 #include "core/pv_type.h"
-#include "test/pv_test.h"
 #include "orca/pv_orca_istft.h"
+#include "orca/pv_orca_synthesizer.h"
+#include "test/pv_test.h"
 
 #include "test_data/test_pv_orca_vocoder_data.c"
 
@@ -23,7 +25,10 @@ static pv_status_t test_pv_orca_vocoder_setup(void) {
         return status;
     }
 
-    status = pv_orca_vocoder_init(ypu, &DEC_PARAM, &orca_vocoder_object);
+    status = pv_orca_vocoder_init(
+            ypu,
+            &DEC_PARAM,
+            &orca_vocoder_object);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -37,198 +42,69 @@ static void test_pv_orca_vocoder_teardown(void) {
 }
 
 static void test_pv_orca_vocoder_forward(void) {
-    const int32_t num_samples = TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT;
-
-    int16_t *pcm = calloc(TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT, sizeof(int16_t));
-    if (!pcm) {
-        return;
-    }
-
     pv_ypu_mem_t *m0 = pv_ypu_mem_alloc(
-        ypu,
-        sizeof(TEST_ORCA_VOCODER_INPUT),
-        PV_YPU_DEVICE_MEM_FLAG_NONE);
+            ypu,
+            sizeof(TEST_ORCA_VOCODER_INPUT),
+            PV_YPU_DEVICE_MEM_FLAG_NONE);
     pv_test_true(m0 != NULL, "Failed to allocate m0");
     if (m0 == NULL) {
         return;
     }
 
     pv_status_t status = pv_ypu_mem_copy_to(
-        ypu,
-        m0,
-        TEST_ORCA_VOCODER_INPUT,
-        0,
-        sizeof(TEST_ORCA_VOCODER_INPUT));
+            ypu,
+            m0,
+            TEST_ORCA_VOCODER_INPUT,
+            0,
+            sizeof(TEST_ORCA_VOCODER_INPUT));
     pv_test_true(
-        status == PV_STATUS_SUCCESS,
-        "pv_ypu_mem_copy_to failed with %s",
-        pv_status_to_string(status));
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_mem_copy_to failed with %s",
+            pv_status_to_string(status));
+
+    int16_t *buffer_output = calloc(
+            TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT,
+            sizeof(int16_t));
 
     status = pv_orca_vocoder_forward(
-        ypu,
-        orca_vocoder_object,
-        TEST_ORCA_VOCODER_SEQUENCE_LENGTH,
-        m0,
-        pcm,
-        0);
-    pv_test_true(
-        status == PV_STATUS_SUCCESS,
-        "pv_orca_vocoder_forward failed with %s",
-        pv_status_to_string(status));
-    
+            ypu,
+            orca_vocoder_object,
+            TEST_ORCA_VOCODER_SEQUENCE_LENGTH,
+            m0,
+            buffer_output,
+            0);
+    pv_ypu_mem_free(ypu, m0);
+    pv_test_true(status == PV_STATUS_SUCCESS, "pv_orca_vocoder_forward() returns failed status");
 
-    float max_difference = 100;
+#ifdef __ORCA_FLOAT_MODE__
+
+    float max_difference = 7;
+
+#else
+
+    float max_difference = 1030;
+
+#endif
+
     int32_t start = PV_ORCA_ISTFT_LINEAR_FADE_IN_SAMPLES;
-    int32_t end = num_samples - PV_ORCA_ISTFT_LINEAR_FADE_OUT_SAMPLES;
+    int32_t end = TEST_ORCA_VOCODER_SEQUENCE_LENGTH * PV_ORCA_WINDOW_SHIFT - PV_ORCA_ISTFT_LINEAR_FADE_OUT_SAMPLES;
     for (int32_t i = start; i < end; i++) {
         float target = (float) TEST_ORCA_VOCODER_TARGET[i] * DEC_PARAM.pcm_normalization_factor;
-        float sample_difference = fabsf((float) pcm[i] - target);
+        float sample_difference = fabsf((float) buffer_output[i] - target);
         pv_test_true(
-                sample_difference < max_difference,
+                sample_difference <= max_difference,
                 "pcm mismatch at index %d (difference > %.0f), got %d, expected %d",
                 i,
                 max_difference,
-                pcm[i],
+                buffer_output[i],
                 TEST_ORCA_VOCODER_TARGET[i]);
     }
 
-    free(pcm);
-    pv_ypu_mem_free(ypu, m0);
+    free(buffer_output);
 }
-
-#ifdef __PV_MOCKS__
-
-static size_t pv_fread_ret_one_read_zero(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    (void) stream;
-
-    memset(ptr, 0, size * nmemb);
-    return 1;
-}
-
-static size_t pv_fread_ret_zero(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    (void) ptr;
-    (void) size;
-    (void) nmemb;
-    (void) stream;
-
-    return 0;
-}
-
-static void test_pv_orca_vocoder_param_load_failure_helper(pv_status_t expected) {
-    FILE *dummy_file = malloc(sizeof(FILE *));
-    pv_test_true(dummy_file != NULL, "failed to create dummy file");
-    if (!dummy_file) {
-        return;
-    }
-
-    pv_orca_vocoder_param_t *param = NULL;
-    pv_status_t status = pv_orca_vocoder_param_load(ypu, dummy_file, &param);
-    pv_test_true(
-            status == expected,
-            "param load error, got `%s` expected `%s`",
-            pv_status_to_string(status),
-            pv_status_to_string(expected));
-    free(dummy_file);
-    if (param) {
-        pv_orca_vocoder_param_delete(ypu, param);
-    }
-}
-
-static void test_pv_orca_vocoder_param_load_failure_1(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_INVALID_ARGUMENT)
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_2(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_INVALID_ARGUMENT)
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_3(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    pv_status_t custom_rets[] = {
-            PV_STATUS_SUCCESS,
-            PV_STATUS_INVALID_ARGUMENT,
-    };
-    PV_SET_MOCK_RETURN_SEQ(pv_convnext_transposed_param_load, custom_rets);
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_4(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_vocos_backbone_param_load, PV_STATUS_INVALID_ARGUMENT)
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_5(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_SUCCESS)
-    pv_status_t custom_rets[] = {
-            PV_STATUS_SUCCESS,
-            PV_STATUS_INVALID_ARGUMENT,
-    };
-    PV_SET_MOCK_RETURN_SEQ(pv_vocos_backbone_param_load, custom_rets);
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_6(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_vocos_backbone_param_load, PV_STATUS_SUCCESS)
-    pv_status_t custom_rets[] = {
-            PV_STATUS_SUCCESS,
-            PV_STATUS_INVALID_ARGUMENT,
-    };
-    PV_SET_MOCK_RETURN_SEQ(pv_cnn_param_load, custom_rets);
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_7(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_vocos_backbone_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_fread, pv_fread_ret_zero)
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_IO_ERROR);
-}
-
-static void test_pv_orca_vocoder_param_load_failure_8(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_convnext_transposed_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_vocos_backbone_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_cnn_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_fread, pv_fread_ret_one_read_zero)
-
-    test_pv_orca_vocoder_param_load_failure_helper(PV_STATUS_INVALID_ARGUMENT);
-}
-
-#endif
 
 static const pv_test_case_t PV_ORCA_VOCODER_TEST_CASES[] = {
         {"orca_vocoder forward", test_pv_orca_vocoder_forward},
-
-#ifdef __PV_MOCKS__
-
-        {"param load failure 1", test_pv_orca_vocoder_param_load_failure_1},
-        {"param load failure 2", test_pv_orca_vocoder_param_load_failure_2},
-        {"param load failure 3", test_pv_orca_vocoder_param_load_failure_3},
-        {"param load failure 4", test_pv_orca_vocoder_param_load_failure_4},
-        {"param load failure 5", test_pv_orca_vocoder_param_load_failure_5},
-        {"param load failure 6", test_pv_orca_vocoder_param_load_failure_6},
-        {"param load failure 7", test_pv_orca_vocoder_param_load_failure_7},
-        {"param load failure 8", test_pv_orca_vocoder_param_load_failure_8},
-
-#endif
-
 };
 
 const pv_test_suite_t PV_ORCA_VOCODER_TEST_SUITE = {

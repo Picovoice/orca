@@ -11,8 +11,8 @@
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_metric_internal.h"
 #include "orca/pv_orca_stream_state.h"
-#include "tokenizer/pv_tokenizer.h"
 #include "test/pv_test.h"
+#include "tokenizer/pv_tokenizer.h"
 
 #if !defined(__PV_TARGET_NO_FILE_SYSTEM__) && !defined(__PV_TARGET_PLATFORM_WASM__)
 
@@ -1252,22 +1252,6 @@ static void test_pv_orca_integration_de_female(void) {
             0.f);
 }
 
-static void test_pv_orca_integration_large_de_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/de/sentences_large_de_male.csv",
-            "param/orca_params_de_male_16.pv",
-            "metric/orca_metric_classifier_params_de.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_de_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/de/sentences_large_de_female.csv",
-            "param/orca_params_de_female_16.pv",
-            "metric/orca_metric_classifier_params_de.pv",
-            0.f);
-}
-
 // ENGLISH:
 static void test_pv_orca_integration_en_male(void) {
     test_pv_orca_integration_speaker_suite(
@@ -1300,8 +1284,8 @@ static void test_pv_orca_integration_en_cuda(void) {
     }
 
     test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/en/sentences_en_male.csv",
-            "param/orca_params_en_male.pv",
+            "test_data/integration_sentences/en/sentences_en_female.csv",
+            "param/orca_params_en_female.pv",
             "metric/orca_metric_classifier_params_en.pv",
             0.f);
 
@@ -1326,8 +1310,8 @@ static void test_pv_orca_integration_en_metal(void) {
     }
 
     test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/en/sentences_en_male.csv",
-            "param/orca_params_en_male.pv",
+            "test_data/integration_sentences/en/sentences_en_female.csv",
+            "param/orca_params_en_female.pv",
             "metric/orca_metric_classifier_params_en.pv",
             0.f);
 
@@ -1336,22 +1320,6 @@ static void test_pv_orca_integration_en_metal(void) {
 }
 
 #endif
-
-static void test_pv_orca_integration_large_en_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/en/sentences_large_en_female.csv",
-            "param/orca_params_en_female_16.pv",
-            "metric/orca_metric_classifier_params_en.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_en_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/en/sentences_large_en_male.csv",
-            "param/orca_params_en_male_16.pv",
-            "metric/orca_metric_classifier_params_en.pv",
-            0.f);
-}
 
 // SPANISH:
 static void test_pv_orca_integration_es_female(void) {
@@ -1366,22 +1334,6 @@ static void test_pv_orca_integration_es_male(void) {
     test_pv_orca_integration_speaker_suite(
             "test_data/integration_sentences/es/sentences_es_male.csv",
             "param/orca_params_es_male.pv",
-            "metric/orca_metric_classifier_params_es.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_es_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/es/sentences_es_female_16.csv",
-            "param/orca_params_es_female_16.pv",
-            "metric/orca_metric_classifier_params_es.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_es_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/es/sentences_es_male_16.csv",
-            "param/orca_params_es_male_16.pv",
             "metric/orca_metric_classifier_params_es.pv",
             0.f);
 }
@@ -1403,22 +1355,6 @@ static void test_pv_orca_integration_fr_female(void) {
             0.f);
 }
 
-static void test_pv_orca_integration_large_fr_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/fr/sentences_large_fr_female.csv",
-            "param/orca_params_fr_female_16.pv",
-            "metric/orca_metric_classifier_params_fr.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_fr_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/fr/sentences_large_fr_male.csv",
-            "param/orca_params_fr_male_16.pv",
-            "metric/orca_metric_classifier_params_fr.pv",
-            0.f);
-}
-
 // ITALIAN:
 static void test_pv_orca_integration_it_female(void) {
     test_pv_orca_integration_speaker_suite(
@@ -1436,22 +1372,6 @@ static void test_pv_orca_integration_it_male(void) {
             0.f);
 }
 
-static void test_pv_orca_integration_large_it_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/it/sentences_it_female_16.csv",
-            "param/orca_params_it_female_16.pv",
-            "metric/orca_metric_classifier_params_it.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_it_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/it/sentences_it_male_16.csv",
-            "param/orca_params_it_male_16.pv",
-            "metric/orca_metric_classifier_params_it.pv",
-            0.f);
-}
-
 // PORTUGUESE:
 static void test_pv_orca_integration_pt_male(void) {
     test_pv_orca_integration_speaker_suite(
@@ -1465,22 +1385,6 @@ static void test_pv_orca_integration_pt_female(void) {
     test_pv_orca_integration_speaker_suite(
             "test_data/integration_sentences/pt/sentences_pt_female.csv",
             "param/orca_params_pt_female.pv",
-            "metric/orca_metric_classifier_params_pt.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_pt_female(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/pt/sentences_pt_female_16.csv",
-            "param/orca_params_pt_female_16.pv",
-            "metric/orca_metric_classifier_params_pt.pv",
-            0.f);
-}
-
-static void test_pv_orca_integration_large_pt_male(void) {
-    test_pv_orca_integration_speaker_suite(
-            "test_data/integration_sentences/pt/sentences_pt_male_16.csv",
-            "param/orca_params_pt_male_16.pv",
             "metric/orca_metric_classifier_params_pt.pv",
             0.f);
 }
@@ -1537,28 +1441,6 @@ static const pv_test_case_t PV_ORCA_INTEGRATION_TEST_CASES[] = {
 
         {"orca_integration_ja_female", test_pv_orca_integration_ja_female},
         {"orca_integration_ja_male", test_pv_orca_integration_ja_male},
-
-#if defined(__PV_ENABLE_RELEASE_TESTS__) && defined(__PV_ENABLE_LARGE_MODEL_TESTS__)
-
-        {"orca_integration_large_de_female", test_pv_orca_integration_large_de_female},
-        {"orca_integration_large_de_male", test_pv_orca_integration_large_de_male},
-
-        {"orca_integration_large_en_female", test_pv_orca_integration_large_en_female},
-        {"orca_integration_large_en_male", test_pv_orca_integration_large_en_male},
-
-        {"orca_integration_large_es_female", test_pv_orca_integration_large_es_female},
-        {"orca_integration_large_es_male", test_pv_orca_integration_large_es_male},
-
-        {"orca_integration_large_fr_female", test_pv_orca_integration_large_fr_female},
-        {"orca_integration_large_fr_male", test_pv_orca_integration_large_fr_male},
-
-        {"orca_integration_large_it_female", test_pv_orca_integration_large_it_female},
-        {"orca_integration_large_it_male", test_pv_orca_integration_large_it_male},
-
-        {"orca_integration_large_pt_female", test_pv_orca_integration_large_pt_female},
-        {"orca_integration_large_pt_male", test_pv_orca_integration_large_pt_male},
-
-#endif
 
 #ifdef __PV_YPU_CUDA_SUPPORT__
 

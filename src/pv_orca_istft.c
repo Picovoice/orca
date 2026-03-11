@@ -36,7 +36,7 @@ static pv_status_t generate_hann_window(int32_t length, float **window) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    for (int32_t i = 0; i < length; ++i) {
+    for (int32_t i = 0; i < length; i++) {
         // non-symmetric hann window mimicking torch.hann_window()
         w[i] = 0.5f * (float) (1 - cos((2.0 * M_PI * i) / length));
     }
@@ -178,8 +178,8 @@ void PV_MOCKABLE(pv_orca_istft_preprocess_fft)(
             spec_complex[frame_offset + (2 * i) + 1] = mag * sinf(phase[i]) * multiplication_factor;
         }
 
-        spec_complex[frame_offset + 1] = 0.f; // DC imaginary part is always 0 for real output signals
-        spec_complex[frame_offset + num_fft + 1] = 0.f; // Nyquist frequency's imaginary part is 0 for real output
+        spec_complex[frame_offset + 1] = 0.f;  // DC imaginary part is always 0 for real output signals
+        spec_complex[frame_offset + num_fft + 1] = 0.f;  // Nyquist frequency's imaginary part is 0 for real output
     }
 }
 
@@ -194,12 +194,12 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_forward)(
     PV_ASSERT(pcm_subband);
     PV_ORCA_PROFILER_START("istft");
 
-    float *buffer_reconstructed_frame = pv_buffer_get(object->buffer_reconstructed_frame, 1, false);
+    float *buffer_reconstructed_frame = pv_buffer_get(object->buffer_reconstructed_frame, ((int32_t) sizeof(float)), false);
     if (!buffer_reconstructed_frame) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    float *buffer_reconstructed_frames = pv_buffer_get(object->buffer_reconstructed_frames, num_frames, true);
+    float *buffer_reconstructed_frames = pv_buffer_get(object->buffer_reconstructed_frames, num_frames * ((int32_t) sizeof(float)), true);
     if (!buffer_reconstructed_frames) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
@@ -217,7 +217,7 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_forward)(
 
     pv_buffer_free(object->buffer_reconstructed_frame);
 
-    float *buffer_window_norms = pv_buffer_get(object->buffer_window_norms, num_frames, true);
+    float *buffer_window_norms = pv_buffer_get(object->buffer_window_norms, num_frames * ((int32_t) sizeof(float)), true);
     if (!buffer_window_norms) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
@@ -254,14 +254,14 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
     const int32_t num_samples_subband = num_frames * (object->window_length / object->num_subbands);
     const int32_t num_channels_all_subbands = object->num_subbands * (object->num_fft + 2);
 
-    float *buffer_spec_subband = pv_buffer_get(object->buffer_spec_subband, num_frames, false);
+    float *buffer_spec_subband = pv_buffer_get(object->buffer_spec_subband, num_frames * ((int32_t) sizeof(float)), false);
     if (!buffer_spec_subband) {
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
     float *buffer_spec_subband_preprocessed = pv_buffer_get(
             object->buffer_spec_subband_preprocessed,
-            num_frames,
+            num_frames * ((int32_t) sizeof(float)),
             false);
     if (!buffer_spec_subband_preprocessed) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -270,7 +270,7 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
     // [PV_ORCA_VOCODER_NUM_SUBBANDS, num_samples]
     float *buffer_pcm_all_subbands = pv_buffer_get(
             object->buffer_pcm_all_subbands,
-            num_samples_subband,
+            num_samples_subband * ((int32_t) sizeof(float)),
             false);
     if (!buffer_pcm_all_subbands) {
         return PV_STATUS_OUT_OF_MEMORY;
@@ -315,7 +315,7 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
             object->num_subbands,
             num_samples_subband,
             buffer_pcm_all_subbands,
-            buffer_pcm_all_subbands); // reuse buffer_pcm_all_subbands. becomes [num_samples]
+            buffer_pcm_all_subbands);  // reuse buffer_pcm_all_subbands. becomes [num_samples]
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
