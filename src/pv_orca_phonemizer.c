@@ -118,7 +118,7 @@ void PV_MOCKABLE(pv_orca_phonemizer_param_delete)(pv_orca_phonemizer_param_t *pa
 }
 
 struct pv_orca_phonemizer {
-    pv_orca_phonemizer_param_t *param;
+    const pv_orca_phonemizer_param_t *param;
     pv_hippo_t *hippo;
     pv_lexicon_t *lexicon;
     pv_dict_t *dict;
@@ -166,6 +166,8 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_init)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    o->param = param;
+
     o->hippo = hippo;
     o->lexicon = lexicon;
     o->dict = dict;
@@ -208,7 +210,8 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_init)(
             free(o);
             return status;
         }
-        o->terminator_index = terminator_index;
+        // Because `pv_language_info_phoneme_index_from_string()` plus 1 internally, so need to minus 1 to cancel out.
+        o->terminator_index = terminator_index - 1;
     }
 
     pv_normalizer_language_t language = 0;
@@ -965,8 +968,12 @@ static pv_status_t pv_orca_phonemizer_get_num_phonemes_per_text_token(
     PV_ASSERT(object);
     PV_ASSERT(num_text_tokens >= 0);
     PV_ASSERT(add_terminator_manually >= 0);
+    PV_ASSERT(add_terminator_manually <= 1);
     PV_ASSERT(num_phonemes_buffer);
     PV_ASSERT(text_tokens_num_encoded_phonemes);
+
+    PV_ASSERT(object->num_phoneme_multiplier == 1);
+    PV_ASSERT(object->word_boundary_phoneme_index > 0);
 
     int32_t num_text_tokens_with_terminator = num_text_tokens + add_terminator_manually;
 
@@ -977,7 +984,7 @@ static pv_status_t pv_orca_phonemizer_get_num_phonemes_per_text_token(
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE("text_tokens_num_phonemes"));
+                PV_ERROR_ARGS_PRIVATE("num_phonemes"));
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
@@ -1052,6 +1059,9 @@ static pv_status_t pv_orca_phonemizer_encode_phonemes(
     PV_ASSERT(phonemes_buffer);
     PV_ASSERT(encoded_phonemes);
 
+    PV_ASSERT(object->num_phoneme_multiplier == 1);
+    PV_ASSERT(object->word_boundary_phoneme_index > 0);
+
     *encoded_phonemes = NULL;
 
     int32_t *phonemes = malloc(num_encoded_phonemes * sizeof(int32_t));
@@ -1069,16 +1079,11 @@ static pv_status_t pv_orca_phonemizer_encode_phonemes(
     }
 
     for (int32_t j = 0; j < num_text_tokens; j++) {
-
         for (int32_t k = 0; k < num_phonemes_buffer[j]; k++) {
             if (phonemes_buffer[j][k] == object->word_boundary_phoneme_index) {
                 phonemes[l++] = object->word_boundary_phoneme_index;
-            } else if (object->num_phoneme_multiplier == 2) { // TODO (Ted): Why are we not handling other <num_phoneme_multiplier> cases?
-                // minus object->num_phoneme_multiplier because language_info starts the phoneme indexing at 1
-                phonemes[l++] = (2 * phonemes_buffer[j][k]) - object->num_phoneme_multiplier;
-                phonemes[l++] = (2 * phonemes_buffer[j][k]) + 1 - object->num_phoneme_multiplier;
             } else {
-                phonemes[l++] = phonemes_buffer[j][k] - 1;
+                phonemes[l++] = phonemes_buffer[j][k];
             }
         }
 
@@ -1101,16 +1106,7 @@ static pv_status_t pv_orca_phonemizer_encode_phonemes(
         }
 
         int32_t offset = (object->eos_phoneme_index > 0) ? 2 : 1;
-        if (object->num_phoneme_multiplier > 0) {
-            offset += object->num_phoneme_multiplier - 1;
-        }
-        if (object->num_phoneme_multiplier == 2) {
-            phonemes[num_encoded_phonemes - offset] = 2 * object->terminator_index - object->num_phoneme_multiplier;
-            phonemes[num_encoded_phonemes - offset + 1] =
-                    (2 * object->terminator_index) + 1 - object->num_phoneme_multiplier;
-        } else {
-            phonemes[num_encoded_phonemes - offset] = object->terminator_index;
-        }
+        phonemes[num_encoded_phonemes - offset] = object->terminator_index;
     }
 
     if (allow_append_eos && (object->eos_phoneme_index > 0)) {
@@ -1262,7 +1258,9 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
                 free(phonemes_buffer);
                 return PV_STATUS_OUT_OF_MEMORY;
             }
-            phonemes_buffer[i][0] = object->word_boundary_phoneme_index;
+            // Because `pv_language_info_phoneme_index_from_string()` plus 1 internally,
+            // so we will plus 1 here too to be consistent.
+            phonemes_buffer[i][0] = object->word_boundary_phoneme_index + 1;
         } else if (current->tag_language_agnostic == PV_NORMALIZER_TAG_CUSTOM_PRONUNCIATION) {
             status = pv_orca_phonemizer_get_phonemes_pronunciation(
                     object,
@@ -1490,7 +1488,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
         add_terminator_manually = 1;
     }
 
-    int32_t *num_phonemes_buffer_with_pronunciation = (int32_t *) calloc(num_text_tokens, sizeof(int32_t *));
+    int32_t *num_phonemes_buffer_with_pronunciation = calloc(num_text_tokens, sizeof(int32_t *));
     if (!num_phonemes_buffer_with_pronunciation) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -1503,7 +1501,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
         free(phonemes_buffer);
         return PV_STATUS_OUT_OF_MEMORY;
     }
-    int32_t **phonemes_buffer_with_pronunciation = (int32_t **) calloc(num_text_tokens, sizeof(int32_t *));
+    int32_t **phonemes_buffer_with_pronunciation = calloc(num_text_tokens, sizeof(int32_t *));
     if (!phonemes_buffer_with_pronunciation) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -1521,6 +1519,12 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
     for (int32_t i = 0; i < num_text_tokens; ++i) {
         if (num_phonemes_buffer[i] >= 1) {
             num_phonemes_buffer_with_pronunciation[curr] = num_phonemes_buffer[i];
+            for (int32_t j = 0; j < num_phonemes_buffer[i]; ++j) {
+                PV_ASSERT(phonemes_buffer[i][j] - 1 >= 0);
+                // Because `pv_language_info_phoneme_index_from_string()` plus 1 internally,
+                // so need to minus 1 to cancel out.
+                --(phonemes_buffer[i][j]);
+            }
             phonemes_buffer_with_pronunciation[curr] = phonemes_buffer[i];
             ++curr;
         }
@@ -1582,7 +1586,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
         return status;
     }
 
-    int32_t *text_tokens_num_encoded_phonemes_final = (int32_t *) calloc(num_text_tokens, sizeof(int32_t));
+    int32_t *text_tokens_num_encoded_phonemes_final = calloc(num_text_tokens, sizeof(int32_t));
     if (!text_tokens_num_encoded_phonemes_final) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -1596,6 +1600,7 @@ pv_status_t PV_MOCKABLE(pv_orca_phonemizer_phonemize)(
         free(num_phonemes_buffer_with_pronunciation);
         free(phonemes_buffer_with_pronunciation);
         free(text_tokens_num_encoded_phonemes_internal);
+        free(encoded_phonemes_internal);
         return PV_STATUS_OUT_OF_MEMORY;
     }
     curr = 0;

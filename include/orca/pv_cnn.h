@@ -14,6 +14,7 @@ typedef struct {
     int32_t dilation;
     pv_ypu_config_mem_t *weight;
     pv_ypu_config_mem_t *bias;
+    pv_ypu_config_mem_t *int8_inverse_scale;
 } pv_cnn_param_t;
 
 #ifdef __PV_BUILD_APPS__
@@ -52,10 +53,8 @@ typedef struct {
     int32_t dilation;
     pv_ypu_config_mem_t *weight;
     pv_ypu_config_mem_t *bias;
+    pv_ypu_config_mem_t *int8_inverse_scale;
 } pv_cnn_depthwise_param_t;
-
-int32_t PV_MOCKABLE(pv_cnn_param_receptive_field)(
-        const pv_cnn_param_t *param);
 
 #ifdef __PV_BUILD_APPS__
 
@@ -92,27 +91,11 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
         const pv_cnn_param_t *param,
         pv_cnn_t **object);
 
-void PV_MOCKABLE(pv_cnn_delete)(pv_ypu_t *ypu, pv_cnn_t *object);
+void PV_MOCKABLE(pv_cnn_delete)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object);
 
 pv_status_t PV_MOCKABLE(pv_cnn_forward)(
-        pv_ypu_t *ypu,
-        pv_cnn_t *object,
-        int32_t n,
-        pv_ypu_mem_t *x,
-        pv_ypu_mem_t *y,
-        int32_t x_offset,
-        int32_t y_offset);
-
-pv_status_t PV_MOCKABLE(pv_cnn_forward_to_q510)(
-        pv_ypu_t *ypu,
-        pv_cnn_t *object,
-        int32_t n,
-        pv_ypu_mem_t *x,
-        pv_ypu_mem_t *y,
-        int32_t x_offset,
-        int32_t y_offset);
-
-pv_status_t PV_MOCKABLE(pv_cnn_forward_from_q510)(
         pv_ypu_t *ypu,
         pv_cnn_t *object,
         int32_t n,
@@ -150,14 +133,14 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward)(
         pv_ypu_t *ypu,
         pv_cnn_depthwise_t *object,
         int32_t n,
-        pv_ypu_mem_t *x,
-        pv_ypu_mem_t *y, int32_t x_offset, int32_t y_offset);
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset);
 
 int32_t PV_MOCKABLE(pv_cnn_depthwise_num_channels)(const pv_cnn_depthwise_t *object);
 
 int32_t PV_MOCKABLE(pv_cnn_depthwise_kernel_size)(const pv_cnn_depthwise_t *object);
-
-int32_t PV_MOCKABLE(pv_cnn_depthwise_stride)(const pv_cnn_depthwise_t *object);
 
 pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_depthwise_get_weight)(const pv_cnn_depthwise_t *object);
 

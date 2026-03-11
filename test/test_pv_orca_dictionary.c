@@ -51,189 +51,181 @@ static void test_pv_orca_words_pron_helper(
 
 static void test_pv_orca_hp_pron_de(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "h a p e",
-        "h a",
-        "p e"
-    };
+            "h a p e",
+            "h a",
+            "p e"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_de_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_de_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_de_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_de_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_en(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "EY CH P IY",
-        "EY CH",
-        "P IY"
-    };
+            "EY CH P IY",
+            "EY CH",
+            "P IY"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_en_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_en_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_en_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_en_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_es(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "a ʧ e p e",
-        "a ʧ e",
-        "p e"
-    };
+            "a ʧ e p e",
+            "a ʧ e",
+            "p e"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_es_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_es_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_es_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_es_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_fr(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "a ʃ p e",
-        "a ʃ",
-        "p e"
-    };
+            "a ʃ p e",
+            "a ʃ",
+            "p e"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_fr_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_fr_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_fr_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_fr_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_it(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "a k k a p i",
-        "a k k a",
-        "p i"
-    };
+            "a k k a p i",
+            "a k k a",
+            "p i"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_it_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_it_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_it_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_it_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_ja(void) {
     const char *words[] = {
-        "エイチピー",
-        "エイチ",
-        "ピー",
+            "エイチピー",
+            "エイチ",
+            "ピー",
     };
     const char *word_phonemes[] = {
-        "e ʧ i p i",
-        "e ʧ i",
-        "p i"
-    };
+            "e ʧ i p i",
+            "e ʧ i",
+            "p i"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_ja_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_ja_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_ja_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_ja_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_ko(void) {
     const char *words[] = {
-        "에이치피",
-        "에이치",
-        "피",
+            "에이치피",
+            "에이치",
+            "피",
     };
     const char *word_phonemes[] = {
-        "e i ʨʰ i pʰ i",
-        "e i ʨʰ i",
-        "pʰ i"
-    };
+            "e i ʨʰ i pʰ i",
+            "e i ʨʰ i",
+            "pʰ i"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_ko_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_ko_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static void test_pv_orca_hp_pron_pt(void) {
     const char *words[] = {
-        "HP",
-        "H",
-        "P",
+            "HP",
+            "H",
+            "P",
     };
     const char *word_phonemes[] = {
-        "ɐ ɡ ɐ p e",
-        "ɐ ɡ ɐ",
-        "p e"
-    };
+            "ɐ ɡ ɐ p e",
+            "ɐ ɡ ɐ",
+            "p e"};
 
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_pt_male.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_pt_male.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
     test_pv_orca_words_pron_helper(
-        "dictionary/dictionary_pt_female.txt",
-        words,
-        word_phonemes,
-        PV_ARRAY_LEN(words));
+            "dictionary/dictionary_pt_female.txt",
+            words,
+            word_phonemes,
+            PV_ARRAY_LEN(words));
 }
 
 static const pv_test_case_t PV_ORCA_DICTIONARY_TEST_CASES[] = {

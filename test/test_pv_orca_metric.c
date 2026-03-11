@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "core/picovoice.h"
 #include "core/pv_type.h"
-#include "test/pv_test.h"
 #include "orca/pv_orca_metric_internal.h"
+#include "test/pv_test.h"
 
 #ifdef __PV_MOCKS__
 

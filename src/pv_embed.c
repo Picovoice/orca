@@ -29,8 +29,15 @@ pv_status_t PV_MOCKABLE(pv_embed_param_serialize_buffer)(
             (sizeof(float) * param->num_embeddings * param->output_channels);
     *buffer = NULL;
 
-    void *b = pv_ypu_host_alloc(ypu, *length);
-    PV_CHECK_ALLOC(b);
+    void *b = pv_ypu_host_alloc(ypu, (int32_t) (*length));
+    if (!b) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_host_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("b"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
     *buffer = b;
 
     memcpy(b, &(param->num_embeddings), sizeof(int32_t));
@@ -71,7 +78,13 @@ pv_status_t PV_MOCKABLE(pv_embed_param_load)(pv_ypu_t *ypu, FILE *f, pv_embed_pa
     *param = NULL;
 
     pv_embed_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_embed_param_t));
-    PV_CHECK_ALLOC(p);
+    if (!p) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_host_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("p"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
 
     memset(p, 0, sizeof(pv_embed_param_t));
 
@@ -162,6 +175,8 @@ pv_status_t PV_MOCKABLE(pv_embed_init)(pv_ypu_t *ypu, const pv_embed_param_t *pa
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
+    memset(o, 0, sizeof(pv_embed_t));
+
     o->param = param;
 
     *object = o;
@@ -207,7 +222,7 @@ pv_status_t PV_MOCKABLE(pv_embed_get)(
             y_ypu_mem,
             object->param->weight + (index * dimension),
             y_offset,
-            sizeof(float) * dimension);
+            (int32_t) sizeof(float) * dimension);
     if (status != PV_STATUS_SUCCESS) {
         return status;
     }
@@ -235,7 +250,7 @@ pv_status_t PV_MOCKABLE(pv_embed_forward)(
                 object,
                 x[i],
                 y_ypu_mem,
-                y_offset + (i * dimension) * (int32_t) sizeof(float));
+                y_offset + ((i * dimension) * (int32_t) sizeof(float)));
         if (status != PV_STATUS_SUCCESS) {
             return status;
         }

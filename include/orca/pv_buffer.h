@@ -14,10 +14,25 @@ void PV_MOCKABLE(pv_buffer_delete)(pv_buffer_t *object);
 
 void PV_MOCKABLE(pv_buffer_free)(pv_buffer_t *object);
 
-float *PV_MOCKABLE(pv_buffer_get)(pv_buffer_t *object, int32_t requested_length, bool clear);
+void *PV_MOCKABLE(pv_buffer_get)(pv_buffer_t *object, int32_t requested_length, bool clear);
 
 int32_t PV_MOCKABLE(pv_buffer_dimension)(const pv_buffer_t *object);
 
 int32_t PV_MOCKABLE(pv_buffer_length)(const pv_buffer_t *object);
+
+pv_status_t PV_MOCKABLE(pv_buffer_concat)(
+        pv_buffer_t *object,
+        const void *src,
+        int32_t n);
+
+pv_status_t PV_MOCKABLE(pv_buffer_replace)(
+        pv_buffer_t *object,
+        const void *src,
+        int32_t n);
+
+void PV_MOCKABLE(pv_buffer_copy_to)(
+        const pv_buffer_t *object,
+        void *src,
+        int32_t n);
 
 #endif // PV_BUFFER_H

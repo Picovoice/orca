@@ -3,10 +3,14 @@
 
 #include "core/pv_language.h"
 #include "orca/pv_orca.h"
-#include "orca/pv_orca_stream_state.h"
-#include "orca/pv_orca_text_encoder.h"
 #include "orca/pv_orca_duration_predictor.h"
-#include "orca/pv_orca_flow.h"
+#include "orca/pv_orca_gaussian_upsampler.h"
+#include "orca/pv_orca_lfm_condition_fuser.h"
+#include "orca/pv_orca_lfm_film_generator.h"
+#include "orca/pv_orca_lfm_vf_estimator.h"
+#include "orca/pv_orca_prior_encoder_film_generator.h"
+#include "orca/pv_orca_prior_encoder_flow.h"
+#include "orca/pv_orca_stream_state.h"
 #include "orca/pv_orca_vocoder.h"
 #include "ypu/pv_ypu.h"
 

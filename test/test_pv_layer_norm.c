@@ -71,9 +71,7 @@ static void test_pv_layer_norm_forward(void) {
         layer_norm_object,
         TEST_LAYER_NORM_SEQUENCE_LENGTH,
         m0,
-        m1,
-        0,
-        0);
+        m1);
     pv_test_true(
         status == PV_STATUS_SUCCESS,
         "pv_layer_norm_forward failed with %s",

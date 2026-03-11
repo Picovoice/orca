@@ -1,322 +1,302 @@
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
+#include "core/picovoice.h"
+#include "core/pv_error_messages.h"
 #include "orca/pv_affine.h"
 #include "orca/pv_profiler.h"
-#include "util/pv_check_status.h"
-#include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__
 
 #include "orca/mock/pv_orca_mock.h"
-#include "ypu/mock/pv_ypu_mock.h"
 
 #endif
 
-#ifdef __PV_BUILD_APPS__
+#if __ORCA_FLOAT_MODE__
 
-pv_status_t PV_MOCKABLE(pv_affine_param_serialize_buffer)(
-        pv_ypu_t *ypu,
-        const pv_affine_param_t *param,
-        size_t *length,
-        void **buffer) {
-    PV_ASSERT(ypu);
-    PV_ASSERT(param);
-
-    *length =
-            sizeof(int32_t) +
-            sizeof(int32_t) +
-            (sizeof(float) * param->num_channels) +
-            (sizeof(float) * param->num_channels);
-    *buffer = NULL;
-
-    void *b = pv_ypu_host_alloc(ypu, *length);
-    PV_CHECK_ALLOC(b);
-    *buffer = b;
-
-    memcpy(b, &(param->num_channels), sizeof(int32_t));
-    b += sizeof(int32_t);
-
-    memcpy(b, &(param->scale_offset), sizeof(int32_t));
-    b += sizeof(int32_t);
-
-    memcpy(b, param->bias->data, sizeof(float) * param->num_channels);
-    b += sizeof(float) * param->num_channels;
-
-    memcpy(b, param->scale->data, sizeof(float) * param->num_channels);
-
-    return PV_STATUS_SUCCESS;
-}
-
-
-pv_status_t PV_MOCKABLE(pv_affine_param_serialize)(
-        pv_ypu_t *ypu,
-        const pv_affine_param_t *param,
-        FILE *file) {
-    PV_ASSERT(ypu);
-    PV_ASSERT(param);
-    PV_ASSERT(file);
-
-    size_t length = 0;
-    void *buffer = NULL;
-
-    pv_status_t status = pv_affine_param_serialize_buffer(ypu, param, &length, &buffer);
-    PV_CHECK_STATUS(status);
-
-    const size_t count = fwrite(buffer, 1, length, file);
-    pv_ypu_host_free(ypu, buffer);
-
-    return (count == length) ? PV_STATUS_SUCCESS : PV_STATUS_IO_ERROR;
-}
-
-#endif
-
-pv_status_t PV_MOCKABLE(pv_affine_param_load)(
-        pv_ypu_t *ypu,
-        FILE *f,
-        pv_affine_param_t **param) {
-    PV_ASSERT(ypu);
-    PV_ASSERT(f);
-    PV_ASSERT(param);
-
-    *param = NULL;
-
-    pv_affine_param_t *p = pv_ypu_host_alloc(ypu, sizeof(pv_affine_param_t));
-    PV_CHECK_ALLOC(p);
-
-    memset(p, 0, sizeof(pv_affine_param_t));
-
-    size_t count = pv_fread(&(p->num_channels), sizeof(int32_t), 1, f);
-    if (count != 1) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_IO_ERROR;
-    }
-    if (p->num_channels <= 0) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_INVALID_ARGUMENT;
-    }
-
-    count = pv_fread(&(p->scale_offset), sizeof(int32_t), 1, f);
-    if (count != 1) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_IO_ERROR;
-    }
-
-    const size_t length = (size_t) p->num_channels;
-
-    p->bias = pv_ypu_config_mem_alloc(
-            ypu,
-            (int32_t) (sizeof(float) * length),
-            PV_YPU_DEVICE_MEM_FLAG_STATIC);
-    if (!p->bias) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-    count = pv_fread(p->bias->data, sizeof(float), length, f);
-    if (count != length) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_IO_ERROR;
-    }
-
-    p->scale = pv_ypu_config_mem_alloc(
-            ypu,
-            (int32_t) (sizeof(float) * length),
-            PV_YPU_DEVICE_MEM_FLAG_STATIC);
-    if (!p->scale) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-    count = pv_fread(p->scale->data, sizeof(float), length, f);
-    if (count != length) {
-        pv_affine_param_delete(ypu, p);
-        return PV_STATUS_IO_ERROR;
-    }
-
-    *param = p;
-
-    return PV_STATUS_SUCCESS;
-}
-
-void PV_MOCKABLE(pv_affine_param_delete)(
-        pv_ypu_t *ypu,
-        pv_affine_param_t *param) {
-    PV_ASSERT(ypu);
-
-    if (param) {
-        pv_ypu_config_mem_free(ypu, param->scale);
-        pv_ypu_config_mem_free(ypu, param->bias);
-        pv_ypu_host_free(ypu, param);
-    }
-}
-
-bool PV_MOCKABLE(pv_affine_param_is_equal)(const pv_affine_param_t *object, const pv_affine_param_t *other) {
-    PV_ASSERT(object);
-    PV_ASSERT(other);
-
-    if (object->num_channels != other->num_channels) {
-        return false;
-    }
-
-    if (object->scale_offset != other->scale_offset) {
-        return false;
-    }
-
-    if (!pv_ypu_config_mem_is_equal(object->bias, other->bias)) {
-        return false;
-    }
-
-    if (!pv_ypu_config_mem_is_equal(object->scale, other->scale)) {
-        return false;
-    }
-
-    return true;
-}
-
-struct pv_affine {
-    const pv_affine_param_t *param;
-
-    pv_ypu_mem_t *scale;
-    pv_ypu_mem_t *bias;
-    pv_ypu_mem_t *scale_with_offset;
-};
-
-pv_status_t PV_MOCKABLE(pv_affine_init)(
-        pv_ypu_t *ypu,
-        const pv_affine_param_t *param,
-        pv_affine_t **object) {
-    PV_ASSERT(ypu);
-    PV_ASSERT(param);
-    PV_ASSERT(object);
-
-    *object = NULL;
-
-    pv_affine_t *o = pv_ypu_host_alloc(ypu, sizeof(pv_affine_t));
-    if (!o) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    memset(o, 0, sizeof(pv_affine_t));
-
-    o->param = param;
-
-    const int32_t num_channels = o->param->num_channels;
-
-    o->scale = pv_ypu_mem_from_config(ypu, param->scale);
-    if (!o->scale) {
-        pv_affine_delete(ypu, o);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    o->bias = pv_ypu_mem_from_config(ypu, param->bias);
-    if (!o->bias) {
-        pv_affine_delete(ypu, o);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    o->scale_with_offset = pv_ypu_mem_alloc(
-            ypu,
-            num_channels * (int32_t) sizeof(float),
-            PV_YPU_DEVICE_MEM_FLAG_NONE);
-    if (!o->scale_with_offset) {
-        pv_affine_delete(ypu, o);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
-    pv_ypu_op_elementwise_scalar_args_t args = {
-            .output = o->scale_with_offset,
-            .input = o->scale,
-            .scalar.f32 = o->param->scale_offset,
-            .length = num_channels,
-            .output_offset = 0,
-            .input_offset = 0,
-    };
-
-    pv_status_t status = pv_ypu_operator_execute(
-            ypu,
-            PV_YPU_OPERATOR_ADDSV,
-            &args);
-    if (status != PV_STATUS_SUCCESS) {
-        pv_affine_delete(ypu, o);
-        return status;
-    }
-
-    *object = o;
-
-    return PV_STATUS_SUCCESS;
-}
-
-void PV_MOCKABLE(pv_affine_delete)(
-        pv_ypu_t *ypu,
-        pv_affine_t *object) {
-    PV_ASSERT(ypu);
-
-    if (object) {
-        pv_ypu_mem_free(ypu, object->scale_with_offset);
-        pv_ypu_mem_free(ypu, object->bias);
-        pv_ypu_mem_free(ypu, object->scale);
-        pv_ypu_host_free(ypu, object);
-    }
-}
-
-int32_t PV_MOCKABLE(pv_affine_num_channels)(const pv_affine_t *object) {
-    PV_ASSERT(object);
-
-    return object->param->num_channels;
-}
-
-pv_status_t PV_MOCKABLE(pv_affine_forward)(
-        pv_ypu_t *ypu,
-        pv_affine_t *object,
+pv_status_t PV_MOCKABLE(pv_affine_execute_float)(
         int32_t n,
-        pv_ypu_mem_t *x_ypu_mem,
-        pv_ypu_mem_t *y_ypu_mem,
-        int32_t x_offset,
-        int32_t y_offset) {
-    PV_ASSERT(ypu);
-    PV_ASSERT(object);
+        int32_t num_channels,
+        const float *x,
+        float scale,
+        float shift,
+        const float *weight,
+        const float *bias,
+        float *y) {
     PV_ASSERT(n);
-    PV_ASSERT(x_ypu_mem);
-    PV_ASSERT(y_ypu_mem);
-    PV_ORCA_PROFILER_START("affine");
+    PV_ASSERT(num_channels);
+    PV_ASSERT(x);
+    PV_ASSERT(scale >= 0.0f);
+    PV_ASSERT(weight);
+    PV_ASSERT(bias);
+    PV_ASSERT(y);
 
-    pv_ypu_op_pairwise_broadcast_args_t args0 = {
-            .output = y_ypu_mem,
-            .lhs = x_ypu_mem,
-            .rhs = object->scale_with_offset,
-            .m = n,
-            .n = object->param->num_channels,
-            .output_offset = y_offset,
-            .lhs_offset = x_offset,
-            .rhs_offset = 0,
+    for (int32_t i = 0; i < n; i++) {
+        const int32_t i_offset = i * num_channels;
+        for (int32_t j = 0; j < num_channels; j++) {
+            y[i_offset + j] = (x[i_offset + j] * scale * weight[j]) + (x[i_offset + j] * shift) + bias[j];
+        }
+    }
+
+    return PV_STATUS_SUCCESS;
+}
+
+#endif
+
+pv_status_t PV_MOCKABLE(pv_affine_execute)(
+        pv_ypu_t *ypu,
+        int32_t n,
+        int32_t num_channels,
+        pv_ypu_mem_t *x_ypu,
+        float scale,
+        float shift,
+        pv_ypu_mem_t *weight_ypu,
+        pv_ypu_mem_t *bias_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t weight_offset,
+        int32_t bias_offset,
+        int32_t y_offset) {
+    PV_ASSERT(n);
+    PV_ASSERT(num_channels);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(scale >= 0.0f);
+    PV_ASSERT(weight_ypu);
+    PV_ASSERT(bias_ypu);
+    PV_ASSERT(y_ypu);
+
+    pv_ypu_mem_t *buffer_0_ypu = pv_ypu_buffer_get(
+            ypu,
+            n * num_channels * (int32_t) sizeof(float),
+            false);
+    if (!buffer_0_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_0_ypu"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_elementwise_scalar_args_t args_mulsv0 = {
+            .output = buffer_0_ypu,
+            .input = x_ypu,
+            .scalar.f32 = shift,
+            .length = n * num_channels,
+            .output_offset = 0,
+            .input_offset = x_offset
     };
-
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
-            PV_YPU_OPERATOR_MULMV,
-            &args0);
+            PV_YPU_OPERATOR_MULSV,
+            &args_mulsv0);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULSV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_0_ypu);
         return status;
     }
 
-    pv_ypu_op_pairwise_broadcast_args_t args1 = {
-            .output = y_ypu_mem,
-            .lhs = y_ypu_mem,
-            .rhs = object->bias,
-            .m = n,
-            .n = object->param->num_channels,
-            .output_offset = y_offset,
-            .lhs_offset = y_offset,
-            .rhs_offset = 0,
-    };
+    pv_ypu_mem_t *buffer_1_ypu = pv_ypu_buffer_get(
+            ypu,
+            n * num_channels * (int32_t) sizeof(float),
+            false);
+    if (!buffer_1_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_1_ypu"));
+        pv_ypu_buffer_release(ypu, buffer_0_ypu);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
 
+    pv_ypu_op_elementwise_scalar_args_t args_mulsv1 = {
+            .output = buffer_1_ypu,
+            .input = x_ypu,
+            .scalar.f32 = scale,
+            .length = n * num_channels,
+            .output_offset = 0,
+            .input_offset = x_offset
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULSV,
+            &args_mulsv1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULSV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
+        pv_ypu_buffer_release(ypu, buffer_0_ypu);
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args_mulmv_iadd = {
+            .output = buffer_0_ypu,
+            .lhs = buffer_1_ypu,
+            .rhs = weight_ypu,
+            .m = n,
+            .n = num_channels,
+            .output_offset = 0,
+            .lhs_offset = 0,
+            .rhs_offset = weight_offset
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULMV_IADD,
+            &args_mulmv_iadd);
+    pv_ypu_buffer_release(ypu, buffer_1_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULMV_IADD),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_0_ypu);
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args_addmv = {
+            .output = y_ypu,
+            .lhs = buffer_0_ypu,
+            .rhs = bias_ypu,
+            .m = n,
+            .n = num_channels,
+            .output_offset = y_offset,
+            .lhs_offset = 0,
+            .rhs_offset = bias_offset,
+    };
     status = pv_ypu_operator_execute(
             ypu,
             PV_YPU_OPERATOR_ADDMV,
-            &args1);
+            &args_addmv);
+    pv_ypu_buffer_release(ypu, buffer_0_ypu);
     if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_ADDMV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
         return status;
     }
 
-    PV_ORCA_PROFILER_STOP("affine");
+    return PV_STATUS_SUCCESS;
+}
+
+pv_status_t PV_MOCKABLE(pv_affine_execute_from_q1417_to_float)(
+        pv_ypu_t *ypu,
+        int32_t n,
+        int32_t num_channels,
+        pv_ypu_mem_t *x,
+        pv_ypu_mem_t *scale,
+        pv_ypu_mem_t *weight,
+        pv_ypu_mem_t *bias,
+        pv_ypu_mem_t *y,
+        int32_t x_offset,
+        int32_t scale_offset,
+        int32_t weight_offset,
+        int32_t bias_offset,
+        int32_t y_offset) {
+    PV_ASSERT(n);
+    PV_ASSERT(num_channels);
+    PV_ASSERT(x);
+    PV_ASSERT(scale);
+    PV_ASSERT(weight);
+    PV_ASSERT(bias);
+    PV_ASSERT(y);
+
+     pv_ypu_op_pairwise_broadcast_args_t args_mulmv0 = {
+            .output = y,
+            .lhs = x,
+            .rhs = scale,
+            .m = n * num_channels,
+            .n = 1,
+            .output_offset = y_offset,
+            .lhs_offset = x_offset,
+            .rhs_offset = scale_offset,
+    };
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULMV,
+            &args_mulmv0);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULMV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args_mulmv1 = {
+            .output = y,
+            .lhs = y,
+            .rhs = weight,
+            .m = n,
+            .n = num_channels,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = weight_offset,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MULMV,
+            &args_mulmv1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MULMV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        return status;
+    }
+
+    pv_ypu_op_pairwise_broadcast_args_t args_addmv = {
+            .output = y,
+            .lhs = y,
+            .rhs = bias,
+            .m = n,
+            .n = num_channels,
+            .output_offset = y_offset,
+            .lhs_offset = y_offset,
+            .rhs_offset = bias_offset,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_ADDMV,
+            &args_addmv);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_ADDMV),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        return status;
+    }
+
     return PV_STATUS_SUCCESS;
 }

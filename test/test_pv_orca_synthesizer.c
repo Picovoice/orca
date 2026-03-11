@@ -5,14 +5,13 @@
 #include "core/picovoice.h"
 #include "core/pv_type.h"
 #include "io/pv_log.h"
+#include "orca/pv_buffer.h"
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_metric_internal.h"
 #include "orca/pv_orca_phonemizer.h"
 #include "orca/pv_orca_stream_state.h"
 #include "test/pv_test.h"
 #include "util/pv_time.h"
-
-#include "test_data/test_pv_orca_synthesizer_data_en.c"
 
 #ifdef __PV_MOCKS__
 
@@ -73,7 +72,7 @@ static pv_status_t test_pv_orca_synthesizer_setup_helper(
 
     pv_orca_phonemizer_param_t *phonemizer_param = NULL;
     pv_status_t status = pv_orca_internal_param_load(ypu, f, &phonemizer_param, synthesizer_param);
-    pv_test_true(f != NULL, "failed to load params");
+    pv_test_true(status == PV_STATUS_SUCCESS, "failed to load params with `%s`", pv_status_to_string(status));
     if (status != PV_STATUS_SUCCESS) {
         fclose(f);
         return status;
@@ -88,13 +87,16 @@ static pv_status_t test_pv_orca_synthesizer_setup_helper(
             eos_punctuation_indices,
             1,
             eos_punctuation_indices,
-            -1,
             200,
             &stream_state_object);
     if (status != PV_STATUS_SUCCESS) {
         fclose(f);
         return status;
     }
+
+    // Ted: Set to streaming active and is_flush for mock test.
+    stream_state_object->status = PV_ORCA_STREAM_STATUS_ACTIVE;
+    stream_state_object->is_flush = true;
 
     status = pv_orca_synthesizer_init(ypu, *synthesizer_param, stream_state_object, object);
     if (status != PV_STATUS_SUCCESS) {
@@ -108,7 +110,6 @@ static pv_status_t test_pv_orca_synthesizer_setup_helper(
 
     return PV_STATUS_SUCCESS;
 }
-
 
 static pv_status_t test_pv_orca_synthesizer_setup(void) {
     pv_status_t status = pv_ypu_init_cpu(1, &ypu);
@@ -152,6 +153,7 @@ static void test_pv_orca_synthesizer_forward_helper(
         const char *expected_public_error_message_regex,
         const char *expected_private_error_message_regex) {
     pv_log_disable();
+
     pv_status_t status = pv_orca_synthesizer_forward(
             ypu,
             args->object,
@@ -193,53 +195,14 @@ static void test_pv_orca_synthesizer_forward_helper(
     args->pcm = NULL;
 }
 
-static void test_pv_orca_synthesizer_forward_success(void) {
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_SUCCESS, NULL, NULL);
-}
-
-__attribute__((unused)) static void test_pv_orca_synthesizer_forward_performance(void) {
-    int64_t start = pv_time();
-    default_forward_args.num_tokens = TEST_ORCA_SYNTHESIZER_EN_SEQUENCE_LENGTH;
-    default_forward_args.tokens = TEST_ORCA_SYNTHESIZER_EN_INPUT;
-    int32_t num_calls = 100;
-    for (int32_t i = 0; i < num_calls; i++) {
-        test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_SUCCESS, NULL, NULL);
-    }
-    int64_t end = pv_time();
-    int32_t duration = (int32_t) (end - start);
-
-    LOG_INFO("Time taken for %d synthesis calls: %d s", num_calls, duration);
-    pv_test_true(
-            duration < 30,
-            "Time taken for %d synthesis calls is too high, got `%d s`, expected less than 30 s",
-            num_calls,
-            duration);
-}
-
-static pv_ypu_mem_t *pv_ypu_buffer_get_return_null(pv_ypu_t *ypu, int32_t size_bytes, bool exact_size) {
-    (void) ypu;
-    (void) size_bytes;
-    (void) exact_size;
-    return NULL;
-}
-
-static pv_status_t pv_orca_duration_predictor_forward_mock(
+static pv_status_t pv_orca_stream_state_update_t_domain_mock(
         pv_ypu_t *ypu,
-        pv_orca_duration_predictor_t *object,
-        float speech_rate,
-        int32_t n,
-        pv_ypu_mem_t *x,
-        int32_t *durations_token,
-        int32_t x_offset) {
+        pv_orca_stream_state_t *object,
+        int32_t *num_to_T_domain) {
     (void) ypu;
     (void) object;
-    (void) speech_rate;
-    (void) n;
-    (void) x;
-    (void) x_offset;
-    for (int32_t i = 0; i < n; i++) {
-        durations_token[i] = 1;
-    }
+    *num_to_T_domain = 1;
+
     return PV_STATUS_SUCCESS;
 }
 
@@ -286,152 +249,201 @@ static void test_pv_orca_synthesizer_init_helper(
     }
 }
 
-static void test_pv_orca_synthesizer_init_alloc_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_ypu_host_alloc, NULL)
+static void test_pv_orca_synthesizer_init_prior_encoder_film_generator_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_prior_encoder_film_generator_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_init_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `o`\\.");
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`prior_encoder_film_generator` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
-static void test_pv_orca_synthesizer_init_text_encoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_init, PV_STATUS_OUT_OF_MEMORY)
+static void test_pv_orca_synthesizer_init_prior_encoder_flow_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_prior_encoder_flow_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_init_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`text_encoder` failed to init with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`prior_encoder_flow` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_init_duration_predictor_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_init, PV_STATUS_SUCCESS)
     PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_init_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`duration_predictor` failed to init with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`duration_predictor` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
-static void test_pv_orca_synthesizer_init_flow_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_init, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_init, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_init, PV_STATUS_OUT_OF_MEMORY)
+static void test_pv_orca_synthesizer_init_gaussian_upsampler_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_gaussian_upsampler_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_init_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`flow` failed to init with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`gaussian_upsampler` failed to init with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_init_lfm_film_generator_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_film_generator_init, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`lfm_film_generator` failed to init with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_init_lfm_condition_fuser_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_condition_fuser_init, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`lfm_condition_fuser` failed to init with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_init_lfm_vf_estimator_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_vf_estimator_init, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`lfm_vf_estimator` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_init_vocoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_init, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_init, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_init, PV_STATUS_SUCCESS)
     PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_init, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_init_helper(&default_init_args, PV_STATUS_OUT_OF_MEMORY, "Picovoice Error", "`vocoder` failed to init with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_init_helper(
+            &default_init_args,
+            PV_STATUS_OUT_OF_MEMORY,
+            NULL,
+            "`vocoder` failed to init with status `OUT_OF_MEMORY`\\.");
 }
 
-static void test_pv_orca_synthesizer_forward_text_encoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_text_encoder_forward` failed with status `OUT_OF_MEMORY`\\.");
+static void test_pv_orca_synthesizer_forward_get_random_state_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_synthesize_params_get_random_state_valid, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_synthesize_params_get_random_state_valid` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_sufficient_context_n_domain_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_is_sufficient_context_n_domain, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_stream_state_is_sufficient_context_n_domain` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_update_n_domain_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_stream_state_update_n_domain` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_sample_gaussian_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_util_sample_standard_gaussian_with_temperature, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_util_sample_standard_gaussian_with_temperature` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_prior_encoder_film_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_prior_encoder_film_generator_forward, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_prior_encoder_film_generator_forward` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_prior_encoder_flow_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_prior_encoder_flow_forward, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_prior_encoder_flow_forward` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_get_speech_rate_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_synthesize_params_get_speech_rate, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_synthesize_params_get_speech_rate` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_forward_duration_predictor_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
     PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_forward, PV_STATUS_OUT_OF_MEMORY)
 
     test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_duration_predictor_forward` failed with status `OUT_OF_MEMORY`\\.");
 }
 
-static void test_pv_orca_synthesizer_forward_flow_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_forward, PV_STATUS_OUT_OF_MEMORY)
+static void test_pv_orca_synthesizer_forward_gaussian_upsampler_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_gaussian_upsampler_forward, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_flow_forward` failed with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_gaussian_upsampler_forward` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_sample_gaussian_failure_2(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    pv_status_t custom_rets_orca_lfm_condition_fuser_forward[] = {
+            PV_STATUS_SUCCESS,
+            PV_STATUS_OUT_OF_MEMORY,
+    };
+    PV_SET_MOCK_RETURN_SEQ(pv_orca_util_sample_standard_gaussian_with_temperature, custom_rets_orca_lfm_condition_fuser_forward)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_util_sample_standard_gaussian_with_temperature` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_sufficient_context_t_domain_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_is_sufficient_context_t_domain, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_stream_state_is_sufficient_context_t_domain` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_update_t_domain_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_t_domain, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_stream_state_update_t_domain` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_lfm_film_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_stream_state_update_t_domain, pv_orca_stream_state_update_t_domain_mock)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_film_generator_forward, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_lfm_film_generator_forward` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_lfm_condition_fuser_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_stream_state_update_t_domain, pv_orca_stream_state_update_t_domain_mock)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_condition_fuser_forward, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_lfm_condition_fuser_forward` failed with status `OUT_OF_MEMORY`\\.");
+}
+
+static void test_pv_orca_synthesizer_forward_lfm_vf_estimator_failure(void) {
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_stream_state_update_t_domain, pv_orca_stream_state_update_t_domain_mock)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_lfm_vf_estimator_forward, PV_STATUS_OUT_OF_MEMORY)
+
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_lfm_vf_estimator_forward` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_forward_vocoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_forward, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
+    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_stream_state_update_t_domain, pv_orca_stream_state_update_t_domain_mock)
     PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_forward, PV_STATUS_OUT_OF_MEMORY)
+
     test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_vocoder_forward` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_1st_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_ypu_buffer_get, NULL)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_2nd_buffer_failure(void) {
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_3rd_buffer_failure(void) {
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_4th_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_5th_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_forward, PV_STATUS_SUCCESS)
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_6th_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
-}
-
-static void test_pv_orca_synthesizer_forward_7th_buffer_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_forward, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_CUSTOM_FUNC(pv_orca_duration_predictor_forward, pv_orca_duration_predictor_forward_mock)
-    pv_ypu_mem_t *(*custom_funcs[])(pv_ypu_t *, int32_t, bool) = {
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_real,
-            pv_ypu_buffer_get_return_null,
-    };
-    PV_SET_MOCK_CUSTOM_FUNC_SEQ(pv_ypu_buffer_get, custom_funcs)
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, "Failed to allocate, out of memory\\.", "Failed to allocate memory for `pv_ypu_buffer_get`\\.");
 }
 
 static void test_pv_orca_synthesizer_param_load_helper(
@@ -445,6 +457,7 @@ static void test_pv_orca_synthesizer_param_load_helper(
     }
 
     pv_orca_synthesizer_param_t *param = NULL;
+
     pv_status_t status = pv_orca_synthesizer_param_load(ypu, dummy_file, "1.0", &param);
     reset_mocks();
     pv_test_true(
@@ -453,7 +466,7 @@ static void test_pv_orca_synthesizer_param_load_helper(
             pv_status_to_string(status),
             pv_status_to_string(expected));
 
-    if (status != PV_STATUS_SUCCESS) {
+    if (expected != PV_STATUS_SUCCESS) {
         const char *expected_message = expected_public_error_message_regex;
 
 #ifdef __PV_ERROR_SHOW_PRIVATE_MSGS__
@@ -475,128 +488,45 @@ static void test_pv_orca_synthesizer_param_load_helper(
     free(dummy_file);
 }
 
-static void test_pv_orca_synthesizer_param_load_text_encoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_fread, 1)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_load, PV_STATUS_OUT_OF_MEMORY)
-
-    test_pv_orca_synthesizer_param_load_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_text_encoder_param_load` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_synthesizer_param_load_duration_predictor_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_fread, 1)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_load, PV_STATUS_OUT_OF_MEMORY)
-
-    test_pv_orca_synthesizer_param_load_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_duration_predictor_param_load` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_synthesizer_param_load_flow_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_fread, 1)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_param_load, PV_STATUS_OUT_OF_MEMORY)
-
-    test_pv_orca_synthesizer_param_load_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_flow_param_load` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_synthesizer_param_load_vocoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_fread, 1)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_phonemizer_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_param_load, PV_STATUS_SUCCESS)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_param_load, PV_STATUS_OUT_OF_MEMORY)
-
-    test_pv_orca_synthesizer_param_load_helper(PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_vocoder_param_load` failed with status `OUT_OF_MEMORY`\\.");
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_helper(bool expected) {
-    bool is_equal = pv_orca_synthesizer_param_is_equal(synthesizer_param_object, synthesizer_param_object);
-    pv_test_true(is_equal == expected, "param load error, got '%d' expected '%d'", is_equal, expected);
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_success(void) {
-    test_pv_orca_synthesizer_param_is_equal_helper(true);
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_text_encoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_is_equal, false)
-
-    test_pv_orca_synthesizer_param_is_equal_helper(false);
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_duration_predictor_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_is_equal, false)
-
-    test_pv_orca_synthesizer_param_is_equal_helper(false);
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_flow_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_param_is_equal, false)
-
-    test_pv_orca_synthesizer_param_is_equal_helper(false);
-}
-
-static void test_pv_orca_synthesizer_param_is_equal_vocoder_failure(void) {
-    PV_SET_MOCK_RETURN_VAL(pv_orca_text_encoder_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_duration_predictor_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_flow_param_is_equal, true)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_param_is_equal, false)
-
-    test_pv_orca_synthesizer_param_is_equal_helper(false);
-}
-
 #endif
 
 static const pv_test_case_t PV_ORCA_SYNTHESIZER_TEST_CASES[] = {
 
 #ifdef __PV_MOCKS__
 
-        {"forward text_encoder failure", test_pv_orca_synthesizer_forward_text_encoder_failure},
-        {"forward duration_predictor failure", test_pv_orca_synthesizer_forward_duration_predictor_failure},
-        {"forward flow failure", test_pv_orca_synthesizer_forward_flow_failure},
-        {"forward vocoder failure", test_pv_orca_synthesizer_forward_vocoder_failure},
-        {"forward 1st buffer failure", test_pv_orca_synthesizer_forward_1st_buffer_failure},
-        {"forward 2nd buffer failure", test_pv_orca_synthesizer_forward_2nd_buffer_failure},
-        {"forward 3rd buffer failure", test_pv_orca_synthesizer_forward_3rd_buffer_failure},
-        {"forward 4th buffer failure", test_pv_orca_synthesizer_forward_4th_buffer_failure},
-        {"forward 5th buffer failure", test_pv_orca_synthesizer_forward_5th_buffer_failure},
-        {"forward 6th buffer failure", test_pv_orca_synthesizer_forward_6th_buffer_failure},
-        {"forward 7th buffer failure", test_pv_orca_synthesizer_forward_7th_buffer_failure},
+        {"forward get random state failure", test_pv_orca_synthesizer_forward_get_random_state_failure},
+        {"forward sufficient context n domain failure", test_pv_orca_synthesizer_forward_sufficient_context_n_domain_failure},
+        {"forward update n domain failure", test_pv_orca_synthesizer_forward_update_n_domain_failure},
+        {"forward sample gaussian failure", test_pv_orca_synthesizer_forward_sample_gaussian_failure},
+        {"forward prior encoder film failure", test_pv_orca_synthesizer_forward_prior_encoder_film_failure},
+        {"forward prior encoder flow failure", test_pv_orca_synthesizer_forward_prior_encoder_flow_failure},
+        {"forward get speech rate failure", test_pv_orca_synthesizer_forward_get_speech_rate_failure},
+        {"forward duration predictor failure", test_pv_orca_synthesizer_forward_duration_predictor_failure},
+        {"forward gaussian upsampler failure", test_pv_orca_synthesizer_forward_gaussian_upsampler_failure},
+        {"forward sample gaussian failure 2", test_pv_orca_synthesizer_forward_sample_gaussian_failure_2},
+        {"forward sufficient context t domain failure", test_pv_orca_synthesizer_forward_sufficient_context_t_domain_failure},
+        {"forward update t domain failure", test_pv_orca_synthesizer_forward_update_t_domain_failure},
+        {"forward lfm film failure", test_pv_orca_synthesizer_forward_lfm_film_failure},
+        {"forward lfm condition fuser failure", test_pv_orca_synthesizer_forward_lfm_condition_fuser_failure},
+        {"forward lfm vf estimator failure", test_pv_orca_synthesizer_forward_lfm_vf_estimator_failure},
 
-        {"init alloc failure", test_pv_orca_synthesizer_init_alloc_failure},
-        {"init text_encoder failure", test_pv_orca_synthesizer_init_text_encoder_failure},
+#if !defined(__PV_TARGET_PLATFORM_WASM__)
+
+        {"forward vocoder failure", test_pv_orca_synthesizer_forward_vocoder_failure},
+
+#endif
+
+        {"init prior_encoder_film_generator failure", test_pv_orca_synthesizer_init_prior_encoder_film_generator_failure},
+        {"init prior_encoder_flow failure", test_pv_orca_synthesizer_init_prior_encoder_flow_failure},
+        {"init gaussian_upsampler failure", test_pv_orca_synthesizer_init_gaussian_upsampler_failure},
         {"init duration_predictor failure", test_pv_orca_synthesizer_init_duration_predictor_failure},
-        {"init flow failure", test_pv_orca_synthesizer_init_flow_failure},
+        {"init lfm_film_generator failure", test_pv_orca_synthesizer_init_lfm_film_generator_failure},
+        {"init lfm_condition_fuser failure", test_pv_orca_synthesizer_init_lfm_condition_fuser_failure},
+        {"init lfm_vf_estimator failure", test_pv_orca_synthesizer_init_lfm_vf_estimator_failure},
         {"init vocoder failure", test_pv_orca_synthesizer_init_vocoder_failure},
 
-        {"param load text_encoder failure", test_pv_orca_synthesizer_param_load_text_encoder_failure},
-        {"param load duration_predictor failure", test_pv_orca_synthesizer_param_load_duration_predictor_failure},
-        {"param load flow failure", test_pv_orca_synthesizer_param_load_flow_failure},
-        {"param load vocoder failure", test_pv_orca_synthesizer_param_load_vocoder_failure},
+#endif
 
-        {"param is_equal success", test_pv_orca_synthesizer_param_is_equal_success},
-        {"param is_equal text_encoder failure", test_pv_orca_synthesizer_param_is_equal_text_encoder_failure},
-        {"param is_equal duration_predictor failure",
-         test_pv_orca_synthesizer_param_is_equal_duration_predictor_failure},
-        {"param is_equal flow failure", test_pv_orca_synthesizer_param_is_equal_flow_failure},
-        {"param is_equal vocoder failure", test_pv_orca_synthesizer_param_is_equal_vocoder_failure},
-
-        {"forward success", test_pv_orca_synthesizer_forward_success},
-
-        /*
-            Commented out because it slows down pipeline and is only useful in release mode.
-            Kept in to be able to test locally for different platforms.
-        */
-        //         {"forward performance", test_pv_orca_synthesizer_forward_performance},
-
-        #endif
 };
 
 const pv_test_suite_t PV_ORCA_SYNTHESIZER_TEST_SUITE = {

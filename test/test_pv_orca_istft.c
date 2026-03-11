@@ -3,10 +3,10 @@
 
 #include "test/pv_test.h"
 
-#include "orca/pv_buffer.h"
-#include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_fft.h"
+#include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_pqmf.h"
+#include "orca/pv_orca_synthesizer.h"
 #include "test_data/test_pv_orca_fft_data.c"
 #include "test_data/test_pv_orca_istft_data.c"
 #include "test_data/test_pv_orca_mb_istft_data.c"
@@ -77,7 +77,7 @@ static void test_pv_orca_ifft(void) {
     const float *input = TEST_ORCA_FFT_INPUT;
     const float *target = TEST_ORCA_FFT_TARGET;
     int32_t sequence_length = 1;
-    int32_t num_fft = TEST_ORCA_FFT_NUM_FFT;
+    int32_t num_fft = TEST_ORCA_FFT_SEQUENCE_LENGTH_1;
 
     float full_spec[num_fft + 2];
     pv_orca_istft_preprocess_fft(num_fft, sequence_length, input, full_spec);
