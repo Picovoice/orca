@@ -8,8 +8,8 @@
           "orca_params_en_male.pv"
         ],
         "random_state": 42,
-        "text": "It doesn't matter how slowly you go, as long as you do not stop!",
-        "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
+        "text": "doesn't matter how slowly you go, as long as you do not stop!",
+        "text_no_punctuation": "doesn't matter how slowly you go as long as you do not stop",
         "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
       },
       {
@@ -62,8 +62,8 @@
           "orca_params_ja_male.pv"
         ],
         "random_state": 42,
-        "text": "止まらなければ、どれだけゆっくり進んでも問題ありません。",
-        "text_no_punctuation": "止まらなければどれだけゆっくり進んでも問題ありません",
+        "text": "まらなければ、どれだけゆっくり進んでも問題ありません。",
+        "text_no_punctuation": "まらなければどれだけゆっくり進んでも問題ありません",
         "text_custom_pronunciation": "これは{カスタム|k a s t a m ɕ}発音です."
       },
       {
