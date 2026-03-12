@@ -355,7 +355,7 @@ describe('Sentence Tests', function() {
           }
         });
 
-        // TODO: solve memory issue related to this test
+        // TODO solve memory issue related to this test
         /* eslint-disable-next-line cypress/no-async-tests */
       //   it(`should be able to handle max num characters (${testCaseString})`, async () => {
       //     // test takes a while specifically in some languages
@@ -391,7 +391,7 @@ describe('Sentence Tests', function() {
       //       expect(e).to.be.undefined;
       //     }
       //   });
-      // }
+      }
     }
   }
 });
