@@ -1,5 +1,5 @@
 /*
-    Copyright 2024-2025 Picovoice Inc.
+    Copyright 2024 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
     file accompanying this source.
@@ -114,7 +114,7 @@ typedef struct pv_orca_synthesize_params pv_orca_synthesize_params_t;
 
 /**
  * Constructor for the pv_orca_synthesize_params object.
- *
+ * 
  * @param[out] object Constructed instance of pv_orca_synthesize_params.
  * @return Status code. Returns `PV_STATUS_INVALID_ARGUMENT` or `PV_STATUS_OUT_OF_MEMORY`  on failure.
  */
@@ -122,14 +122,14 @@ PV_API pv_status_t pv_orca_synthesize_params_init(pv_orca_synthesize_params_t **
 
 /**
  * Destructor for the pv_orca_synthesize_params object.
- *
+ * 
  * @param object The pv_orca_synthesize_params object.
 */
 PV_API void pv_orca_synthesize_params_delete(pv_orca_synthesize_params_t *object);
 
 /**
  * Setter for the speech rate.
- *
+ * 
  * @param object Constructed instance of pv_orca_synthesize_params.
  * @param speech_rate The pace of the speech. Valid values are within [0.7, 1.3].
  * @return Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
@@ -140,7 +140,7 @@ PV_API pv_status_t pv_orca_synthesize_params_set_speech_rate(
 
 /**
  * Getter for the speech rate.
- *
+ * 
  * @param object Constructed instance of pv_orca_synthesize_params.
  * @param[out] speech_rate The pace of the speech.
  * @return Returns `PV_STATUS_INVALID_ARGUMENT` on failure.
