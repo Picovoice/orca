@@ -45,6 +45,12 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
+# ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: pip install setuptools && pip install wheel && python3 setup.py sdist bdist_wheel
+        working-directory: binding/python
+# ********************************************************
+
       - name: Install dependencies
         run: |
           ${{matrix.install_dep}}
@@ -67,6 +73,10 @@ jobs:
           --model_path ../../lib/common/orca_params_en_female.pv
           --device ${{ matrix.device }}
 
+      - name: Test get devices
+        run: >
+          python orca_demo.py --show_inference_devices
+
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
@@ -84,6 +94,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+# ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: python3 setup.py sdist bdist_wheel
+        working-directory: binding/python
+# ********************************************************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
@@ -104,3 +120,7 @@ jobs:
           --output_path ./tmp.wav
           --model_path ../../lib/common/orca_params_en_female.pv
           --device ${{ matrix.device }}
+
+      - name: Test get devices
+        run: >
+          python orca_demo.py --show_inference_devices

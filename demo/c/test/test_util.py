@@ -41,6 +41,6 @@ def get_model_paths() -> List[str]:
 
 
 __all__ = [
-    "get_test_data",
     "get_model_paths",
+    "get_test_data",
 ]
