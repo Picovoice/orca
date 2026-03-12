@@ -15,15 +15,19 @@ include("${zoo-dev_SOURCE_DIR}/preload.cmake")
 set(RELEASE_OPERATORS
   add
   addmv
+  add_q510
   convert_f32_i32
   conv1d_q1417_q7_q510
   conv1d_depthwise_q1417_q7_q510
   conv1d_transposed_depthwise_q1417_q7_q510
+  dot_add_iadd_q510_q510_q7_q7
+  dot_add_q510_q510_q7_q7
   exp
   flip
   gaussian_attention
   gelu_approx
   layer_norm_non_affine
+  lstmcell_q510
   memcpy
   memset
   mulmv
@@ -34,16 +38,9 @@ set(RELEASE_OPERATORS
   rope
   sdpa_masked
   silu
-  transpose
-
-  # Needed for orca_metric in test module (may try to remove)
-  add_q510
-  dot_add_iadd_q510_q510_q7_q7
-  dot_add_q510_q510_q7_q7
-  gelu_approx_q510
-  lstmcell_q510
   softmax_q31_q510
   sub_mul_q510
+  transpose
 )
 
 set(ENV{PV_YPU_RELEASE_OPERATORS} "${RELEASE_OPERATORS}")
@@ -62,7 +59,7 @@ add_peer_subdirectory(model)
 add_peer_subdirectory(normalizer)
 add_peer_subdirectory(hippo)
 
-set(MODULE_VERSION 2.0.X)
+set(MODULE_VERSION 3.0.0)
 
 message(CHECK_START "Generating clean public header file for ${MODULE}")
 execute_process(

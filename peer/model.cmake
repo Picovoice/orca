@@ -1,1 +1,1 @@
-fetch_peer_module(model "ed65df636b283ce21676abb2f58a0aa05edf3e92")
+fetch_peer_module(model "c59caf6b661cb6eee11700744e46aeec58440afa")

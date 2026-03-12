@@ -107,6 +107,8 @@ static void test_pv_orca_duration_predictor_forward(void) {
             TEST_EPSILON_DURATION,
             "failed to match target duration");
 
+    free(buffer_duration);
+
     float *buffer_std = pv_ypu_mem_get_host_view(ypu, m1, true);
     pv_test_close_float_array(
             buffer_std,

@@ -64,12 +64,9 @@ def main(access_key, test_resource_folder) -> None:
         serializer_path = os.path.join(
             os.path.dirname(__file__),
             f'../build/release/x86_64/pv_orca_serializer_{x.value}')
-        serializer_path_large = os.path.join(
-            os.path.dirname(__file__),
-            f'../build/release/x86_64/pv_orca_serializer_{x.value}_16')
         hippo_language_info_path = os.path.join(
-            os.path.dirname(__file__),
-            f'../res/core/pv_language_info_{language}.json'
+            PEER_MODULE_DIR,
+            f'zoo-dev/res/core/pv_language_info_{language}.json'
         )
         orca_language_info_path = os.path.join(
             os.path.dirname(__file__),
@@ -80,12 +77,6 @@ def main(access_key, test_resource_folder) -> None:
             os.path.dirname(__file__),
             f'../res/param/{model_name}.pv')
 
-        large_model_name = f"orca_params_{x.value}_16"
-        large_param_path = os.path.join(
-            os.path.dirname(__file__),
-            f'../res/param/{large_model_name}.pv')
-
-        cmd_large = None
         if Languages.JAPANESE.value == language:
             tokenizer_data_path = os.path.join(
                 PEER_MODULE_DIR,
@@ -103,17 +94,8 @@ def main(access_key, test_resource_folder) -> None:
                 '-h', os.path.abspath(hippo_language_info_path),
                 '-l', os.path.abspath(orca_language_info_path),
                 '-o', os.path.abspath(param_path)]
-            if os.path.isfile(serializer_path_large):
-                cmd_large = [
-                    os.path.abspath(serializer_path_large),
-                    '-h', os.path.abspath(hippo_language_info_path),
-                    '-l', os.path.abspath(orca_language_info_path),
-                    '-o', os.path.abspath(large_param_path)
-                ]
 
         subprocess.run(cmd)
-        if cmd_large:
-            subprocess.run(cmd_large)
 
         if access_key is not None and test_resource_folder is not None and language in TEST_SENTENCES:
             app_path = os.path.join(os.path.dirname(__file__), f'../build/release/x86_64/pv_orca_app')

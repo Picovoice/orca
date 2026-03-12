@@ -1025,6 +1025,7 @@ beta-perf-mac-m1-metal-branch:
     - !reference [.build-beta, script-perf-no-toolchain]
   tags:
     - pv-cicd-windows-x86
+    - pv-cicd-gpu
     - pv-cicd-c
 
 beta-perf-windows-x86-cpu-main:
