@@ -8,7 +8,7 @@
           "orca_params_en_male.pv"
         ],
         "random_state": 42,
-        "text": "matter how slowly you go, as long as you do not stop!",
+        "text": "how slowly you go, as long as you do not stop!",
         "text_no_punctuation": "doesn't matter how slowly you go as long as you do not stop",
         "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
       },
