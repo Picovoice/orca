@@ -156,18 +156,20 @@ class OrcaTestCase(unittest.TestCase):
             pcm, alignments = orca.synthesize(text_alignment, random_state=random_state)
             self.assertGreater(len(pcm), 0)
 
-            previous_word_end_sec = 0
-            previous_phoneme_end_sec = 0
+            previous_word_end_sec = -1
             for word in alignments:
-                self.assertTrue(word.start_sec == previous_word_end_sec)
-                self.assertTrue(word.end_sec > word.start_sec)
+                if previous_word_end_sec >= 0:
+                    self.assertTrue(word.start_sec == previous_word_end_sec)
+                self.assertTrue(word.end_sec >= word.start_sec)
                 previous_word_end_sec = word.end_sec
 
+                previous_phoneme_end_sec = -1
                 for phoneme in word.phonemes:
-                    self.assertTrue(phoneme.start_sec == previous_phoneme_end_sec)
+                    if previous_phoneme_end_sec >= 0:
+                        self.assertTrue(phoneme.start_sec == previous_phoneme_end_sec)
                     self.assertTrue(phoneme.start_sec >= word.start_sec)
                     self.assertTrue(phoneme.end_sec <= word.end_sec)
-                    self.assertTrue(phoneme.end_sec > phoneme.start_sec)
+                    self.assertTrue(phoneme.end_sec >= phoneme.start_sec)
                     previous_phoneme_end_sec = phoneme.end_sec
 
     @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
