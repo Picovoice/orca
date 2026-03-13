@@ -2,8 +2,10 @@
 # yarn lockfile v1
 
 
-"@picovoice/orca-node@file:../../binding/nodejs":
+"@picovoice/orca-node@3.0.0":
   version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-node/-/orca-node-3.0.0.tgz#80aec077c2aebd7bc89de7268e2e72496708151c"
+  integrity sha512-0KTU+Oo9Jr8wxkOrU8OPVkd/BOfIq8CN6Sn9wlk9IZQH/xyH4h0143bJ3L6maX4lEb9Mzrs8miH4fojRDvmhCQ==
 
 "@picovoice/pvspeaker-node@^1.0.3":
   version "1.0.3"
