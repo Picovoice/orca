@@ -67,6 +67,10 @@ jobs:
           --model_path ../../lib/common/orca_params_en_female.pv
           --device ${{ matrix.device }}
 
+      - name: Test get devices
+        run: >
+          python3 orca_demo.py --show_inference_devices
+
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
@@ -104,3 +108,7 @@ jobs:
           --output_path ./tmp.wav
           --model_path ../../lib/common/orca_params_en_female.pv
           --device ${{ matrix.device }}
+
+      - name: Test get devices
+        run: >
+          python3 orca_demo.py --show_inference_devices

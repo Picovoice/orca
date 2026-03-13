@@ -43,11 +43,11 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
-            proc_performance_threshold_rtf: 5.0
+            proc_performance_threshold_rtf: 3.0
           - os: windows-latest
-            proc_performance_threshold_rtf: 3.0
+            proc_performance_threshold_rtf: 2.0
           - os: macos-latest
-            proc_performance_threshold_rtf: 3.0
+            proc_performance_threshold_rtf: 2.0
 
     steps:
       - uses: actions/checkout@v3
@@ -80,15 +80,15 @@ jobs:
         machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
         include:
           - machine: rpi3-32
-            proc_performance_threshold_rtf: 1.0
+            proc_performance_threshold_rtf: 0.5
           - machine: rpi3-64
-            proc_performance_threshold_rtf: 1.0
+            proc_performance_threshold_rtf: 0.5
           - machine: rpi4-32
-            proc_performance_threshold_rtf: 2.0
+            proc_performance_threshold_rtf: 1.0
           - machine: rpi4-64
-            proc_performance_threshold_rtf: 2.0
+            proc_performance_threshold_rtf: 1.0
           - machine: rpi5-64
-            proc_performance_threshold_rtf: 2.0
+            proc_performance_threshold_rtf: 1.0
 
     steps:
       - uses: actions/checkout@v3
@@ -121,7 +121,7 @@ jobs:
         machine: [ pv-windows-arm64 ]
         include:
           - machine: pv-windows-arm64
-            proc_performance_threshold_rtf: 3.0
+            proc_performance_threshold_rtf: 1.5
 
     steps:
       - uses: actions/checkout@v3

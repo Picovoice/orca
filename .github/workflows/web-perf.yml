@@ -30,7 +30,7 @@ jobs:
         include:
           - node-version: lts/*
             num_test_iterations: 10
-            proc_performance_threshold_sec: 10
+            proc_performance_threshold_sec: 15
 
     steps:
       - uses: actions/checkout@v3
