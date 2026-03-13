@@ -226,7 +226,7 @@ npm install
 npm run start ${LANGUAGE} ${GENDER}
 ```
 
-Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in. 
+Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in.
 Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`.
 
 Open `http://localhost:5000` in your browser to try the demo.
@@ -477,9 +477,9 @@ const char *model_path = "${MODEL_PATH}";
 const char *device = "best";
 
 pv_status_t status = pv_orca_init(
-        access_key, 
-        model_path, 
-        device, 
+        access_key,
+        model_path,
+        device,
         &orca);
 if (status != PV_STATUS_SUCCESS) {
     // error handling logic
@@ -793,6 +793,10 @@ Finally, when done release the resources using `orca.release()`.
 For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
+
+### v3.0.0 - March 13th, 2026
+
+- Improved synthesis quality
 
 ### v2.0.0 - December 17th, 2025
 
