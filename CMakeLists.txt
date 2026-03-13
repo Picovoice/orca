@@ -59,7 +59,7 @@ add_peer_subdirectory(model)
 add_peer_subdirectory(normalizer)
 add_peer_subdirectory(hippo)
 
-set(MODULE_VERSION 3.0.0)
+set(MODULE_VERSION 3.0.X)
 
 message(CHECK_START "Generating clean public header file for ${MODULE}")
 execute_process(
