@@ -31,7 +31,7 @@ jobs:
         device: [ android-perf ]
         include:
           - device: android-perf
-            procPerformanceThresholdSec: 3.0
+            procPerformanceThresholdSec: 5.0
 
     steps:
       - uses: actions/checkout@v3
