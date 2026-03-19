@@ -12,10 +12,6 @@ voice assistants. Orca is:
     - Raspberry Pi (3, 4, 5)
     - Chrome, Safari, Firefox, and Edge
 
-## Requirements
-
-- .NET 6.0
-
 ## Compatibility
 
 Platforms compatible with .NET Standard 2.0+:
