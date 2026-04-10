@@ -286,7 +286,7 @@ def main() -> None:
     audio_device_index = args.audio_device_index
 
     if access_key is None or text is None or model_path is None:
-        raise ValueError("Arguments --access_key, --text, --output_path and --model_path are required.")
+        raise ValueError("Arguments --access_key, --text, and --model_path are required.")
 
     model_file_prefix = "orca_params_"
     lang_code_idx = model_path.find(model_file_prefix) + len(model_file_prefix)
