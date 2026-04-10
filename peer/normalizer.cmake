@@ -1,1 +1,1 @@
-fetch_peer_module(normalizer "6398807437c47e6b2a4a60420dfa7ad50493d92f")
+fetch_peer_module(normalizer "fabe7e91a746ec1a968251723ba7cb688193b773")

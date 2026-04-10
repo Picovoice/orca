@@ -1711,7 +1711,7 @@ beta-relative-pcm-test:
     - build-beta-rpi5-release
     - build-beta-rpi5-64-release
   variables:
-    TARGET_BRANCH: ypu-init
+    TARGET_BRANCH: main
   before_script:
     - pip3 install requests librosa
   script:

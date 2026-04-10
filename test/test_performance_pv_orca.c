@@ -33,6 +33,9 @@
 #endif
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
+#define MEMORY_CHECK_INTERVAL (10)
+#define STREAMING_TEST_MEMORY_UPPER_BOUND (15000000)
+#define STREAMING_TEST_SENTENCE_REPETITION (400)
 
 static const char *MODEL_PATH = "param/orca_params_en_female.pv";
 extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
@@ -41,9 +44,16 @@ static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
 static const char *DEFAULT_SENTENCE = "Orca performance test";
 
+#ifdef __PV_TARGET_PLATFORM_LINUX__
+
+static const char *DEFAULT_SENTENCE_STREAMING = "A fox wandered through the forest at sunrise, wondering why birds seemed to know a secret it didn’t. ";
+
+#endif
+
 static cJSON *ENVIRONMENT = NULL;
 static cJSON *RESULTS = NULL;
 static cJSON *MEMORY = NULL;
+static cJSON *MEMORY_STREAMING = NULL;
 static const char *YPU_ITERATIONS = NULL;
 static const char *YPU_MEMORY_ITERATIONS = NULL;
 static const char *YPU_DURATION = NULL;
@@ -151,6 +161,17 @@ static pv_status_t test_performance_pv_orca_setup(void) {
     cJSON *results_memory = cJSON_CreateObject();
     cJSON_AddItemToObject(MEMORY, YPU_MACHINE, results_memory);
 
+#ifdef __PV_TARGET_PLATFORM_LINUX__
+
+    MEMORY_STREAMING = cJSON_CreateObject();
+    if (!MEMORY_STREAMING) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+    cJSON *results_memory_streaming = cJSON_CreateObject();
+    cJSON_AddItemToObject(MEMORY_STREAMING, YPU_MACHINE, results_memory_streaming);
+
+#endif
+
     return PV_STATUS_SUCCESS;
 }
 
@@ -173,6 +194,20 @@ static void test_performance_pv_orca_teardown(void) {
         free(memory_results_str);
     }
 
+    if (MEMORY_STREAMING != NULL) {
+        char *memory_streaming_results_str = cJSON_PrintUnformatted(MEMORY_STREAMING);
+        pv_test_true(
+                memory_streaming_results_str != NULL,
+                "Unable to allocate JSON output string for `orca` streaming memory results");
+        if (!memory_streaming_results_str) {
+            return;
+        }
+
+        LOG_INFO("STREAMING MEMORY JSON=`%s`", memory_streaming_results_str);
+        cJSON_Delete(MEMORY_STREAMING);
+        free(memory_streaming_results_str);
+    }
+
     if (RESULTS != NULL) {
         char *perf_results_str = cJSON_PrintUnformatted(RESULTS);
         pv_test_true(
@@ -192,15 +227,13 @@ static void test_performance_pv_orca_teardown(void) {
     }
 }
 
-static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
-    pv_orca_t *object = NULL;
-
-    cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY, YPU_MACHINE);
-    cJSON *results_device = cJSON_CreateObject();
-    cJSON_AddItemToObject(results_machine, ypu_device, results_device);
-    cJSON *results_orca = cJSON_CreateObject();
-    cJSON_AddItemToObject(results_device, "orca", results_orca);
-
+static void test_memory_init_helper(
+        pv_ypu_t *ypu,
+        pv_orca_t **orca,
+        size_t *init_pre,
+        size_t *init_post,
+        size_t *init_peak,
+        size_t *init_system_peak) {
     pv_status_t status = pv_test_memory_start(0);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
@@ -224,14 +257,14 @@ static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
         return;
     }
 
-    size_t init_pre = pv_test_memory_get_current_usage();
+    *init_pre = pv_test_memory_get_current_usage();
 
     status = pv_orca_internal_init(
             access_key,
             factory,
             model_path,
             ypu,
-            &object);
+            orca);
     free(access_key);
     free(model_path);
     if (status != PV_STATUS_SUCCESS) {
@@ -239,24 +272,44 @@ static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
         return;
     }
 
-    size_t init_post = pv_test_memory_get_current_usage();
-
+    *init_post = pv_test_memory_get_current_usage();
     pv_test_memory_stop();
-    size_t init_peak = pv_test_memory_get_peak_usage();
-    size_t init_system_peak = pv_test_memory_get_system_peak_usage();
+    *init_peak = pv_test_memory_get_peak_usage();
+    *init_system_peak = pv_test_memory_get_system_peak_usage();
+}
 
-    status = pv_test_memory_start(10);
+static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
+    cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY, YPU_MACHINE);
+    cJSON *results_device = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_machine, ypu_device, results_device);
+    cJSON *results_orca = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_device, "orca", results_orca);
+
+    pv_orca_t *object = NULL;
+    size_t init_pre = 0;
+    size_t init_post = 0;
+    size_t init_peak = 0;
+    size_t init_system_peak = 0;
+
+    test_memory_init_helper(
+            ypu,
+            &object,
+            &init_pre,
+            &init_post,
+            &init_peak,
+            &init_system_peak);
+
+    pv_status_t status = pv_test_memory_start(MEMORY_CHECK_INTERVAL);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
         return;
     }
+    size_t process_pre = pv_test_memory_get_current_usage();
 
     int32_t num_samples = 0;
     int16_t *pcms = NULL;
     pv_orca_word_alignment_t **alignments = NULL;
     int32_t num_alignments = 0;
-
-    size_t process_pre = pv_test_memory_get_current_usage();
 
     for (int32_t i = 0; i < memory_test_iterations; i++) {
         status = pv_orca_synthesize(
@@ -275,8 +328,10 @@ static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
         free(pcms);
         pv_orca_word_alignments_delete(num_alignments, alignments);
     }
-    size_t process_post = pv_test_memory_get_current_usage();
 
+    pv_orca_delete(object);
+
+    size_t process_post = pv_test_memory_get_current_usage();
     pv_test_memory_stop();
     size_t process_peak = pv_test_memory_get_peak_usage();
     size_t process_system_peak = pv_test_memory_get_system_peak_usage();
@@ -297,9 +352,140 @@ static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
 
     cJSON_AddNumberToObject(results_orca, "init_bytes", (double) init_result);
     cJSON_AddNumberToObject(results_orca, "process_bytes", (double) process_result);
-
-    pv_orca_delete(object);
 }
+
+#ifdef __PV_TARGET_PLATFORM_LINUX__
+
+static void test_memory_streaming_helper(pv_ypu_t *ypu, const char *ypu_device) {
+    cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY_STREAMING, YPU_MACHINE);
+    cJSON *results_device = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_machine, ypu_device, results_device);
+    cJSON *results_orca = cJSON_CreateObject();
+    cJSON_AddItemToObject(results_device, "orca", results_orca);
+
+    pv_orca_t *object = NULL;
+    size_t init_pre = 0;
+    size_t init_post = 0;
+    size_t init_peak = 0;
+    size_t init_system_peak = 0;
+
+    test_memory_init_helper(
+            ypu,
+            &object,
+            &init_pre,
+            &init_post,
+            &init_peak,
+            &init_system_peak);
+
+    pv_status_t status = pv_test_memory_start(MEMORY_CHECK_INTERVAL);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
+        return;
+    }
+    size_t process_pre = pv_test_memory_get_current_usage();
+
+    pv_orca_synthesize_params_t *synthesize_params = NULL;
+    status = pv_orca_synthesize_params_init(&synthesize_params);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("pv_orca_synthesize_params_init failed with `%s`", pv_status_to_string(status));
+        return;
+    }
+
+    int64_t random_state = 0;
+    status = pv_orca_synthesize_params_set_random_state(synthesize_params, random_state);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("pv_orca_synthesize_params_set_random_state failed with `%s`", pv_status_to_string(status));
+        return;
+    }
+
+    pv_orca_stream_t *orca_stream = NULL;
+    status = pv_orca_stream_open(object, synthesize_params, &orca_stream);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("pv_orca_stream_open failed with `%s`", pv_status_to_string(status));
+        return;
+    }
+
+    int32_t num_samples_chunk = 0;
+    int16_t *pcm_chunk = NULL;
+    char character[PV_NORMALIZER_MAX_NUM_BYTES_PER_CHARACTER] = {0};
+    size_t index = 0;
+    size_t text_length = strlen(DEFAULT_SENTENCE_STREAMING);
+    while (index < text_length * STREAMING_TEST_SENTENCE_REPETITION) {
+        size_t i = index % text_length;
+        int32_t num_bytes_character = 0;
+        status = pv_language_num_bytes_character((unsigned char) DEFAULT_SENTENCE_STREAMING[i], &num_bytes_character);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_language_num_bytes_character failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        for (int32_t j = 0; j < num_bytes_character; j++) {
+            character[j] = DEFAULT_SENTENCE_STREAMING[i + j];
+        }
+        character[num_bytes_character] = '\0';
+
+        num_samples_chunk = 0;
+        pcm_chunk = NULL;
+        status = pv_orca_stream_synthesize(orca_stream, character, &num_samples_chunk, &pcm_chunk);
+        pv_orca_pcm_delete(pcm_chunk);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_stream_synthesize failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        index += num_bytes_character;
+    }
+
+    num_samples_chunk = 0;
+    pcm_chunk = NULL;
+    status = pv_orca_stream_flush(orca_stream, &num_samples_chunk, &pcm_chunk);
+    pv_orca_pcm_delete(pcm_chunk);
+    if (status != PV_STATUS_SUCCESS) {
+        LOG_ERROR("pv_orca_stream_flush failed with `%s`", pv_status_to_string(status));
+        return;
+    }
+
+    pv_orca_stream_close(orca_stream);
+    pv_orca_synthesize_params_delete(synthesize_params);
+    pv_orca_delete(object);
+
+    size_t process_post = pv_test_memory_get_current_usage();
+    pv_test_memory_stop();
+    size_t process_peak = pv_test_memory_get_peak_usage();
+    size_t process_system_peak = pv_test_memory_get_system_peak_usage();
+
+    LOG_INFO("init memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
+        init_pre,
+        init_post,
+        init_peak,
+        init_system_peak);
+    LOG_INFO("process memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
+        process_pre,
+        process_post,
+        process_peak,
+        process_system_peak);
+
+    cJSON_AddNumberToObject(results_orca, "init_pre_bytes", init_pre);
+    cJSON_AddNumberToObject(results_orca, "init_post_bytes", init_post);
+    cJSON_AddNumberToObject(results_orca, "init_peak_bytes", init_peak);
+    cJSON_AddNumberToObject(results_orca, "init_system_peak_bytes", init_system_peak);
+
+    cJSON_AddNumberToObject(results_orca, "process_pre_bytes", process_pre);
+    cJSON_AddNumberToObject(results_orca, "process_post_bytes", process_post);
+    cJSON_AddNumberToObject(results_orca, "process_peak_bytes", process_peak);
+    cJSON_AddNumberToObject(results_orca, "process_system_peak_bytes", process_system_peak);
+
+    size_t init_result = max(init_peak, init_system_peak) - init_pre;
+    size_t process_result = max(process_peak, process_system_peak) - process_pre;
+    size_t total_result = max(init_result, process_result);
+    pv_test_true(
+            total_result <= STREAMING_TEST_MEMORY_UPPER_BOUND,
+            "Peak memory usage exceeded upper bound! Upper bound: %d bytes; Using: %d bytes.",
+            STREAMING_TEST_MEMORY_UPPER_BOUND,
+            total_result);
+}
+
+#endif
 
 static void test_performance_helper(pv_ypu_t *ypu, const char *ypu_device) {
     static pv_orca_t *object = NULL;
@@ -315,7 +501,7 @@ static void test_performance_helper(pv_ypu_t *ypu, const char *ypu_device) {
     if (!model_path) {
         return;
     }
- 
+
     char *access_key = NULL;
     pv_status_t status = pv_access_serialize(&BYPASS_ACCESS, &access_key);
     pv_test_true(
@@ -525,6 +711,30 @@ static void test_memory_pv_orca_cpu_impl(void) {
     test_memory_helper(ypu, "cpu:1");
 }
 
+#ifdef __PV_TARGET_PLATFORM_LINUX__
+
+static void test_memory_pv_orca_streaming_cpu_impl(void) {
+    if (pv_getenv("YPU_IGNORE_CPU", ENVIRONMENT) != NULL) {
+        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
+        return;
+    }
+
+    pv_ypu_t *ypu = NULL;
+    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
+    pv_test_true(
+            status == PV_STATUS_SUCCESS,
+            "pv_ypu_init_cpu should have returned with %s, got %s",
+            pv_status_to_string(PV_STATUS_SUCCESS),
+            pv_status_to_string(status));
+    if (status != PV_STATUS_SUCCESS) {
+        return;
+    }
+
+    test_memory_streaming_helper(ypu, "cpu:1");
+}
+
+#endif
+
 #endif
 
 #ifdef __PV_YPU_CUDA_SUPPORT__
@@ -644,10 +854,15 @@ static const pv_test_case_t PERFORMANCE_PV_ORCA_TEST_CASES[] = {
 
 #endif
 
-        {"cpu performance", test_performance_pv_orca_cpu_impl},
+#ifdef __PV_TARGET_PLATFORM_LINUX__
+
+        {"cpu memory streaming", test_memory_pv_orca_streaming_cpu_impl},
 
 #endif
 
+        {"cpu performance", test_performance_pv_orca_cpu_impl},
+
+#endif
 
 #ifdef __PV_YPU_CUDA_SUPPORT__
 
