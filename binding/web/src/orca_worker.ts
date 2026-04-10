@@ -311,7 +311,7 @@ export class OrcaWorker {
   public static async create(
     accessKey: string,
     model: OrcaModel,
-    options: OrcaOptions
+    options: OrcaOptions = {}
   ): Promise<OrcaWorker> {
     const customWritePath = model.customWritePath
       ? model.customWritePath
