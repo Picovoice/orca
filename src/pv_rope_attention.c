@@ -839,6 +839,7 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
             .query_size = n,
             .key_value_size = n,
             .num_heads = num_heads,
+            .num_kv_heads = num_heads,
             .head_dim = head_dimension,
     };
     status = pv_ypu_operator_execute(

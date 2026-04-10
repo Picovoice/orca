@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "core/pv_error_messages.h"
+#include "core/pv_type.h"
 #include "gatekeeper/pv_gatekeeper.h"
 #include "gatekeeper/pv_gatekeeper_usage_animal.h"
 #include "hippo/pv_hippo_internal.h"
@@ -41,8 +42,8 @@
 static const float PV_ORCA_DEFAULT_SPEECH_RATE = 1.0f;
 static const float PV_ORCA_MIN_SPEECH_RATE = 0.7f;
 static const float PV_ORCA_MAX_SPEECH_RATE = 1.3f;
-
 static const int64_t PV_ORCA_DEFAULT_RANDOM_STATE = -1;
+static const int32_t MAX_STREAM_TOKEN_ARRAY_LOOKBACK = 200;
 
 #if defined(__PV_TARGET_PLATFORM_WINDOWS__) && defined(__PV_CPU_AVX2_SUPPORT__)
 
@@ -2301,7 +2302,7 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize)(
             pcm);
 }
 
-pv_status_t pv_orca_stream_append_token_arrays(
+static pv_status_t pv_orca_stream_append_token_arrays(
         pv_orca_stream_t *object,
         int32_t num_text_tokens,
         pv_normalizer_token_t **text_tokens) {
@@ -2309,9 +2310,13 @@ pv_status_t pv_orca_stream_append_token_arrays(
     PV_ASSERT(num_text_tokens > 0);
     PV_ASSERT(text_tokens);
 
-    int32_t new_count = object->prev_verbalized_token_count + num_text_tokens;
+    int32_t length_truncated = pv_min_int32(
+            object->prev_verbalized_token_count,
+            MAX_STREAM_TOKEN_ARRAY_LOOKBACK) + num_text_tokens;
+    int32_t offset = pv_max_int32(object->prev_verbalized_token_count - MAX_STREAM_TOKEN_ARRAY_LOOKBACK, 0);
+
     pv_normalizer_token_t **new_prev_verbalized_token_array = malloc(
-            new_count * (int32_t) sizeof(pv_normalizer_token_t *));
+            length_truncated * (int32_t) sizeof(pv_normalizer_token_t *));
     if (!new_prev_verbalized_token_array) {
         PV_ERROR_REPORT(
                 &pv_error_msg_alloc,
@@ -2320,15 +2325,20 @@ pv_status_t pv_orca_stream_append_token_arrays(
         return PV_STATUS_OUT_OF_MEMORY;
     }
     for (int32_t i = 0; i < object->prev_verbalized_token_count; i++) {
-        new_prev_verbalized_token_array[i] = object->prev_verbalized_tokens[i];
+        if (i >= offset) {
+            new_prev_verbalized_token_array[i - offset] = object->prev_verbalized_tokens[i];
+        } else {
+            pv_normalizer_token_delete(object->prev_verbalized_tokens[i]);
+            object->prev_verbalized_tokens[i] = NULL;
+        }
     }
     for (int32_t i = 0; i < num_text_tokens; i++) {
-        new_prev_verbalized_token_array[object->prev_verbalized_token_count + i] = text_tokens[i];
+        new_prev_verbalized_token_array[object->prev_verbalized_token_count - offset + i] = text_tokens[i];
     }
 
     free(object->prev_verbalized_tokens);
     object->prev_verbalized_tokens = new_prev_verbalized_token_array;
-    object->prev_verbalized_token_count = new_count;
+    object->prev_verbalized_token_count = length_truncated;
 
     return PV_STATUS_SUCCESS;
 }

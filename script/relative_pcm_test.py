@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 
 GITLAB_API_URL = "https://gitlab.com/api/v4/projects"
 
-NUM_AUDIOS = 162
+NUM_AUDIOS = 150
 
 JOB_NAMES = [
     "build-beta-linux-release",
