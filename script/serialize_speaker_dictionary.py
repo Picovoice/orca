@@ -31,7 +31,7 @@ def normalize_dict(input_path: str, output_path: str) -> None:
         with open(input_path) as f:
             for line in f.read().strip('\n').split('\n'):
                 word, pro = line.split('\t')
-                # TODO (Ted): Below line removing parenthesis has issue with Japanese base lexicon which 
+                # TODO (Ted): Below line removing parenthesis has issue with Japanese base lexicon which
                 # contain words with parenthesis. Will deal with it after Japanese Orca is properly updated.
                 word = word.split('(')[0]
                 if word in d:
@@ -46,7 +46,7 @@ def normalize_dict(input_path: str, output_path: str) -> None:
         print(f"Current LC_COLLATE locale: {old_collate_locale}")
         locale.setlocale(locale.LC_COLLATE, "C")
         print(f"Set LC_COLLATE locale for sorting to: {locale.getlocale(locale.LC_COLLATE)}")
-        
+
         words = set()
         for word, _ in list(d.items()):
             if word[-1].isnumeric() and word[-2] == "_":
@@ -148,7 +148,7 @@ def main():
         choices=[speaker.value for speaker in Speakers])
     parser.add_argument('--phonebook_path', '-p', required=True)
     parser.add_argument(
-        '--heteronym_path', '-t', 
+        '--heteronym_path', '-t',
         default="res/heteronym/",
         help="Path to the folder with heteronym tree file in. Default: res/heteronym/")
     parser.add_argument(
@@ -157,16 +157,19 @@ def main():
         help="Path to the folder with speaker dictionary file in. Default: res/dictionary/")
     parser.add_argument(
         '--noun_gender_dict_folder',
-        default="res/noun_gender_dict/",
-        help="Path to the folder with speaker noun_gender_dict file in. Default: res/noun_gender_dict/")
+        default="../normalizer/res/noun_gender_dict/",
+        help="Path to the folder with speaker noun_gender_dict file in. Default: ../normalizer/res/noun_gender_dict/")
     parser.add_argument(
         '--zoodev_path',
         '-z',
         default=os.path.abspath(os.path.expanduser("~/work/gitlab/zoo-dev")))
     parser.add_argument(
+        '--orca_path',
+        default=os.path.abspath(os.path.expanduser("~/work/gitlab/orca")))
+    parser.add_argument(
         '--language_info_dir',
         '-i',
-        default=os.path.abspath(os.path.expanduser("~/work/gitlab/zoo-dev/res/core/")))
+        default=os.path.abspath(os.path.expanduser("~/work/gitlab/orca/res/core/")))
     parser.add_argument(
         '--working_dir',
         '-w',
@@ -184,6 +187,7 @@ def main():
     save_working_dir = args.save_working_dir
     language_info_dir = args.language_info_dir
     zoodev_path = args.zoodev_path
+    orca_path = args.orca_path
     output_dir = args.output_dir
     dictionary_folder = args.dictionary_folder
     noun_gender_dict_folder = args.noun_gender_dict_folder
@@ -218,7 +222,7 @@ def main():
             subprocess.run(cmd, stderr=subprocess.STDOUT)
 
             print(f"{speaker}: Building C array from dict")
-            c_dict_path = os.path.join(zoodev_path, output_dir, f"pv_dict_{speaker}.c")
+            c_dict_path = os.path.join(orca_path, output_dir, f"pv_dict_{speaker}.c")
             c_from_bin(bin_path=bin_dict_path, c_path=c_dict_path, speaker_or_language=speaker)
 
             print(f"{speaker}: Building binary lexicon")
@@ -228,7 +232,7 @@ def main():
             subprocess.run(cmd, stderr=subprocess.STDOUT)
 
             print(f"{speaker}: Building C array from lexicon")
-            c_lexicon_path = os.path.join(zoodev_path, output_dir, f"pv_lexicon_{speaker}.c")
+            c_lexicon_path = os.path.join(orca_path, output_dir, f"pv_lexicon_{speaker}.c")
             c_from_bin(bin_path=bin_lexicon_path, c_path=c_lexicon_path, speaker_or_language=speaker)
 
             print(f"{speaker}: Building binary heteronym tree")
@@ -241,7 +245,7 @@ def main():
             subprocess.run(cmd, stderr=subprocess.STDOUT)
 
             print(f"{speaker}: Building C array from heteronym tree")
-            c_tree_path = os.path.join(zoodev_path, output_dir, f"pv_heteronym_tree_{speaker}.c")
+            c_tree_path = os.path.join(orca_path, output_dir, f"pv_heteronym_tree_{speaker}.c")
             c_from_bin(bin_path=bin_tree_path, c_path=c_tree_path, speaker_or_language=speaker)
 
 
@@ -253,8 +257,10 @@ def main():
     try:
         raw_noun_gender_dict_path = os.path.join(noun_gender_dict_folder, "empty.txt")
         if language in LANGUAGES_WITH_GENDERED_NOUNS:
-            raw_noun_gender_dict_path = os.path.join(noun_gender_dict_folder, 
-                                                     f"noun_gender_dict_{language}.txt")
+            raw_noun_gender_dict_path = os.path.join(
+                noun_gender_dict_folder,
+                f"noun_gender_dict_{language}.txt",
+            )
 
         if not os.path.isfile(raw_noun_gender_dict_path):
             raise FileNotFoundError(f"Noun gender dict file not found: {raw_noun_gender_dict_path}")
@@ -266,12 +272,16 @@ def main():
         subprocess.run(cmd, stderr=subprocess.STDOUT)
 
         print(f"{language}: Building C array from noun gender dict")
-        c_noun_gender_dict_path = os.path.join(zoodev_path, 
-                                               output_dir, 
-                                               f"pv_noun_gender_dict_{language}.c")
-        c_from_bin(bin_path=bin_noun_gender_dict_path, 
-                   c_path=c_noun_gender_dict_path, 
-                   speaker_or_language=language)
+        c_noun_gender_dict_path = os.path.join(
+            orca_path,
+            output_dir,
+            f"pv_noun_gender_dict_{language}.c",
+        )
+        c_from_bin(
+            bin_path=bin_noun_gender_dict_path,
+            c_path=c_noun_gender_dict_path,
+            speaker_or_language=language,
+        )
     finally:
         if not save_working_dir:
             shutil.rmtree(working_dir)
