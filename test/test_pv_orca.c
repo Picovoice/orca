@@ -43,9 +43,9 @@ static pv_ypu_t *ypu = NULL;
 static pv_orca_t *orca_object = NULL;
 static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
-static const char *DEFAULT_SENTENCE = "Welcome, to our demonstration of streaming text-to-speech technology!";
+static const char *DEFAULT_SENTENCE = "Hello, to our demonstration of streaming text-to-speech technology!";
 static const char *DEFAULT_SENTENCE_TOKENS[] = {
-        "Welcome", ",", " to", " our", " demonstration", " of", " streaming", " text", "-", "to", "-", "speech",
+        "Hello", ",", " to", " our", " demonstration", " of", " streaming", " text", "-", "to", "-", "speech",
         " technology", "!"};
 
 static const char *TEST_ROBUSTNESS_SENTENCES[27][2] = {

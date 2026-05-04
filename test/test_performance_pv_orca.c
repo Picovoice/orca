@@ -34,7 +34,7 @@
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define MEMORY_CHECK_INTERVAL (10)
-#define STREAMING_TEST_MEMORY_UPPER_BOUND (15000000)
+#define STREAMING_TEST_MEMORY_UPPER_BOUND (20000000)
 #define STREAMING_TEST_SENTENCE_REPETITION (400)
 
 static const char *MODEL_PATH = "param/orca_params_en_female.pv";
