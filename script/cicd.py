@@ -328,7 +328,7 @@ def test_unittest_orca(
                     res_performance_test = run_command(
                         f"python3 {selenium_script} {arg} "
                         f"--build_mode {build_mode} --root_path {peer_dir} --test_type performance",
-                        extract_mem_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"),
+                        extract_mem_dir=None,
                         extract_perf_dir=os.path.join(os.path.dirname(__file__), "..", "res", "performance"))
                     results.append(res_performance_test)
 

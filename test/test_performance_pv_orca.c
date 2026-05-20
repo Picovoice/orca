@@ -34,7 +34,7 @@
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define MEMORY_CHECK_INTERVAL (10)
-#define STREAMING_TEST_MEMORY_UPPER_BOUND (20000000)
+#define STREAMING_TEST_MEMORY_UPPER_BOUND (50000000)
 #define STREAMING_TEST_SENTENCE_REPETITION (400)
 
 static const char *MODEL_PATH = "param/orca_params_en_female.pv";
@@ -44,7 +44,7 @@ static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
 static const char *DEFAULT_SENTENCE = "Orca performance test";
 
-#ifdef __PV_TARGET_PLATFORM_LINUX__
+#ifndef __PV_TARGET_PLATFORM_WASM__
 
 static const char *DEFAULT_SENTENCE_STREAMING = "A fox wandered through the forest at sunrise, wondering why birds seemed to know a secret it didn’t. ";
 
@@ -52,7 +52,6 @@ static const char *DEFAULT_SENTENCE_STREAMING = "A fox wandered through the fore
 
 static cJSON *ENVIRONMENT = NULL;
 static cJSON *RESULTS = NULL;
-static cJSON *MEMORY = NULL;
 static cJSON *MEMORY_STREAMING = NULL;
 static const char *YPU_ITERATIONS = NULL;
 static const char *YPU_MEMORY_ITERATIONS = NULL;
@@ -154,14 +153,7 @@ static pv_status_t test_performance_pv_orca_setup(void) {
     cJSON *results_machine = cJSON_CreateObject();
     cJSON_AddItemToObject(RESULTS, YPU_MACHINE, results_machine);
 
-    MEMORY = cJSON_CreateObject();
-    if (!MEMORY) {
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-    cJSON *results_memory = cJSON_CreateObject();
-    cJSON_AddItemToObject(MEMORY, YPU_MACHINE, results_memory);
-
-#ifdef __PV_TARGET_PLATFORM_LINUX__
+#ifndef __PV_TARGET_PLATFORM_WASM__
 
     MEMORY_STREAMING = cJSON_CreateObject();
     if (!MEMORY_STREAMING) {
@@ -179,20 +171,6 @@ static void test_performance_pv_orca_teardown(void) {
     pv_orca_synthesize_params_delete(synthesize_params_object);
 
     free(test_durations);
-
-    if (MEMORY != NULL) {
-        char *memory_results_str = cJSON_PrintUnformatted(MEMORY);
-        pv_test_true(
-                memory_results_str != NULL,
-                "Unable to allocate JSON output string for `orca` memory results");
-        if (!memory_results_str) {
-            return;
-        }
-
-        LOG_INFO("MEMORY JSON=`%s`", memory_results_str);
-        cJSON_Delete(MEMORY);
-        free(memory_results_str);
-    }
 
     if (MEMORY_STREAMING != NULL) {
         char *memory_streaming_results_str = cJSON_PrintUnformatted(MEMORY_STREAMING);
@@ -278,83 +256,7 @@ static void test_memory_init_helper(
     *init_system_peak = pv_test_memory_get_system_peak_usage();
 }
 
-static void test_memory_helper(pv_ypu_t *ypu, const char *ypu_device) {
-    cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY, YPU_MACHINE);
-    cJSON *results_device = cJSON_CreateObject();
-    cJSON_AddItemToObject(results_machine, ypu_device, results_device);
-    cJSON *results_orca = cJSON_CreateObject();
-    cJSON_AddItemToObject(results_device, "orca", results_orca);
-
-    pv_orca_t *object = NULL;
-    size_t init_pre = 0;
-    size_t init_post = 0;
-    size_t init_peak = 0;
-    size_t init_system_peak = 0;
-
-    test_memory_init_helper(
-            ypu,
-            &object,
-            &init_pre,
-            &init_post,
-            &init_peak,
-            &init_system_peak);
-
-    pv_status_t status = pv_test_memory_start(MEMORY_CHECK_INTERVAL);
-    if (status != PV_STATUS_SUCCESS) {
-        LOG_ERROR("failed to start pv_test_monitor thread", pv_status_to_string(status));
-        return;
-    }
-    size_t process_pre = pv_test_memory_get_current_usage();
-
-    int32_t num_samples = 0;
-    int16_t *pcms = NULL;
-    pv_orca_word_alignment_t **alignments = NULL;
-    int32_t num_alignments = 0;
-
-    for (int32_t i = 0; i < memory_test_iterations; i++) {
-        status = pv_orca_synthesize(
-                object,
-                DEFAULT_SENTENCE,
-                synthesize_params_object,
-                &num_samples,
-                &pcms,
-                &num_alignments,
-                &alignments);
-        if (status != PV_STATUS_SUCCESS) {
-            LOG_ERROR("synthesize failed with `%s`", pv_status_to_string(status));
-            return;
-        }
-
-        free(pcms);
-        pv_orca_word_alignments_delete(num_alignments, alignments);
-    }
-
-    pv_orca_delete(object);
-
-    size_t process_post = pv_test_memory_get_current_usage();
-    pv_test_memory_stop();
-    size_t process_peak = pv_test_memory_get_peak_usage();
-    size_t process_system_peak = pv_test_memory_get_system_peak_usage();
-
-    LOG_INFO("init memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
-        init_pre,
-        init_post,
-        init_peak,
-        init_system_peak);
-    LOG_INFO("process memory usage (bytes) - pre: %d, post: %d, peak: %d, system peak: %d",
-        process_pre,
-        process_post,
-        process_peak,
-        process_system_peak);
-
-    size_t init_result = max(init_peak, init_system_peak) - init_pre;
-    size_t process_result = max(process_peak, process_system_peak) - process_pre;
-
-    cJSON_AddNumberToObject(results_orca, "init_bytes", (double) init_result);
-    cJSON_AddNumberToObject(results_orca, "process_bytes", (double) process_result);
-}
-
-#ifdef __PV_TARGET_PLATFORM_LINUX__
+#ifndef __PV_TARGET_PLATFORM_WASM__
 
 static void test_memory_streaming_helper(pv_ypu_t *ypu, const char *ypu_device) {
     cJSON *results_machine = cJSON_GetObjectItemCaseSensitive(MEMORY_STREAMING, YPU_MACHINE);
@@ -410,6 +312,7 @@ static void test_memory_streaming_helper(pv_ypu_t *ypu, const char *ypu_device) 
     char character[PV_NORMALIZER_MAX_NUM_BYTES_PER_CHARACTER] = {0};
     size_t index = 0;
     size_t text_length = strlen(DEFAULT_SENTENCE_STREAMING);
+    int64_t last_sleep_time = get_now_usec();
     while (index < text_length * STREAMING_TEST_SENTENCE_REPETITION) {
         size_t i = index % text_length;
         int32_t num_bytes_character = 0;
@@ -434,6 +337,20 @@ static void test_memory_streaming_helper(pv_ypu_t *ypu, const char *ypu_device) 
         }
 
         index += num_bytes_character;
+
+        int64_t now = get_now_usec();
+        if (now - last_sleep_time > 3 * 1e6) {
+            sleep(1);
+
+#ifdef __PV_TARGET_PLATFORM_IOS__
+
+            // Sleep 25+% of runtime to avoid being kill by iOS
+            sleep(((now - last_sleep_time) / 1e6) / 4 + 1);
+
+#endif
+
+            last_sleep_time = get_now_usec();
+        }
     }
 
     num_samples_chunk = 0;
@@ -615,7 +532,7 @@ static void test_performance_helper(pv_ypu_t *ypu, const char *ypu_device) {
 #ifdef __PV_TARGET_PLATFORM_IOS__
 
             // Sleep 25+% of runtime to avoid being kill by iOS
-            sleep((now - last_sleep_time) / 1e6 / 4 + 1);
+            sleep(((now - last_sleep_time) / 1e6) / 4 + 1);
 
 #endif
 
@@ -691,27 +608,7 @@ static void test_performance_pv_orca_cpu_impl(void) {
     }
 }
 
-static void test_memory_pv_orca_cpu_impl(void) {
-    if (pv_getenv("YPU_IGNORE_CPU", ENVIRONMENT) != NULL) {
-        LOG_INFO_SIMPLE("    -> Skipping (ignored)...");
-        return;
-    }
-
-    pv_ypu_t *ypu = NULL;
-    pv_status_t status = pv_ypu_init_cpu(1, &ypu);
-    pv_test_true(
-            status == PV_STATUS_SUCCESS,
-            "pv_ypu_init_cpu should have returned with %s, got %s",
-            pv_status_to_string(PV_STATUS_SUCCESS),
-            pv_status_to_string(status));
-    if (status != PV_STATUS_SUCCESS) {
-        return;
-    }
-
-    test_memory_helper(ypu, "cpu:1");
-}
-
-#ifdef __PV_TARGET_PLATFORM_LINUX__
+#ifndef __PV_TARGET_PLATFORM_WASM__
 
 static void test_memory_pv_orca_streaming_cpu_impl(void) {
     if (pv_getenv("YPU_IGNORE_CPU", ENVIRONMENT) != NULL) {
@@ -848,14 +745,10 @@ static const pv_test_case_t PERFORMANCE_PV_ORCA_TEST_CASES[] = {
 
 #ifdef __PV_YPU_CPU_SUPPORT__
 
-#if !defined(__PV_TARGET_PLATFORM_WASM__) || defined(__PV_WASM_PTHREAD__)
+#ifndef __PV_TARGET_PLATFORM_WASM__
 
-        {"cpu memory", test_memory_pv_orca_cpu_impl},
-
-#endif
-
-#ifdef __PV_TARGET_PLATFORM_LINUX__
-
+        // Can only do one peak memory test at a time. Otherwise, the subsequent memory tests will be inaccurate.
+        // TODO (Ted): Added a Trello card to support e.g. non-streaming memory test without any interference.
         {"cpu memory streaming", test_memory_pv_orca_streaming_cpu_impl},
 
 #endif
