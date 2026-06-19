@@ -14,12 +14,12 @@ include("${zoo-dev_SOURCE_DIR}/preload.cmake")
 
 set(RELEASE_OPERATORS
   add
-  addmv
   add_q510
-  convert_f32_i32
-  conv1d_q1417_q7_q510
+  addmv
   conv1d_depthwise_q1417_q7_q510
+  conv1d_q1417_q7_q510
   conv1d_transposed_depthwise_q1417_q7_q510
+  convert_f32_i32
   dot_add_iadd_q510_q510_q7_q7
   dot_add_q510_q510_q7_q7
   exp
@@ -29,15 +29,30 @@ set(RELEASE_OPERATORS
   layer_norm_non_affine
   lstmcell_q510
   memcpy
+  memmove
   memset
   mulmv
   mulmv_iadd
   mulsv
   quantize_q510
+  quantize_u8
   relu
   rope
+  sdpa
+  sdpa_bias_apply
+  sdpa_biased
+  sdpa_biased_u8
+  sdpa_flash
+  sdpa_mask_apply
   sdpa_masked
+  sdpa_masked_u8
+  sdpa_output
+  sdpa_output_u8
+  sdpa_scores
+  sdpa_scores_u8
+  sdpa_u8
   silu
+  softmax
   softmax_q31_q510
   sub_mul_q510
   transpose
@@ -122,7 +137,6 @@ pv_module_register(
     include/orca/pv_orca_synthesizer.h
     include/orca/pv_orca_util.h
     include/orca/pv_orca_vocoder.h
-    include/orca/pv_profiler.h
     include/orca/pv_rope_attention.h
     include/orca/pv_rope_ffn.h
     include/orca/pv_rope_transformer.h
@@ -157,7 +171,6 @@ pv_module_register(
     src/pv_orca_synthesizer.c
     src/pv_orca_util.c
     src/pv_orca_vocoder.c
-    src/pv_profiler.c
     src/pv_rope_attention.c
     src/pv_rope_ffn.c
     src/pv_rope_transformer.c

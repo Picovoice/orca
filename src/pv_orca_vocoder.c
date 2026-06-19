@@ -6,7 +6,6 @@
 #include "orca/pv_convnext_transposed.h"
 #include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_vocoder.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
 
@@ -438,8 +437,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
     PV_ASSERT(x_ypu);
     PV_ASSERT(pcm);
 
-    PV_ORCA_PROFILER_START("\torca_vocoder");
-
     int32_t n_upsampled_0 = pv_convnext_transposed_num_output_frames(object->convnext_transposed_0, n);
     int32_t n_upsampled_1 = pv_convnext_transposed_num_output_frames(object->convnext_transposed_1, n_upsampled_0);
 
@@ -472,7 +469,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         return status;
     }
 
-    PV_ORCA_PROFILER_START("\t\tvocoder_gelu");
     pv_ypu_op_elementwise_args_t gelu_args0 = {
             .output = buffer_conv_pre_ypu,
             .input = buffer_conv_pre_ypu,
@@ -496,7 +492,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\tvocoder_gelu");
 
     const int32_t num_channels_convnext_transposed = object->param->convnext_transposed_1_param->conv_2_param->output_channels;
     pv_ypu_mem_t *buffer_convnext_transposed_ypu = pv_ypu_buffer_get(
@@ -556,7 +551,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         return status;
     }
 
-    PV_ORCA_PROFILER_START("\t\tvocoder_gelu");
     pv_ypu_op_elementwise_args_t gelu_args1 = {
             .output = buffer_backbone_ypu,
             .input = buffer_backbone_ypu,
@@ -581,7 +575,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\tvocoder_gelu");
 
     status = pv_convnext_transposed_forward(
             ypu,
@@ -658,8 +651,6 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         return status;
     }
     pv_ypu_mem_release_host_view(ypu, buffer_spec_all_subbands_ypu, false);
-
-    PV_ORCA_PROFILER_STOP("\torca_vocoder");
 
     return PV_STATUS_SUCCESS;
 }

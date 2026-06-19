@@ -10,7 +10,7 @@
 #include "io/pv_dump.h"
 #include "orca/pv_orca.h"
 #include "orca/pv_orca_internal.h"
-#include "orca/pv_profiler.h"
+#include "util/pv_profiler.h"
 
 #define MAX_NUM_CHUNKS (600)
 
@@ -161,6 +161,8 @@ int main(int argc, char *argv[]) {
 
     char **message_stack = NULL;
     int32_t message_stack_depth = 0;
+
+    PV_PROFILER_START();
 
     pv_orca_t *orca = NULL;
     pv_status_t status = pv_orca_init(access_key, model_path, device, &orca);
@@ -361,7 +363,7 @@ int main(int argc, char *argv[]) {
                 rtf);
     }
 
-    PV_ORCA_PROFILER_PRINT_DATA;
+    PV_PROFILER_STOP();
 
     PV_DUMP_END()
     return EXIT_SUCCESS;

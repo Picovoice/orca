@@ -9,7 +9,6 @@
 #include "orca/pv_cnn.h"
 #include "orca/pv_convnext_film.h"
 #include "orca/pv_layer_norm.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
 
@@ -326,8 +325,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
     PV_ASSERT(gate_residual_ypu);
     PV_ASSERT(y_ypu);
 
-    PV_ORCA_PROFILER_START("\t\tconvnext_film");
-
     pv_ypu_mem_t *buffer_1_ypu = pv_ypu_buffer_get(
             ypu,
             n * object->param->conv_depthwise_param->num_channels * (int32_t) sizeof(float),
@@ -340,7 +337,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_depthwise");
     pv_status_t status = pv_cnn_depthwise_forward(
             ypu,
             object->conv_depthwise,
@@ -357,9 +353,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         return status;
     }
 
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_depthwise");
-
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_layer_norm");
     pv_ypu_op_layer_norm_non_affine_args_t layer_norm_args = {
             .output = buffer_1_ypu,
             .input = buffer_1_ypu,
@@ -407,7 +400,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_layer_norm");
 
     pv_ypu_mem_t *buffer_2_ypu = pv_ypu_buffer_get(
             ypu,
@@ -421,7 +413,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_conv_1");
     status = pv_cnn_forward(
             ypu,
             object->conv_1,
@@ -438,9 +429,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_conv_1");
-
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_relu");
 
     status = pv_activation_relu_float(
             ypu,
@@ -455,9 +443,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_relu");
-
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_conv_2");
     status = pv_cnn_forward(
             ypu,
             object->conv_2,
@@ -474,9 +459,7 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
         pv_ypu_buffer_release(ypu, buffer_1_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_conv_2");
 
-    PV_ORCA_PROFILER_START("\t\t\tconvnext_film_residual");
     const int32_t num_channels = pv_cnn_output_channels(object->conv_2);
     status = pv_affine_execute(
             ypu,
@@ -500,8 +483,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
                 pv_status_to_string(status));
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\t\tconvnext_film_residual");
 
-    PV_ORCA_PROFILER_STOP("\t\tconvnext_film");
     return PV_STATUS_SUCCESS;
 }

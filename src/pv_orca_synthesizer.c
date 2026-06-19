@@ -16,7 +16,6 @@
 #include "orca/pv_orca_synthesizer.h"
 #include "orca/pv_orca_util.h"
 #include "orca/pv_orca_vocoder.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__
@@ -778,8 +777,6 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
     PV_ASSERT(num_samples);
     PV_ASSERT(pcm);
 
-    PV_ORCA_PROFILER_START("orca_synthesizer_forward");
-
     (void) no_random_latents;
 
     *encoded_phonemes_durations = NULL;
@@ -1469,8 +1466,6 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
 
     *num_samples = num_samples_chunk;
     *encoded_phonemes_durations = buffer_duration;
-
-    PV_ORCA_PROFILER_STOP("orca_synthesizer_forward");
 
     return PV_STATUS_SUCCESS;
 }

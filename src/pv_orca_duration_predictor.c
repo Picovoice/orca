@@ -7,7 +7,6 @@
 #include "orca/pv_cnn.h"
 #include "orca/pv_orca_duration_predictor.h"
 #include "orca/pv_orca_util.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_transformer.h"
 #include "util/pv_file.h"
 
@@ -232,8 +231,6 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
     PV_ASSERT(d);
     PV_ASSERT(std);
 
-    PV_ORCA_PROFILER_START("\torca_duration_predictor_forward");
-
     const int32_t dimension = object->param->transformer_param->layer_norm_1_param->num_channels;
 
     pv_ypu_mem_t *buffer_hidden_ypu = pv_ypu_buffer_get(
@@ -369,8 +366,6 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
     pv_ypu_buffer_release(ypu, buffer_d_log_std_transposed_ypu);
     pv_ypu_buffer_release(ypu, buffer_d_log_std_ypu);
     pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
-
-    PV_ORCA_PROFILER_STOP("\torca_duration_predictor_forward");
 
     return PV_STATUS_SUCCESS;
 }

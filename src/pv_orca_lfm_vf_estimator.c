@@ -11,7 +11,6 @@
 #include "orca/pv_orca_lfm_vf_estimator_param.h"
 #include "orca/pv_orca_stream_state.h"
 
-#include "orca/pv_profiler.h"
 #include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__
@@ -498,8 +497,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
     PV_ASSERT(c_ypu);
     PV_ASSERT(y_ypu);
 
-    PV_ORCA_PROFILER_START("\torca_lfm_vf_estimator_forward");
-
     const int32_t dimension = object->param->dimension;
 
     pv_ypu_mem_t *buffer_conv_pre_ypu = pv_ypu_buffer_get(
@@ -560,7 +557,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    PV_ORCA_PROFILER_START("\t\tsilu");
     pv_ypu_op_elementwise_args_t silu_args = {
             .output = buffer_c_ypu,
             .input = c_ypu,
@@ -586,9 +582,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
         pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\tsilu");
 
-    PV_ORCA_PROFILER_START("\t\tadanorm_linear");
     status = pv_cnn_forward(
             ypu,
             object->adanorm_linear,
@@ -606,9 +600,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
         pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\tadanorm_linear");
 
-    PV_ORCA_PROFILER_START("\t\tbuffer_gates_list");
     pv_ypu_mem_t *buffer_gates_list_ypu = pv_ypu_buffer_get(
             ypu,
             n * NUM_GATES * dimension * (int32_t) sizeof(float),
@@ -651,8 +643,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
         pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
         return status;
     }
-
-    PV_ORCA_PROFILER_STOP("\t\tbuffer_gates_list");
 
     for (int32_t i = 0; i < object->param->num_blocks; i++) {
         const int32_t i_grouped = i / FILM_SHARING_FACTOR;
@@ -755,8 +745,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
                 pv_status_to_string(status));
         return status;
     }
-
-    PV_ORCA_PROFILER_STOP("\torca_lfm_vf_estimator_forward");
 
     return PV_STATUS_SUCCESS;
 }

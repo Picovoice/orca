@@ -6,7 +6,6 @@
 #include "orca/pv_affine.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_orca_util.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
 

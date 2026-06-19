@@ -3,7 +3,6 @@
 #include "core/pv_error_messages.h"
 #include "orca/pv_additive_coupling.h"
 #include "orca/pv_cnn.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_transformer_film_conditioned.h"
 #include "util/pv_file.h"
 

@@ -4,8 +4,8 @@
 #include "core/pv_assert.h"
 #include "core/pv_error.h"
 #include "core/pv_error_messages.h"
+#include "core/pv_type.h"
 #include "orca/pv_orca_pqmf.h"
-#include "orca/pv_profiler.h"
 
 #ifdef __PV_MOCKS__
 
@@ -47,7 +47,6 @@ pv_status_t PV_MOCKABLE(pv_orca_pqmf_synthesis)(
     PV_ASSERT(n);
     PV_ASSERT(x); // [num_subbands, n]
     PV_ASSERT(y);
-    PV_ORCA_PROFILER_START("pqmf");
 
     const int32_t n_expanded = num_subbands * n;
 
@@ -96,6 +95,5 @@ pv_status_t PV_MOCKABLE(pv_orca_pqmf_synthesis)(
 
     free(x_padded);
 
-    PV_ORCA_PROFILER_STOP("pqmf");
     return PV_STATUS_SUCCESS;
 }

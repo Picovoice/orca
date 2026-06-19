@@ -4,7 +4,6 @@
 
 #include "core/pv_type.h"
 #include "orca/pv_buffer.h"
-#include "orca/pv_profiler.h"
 
 #ifdef __PV_MOCKS__
 

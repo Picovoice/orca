@@ -5,7 +5,6 @@
 #include "core/pv_error_messages.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_orca_util.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_attention.h"
 #include "util/pv_file.h"
 
@@ -781,22 +780,6 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
         return status;
     }
 
-    pv_ypu_mem_t *buffer_scores = pv_ypu_buffer_get(
-            ypu,
-            num_heads * n * n * (int32_t) sizeof(float),
-            false);
-    if (!buffer_scores) {
-        PV_ERROR_REPORT(
-                &pv_error_msg_ypu_device_alloc,
-                PV_ERROR_ARGS_PUBLIC_EMPTY(),
-                PV_ERROR_ARGS_PRIVATE("buffer_scores"));
-        pv_ypu_buffer_release(ypu, buffer_k_rope);
-        pv_ypu_buffer_release(ypu, buffer_q_rope);
-        pv_ypu_buffer_release(ypu, buffer_o);
-        pv_ypu_buffer_release(ypu, buffer_v);
-        return PV_STATUS_OUT_OF_MEMORY;
-    }
-
     pv_ypu_mem_t *mask_indices = pv_ypu_buffer_get(
             ypu,
             n * 2 * (int32_t) sizeof(float),
@@ -833,7 +816,6 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
             .query = buffer_q_rope,
             .key = buffer_k_rope,
             .value = buffer_v,
-            .scores = buffer_scores,
             .mask_indices = mask_indices,
             .batch_size = 1,
             .query_size = n,
@@ -841,13 +823,13 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
             .num_heads = num_heads,
             .num_kv_heads = num_heads,
             .head_dim = head_dimension,
+            .quantize = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
             PV_YPU_OPERATOR_SDPA_MASKED,
             &args_sdpa);
     pv_ypu_buffer_release(ypu, mask_indices);
-    pv_ypu_buffer_release(ypu, buffer_scores);
     pv_ypu_buffer_release(ypu, buffer_k_rope);
     pv_ypu_buffer_release(ypu, buffer_q_rope);
     pv_ypu_buffer_release(ypu, buffer_v);

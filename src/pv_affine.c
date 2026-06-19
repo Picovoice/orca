@@ -3,7 +3,6 @@
 #include "core/picovoice.h"
 #include "core/pv_error_messages.h"
 #include "orca/pv_affine.h"
-#include "orca/pv_profiler.h"
 
 #ifdef __PV_MOCKS__
 
