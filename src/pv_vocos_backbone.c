@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "core/pv_error_messages.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_vocos_backbone.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"

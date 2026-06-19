@@ -10,7 +10,6 @@
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_stream_state.h"
 #include "orca/pv_orca_synthesizer.h"
-#include "orca/pv_profiler.h"
 
 void usage(const char *program) {
     (void) fprintf(
@@ -222,7 +221,6 @@ int main(int argc, char *argv[]) {
     printf("Total synthesized audio = %.2f seconds\n", audio_length_second_sum);
     printf("Total processing time = %.2f seconds\n", processing_time_sum);
     printf("Mean RTF = %.1f\n\n", rtf_sum / (float) (num_iterations * num_lengths));
-    PV_ORCA_PROFILER_PRINT_DATA;
     printf("\n*************************************************\n");
 
     (void) fclose(f);

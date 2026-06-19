@@ -5,7 +5,6 @@
 #include "math/pv_math.h"
 #include "orca/pv_embed.h"
 #include "orca/pv_orca_prior_encoder_film_generator.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_transformer.h"
 #include "util/pv_file.h"
 
@@ -302,7 +301,6 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_film_generator_forward)(
     PV_ASSERT(x);
     PV_ASSERT(y);
 
-    PV_ORCA_PROFILER_START("\torca_prior_encoder_film_generator_forward");
     pv_status_t status = pv_embed_forward(
             ypu,
             object->embed,
@@ -334,6 +332,5 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_film_generator_forward)(
         }
     }
 
-    PV_ORCA_PROFILER_STOP("\torca_prior_encoder_film_generator_forward"); 
     return PV_STATUS_SUCCESS;
 }

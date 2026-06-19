@@ -5,7 +5,6 @@
 #include "core/pv_error_messages.h"
 #include "math/pv_math.h"
 #include "orca/pv_orca_gaussian_upsampler.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_transformer.h"
 #include "orca/pv_orca_util.h"
 #include "util/pv_file.h"
@@ -333,8 +332,6 @@ pv_status_t PV_MOCKABLE(pv_orca_gaussian_upsampler_forward)(
     PV_ASSERT(std);
     PV_ASSERT(y);
 
-    PV_ORCA_PROFILER_START("\torca_gaussian_upsampler_forward"); 
-
     pv_status_t status = pv_rope_transformer_forward(
             ypu,
             object->transformer,
@@ -390,8 +387,6 @@ pv_status_t PV_MOCKABLE(pv_orca_gaussian_upsampler_forward)(
     }
 
     pv_ypu_buffer_release(ypu, buffer_gaussian_center_ypu);
-
-    PV_ORCA_PROFILER_STOP("\torca_gaussian_upsampler_forward");
 
     return PV_STATUS_SUCCESS;
 }

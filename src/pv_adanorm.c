@@ -6,7 +6,6 @@
 #include "orca/pv_affine.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_layer_norm.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__

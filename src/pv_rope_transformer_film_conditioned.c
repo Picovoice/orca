@@ -5,7 +5,6 @@
 #include "orca/pv_adanorm.h"
 #include "orca/pv_affine.h"
 #include "orca/pv_layer_norm.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_attention.h"
 #include "orca/pv_rope_ffn.h"
 #include "orca/pv_rope_transformer_film_conditioned.h"

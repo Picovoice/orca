@@ -10,7 +10,6 @@
 #include "orca/pv_orca_fft.h"
 #include "orca/pv_orca_istft.h"
 #include "orca/pv_orca_pqmf.h"
-#include "orca/pv_profiler.h"
 
 #ifdef __PV_MOCKS__
 
@@ -192,7 +191,6 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_forward)(
     PV_ASSERT(num_frames);
     PV_ASSERT(vocoder_spec_complex);
     PV_ASSERT(pcm_subband);
-    PV_ORCA_PROFILER_START("istft");
 
     float *buffer_reconstructed_frame = pv_buffer_get(object->buffer_reconstructed_frame, ((int32_t) sizeof(float)), false);
     if (!buffer_reconstructed_frame) {
@@ -235,7 +233,6 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_forward)(
         pcm_subband[i - object->padding] = (buffer_reconstructed_frames[i] / buffer_window_norms[i]);
     }
 
-    PV_ORCA_PROFILER_STOP("istft");
     return PV_STATUS_SUCCESS;
 }
 
@@ -248,7 +245,6 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
     PV_ASSERT(num_frames);
     PV_ASSERT(spec_all_subbands);
     PV_ASSERT(pcm);
-    PV_ORCA_PROFILER_START("multiband_istft");
 
     const int32_t num_samples = num_frames * object->window_length;
     const int32_t num_samples_subband = num_frames * (object->window_length / object->num_subbands);
@@ -332,6 +328,5 @@ pv_status_t PV_MOCKABLE(pv_orca_istft_multiband_forward)(
 
     pv_buffer_free(object->buffer_pcm_all_subbands);
 
-    PV_ORCA_PROFILER_STOP("multiband_istft");
     return PV_STATUS_SUCCESS;
 }

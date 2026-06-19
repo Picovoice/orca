@@ -4,7 +4,6 @@
 #include "core/pv_error_messages.h"
 #include "math/pv_math.h"
 #include "orca/pv_orca_util.h"
-#include "orca/pv_profiler.h"
 
 #ifdef __PV_MOCKS__
 

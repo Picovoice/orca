@@ -5,7 +5,6 @@
 #include "math/pv_math.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_orca_lfm_film_generator.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_transformer.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
@@ -309,7 +308,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_film_generator_forward)(
     PV_ASSERT(x);
     PV_ASSERT(bucket);
     PV_ASSERT(y);
-    PV_ORCA_PROFILER_START("\torca_lfm_film_generator_forward");
 
     const int32_t num_blocks = object->param->num_blocks;
     for (int32_t i = 0; i < num_blocks; i++) {
@@ -327,8 +325,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_film_generator_forward)(
             return status;
         }
     }
-
-    PV_ORCA_PROFILER_STOP("\torca_lfm_film_generator_forward");
 
     return PV_STATUS_SUCCESS;
 }

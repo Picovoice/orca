@@ -42,7 +42,7 @@ extern const pv_orca_phonemizer_param_t PV_ORCA_PHONEMIZER_PARAM;
 extern const pv_orca_synthesizer_param_t PV_ORCA_SYNTHESIZER_PARAM;
 static pv_orca_synthesize_params_t *synthesize_params_object = NULL;
 
-static const char *DEFAULT_SENTENCE = "Orca performance test";
+static const char *DEFAULT_SENTENCE = "It was the White Rabbit, ";
 
 #ifndef __PV_TARGET_PLATFORM_WASM__
 
@@ -460,71 +460,119 @@ static void test_performance_helper(pv_ypu_t *ypu, const char *ypu_device) {
     while (iterations < (1 << 30) && duration_usec < test_duration_usec) {
         iterations <<= 1;
 
-        int16_t *pcms[iterations];
-        memset(pcms, 0, sizeof(char *) * iterations);
-        pv_orca_word_alignment_t **alignments[iterations];
-        memset(alignments, 0, sizeof(pv_orca_word_alignment_t **) * iterations);
-        int32_t num_alignments[iterations];
-        memset(num_alignments, 0, sizeof(int32_t) * iterations);
+        pv_orca_synthesize_params_t *synthesize_params = NULL;
+        status = pv_orca_synthesize_params_init(&synthesize_params);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_synthesize_params_init failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        int64_t random_state = 0;
+        status = pv_orca_synthesize_params_set_random_state(synthesize_params, random_state);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_synthesize_params_set_random_state failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        pv_orca_stream_t *orca_stream = NULL;
+        status = pv_orca_stream_open(object, synthesize_params, &orca_stream);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_stream_open failed with `%s`", pv_status_to_string(status));
+            return;
+        }
 
         int64_t start = get_now_usec();
         for (int32_t i = 0; i < iterations; i++) {
             int32_t num_samples = 0;
-            pv_status_t status = pv_orca_synthesize(
-                    object,
+            int16_t *pcm = NULL;
+            status = pv_orca_stream_synthesize(
+                    orca_stream,
                     DEFAULT_SENTENCE,
-                    synthesize_params_object,
                     &num_samples,
-                    &pcms[i],
-                    &num_alignments[i],
-                    &alignments[i]);
+                    &pcm);
+            pv_orca_pcm_delete(pcm);
             if (status != PV_STATUS_SUCCESS) {
-                LOG_ERROR("processing failed with `%s`", pv_status_to_string(status));
+                LOG_ERROR("pv_orca_stream_synthesize failed with `%s`", pv_status_to_string(status));
                 return;
             }
         }
+
+        int32_t num_samples = 0;
+        int16_t *pcm = NULL;
+        status = pv_orca_stream_flush(
+                orca_stream,
+                &num_samples,
+                &pcm);
+        pv_orca_pcm_delete(pcm);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_stream_flush failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
         duration_usec = get_now_usec() - start;
         LOG_INFO("orca: %d iterations in %.3f sec", iterations, duration_usec / 1e6);
 
-        for (int32_t i = 0; i < iterations; i++) {
-            free(pcms[i]);
-            pv_orca_word_alignments_delete(num_alignments[i], alignments[i]);
-        }
+        pv_orca_stream_close(orca_stream);
+        pv_orca_synthesize_params_delete(synthesize_params);
     }
 
     int64_t last_sleep_time = get_now_usec();
     for (int32_t i = 0; i < test_iterations; i++) {
-        int16_t *pcms[iterations];
-        memset(pcms, 0, sizeof(char *) * iterations);
-        pv_orca_word_alignment_t **alignments[iterations];
-        memset(alignments, 0, sizeof(pv_orca_word_alignment_t **) * iterations);
-        int32_t num_alignments[iterations];
-        memset(num_alignments, 0, sizeof(int32_t) * iterations);
+        pv_orca_synthesize_params_t *synthesize_params = NULL;
+        status = pv_orca_synthesize_params_init(&synthesize_params);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_synthesize_params_init failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        int64_t random_state = 0;
+        status = pv_orca_synthesize_params_set_random_state(synthesize_params, random_state);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_synthesize_params_set_random_state failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
+        pv_orca_stream_t *orca_stream = NULL;
+        status = pv_orca_stream_open(object, synthesize_params, &orca_stream);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_stream_open failed with `%s`", pv_status_to_string(status));
+            return;
+        }
 
         int64_t start = get_now_usec();
         for (int32_t j = 0; j < iterations; j++) {
             int32_t num_samples = 0;
-            pv_status_t status = pv_orca_synthesize(
-                    object,
+            int16_t *pcm = NULL;
+            status = pv_orca_stream_synthesize(
+                    orca_stream,
                     DEFAULT_SENTENCE,
-                    synthesize_params_object,
                     &num_samples,
-                    &pcms[j],
-                    &num_alignments[j],
-                    &alignments[j]);
+                    &pcm);
+            pv_orca_pcm_delete(pcm);
             if (status != PV_STATUS_SUCCESS) {
-                LOG_ERROR("processing failed with `%s`", pv_status_to_string(status));
+                LOG_ERROR("pv_orca_stream_synthesize failed with `%s`", pv_status_to_string(status));
                 return;
             }
         }
+
+        int32_t num_samples = 0;
+        int16_t *pcm = NULL;
+        status = pv_orca_stream_flush(
+                orca_stream,
+                &num_samples,
+                &pcm);
+        pv_orca_pcm_delete(pcm);
+        if (status != PV_STATUS_SUCCESS) {
+            LOG_ERROR("pv_orca_stream_flush failed with `%s`", pv_status_to_string(status));
+            return;
+        }
+
         int64_t now = get_now_usec();
         test_durations[i] = now - start;
         LOG_INFO("orca: %d iterations in %.3f sec", iterations, test_durations[i] / 1e6);
 
-        for (int32_t j = 0; j < iterations; j++) {
-            free(pcms[j]);
-            pv_orca_word_alignments_delete(num_alignments[j], alignments[j]);
-        }
+        pv_orca_stream_close(orca_stream);
+        pv_orca_synthesize_params_delete(synthesize_params);
 
         if (now - last_sleep_time > 3 * 1e6) {
             sleep(1);

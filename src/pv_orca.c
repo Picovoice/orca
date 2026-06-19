@@ -21,7 +21,6 @@
 #include "orca/pv_orca_phonemizer.h"
 #include "orca/pv_orca_stream_state.h"
 #include "orca/pv_orca_synthesizer.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
 #include "util/pv_time.h"

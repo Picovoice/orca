@@ -3,7 +3,6 @@
 
 #include "core/pv_error_messages.h"
 #include "core/pv_type.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_ffn.h"
 
 #ifdef __PV_MOCKS__

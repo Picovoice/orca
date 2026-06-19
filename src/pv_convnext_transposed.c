@@ -6,7 +6,6 @@
 #include "orca/pv_cnn.h"
 #include "orca/pv_cnn_transposed_depthwise.h"
 #include "orca/pv_convnext_transposed.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_check_status.h"
 #include "util/pv_file.h"
 
@@ -396,7 +395,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
         return status;
     }
 
-    PV_ORCA_PROFILER_START("\t\tconvnext_transposed_gelu");
     pv_ypu_op_elementwise_args_t gelu_args = {
             .output = buffer_2_ypu,
             .input = buffer_2_ypu,
@@ -420,7 +418,6 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
         pv_ypu_buffer_release(ypu, buffer_2_ypu);
         return status;
     }
-    PV_ORCA_PROFILER_STOP("\t\tconvnext_transposed_gelu");
 
     status = pv_cnn_forward(
             ypu,

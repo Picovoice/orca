@@ -5,7 +5,6 @@
 #include "core/pv_error_messages.h"
 #include "orca/pv_cnn.h"
 #include "orca/pv_orca_lfm_condition_fuser.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__
@@ -229,8 +228,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_forward)(
     PV_ASSERT(time_condition_ypu);
     PV_ASSERT(fused_condition_ypu);
 
-    PV_ORCA_PROFILER_START("\torca_lfm_condition_fuser_forward");
-
     const int32_t input_channels = object->param->conv_1_param->input_channels;
     const int32_t content_condition_channels = input_channels / 2;
     const int32_t time_condition_channels = input_channels / 2;
@@ -367,8 +364,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_forward)(
                 pv_status_to_string(status));
         return status;
     }
-
-    PV_ORCA_PROFILER_STOP("\torca_lfm_condition_fuser_forward");
 
     return PV_STATUS_SUCCESS;
 }

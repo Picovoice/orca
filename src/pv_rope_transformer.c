@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "core/pv_error_messages.h"
-#include "orca/pv_profiler.h"
 #include "orca/pv_rope_attention.h"
 #include "orca/pv_rope_ffn.h"
 #include "orca/pv_rope_transformer.h"

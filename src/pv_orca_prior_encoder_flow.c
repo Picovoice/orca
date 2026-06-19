@@ -4,7 +4,6 @@
 #include "orca/pv_additive_coupling.h"
 #include "orca/pv_orca_prior_encoder_flow.h"
 #include "orca/pv_orca_util.h"
-#include "orca/pv_profiler.h"
 #include "util/pv_file.h"
 
 #ifdef __PV_MOCKS__
@@ -265,8 +264,6 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_flow_forward)(
     PV_ASSERT(x);
     PV_ASSERT(y);
 
-    PV_ORCA_PROFILER_START("\torca_prior_encoder_flow_forward"); 
-
     const int32_t dimension = object->param->dimension;
     const int32_t num_flows = object->param->num_flows;
 
@@ -309,8 +306,6 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_flow_forward)(
             return status;
         }
     }
-
-    PV_ORCA_PROFILER_STOP("\torca_prior_encoder_flow_forward"); 
 
     return PV_STATUS_SUCCESS;
 }

@@ -7,7 +7,6 @@
 #include "audio/pv_container_wav.h"
 #include "io/pv_dump.h"
 #include "orca/pv_orca.h"
-#include "orca/pv_profiler.h"
 
 
 void usage(const char *program) {
@@ -244,8 +243,6 @@ int main(int argc, char *argv[]) {
            (float) num_samples / (float) sample_rate,
            (end - start),
            (float) num_samples / (float) sample_rate / (end - start));
-
-    PV_ORCA_PROFILER_PRINT_DATA;
 
     PV_DUMP_END()
     return EXIT_SUCCESS;
