@@ -235,7 +235,8 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_init)(
     pv_status_t status = pv_cnn_depthwise_init(
             ypu,
             param->conv_depthwise_param,
-            &(o->conv_depthwise));
+            &(o->conv_depthwise),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_depthwise_init,
@@ -259,7 +260,8 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_1_param,
-            &(o->conv_1));
+            &(o->conv_1),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -271,7 +273,8 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_2_param,
-            &(o->conv_2));
+            &(o->conv_2),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -360,7 +363,7 @@ pv_status_t PV_MOCKABLE(pv_convnext_film_forward)(
             .n = object->param->layer_norm_param->num_channels,
             .eps = object->param->layer_norm_param->eps,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

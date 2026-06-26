@@ -314,7 +314,7 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_film_generator_forward)(
                 pv_status_to_string(status));
         return status;
     }
-    
+
     const int32_t num_blocks = object->param->num_blocks;
     for (int32_t i = 0; i < num_blocks; i++) {
         status = pv_rope_transformer_forward(

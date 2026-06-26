@@ -435,7 +435,8 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_q_param,
-            &(o->conv_q));
+            &(o->conv_q),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -447,7 +448,8 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_k_param,
-            &(o->conv_k));
+            &(o->conv_k),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -459,7 +461,8 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_v_param,
-            &(o->conv_v));
+            &(o->conv_v),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -471,7 +474,8 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_o_param,
-            &(o->conv_o));
+            &(o->conv_o),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -524,7 +528,7 @@ pv_status_t PV_MOCKABLE(pv_rope)(
             .n = object->param->num_heads,
             .k = object->param->head_dimension,
             .position = 0,
-            .rope_constant = rope_constant
+            .rope_constant = rope_constant,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
@@ -631,7 +635,7 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_q);
+        pv_ypu_buffer_release(ypu, buffer_q);
         return status;
     }
 
@@ -661,7 +665,7 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
                 pv_cnn_forward,
                 pv_status_to_string(status));
         pv_ypu_buffer_release(ypu, buffer_k);
-    	pv_ypu_buffer_release(ypu, buffer_q);
+        pv_ypu_buffer_release(ypu, buffer_q);
         return status;
     }
 
@@ -693,7 +697,7 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
                 pv_status_to_string(status));
         pv_ypu_buffer_release(ypu, buffer_v);
         pv_ypu_buffer_release(ypu, buffer_k);
-    	pv_ypu_buffer_release(ypu, buffer_q);
+        pv_ypu_buffer_release(ypu, buffer_q);
         return status;
     }
 
@@ -803,8 +807,7 @@ pv_status_t PV_MOCKABLE(pv_rope_attention_forward)(
                 n,
                 bucket,
                 mask_indices);
-    }
-    else {
+    } else {
         pv_rope_attention_generate_mask(
                 ypu,
                 object,

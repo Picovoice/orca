@@ -197,7 +197,7 @@ bool PV_MOCKABLE(pv_layer_norm_param_is_equal)(
         if (!pv_ypu_config_mem_is_equal(object->bias, other->bias)) {
             return false;
         }
-    } else if ((object->bias != NULL) || (other->bias != NULL)){
+    } else if ((object->bias != NULL) || (other->bias != NULL)) {
         return false;
     }
 
@@ -205,7 +205,7 @@ bool PV_MOCKABLE(pv_layer_norm_param_is_equal)(
         if (!pv_ypu_config_mem_is_equal(object->weight, other->weight)) {
             return false;
         }
-    } else if ((object->weight != NULL) || (other->weight != NULL)){
+    } else if ((object->weight != NULL) || (other->weight != NULL)) {
         return false;
     }
 
@@ -304,7 +304,7 @@ pv_status_t PV_MOCKABLE(pv_layer_norm_forward)(
             .n = num_channels,
             .eps = object->param->eps,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,

@@ -199,9 +199,9 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_init)(
 
     pv_ypu_t *ypu = NULL;
     pv_status_t status = pv_ypu_init_internal(
-        device,
-        PV_ORCA_BEST_YPU_DEVICE,
-        &ypu);
+            device,
+            PV_ORCA_BEST_YPU_DEVICE,
+            &ypu);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_ypu_init_internal,
@@ -867,6 +867,15 @@ PV_API void PV_MOCKABLE(pv_orca_delete)(pv_orca_t *object) {
 
         pv_ypu_delete(ypu);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_orca_reset_cache)(
+        pv_ypu_t *ypu,
+        const pv_orca_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+
+    return pv_orca_synthesizer_reset_cache(ypu, object->synthesizer);
 }
 
 PV_API pv_status_t PV_MOCKABLE(pv_orca_valid_characters)(
@@ -1732,12 +1741,20 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesize_internal)(
     *num_alignments = 0;
     *alignments = NULL;
 
+    pv_status_t status = pv_orca_reset_cache(object->ypu, object);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_orca_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
     int32_t num_text_tokens = 0;
     pv_normalizer_token_t **text_tokens = NULL;
     int32_t num_encoded_phonemes = 0;
     int32_t *encoded_phonemes = NULL;
     int32_t *text_tokens_num_encoded_phonemes = NULL;
-    pv_status_t status = pv_orca_phonemize_text(
+    status = pv_orca_phonemize_text(
             object,
             text,
             true,
@@ -1815,6 +1832,14 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesize_internal)(
                 pv_orca_create_word_alignments,
                 pv_status_to_string(status));
         free(pcm_internal);
+        return status;
+    }
+
+    status = pv_orca_reset_cache(object->ypu, object);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_orca_reset_cache,
+                pv_status_to_string(status));
         return status;
     }
 
@@ -2310,8 +2335,9 @@ static pv_status_t pv_orca_stream_append_token_arrays(
     PV_ASSERT(text_tokens);
 
     int32_t length_truncated = pv_min_int32(
-            object->prev_verbalized_token_count,
-            MAX_STREAM_TOKEN_ARRAY_LOOKBACK) + num_text_tokens;
+                                       object->prev_verbalized_token_count,
+                                       MAX_STREAM_TOKEN_ARRAY_LOOKBACK) +
+                               num_text_tokens;
     int32_t offset = pv_max_int32(object->prev_verbalized_token_count - MAX_STREAM_TOKEN_ARRAY_LOOKBACK, 0);
 
     pv_normalizer_token_t **new_prev_verbalized_token_array = malloc(
@@ -2521,14 +2547,12 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_synthesize_internal)(
 
     if (new_num_encoded_phonemes == 0) {
         if (state->is_flush) {
-            bool no_synthesis_N_domain = (
-                    (pv_buffer_length(state->cached_N_domain) == 0) &&
-                    (state->num_processed_chunks_N_domain != 0 ||
-                     (pv_buffer_length(state->buffer_N_domain_concat) == 0)));
-            bool no_synthesis_T_domain = (
-                    (pv_buffer_ypu_length(state->cached_T_domain) == 0) &&
-                    (state->num_processed_chunks_T_domain != 0 ||
-                     (pv_buffer_ypu_length(state->buffer_T_domain_concat) == 0)));
+            bool no_synthesis_N_domain = ((pv_buffer_length(state->cached_N_domain) == 0) &&
+                                          (state->num_processed_chunks_N_domain != 0 ||
+                                           (pv_buffer_length(state->buffer_N_domain_concat) == 0)));
+            bool no_synthesis_T_domain = ((pv_buffer_ypu_length(state->cached_T_domain) == 0) &&
+                                          (state->num_processed_chunks_T_domain != 0 ||
+                                           (pv_buffer_ypu_length(state->buffer_T_domain_concat) == 0)));
             if (no_synthesis_N_domain && no_synthesis_T_domain) {
                 free(new_encoded_phonemes);
                 return PV_STATUS_SUCCESS;
@@ -2660,6 +2684,14 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_flush_internal)(
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_orca_stream_synthesize_internal,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_orca_reset_cache(object->orca->ypu, object->orca);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_orca_reset_cache,
                 pv_status_to_string(status));
         return status;
     }

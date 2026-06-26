@@ -62,6 +62,10 @@ typedef struct {
 
 const pv_serialized_vtable_t *PV_MOCKABLE(pv_orca_internal_param_serialized_vtable)(void);
 
+pv_status_t PV_MOCKABLE(pv_orca_reset_cache)(
+        pv_ypu_t *ypu,
+        const pv_orca_t *object);
+
 pv_status_t PV_MOCKABLE(pv_orca_phoneme_alignment_init)(
         const char *phoneme,
         float start_sec,

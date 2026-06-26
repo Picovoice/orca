@@ -55,6 +55,19 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
         pv_ypu_mem_t *x,
         pv_ypu_mem_t *y);
 
+pv_status_t PV_MOCKABLE(pv_convnext_transposed_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_t *object);
+
+pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x,
+        pv_ypu_mem_t *y,
+        bool is_flush,
+        int32_t *n_out);
+
 int32_t PV_MOCKABLE(pv_convnext_transposed_num_output_frames)(
         const pv_convnext_transposed_t *object,
         int32_t n);

@@ -61,7 +61,7 @@ static void test_pv_cnn_teardown(void) {
 
 static void test_pv_cnn_helpers(void) {
     pv_cnn_t *cnn = NULL;
-    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K3_PARAM, &cnn);
+    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K3_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;
@@ -95,7 +95,7 @@ static void test_pv_cnn_helpers(void) {
 
 static void test_pv_cnn_kernel_1_forward(void) {
     pv_cnn_t *cnn = NULL;
-    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K1_PARAM, &cnn);
+    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K1_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;
@@ -164,7 +164,7 @@ static void test_pv_cnn_kernel_1_forward(void) {
 
 static void test_pv_cnn_kernel_3_forward(void) {
     pv_cnn_t *cnn = NULL;
-    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K3_PARAM, &cnn);
+    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K3_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;
@@ -231,7 +231,7 @@ static void test_pv_cnn_kernel_3_forward(void) {
 
 static void test_pv_cnn_kernel_5_forward(void) {
     pv_cnn_t *cnn = NULL;
-    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K5_PARAM, &cnn);
+    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K5_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;
@@ -298,7 +298,7 @@ static void test_pv_cnn_kernel_5_forward(void) {
 
 static void test_pv_cnn_kernel_7_forward(void) {
     pv_cnn_t *cnn = NULL;
-    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K7_PARAM, &cnn);
+    pv_status_t status = pv_cnn_init(ypu, &TEST_CNN_K7_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;
@@ -365,7 +365,7 @@ static void test_pv_cnn_kernel_7_forward(void) {
 
 static void test_pv_cnn_depthwise_forward(void) {
     pv_cnn_depthwise_t *cnn = NULL;
-    pv_status_t status = pv_cnn_depthwise_init(ypu, &TEST_CNN_DEPTHWISE_PARAM, &cnn);
+    pv_status_t status = pv_cnn_depthwise_init(ypu, &TEST_CNN_DEPTHWISE_PARAM, &cnn, false);
     pv_test_true(status == PV_STATUS_SUCCESS, "failed to create cnn object");
     if (status != PV_STATUS_SUCCESS) {
         return;

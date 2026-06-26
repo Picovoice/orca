@@ -166,7 +166,8 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_ffn_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_1_param,
-            &(o->conv_1));
+            &(o->conv_1),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -178,7 +179,8 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_ffn_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_2_param,
-            &(o->conv_2));
+            &(o->conv_2),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -216,7 +218,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_ffn_forward)(
     PV_ASSERT(n);
     PV_ASSERT(x_ypu);
     PV_ASSERT(y_ypu);
-    
+
     const int32_t intermediate_dimension = object->param->conv_1_param->output_channels;
     pv_ypu_mem_t *buffer_ypu = pv_ypu_buffer_get(
             ypu,
@@ -251,7 +253,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_ffn_forward)(
             .input = buffer_ypu,
             .length = n * intermediate_dimension,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

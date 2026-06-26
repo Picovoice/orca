@@ -9,7 +9,7 @@ extern const pv_online_token_classifier_param_t *PV_ORCA_METRIC_CLASSIFIER(void)
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        fprintf(stderr,"usage: %s language_info_path param_path\n", argv[0]);
+        fprintf(stderr, "usage: %s language_info_path param_path\n", argv[0]);
         return 1;
     }
 

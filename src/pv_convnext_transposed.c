@@ -100,7 +100,7 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_param_load)(
 
     pv_status_t status = pv_cnn_transposed_depthwise_param_load(
             ypu,
-            f, 
+            f,
             (pv_cnn_transposed_depthwise_param_t **) &(p->conv_transposed_depthwise_param));
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
@@ -179,7 +179,7 @@ bool PV_MOCKABLE(pv_convnext_transposed_param_is_equal)(
     PV_ASSERT(other);
 
     if (!pv_cnn_transposed_depthwise_param_is_equal(
-            object->conv_transposed_depthwise_param, other->conv_transposed_depthwise_param)) {
+                object->conv_transposed_depthwise_param, other->conv_transposed_depthwise_param)) {
         return false;
     }
 
@@ -259,7 +259,8 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_1_param,
-            &(o->conv_1));
+            &(o->conv_1),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -271,7 +272,8 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_2_param,
-            &(o->conv_2));
+            &(o->conv_2),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -300,6 +302,15 @@ void PV_MOCKABLE(pv_convnext_transposed_delete)(
 
         pv_ypu_host_free(ypu, object);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_convnext_transposed_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+
+    return pv_cnn_transposed_depthwise_reset_cache(ypu, object->conv_transposed_depthwise);
 }
 
 int32_t PV_MOCKABLE(pv_convnext_transposed_output_channels)(const pv_convnext_transposed_t *object) {
@@ -400,7 +411,7 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
             .input = buffer_2_ypu,
             .length = n_upsampled * pv_cnn_output_channels(object->conv_1),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -437,6 +448,146 @@ pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward)(
 
     return PV_STATUS_SUCCESS;
 }
+
+pv_status_t PV_MOCKABLE(pv_convnext_transposed_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_convnext_transposed_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        bool is_flush,
+        int32_t *n_out) {
+    PV_ASSERT(object);
+    PV_ASSERT(n);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(y_ypu);
+
+    const int32_t num_channels_depthwise = object->param->conv_transposed_depthwise_param->num_channels;
+    int32_t cache_length = pv_cnn_transposed_depthwise_cache_length(object->conv_transposed_depthwise);
+    const int32_t n_upsampled_max = (n + cache_length) * 4;
+
+    pv_ypu_mem_t *buffer_1_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_channels_depthwise * n_upsampled_max * (int32_t) sizeof(float),
+            false);
+    if (!buffer_1_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_1_ypu"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    int32_t n_upsampled_out = 0;
+    pv_status_t status = pv_cnn_transposed_depthwise_forward_with_cache(
+            ypu,
+            object->conv_transposed_depthwise,
+            n,
+            x_ypu,
+            buffer_1_ypu,
+            0,
+            0,
+            is_flush,
+            &n_upsampled_out);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_transposed_depthwise_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
+        return status;
+    }
+    assert(n_upsampled_out <= n_upsampled_max);
+
+    status = pv_layer_norm_forward(
+            ypu,
+            object->layer_norm,
+            n_upsampled_out,
+            buffer_1_ypu,
+            buffer_1_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
+        return status;
+    }
+
+    const int32_t num_intermediate_channels = object->param->conv_1_param->output_channels;
+    pv_ypu_mem_t *buffer_2_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_intermediate_channels * n_upsampled_out * (int32_t) sizeof(float),
+            false);
+    if (!buffer_2_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_2_ypu"));
+        pv_ypu_buffer_release(ypu, buffer_1_ypu);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    status = pv_cnn_forward(
+            ypu,
+            object->conv_1,
+            n_upsampled_out,
+            buffer_1_ypu,
+            buffer_2_ypu,
+            0,
+            0);
+    pv_ypu_buffer_release(ypu, buffer_1_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_2_ypu);
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t gelu_args = {
+            .output = buffer_2_ypu,
+            .input = buffer_2_ypu,
+            .length = n_upsampled_out * pv_cnn_output_channels(object->conv_1),
+            .output_offset = 0,
+            .input_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_GELU_APPROX,
+            &gelu_args);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_GELU_APPROX),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_2_ypu);
+        return status;
+    }
+
+    status = pv_cnn_forward(
+            ypu,
+            object->conv_2,
+            n_upsampled_out,
+            buffer_2_ypu,
+            y_ypu,
+            0,
+            0);
+    pv_ypu_buffer_release(ypu, buffer_2_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    *n_out = n_upsampled_out;
+
+    return PV_STATUS_SUCCESS;
+}
+
 
 int32_t PV_MOCKABLE(pv_convnext_transposed_num_output_frames)(
         const pv_convnext_transposed_t *object,

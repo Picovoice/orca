@@ -89,9 +89,14 @@ typedef struct pv_cnn pv_cnn_t;
 pv_status_t PV_MOCKABLE(pv_cnn_init)(
         pv_ypu_t *ypu,
         const pv_cnn_param_t *param,
-        pv_cnn_t **object);
+        pv_cnn_t **object,
+        bool should_cache);
 
 void PV_MOCKABLE(pv_cnn_delete)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object);
+
+pv_status_t PV_MOCKABLE(pv_cnn_reset_cache)(
         pv_ypu_t *ypu,
         pv_cnn_t *object);
 
@@ -103,6 +108,17 @@ pv_status_t PV_MOCKABLE(pv_cnn_forward)(
         pv_ypu_mem_t *y,
         int32_t x_offset,
         int32_t y_offset);
+
+pv_status_t PV_MOCKABLE(pv_cnn_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset,
+        bool is_flush,
+        int32_t *n_out);
 
 int32_t PV_MOCKABLE(pv_cnn_output_channels)(const pv_cnn_t *object);
 
@@ -116,6 +132,8 @@ int32_t PV_MOCKABLE(pv_cnn_dilation)(const pv_cnn_t *object);
 
 int32_t PV_MOCKABLE(pv_cnn_stride)(const pv_cnn_t *object);
 
+int32_t PV_MOCKABLE(pv_cnn_cache_length)(const pv_cnn_t *object);
+
 pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_get_weight)(const pv_cnn_t *object);
 
 typedef struct pv_cnn_depthwise pv_cnn_depthwise_t;
@@ -123,9 +141,14 @@ typedef struct pv_cnn_depthwise pv_cnn_depthwise_t;
 pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
         pv_ypu_t *ypu,
         const pv_cnn_depthwise_param_t *param,
-        pv_cnn_depthwise_t **object);
+        pv_cnn_depthwise_t **object,
+        bool should_cache);
 
 void PV_MOCKABLE(pv_cnn_depthwise_delete)(
+        pv_ypu_t *ypu,
+        pv_cnn_depthwise_t *object);
+
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_reset_cache)(
         pv_ypu_t *ypu,
         pv_cnn_depthwise_t *object);
 
@@ -138,9 +161,24 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward)(
         int32_t x_offset,
         int32_t y_offset);
 
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_depthwise_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset,
+        bool is_flush,
+        int32_t *n_out);
+
+int32_t PV_MOCKABLE(pv_cnn_depthwise_padding)(const pv_cnn_depthwise_t *object);
+
 int32_t PV_MOCKABLE(pv_cnn_depthwise_num_channels)(const pv_cnn_depthwise_t *object);
 
 int32_t PV_MOCKABLE(pv_cnn_depthwise_kernel_size)(const pv_cnn_depthwise_t *object);
+
+int32_t PV_MOCKABLE(pv_cnn_depthwise_cache_length)(const pv_cnn_depthwise_t *object);
 
 pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_depthwise_get_weight)(const pv_cnn_depthwise_t *object);
 

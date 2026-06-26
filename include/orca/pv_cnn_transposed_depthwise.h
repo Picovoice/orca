@@ -49,6 +49,10 @@ void PV_MOCKABLE(pv_cnn_transposed_depthwise_delete)(
         pv_ypu_t *ypu,
         pv_cnn_transposed_depthwise_t *object);
 
+pv_status_t PV_MOCKABLE(pv_cnn_transposed_depthwise_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_transposed_depthwise_t *object);
+
 pv_status_t PV_MOCKABLE(pv_cnn_transposed_depthwise_forward)(
         pv_ypu_t *ypu,
         pv_cnn_transposed_depthwise_t *object,
@@ -58,8 +62,27 @@ pv_status_t PV_MOCKABLE(pv_cnn_transposed_depthwise_forward)(
         int32_t x_offset,
         int32_t y_offset);
 
+pv_status_t PV_MOCKABLE(pv_cnn_transposed_depthwise_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_transposed_depthwise_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset,
+        bool is_flush,
+        int32_t *n_out);
+
 int32_t PV_MOCKABLE(pv_cnn_transposed_depthwise_num_output_frames)(
         const pv_cnn_transposed_depthwise_t *object,
         int32_t n);
+
+int32_t PV_MOCKABLE(pv_cnn_transposed_depthwise_kernel_size)(const pv_cnn_transposed_depthwise_t *object);
+
+int32_t PV_MOCKABLE(pv_cnn_transposed_depthwise_num_channels)(const pv_cnn_transposed_depthwise_t *object);
+
+int32_t PV_MOCKABLE(pv_cnn_transposed_depthwise_padding)(const pv_cnn_transposed_depthwise_t *object);
+
+int32_t PV_MOCKABLE(pv_cnn_transposed_depthwise_cache_length)(const pv_cnn_transposed_depthwise_t *object);
 
 #endif // PV_CNN_TRANSPOSED_DEPTHWISE_H

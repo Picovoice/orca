@@ -288,7 +288,7 @@ pv_status_t PV_MOCKABLE(pv_orca_prior_encoder_flow_forward)(
                 .m = n,
                 .n = dimension,
                 .output_offset = 0,
-                .input_offset = 0
+                .input_offset = 0,
         };
         status = pv_ypu_operator_execute(
                 ypu,

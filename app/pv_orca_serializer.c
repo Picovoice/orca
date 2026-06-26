@@ -87,16 +87,16 @@ int main(int argc, char *argv[]) {
 
     if (!only_test_helpers) {
         pv_orca_internal_param_t orca_param = {
-            .phonemizer_param = (pv_orca_phonemizer_param_t *) &PV_ORCA_PHONEMIZER_PARAM,
-            .synthesizer_param = (pv_orca_synthesizer_param_t *) &PV_ORCA_SYNTHESIZER_PARAM,
+                .phonemizer_param = (pv_orca_phonemizer_param_t *) &PV_ORCA_PHONEMIZER_PARAM,
+                .synthesizer_param = (pv_orca_synthesizer_param_t *) &PV_ORCA_SYNTHESIZER_PARAM,
         };
 
         status = pv_serialized_serialize_file(
-            pv_orca_internal_param_serialized_vtable(),
-            ypu,
-            false,
-            f,
-            &orca_param);
+                pv_orca_internal_param_serialized_vtable(),
+                ypu,
+                false,
+                f,
+                &orca_param);
         if (status != PV_STATUS_SUCCESS) {
             LOG_ERROR("orca param serialization failed with `%s`", pv_status_to_string(status));
             exit(EXIT_FAILURE);
@@ -121,11 +121,11 @@ int main(int argc, char *argv[]) {
     }
 
     status = pv_serialized_serialize_file(
-        pv_language_info_serialized_vtable(),
-        NULL,
-        true,
-        f,
-        language_info_normalizer);
+            pv_language_info_serialized_vtable(),
+            NULL,
+            true,
+            f,
+            language_info_normalizer);
     pv_language_info_delete(language_info_normalizer);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to write language info to '%s'", output_path);
@@ -134,17 +134,16 @@ int main(int argc, char *argv[]) {
     }
 
     pv_offline_token_classifier_param_serialized_context_t hippo_context = {
-        .ypu = ypu,
-        .product = PV_HIPPO_MAGIC_TOKEN,
-        .version = PV_HIPPO_VERSION
-    };
+            .ypu = ypu,
+            .product = PV_HIPPO_MAGIC_TOKEN,
+            .version = PV_HIPPO_VERSION};
 
     status = pv_serialized_serialize_file(
-        pv_offline_token_classifier_param_serialized_vtable(),
-        &hippo_context,
-        false,
-        f,
-        PV_HIPPO_CLASSIFIER());
+            pv_offline_token_classifier_param_serialized_vtable(),
+            &hippo_context,
+            false,
+            f,
+            PV_HIPPO_CLASSIFIER());
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to serialize hippo to '%s'", output_path);
         (void) fclose(f);
@@ -161,11 +160,11 @@ int main(int argc, char *argv[]) {
     }
 
     status = pv_serialized_serialize_file(
-        pv_language_info_serialized_vtable(),
-        NULL,
-        true,
-        f,
-        language_info_hippo);
+            pv_language_info_serialized_vtable(),
+            NULL,
+            true,
+            f,
+            language_info_hippo);
     pv_language_info_delete(language_info_hippo);
     if (status != PV_STATUS_SUCCESS) {
         LOG_ERROR("failed to write language info to '%s'", output_path);

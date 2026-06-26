@@ -441,9 +441,9 @@ static void test_pv_orca_synthesizer_forward_lfm_vf_estimator_failure(void) {
 static void test_pv_orca_synthesizer_forward_vocoder_failure(void) {
     PV_SET_MOCK_RETURN_VAL(pv_orca_stream_state_update_n_domain, PV_STATUS_SUCCESS)
     PV_SET_MOCK_CUSTOM_FUNC(pv_orca_stream_state_update_t_domain, pv_orca_stream_state_update_t_domain_mock)
-    PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_forward, PV_STATUS_OUT_OF_MEMORY)
+    PV_SET_MOCK_RETURN_VAL(pv_orca_vocoder_forward_with_cache, PV_STATUS_OUT_OF_MEMORY)
 
-    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_vocoder_forward` failed with status `OUT_OF_MEMORY`\\.");
+    test_pv_orca_synthesizer_forward_helper(&default_forward_args, PV_STATUS_OUT_OF_MEMORY, pv_test_function_hash_regex(), "`pv_orca_vocoder_forward_with_cache` failed with status `OUT_OF_MEMORY`\\.");
 }
 
 static void test_pv_orca_synthesizer_param_load_helper(

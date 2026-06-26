@@ -136,7 +136,7 @@ bool PV_MOCKABLE(pv_orca_duration_predictor_param_is_equal)(
     if (!pv_rope_transformer_param_is_equal(
                 object->transformer_param,
                 other->transformer_param)) {
-            return false;
+        return false;
     }
 
     if (!pv_cnn_param_is_equal(
@@ -188,7 +188,8 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_proj_param,
-            &(o->conv_proj));
+            &(o->conv_proj),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -256,7 +257,7 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_rope_transformer_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
+        pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
         return status;
     }
 
@@ -301,7 +302,7 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
                 pv_status_to_string(status));
         pv_ypu_buffer_release(ypu, buffer_d_log_std_transposed_ypu);
         pv_ypu_buffer_release(ypu, buffer_d_log_std_ypu);
-    	pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
+        pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
         return status;
     }
 
@@ -313,7 +314,7 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
             .n = n,
             .k = (int32_t) sizeof(float),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -330,7 +331,7 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
                         pv_status_to_string(status)));
         pv_ypu_buffer_release(ypu, buffer_d_log_std_transposed_ypu);
         pv_ypu_buffer_release(ypu, buffer_d_log_std_ypu);
-    	pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
+        pv_ypu_buffer_release(ypu, buffer_hidden_ypu);
         return status;
     }
 
@@ -339,7 +340,7 @@ pv_status_t PV_MOCKABLE(pv_orca_duration_predictor_forward)(
             .input = buffer_d_log_std_transposed_ypu,
             .length = n,
             .output_offset = 0,
-            .input_offset = n * (int32_t) sizeof(float)
+            .input_offset = n * (int32_t) sizeof(float),
     };
     status = pv_ypu_operator_execute(
             ypu,

@@ -46,6 +46,10 @@ void PV_MOCKABLE(pv_vocos_backbone_delete)(
         pv_ypu_t *ypu,
         pv_vocos_backbone_t *object);
 
+pv_status_t PV_MOCKABLE(pv_vocos_backbone_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_vocos_backbone_t *object);
+
 int32_t PV_MOCKABLE(pv_vocos_backbone_output_channels)(const pv_vocos_backbone_t *object);
 
 pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward)(
@@ -54,5 +58,14 @@ pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward)(
         int32_t n,
         pv_ypu_mem_t *x,
         pv_ypu_mem_t *y);
+
+pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_vocos_backbone_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x,
+        pv_ypu_mem_t *y,
+        bool is_flush,
+        int32_t *n_out);
 
 #endif // PV_VOCOS_BACKBONE_H

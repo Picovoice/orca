@@ -1,5 +1,5 @@
-#include "core/picovoice.h"
 #include "orca/pv_orca_fft.h"
+#include "core/picovoice.h"
 #include "orca/pv_orca_istft.h"
 
 #ifdef __PV_MOCKS__

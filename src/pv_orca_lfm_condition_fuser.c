@@ -172,7 +172,8 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_1_param,
-            &(o->conv_1));
+            &(o->conv_1),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -184,7 +185,8 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_2_param,
-            &(o->conv_2));
+            &(o->conv_2),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -293,7 +295,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_forward)(
             return status;
         }
     }
-    
+
     const int32_t num_intermediate_channels = object->param->conv_1_param->output_channels;
     pv_ypu_mem_t *buffer_intermediate_ypu = pv_ypu_buffer_get(
             ypu,
@@ -330,7 +332,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_condition_fuser_forward)(
             .input = buffer_intermediate_ypu,
             .length = n * num_intermediate_channels,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

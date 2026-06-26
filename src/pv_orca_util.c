@@ -51,9 +51,9 @@ pv_status_t PV_MOCKABLE(pv_orca_util_sample_standard_gaussian_with_temperature)(
 
     if (temperature == 0) {
         pv_ypu_op_memset_args_t memset_args = {
-            .output = y_ypu_mem,
-            .size_bytes = n * num_channels * ((int32_t) sizeof(float)),
-            .output_offset = 0,
+                .output = y_ypu_mem,
+                .size_bytes = n * num_channels * ((int32_t) sizeof(float)),
+                .output_offset = 0,
         };
         return pv_ypu_operator_execute(
                 ypu,
@@ -125,8 +125,8 @@ float PV_MOCKABLE(pv_orca_util_rand_normal_sample)(pv_orca_util_rand_normal_t *o
     float ru2 = 0.0f;
     float rr = 0.0f;
     while (rr >= 1.0 || rr == 0.0) {
-        ru1 =  (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
-        ru2 =  (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
+        ru1 = (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
+        ru2 = (2.0f * (float) pv_rand_uniform(state)) - 1.0f;
         rr = ru1 * ru1 + ru2 * ru2;
     }
 

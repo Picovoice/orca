@@ -115,7 +115,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_param_load)(
     }
 
     memset(p, 0, sizeof(pv_cnn_param_t));
-    
+
     size_t count = pv_fread(&(p->input_channels), sizeof(int32_t), 1, f);
     if (count != 1) {
         pv_cnn_param_delete(ypu, p);
@@ -551,6 +551,9 @@ struct pv_cnn {
     pv_ypu_mem_t *bias;
     pv_ypu_mem_t *transposed_weight;
     pv_ypu_mem_t *int8_inverse_scale;
+
+    int32_t cache_length;
+    pv_ypu_mem_t *cache;
 };
 
 int32_t PV_MOCKABLE(pv_cnn_output_channels)(const pv_cnn_t *object) {
@@ -589,6 +592,12 @@ int32_t PV_MOCKABLE(pv_cnn_stride)(const pv_cnn_t *object) {
     return object->param->stride;
 }
 
+int32_t PV_MOCKABLE(pv_cnn_cache_length)(const pv_cnn_t *object) {
+    PV_ASSERT(object);
+
+    return object->cache_length;
+}
+
 pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_get_weight)(const pv_cnn_t *object) {
     PV_ASSERT(object);
 
@@ -602,7 +611,8 @@ pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_get_weight)(const pv_cnn_t *object) {
 pv_status_t PV_MOCKABLE(pv_cnn_init)(
         pv_ypu_t *ypu,
         const pv_cnn_param_t *param,
-        pv_cnn_t **object) {
+        pv_cnn_t **object,
+        bool should_cache) {
     PV_ASSERT(ypu);
     PV_ASSERT(param);
 
@@ -666,6 +676,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
     int32_t in_channels = param->input_channels;
     int32_t out_channels = param->output_channels;
     int32_t kernel_size = param->kernel_size;
+    int32_t padding = pv_cnn_padding(o);
 
     if (param->kernel_size > 1) {
         o->transposed_weight = pv_ypu_mem_alloc(
@@ -697,18 +708,57 @@ pv_status_t PV_MOCKABLE(pv_cnn_init)(
                 PV_YPU_OPERATOR_TRANSPOSE,
                 &args);
         if (status != PV_STATUS_SUCCESS) {
-        PV_ERROR_REPORT(
-                &pv_error_msg_ypu_operator_fail,
-                PV_ERROR_ARGS_PUBLIC("execute"),
-                PV_ERROR_ARGS_PRIVATE(
-                        "execute",
-                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_TRANSPOSE),
-                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
-                        pv_status_to_string(status)));
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_TRANSPOSE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
             return status;
         }
     } else {
         o->transposed_weight = NULL;
+    }
+
+    if (should_cache) {
+        o->cache = pv_ypu_mem_alloc(
+                ypu,
+                2 * padding * in_channels * (int32_t) sizeof(float),
+                PV_YPU_DEVICE_MEM_FLAG_NONE);
+        if (!o->cache) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_device_alloc,
+                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                    PV_ERROR_ARGS_PRIVATE("o->cache"));
+            return PV_STATUS_OUT_OF_MEMORY;
+        }
+        o->cache_length = padding;
+
+        pv_ypu_op_memset_args_t args = {
+                .output = o->cache,
+                .size_bytes = 2 * padding * in_channels * (int32_t) sizeof(float),
+                0,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMSET,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    } else {
+        o->cache = NULL;
+        o->cache_length = 0;
     }
 
     *object = o;
@@ -729,9 +779,45 @@ void PV_MOCKABLE(pv_cnn_delete)(
         pv_ypu_mem_free(ypu, object->weight);
         pv_ypu_mem_free(ypu, object->bias);
         pv_ypu_mem_free(ypu, object->int8_inverse_scale);
+        pv_ypu_mem_free(ypu, object->cache);
 
         pv_ypu_host_free(ypu, object);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_cnn_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(object->cache);
+
+    int32_t in_channels = pv_cnn_input_channels(object);
+    int32_t padding = pv_cnn_padding(object);
+    object->cache_length = padding;
+
+    pv_ypu_op_memset_args_t args = {
+            .output = object->cache,
+            .size_bytes = 2 * padding * in_channels * (int32_t) sizeof(float),
+            0,
+    };
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        return status;
+    }
+
+    return PV_STATUS_SUCCESS;
 }
 
 pv_status_t PV_MOCKABLE(pv_cnn_forward)(
@@ -795,7 +881,6 @@ pv_status_t PV_MOCKABLE(pv_cnn_forward)(
                 for (int32_t ic = 0; ic < in_channels; ic++) {
                     sum += x_padded[frame_offset_in + kernel_offset + ic] * (((float) *(w++)) / 128.0f);
                 }
-
             }
 
             buffer[frame_offset_out + oc] = sum;
@@ -819,7 +904,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_forward)(
         free(x_padded);
         return status;
     }
-    
+
     free(buffer);
     free(x_padded);
 
@@ -982,6 +1067,468 @@ pv_status_t PV_MOCKABLE(pv_cnn_forward)(
     return PV_STATUS_SUCCESS;
 }
 
+pv_status_t PV_MOCKABLE(pv_cnn_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset,
+        bool is_flush,
+        int32_t *n_out) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(n);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(y_ypu);
+    PV_ASSERT(n_out);
+    PV_ASSERT(object->cache);
+
+    const int32_t in_channels = pv_cnn_input_channels(object);
+    const int32_t out_channels = pv_cnn_output_channels(object);
+    const int32_t kernel_size = pv_cnn_kernel_size(object);
+    const int32_t padding = pv_cnn_padding(object);
+
+    int32_t n_extended = n;
+    n_extended += object->cache_length;
+    if (is_flush) {
+        n_extended += padding;
+    }
+
+    int32_t output_length = n_extended - 2 * padding;
+    *n_out = output_length;
+
+#ifdef __ORCA_FLOAT_MODE__
+
+    float *y = (float *) (pv_ypu_mem_get_host_view(ypu, y_ypu, false) + y_offset);
+    float *int8_inverse_scale = (float *) pv_ypu_mem_get_host_view(ypu, object->int8_inverse_scale, false);
+    float *bias = (float *) pv_ypu_mem_get_host_view(ypu, object->bias, false);
+    q7_t *weight = (q7_t *) pv_ypu_mem_get_host_view(ypu, pv_cnn_get_weight(object), false);
+
+    float *x_extended = calloc(
+            n_extended * in_channels,
+            sizeof(float));
+    if (!x_extended) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    if (object->cache_length > 0) {
+        pv_status_t status = pv_ypu_mem_copy_from(
+                ypu,
+                object->cache,
+                x_extended,
+                0,
+                object->cache_length * in_channels * (int32_t) sizeof(float));
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    }
+    if (n > 0) {
+        pv_status_t status = pv_ypu_mem_copy_from(
+                ypu,
+                x_ypu,
+                x_extended + object->cache_length * in_channels,
+                x_offset,
+                n * in_channels * (int32_t) sizeof(float));
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    }
+
+    int32_t input_cache_append_length = pv_min_int32(2 * padding, n);
+    int32_t old_cache_append_length = pv_min_int32(2 * padding - input_cache_append_length, object->cache_length);
+
+    if (old_cache_append_length > 0) {
+        pv_ypu_op_memmove_args_t args = {
+                .output = object->cache,
+                .batch_size = 1,
+                .size_bytes = object->cache_length * in_channels * (int32_t) sizeof(float),
+                .input_offset = (object->cache_length - old_cache_append_length) * in_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMMOVE,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMMOVE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    }
+
+    if (input_cache_append_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = object->cache,
+                .input = x_ypu,
+                .size_bytes = input_cache_append_length * in_channels * (int32_t) sizeof(float),
+                .output_offset = old_cache_append_length * in_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (n - input_cache_append_length) * in_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    }
+
+    object->cache_length = input_cache_append_length + old_cache_append_length;
+
+    float *buffer = calloc(
+            output_length * out_channels,
+            sizeof(float));
+    if (!buffer) {
+        free(x_extended);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    for (int32_t frame = 0; frame < output_length; frame++) {
+        const q7_t *w = weight;
+        const int32_t frame_offset_out = frame * out_channels;
+        const int32_t frame_offset_in = frame * in_channels;
+
+        for (int32_t oc = 0; oc < out_channels; oc++) {
+
+            float sum = 0;
+            for (int32_t ke = 0; ke < kernel_size; ke++) {
+                const int32_t kernel_offset = ke * in_channels;
+
+                for (int32_t ic = 0; ic < in_channels; ic++) {
+                    sum += x_extended[frame_offset_in + kernel_offset + ic] * (((float) *(w++)) / 128.0f);
+                }
+            }
+
+            buffer[frame_offset_out + oc] = sum;
+        }
+    }
+
+    pv_status_t status = pv_affine_execute_float(
+            output_length,
+            out_channels,
+            buffer,
+            1.0f,
+            0.0f,
+            int8_inverse_scale,
+            bias,
+            y);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_affine_execute_float,
+                pv_status_to_string(status));
+        free(buffer);
+        free(x_extended);
+        return status;
+    }
+
+    free(buffer);
+    free(x_extended);
+
+#else
+
+    pv_ypu_mem_t *x_q510 = pv_ypu_buffer_get(
+            ypu,
+            (n_extended * in_channels) * (int32_t) sizeof(q510_t),
+            false);
+    if (!x_q510) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("x_q510"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *inverse_scale = pv_ypu_buffer_get(
+            ypu,
+            sizeof(float),
+            false);
+    if (!inverse_scale) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("inverse_scale"));
+        pv_ypu_buffer_release(ypu, x_q510);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *x_extended = pv_ypu_buffer_get(
+            ypu,
+            (n_extended * in_channels) * (int32_t) sizeof(float),
+            false);
+    if (!x_extended) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("x_extended"));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args_memset = {
+            .output = x_extended,
+            .size_bytes = (n_extended * in_channels) * (int32_t) sizeof(float),
+            .output_offset = 0,
+    };
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args_memset);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, x_extended);
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return status;
+    }
+
+    if (object->cache_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = x_extended,
+                .input = object->cache,
+                .size_bytes = object->cache_length * in_channels * (int32_t) sizeof(float),
+                .output_offset = 0,
+                .input_offset = 0,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+    if (n > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = x_extended,
+                .input = x_ypu,
+                .size_bytes = n * in_channels * (int32_t) sizeof(float),
+                .output_offset = object->cache_length * in_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    int32_t input_cache_append_length = pv_min_int32(2 * padding, n);
+    int32_t old_cache_append_length = pv_min_int32(2 * padding - input_cache_append_length, object->cache_length);
+
+    if (old_cache_append_length > 0) {
+        pv_ypu_op_memmove_args_t args = {
+                .output = object->cache,
+                .batch_size = 1,
+                .size_bytes = object->cache_length * in_channels * (int32_t) sizeof(float),
+                .input_offset = (object->cache_length - old_cache_append_length) * in_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMMOVE,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMMOVE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    if (input_cache_append_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = object->cache,
+                .input = x_ypu,
+                .size_bytes = input_cache_append_length * in_channels * (int32_t) sizeof(float),
+                .output_offset = old_cache_append_length * in_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (n - input_cache_append_length) * in_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    object->cache_length = input_cache_append_length + old_cache_append_length;
+
+    pv_ypu_op_quantize_args_t args_quantize_q510 = {
+            .output = x_q510,
+            .scale = inverse_scale,
+            .input = x_extended,
+            .m = 1,
+            .n = n_extended * in_channels,
+            .output_offset = 0,
+            .scale_offset = 0,
+            .input_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_QUANTIZE_Q510,
+            &args_quantize_q510);
+    pv_ypu_buffer_release(ypu, x_extended);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_QUANTIZE_Q510),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return status;
+    }
+
+    pv_ypu_op_conv1d_args_t args_conv1d = {
+            .output = y_ypu,
+            .lhs = pv_cnn_get_weight(object),
+            .rhs = x_q510,
+            .n = output_length,
+            .out_channels = out_channels,
+            .in_channels = in_channels,
+            .kernel_size = kernel_size,
+            .output_offset = y_offset,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_Q1417_Q7_Q510,
+            &args_conv1d);
+    pv_ypu_buffer_release(ypu, x_q510);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_CONV1D_Q1417_Q7_Q510),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args_convert_f32_i32 = {
+            .output = y_ypu,
+            .input = y_ypu,
+            .length = output_length * out_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_I32,
+            &args_convert_f32_i32);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_CONVERT_F32_I32),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        return status;
+    }
+
+    status = pv_affine_execute_from_q1417_to_float(
+            ypu,
+            output_length,
+            out_channels,
+            y_ypu,
+            inverse_scale,
+            object->int8_inverse_scale,
+            object->bias,
+            y_ypu,
+            y_offset,
+            0,
+            0,
+            0,
+            y_offset);
+    pv_ypu_buffer_release(ypu, inverse_scale);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_affine_execute_from_q1417_to_float,
+                pv_status_to_string(status));
+        return status;
+    }
+
+#endif
+
+    return PV_STATUS_SUCCESS;
+}
+
 struct pv_cnn_depthwise {
     const pv_cnn_depthwise_param_t *param;
 
@@ -989,12 +1536,16 @@ struct pv_cnn_depthwise {
     pv_ypu_mem_t *bias;
     pv_ypu_mem_t *transposed_weight;
     pv_ypu_mem_t *int8_inverse_scale;
+
+    int32_t cache_length;
+    pv_ypu_mem_t *cache;
 };
 
 pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
         pv_ypu_t *ypu,
         const pv_cnn_depthwise_param_t *param,
-        pv_cnn_depthwise_t **object) {
+        pv_cnn_depthwise_t **object,
+        bool should_cache) {
     PV_ASSERT(ypu);
     PV_ASSERT(param);
     PV_ASSERT(object);
@@ -1046,6 +1597,7 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
 
     int32_t kernel_size = pv_cnn_depthwise_kernel_size(o);
     int32_t num_channels = pv_cnn_depthwise_num_channels(o);
+    int32_t padding = pv_cnn_depthwise_padding(o);
 
     if (kernel_size > 1) {
         o->transposed_weight = pv_ypu_mem_alloc(
@@ -1076,19 +1628,58 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_init)(
                 PV_YPU_OPERATOR_TRANSPOSE,
                 &args);
         if (status != PV_STATUS_SUCCESS) {
-        PV_ERROR_REPORT(
-                &pv_error_msg_ypu_operator_fail,
-                PV_ERROR_ARGS_PUBLIC("execute"),
-                PV_ERROR_ARGS_PRIVATE(
-                        "execute",
-                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_TRANSPOSE),
-                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
-                        pv_status_to_string(status)));
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_TRANSPOSE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
             pv_cnn_depthwise_delete(ypu, o);
             return status;
         }
     } else {
         o->transposed_weight = NULL;
+    }
+
+    if (should_cache) {
+        o->cache = pv_ypu_mem_alloc(
+                ypu,
+                2 * padding * num_channels * (int32_t) sizeof(float),
+                PV_YPU_DEVICE_MEM_FLAG_NONE);
+        if (!o->cache) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_device_alloc,
+                    PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                    PV_ERROR_ARGS_PRIVATE("o->cache"));
+            return PV_STATUS_OUT_OF_MEMORY;
+        }
+        o->cache_length = padding;
+
+        pv_ypu_op_memset_args_t args = {
+                .output = o->cache,
+                .size_bytes = 2 * padding * num_channels * (int32_t) sizeof(float),
+                0,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMSET,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    } else {
+        o->cache = NULL;
+        o->cache_length = 0;
     }
 
     *object = o;
@@ -1109,9 +1700,51 @@ void PV_MOCKABLE(pv_cnn_depthwise_delete)(
         pv_ypu_mem_free(ypu, object->weight);
         pv_ypu_mem_free(ypu, object->bias);
         pv_ypu_mem_free(ypu, object->int8_inverse_scale);
+        pv_ypu_mem_free(ypu, object->cache);
 
         pv_ypu_host_free(ypu, object);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_depthwise_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(object->cache);
+
+    int32_t num_channels = pv_cnn_depthwise_num_channels(object);
+    int32_t padding = pv_cnn_depthwise_padding(object);
+    object->cache_length = padding;
+
+    pv_ypu_op_memset_args_t args = {
+            .output = object->cache,
+            .size_bytes = 2 * padding * num_channels * (int32_t) sizeof(float),
+            0,
+    };
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        return status;
+    }
+
+    return PV_STATUS_SUCCESS;
+}
+
+int32_t PV_MOCKABLE(pv_cnn_depthwise_padding)(const pv_cnn_depthwise_t *object) {
+    PV_ASSERT(object);
+
+    return object->param->padding;
 }
 
 int32_t PV_MOCKABLE(pv_cnn_depthwise_num_channels)(const pv_cnn_depthwise_t *object) {
@@ -1124,6 +1757,12 @@ int32_t PV_MOCKABLE(pv_cnn_depthwise_kernel_size)(const pv_cnn_depthwise_t *obje
     PV_ASSERT(object);
 
     return object->param->kernel_size;
+}
+
+int32_t PV_MOCKABLE(pv_cnn_depthwise_cache_length)(const pv_cnn_depthwise_t *object) {
+    PV_ASSERT(object);
+
+    return object->cache_length;
 }
 
 pv_ypu_mem_t *PV_MOCKABLE(pv_cnn_depthwise_get_weight)(const pv_cnn_depthwise_t *object) {
@@ -1375,6 +2014,478 @@ pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward)(
     status = pv_affine_execute_from_q1417_to_float(
             ypu,
             n,
+            num_channels,
+            y_ypu,
+            inverse_scale,
+            object->int8_inverse_scale,
+            object->bias,
+            y_ypu,
+            y_offset,
+            0,
+            0,
+            0,
+            y_offset);
+    pv_ypu_buffer_release(ypu, inverse_scale);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_affine_execute_from_q1417_to_float,
+                pv_status_to_string(status));
+        return status;
+    }
+
+#endif
+
+    return PV_STATUS_SUCCESS;
+}
+
+pv_status_t PV_MOCKABLE(pv_cnn_depthwise_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_cnn_depthwise_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        int32_t x_offset,
+        int32_t y_offset,
+        bool is_flush,
+        int32_t *n_out) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(n > 0);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(y_ypu);
+    PV_ASSERT(n_out);
+
+    int32_t num_channels = pv_cnn_depthwise_num_channels(object);
+    int32_t kernel_size = object->param->kernel_size;
+    int32_t padding = object->param->padding;
+
+    int32_t n_extended = n;
+    n_extended += object->cache_length;
+    if (is_flush) {
+        n_extended += padding;
+    }
+
+    int32_t output_length = n_extended - 2 * padding;
+    *n_out = output_length;
+
+    int32_t input_cache_append_length = pv_min_int32(2 * padding, n);
+    int32_t old_cache_append_length = pv_min_int32(2 * padding - input_cache_append_length, object->cache_length);
+
+#ifdef __ORCA_FLOAT_MODE__
+
+    float *y = (float *) (pv_ypu_mem_get_host_view(ypu, y_ypu, false) + y_offset);
+    float *int8_inverse_scale = (float *) pv_ypu_mem_get_host_view(ypu, object->int8_inverse_scale, false);
+    float *bias = (float *) pv_ypu_mem_get_host_view(ypu, object->bias, false);
+    q7_t *weight = (q7_t *) pv_ypu_mem_get_host_view(ypu, pv_cnn_depthwise_get_weight(object), false);
+
+    float *x_extended = calloc(
+            n_extended * num_channels,
+            sizeof(float));
+    if (!x_extended) {
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    if (object->cache_length > 0) {
+        pv_status_t status = pv_ypu_mem_copy_from(
+                ypu,
+                object->cache,
+                x_extended,
+                0,
+                object->cache_length * num_channels * (int32_t) sizeof(float));
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    }
+    if (n > 0) {
+        pv_status_t status = pv_ypu_mem_copy_from(
+                ypu,
+                x_ypu,
+                x_extended + object->cache_length * num_channels,
+                x_offset,
+                n * num_channels * (int32_t) sizeof(float));
+        if (status != PV_STATUS_SUCCESS) {
+            return status;
+        }
+    }
+
+    if (old_cache_append_length > 0) {
+        pv_ypu_op_memmove_args_t args = {
+                .output = object->cache,
+                .batch_size = 1,
+                .size_bytes = object->cache_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = (object->cache_length - old_cache_append_length) * num_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMMOVE,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMMOVE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    }
+
+    if (input_cache_append_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = object->cache,
+                .input = x_ypu,
+                .size_bytes = input_cache_append_length * num_channels * (int32_t) sizeof(float),
+                .output_offset = old_cache_append_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (n - input_cache_append_length) * num_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            return status;
+        }
+    }
+
+    object->cache_length = input_cache_append_length + old_cache_append_length;
+
+    float *buffer = calloc(
+            output_length * num_channels,
+            sizeof(float));
+    if (!buffer) {
+        free(x_extended);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    for (int32_t frame = 0; frame < output_length; frame++) {
+        const int32_t frame_offset = frame * num_channels;
+        const q7_t *w = weight;
+
+        for (int32_t ke = 0; ke < kernel_size; ke++) {
+            const int32_t channel_offset = ke * num_channels;
+
+            for (int32_t nc = 0; nc < num_channels; nc++) {
+                buffer[frame_offset + nc] += x_extended[frame_offset + channel_offset + nc] * (((float) *(w++)) / 128.0f);
+            }
+        }
+    }
+
+    pv_status_t status = pv_affine_execute_float(
+            output_length,
+            num_channels,
+            buffer,
+            1.0f,
+            0.0f,
+            int8_inverse_scale,
+            bias,
+            y);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_affine_execute_float,
+                pv_status_to_string(status));
+        free(x_extended);
+        free(buffer);
+        return status;
+    }
+
+    free(x_extended);
+    free(buffer);
+
+#else
+
+    pv_ypu_mem_t *x_q510 = pv_ypu_buffer_get(
+            ypu,
+            n_extended * num_channels * (int32_t) sizeof(q510_t),
+            false);
+    if (!x_q510) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("x_q510"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_mem_t *inverse_scale = pv_ypu_buffer_get(
+            ypu,
+            sizeof(float),
+            false);
+    if (!inverse_scale) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("inverse_scale"));
+        pv_ypu_buffer_release(ypu, x_q510);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args_memset1 = {
+            .output = y_ypu,
+            .size_bytes = n * num_channels * (int32_t) sizeof(float),
+            .output_offset = y_offset,
+    };
+    pv_status_t status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args_memset1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return status;
+    }
+
+    pv_ypu_mem_t *x_extended = pv_ypu_buffer_get(
+            ypu,
+            (n_extended * num_channels) * (int32_t) sizeof(float),
+            false);
+    if (!x_extended) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("x_extended"));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    pv_ypu_op_memset_args_t args_memset = {
+            .output = x_extended,
+            .size_bytes = (n_extended * num_channels) * (int32_t) sizeof(float),
+            .output_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_MEMSET,
+            &args_memset);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMSET),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, x_extended);
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return status;
+    }
+
+    if (object->cache_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = x_extended,
+                .input = object->cache,
+                .size_bytes = object->cache_length * num_channels * (int32_t) sizeof(float),
+                .output_offset = 0,
+                .input_offset = 0,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+    if (n > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = x_extended,
+                .input = x_ypu,
+                .size_bytes = n * num_channels * (int32_t) sizeof(float),
+                .output_offset = object->cache_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset,
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    if (old_cache_append_length > 0) {
+        pv_ypu_op_memmove_args_t args = {
+                .output = object->cache,
+                .batch_size = 1,
+                .size_bytes = object->cache_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = (object->cache_length - old_cache_append_length) * num_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMMOVE,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMMOVE),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    if (input_cache_append_length > 0) {
+        pv_ypu_op_memcpy_args_t args = {
+                .output = object->cache,
+                .input = x_ypu,
+                .size_bytes = input_cache_append_length * num_channels * (int32_t) sizeof(float),
+                .output_offset = old_cache_append_length * num_channels * (int32_t) sizeof(float),
+                .input_offset = x_offset + (n - input_cache_append_length) * num_channels * (int32_t) sizeof(float),
+        };
+        pv_status_t status = pv_ypu_operator_execute(
+                ypu,
+                PV_YPU_OPERATOR_MEMCPY,
+                &args);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT(
+                    &pv_error_msg_ypu_operator_fail,
+                    PV_ERROR_ARGS_PUBLIC("execute"),
+                    PV_ERROR_ARGS_PRIVATE(
+                            "execute",
+                            pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_MEMCPY),
+                            pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                            pv_status_to_string(status)));
+            pv_ypu_buffer_release(ypu, x_extended);
+            pv_ypu_buffer_release(ypu, inverse_scale);
+            pv_ypu_buffer_release(ypu, x_q510);
+            return status;
+        }
+    }
+
+    object->cache_length = input_cache_append_length + old_cache_append_length;
+
+    pv_ypu_op_quantize_args_t args_quantize_q510 = {
+            .output = x_q510,
+            .scale = inverse_scale,
+            .input = x_extended,
+            .m = 1,
+            .n = n_extended * num_channels,
+            .output_offset = 0,
+            .scale_offset = 0,
+            .input_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_QUANTIZE_Q510,
+            &args_quantize_q510);
+    pv_ypu_buffer_release(ypu, x_extended);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_QUANTIZE_Q510),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        pv_ypu_buffer_release(ypu, x_q510);
+        return status;
+    }
+
+    pv_ypu_op_conv1d_depthwise_args_t args_conv1d = {
+            .output = y_ypu,
+            .lhs = pv_cnn_depthwise_get_weight(object),
+            .rhs = x_q510,
+            .n = output_length,
+            .num_channels = num_channels,
+            .kernel_size = kernel_size,
+            .output_offset = y_offset,
+            .lhs_offset = 0,
+            .rhs_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONV1D_DEPTHWISE_Q1417_Q7_Q510,
+            &args_conv1d);
+    pv_ypu_buffer_release(ypu, x_q510);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_CONV1D_DEPTHWISE_Q1417_Q7_Q510),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t args_convert_f32_i32 = {
+            .output = y_ypu,
+            .input = y_ypu,
+            .length = output_length * num_channels,
+            .output_offset = y_offset,
+            .input_offset = y_offset,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_CONVERT_F32_I32,
+            &args_convert_f32_i32);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_CONVERT_F32_I32),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, inverse_scale);
+        return status;
+    }
+
+    status = pv_affine_execute_from_q1417_to_float(
+            ypu,
+            output_length,
             num_channels,
             y_ypu,
             inverse_scale,

@@ -183,7 +183,7 @@ bool PV_MOCKABLE(pv_orca_gaussian_upsampler_param_is_equal)(
     if (!pv_rope_transformer_param_is_equal(
                 object->transformer_param,
                 other->transformer_param)) {
-            return false;
+        return false;
     }
 
     return true;
@@ -293,7 +293,7 @@ pv_status_t PV_MOCKABLE(pv_orca_gaussian_upsampler_attention)(
             .n = n,
             .k = dimension,
             .num_lookaheads = num_lookaheads,
-            .num_lookbacks = num_lookbacks
+            .num_lookbacks = num_lookbacks,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
@@ -363,7 +363,7 @@ pv_status_t PV_MOCKABLE(pv_orca_gaussian_upsampler_forward)(
     float duration_cumulative_sum = 0.0f;
     for (int32_t i = 0; i < n; i++) {
         buffer_gaussian_center[i] = duration_cumulative_sum + (((float) d[i]) / 2.0f);
-        duration_cumulative_sum += ((float ) d[i]);
+        duration_cumulative_sum += ((float) d[i]);
     }
 
     pv_ypu_mem_release_host_view(ypu, buffer_gaussian_center_ypu, true);
