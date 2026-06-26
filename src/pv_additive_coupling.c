@@ -196,11 +196,12 @@ pv_status_t PV_MOCKABLE(pv_additive_coupling_init)(
     memset(o, 0, sizeof(pv_additive_coupling_t));
 
     o->param = param;
-    
+
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_pre_param,
-            &(o->conv_pre));
+            &(o->conv_pre),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -224,7 +225,8 @@ pv_status_t PV_MOCKABLE(pv_additive_coupling_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_post_param,
-            &(o->conv_post));
+            &(o->conv_post),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -293,7 +295,7 @@ pv_status_t PV_MOCKABLE(pv_additive_coupling_forward)(
             .n = n,
             .k = half_channels * (int32_t) sizeof(float),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
@@ -440,7 +442,7 @@ pv_status_t PV_MOCKABLE(pv_additive_coupling_forward)(
             .n = ADDITIVE_COUPLING_NUM_SPLITS,
             .k = half_channels * (int32_t) sizeof(float),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

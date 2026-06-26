@@ -611,8 +611,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "prior_encoder_film_generator",
-                    pv_status_to_string(status)));
+                        "prior_encoder_film_generator",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -626,8 +626,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "prior_encoder_flow",
-                    pv_status_to_string(status)));
+                        "prior_encoder_flow",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -641,8 +641,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "gaussian_upsampler",
-                    pv_status_to_string(status)));
+                        "gaussian_upsampler",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -656,8 +656,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "duration_predictor",
-                    pv_status_to_string(status)));
+                        "duration_predictor",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -671,8 +671,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "lfm_film_generator",
-                    pv_status_to_string(status)));
+                        "lfm_film_generator",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -686,8 +686,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "lfm_condition_fuser",
-                    pv_status_to_string(status)));
+                        "lfm_condition_fuser",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -701,8 +701,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "lfm_vf_estimator",
-                    pv_status_to_string(status)));
+                        "lfm_vf_estimator",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -716,8 +716,8 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
                 &pv_error_msg_module_init_internal,
                 PV_ERROR_ARGS_PUBLIC_EMPTY(),
                 PV_ERROR_ARGS_PRIVATE(
-                    "vocoder",
-                    pv_status_to_string(status)));
+                        "vocoder",
+                        pv_status_to_string(status)));
         pv_orca_synthesizer_delete(ypu, o);
         return status;
     }
@@ -744,6 +744,15 @@ void PV_MOCKABLE(pv_orca_synthesizer_delete)(pv_ypu_t *ypu, pv_orca_synthesizer_
 
         pv_ypu_host_free(ypu, object);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_orca_synthesizer_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_synthesizer_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+
+    return pv_orca_vocoder_reset_cache(ypu, object->vocoder);
 }
 
 int32_t PV_MOCKABLE(pv_orca_synthesizer_sample_rate)(const pv_orca_synthesizer_t *object) {
@@ -1250,7 +1259,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
     int32_t lfm_offset = 0;
     if (state->status == PV_ORCA_STREAM_STATUS_ACTIVE) {
         T_to_lfm -= (pv_max_int32(state->T_domain_garbage_lookback_offset - state->config->lfm_vf_estimator_lookback - state->config->vocoder_lookback, 0) +
-                pv_max_int32(state->T_domain_garbage_lookahead_offset - state->config->lfm_vf_estimator_lookahead - state->config->vocoder_lookahead, 0));
+                     pv_max_int32(state->T_domain_garbage_lookahead_offset - state->config->lfm_vf_estimator_lookahead - state->config->vocoder_lookahead, 0));
         lfm_offset = (pv_max_int32(state->T_domain_garbage_lookback_offset - state->config->lfm_vf_estimator_lookback - state->config->vocoder_lookback, 0));
     }
 
@@ -1337,7 +1346,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
                 .scalar.f32 = DT,
                 .length = T_to_lfm * object->param->lfm_vf_estimator_param->out_dimension,
                 .output_offset = lfm_buffers_offset,
-                .input_offset = lfm_buffers_offset
+                .input_offset = lfm_buffers_offset,
         };
         status = pv_ypu_operator_execute(
                 ypu,
@@ -1403,7 +1412,13 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
                          object->param->lfm_vf_estimator_param->out_dimension;
     }
 
-    int32_t num_samples_internal = PV_ORCA_WINDOW_SHIFT * T_to_vocoder;
+    int32_t num_samples_internal = 0;
+    if ((state->status == PV_ORCA_STREAM_STATUS_ACTIVE) && (state->is_flush)) {
+        num_samples_internal = PV_ORCA_WINDOW_SHIFT * (T_to_vocoder + 13 * 2);
+    } else {
+        num_samples_internal = PV_ORCA_WINDOW_SHIFT * T_to_vocoder;
+    }
+
     int16_t *pcm_internal = malloc(num_samples_internal * sizeof(int16_t));
     if (!pcm_internal) {
         PV_ERROR_REPORT(
@@ -1415,17 +1430,20 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
         return PV_STATUS_OUT_OF_MEMORY;
     }
 
-    status = pv_orca_vocoder_forward(
+    int32_t num_pcm_internal_out = 0;
+    status = pv_orca_vocoder_forward_with_cache(
             ypu,
             object->vocoder,
             T_to_vocoder,
             buffer_lfm_x_t_ypu,
             pcm_internal,
-            vocoder_offset * (int32_t) sizeof(float));
+            vocoder_offset * (int32_t) sizeof(float),
+            (state->status == PV_ORCA_STREAM_STATUS_ACTIVE) ? state->is_flush : true,
+            &num_pcm_internal_out);
     pv_ypu_mem_free(ypu, buffer_lfm_x_t_raw_ypu);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                pv_orca_vocoder_forward,
+                pv_orca_vocoder_forward_with_cache,
                 pv_status_to_string(status));
         free(pcm_internal);
         pv_ypu_host_free(ypu, buffer_duration);
@@ -1436,12 +1454,7 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(
     int32_t pcm_offset = 0;
 
     if (state->status == PV_ORCA_STREAM_STATUS_ACTIVE) {
-        pv_orca_stream_state_update_pcm_chunk(
-                state,
-                PV_ORCA_WINDOW_SHIFT,
-                num_samples_internal,
-                &num_samples_chunk,
-                &pcm_offset);
+        num_samples_chunk = num_pcm_internal_out;
     } else {
         num_samples_chunk = num_samples_internal;
     }

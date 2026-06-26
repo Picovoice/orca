@@ -15,6 +15,8 @@
 
 #endif
 
+#define EXTRA_PAD (13 * 2)
+
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_orca_vocoder_param_serialize)(
@@ -250,12 +252,12 @@ bool PV_MOCKABLE(pv_orca_vocoder_param_is_equal)(
     }
 
     if (!pv_convnext_transposed_param_is_equal(
-            object->convnext_transposed_0_param, other->convnext_transposed_0_param)) {
+                object->convnext_transposed_0_param, other->convnext_transposed_0_param)) {
         return false;
     }
 
     if (!pv_convnext_transposed_param_is_equal(
-            object->convnext_transposed_1_param, other->convnext_transposed_1_param)) {
+                object->convnext_transposed_1_param, other->convnext_transposed_1_param)) {
         return false;
     }
 
@@ -319,7 +321,8 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_pre_param,
-            &(o->conv_pre));
+            &(o->conv_pre),
+            true);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -379,7 +382,8 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_proj_param,
-            &(o->conv_proj));
+            &(o->conv_proj),
+            true);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -422,6 +426,63 @@ void PV_MOCKABLE(pv_orca_vocoder_delete)(
 
         pv_ypu_host_free(ypu, object);
     }
+}
+
+pv_status_t PV_MOCKABLE(pv_orca_vocoder_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_vocoder_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+
+    pv_status_t status = pv_cnn_reset_cache(ypu, object->conv_pre);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_convnext_transposed_reset_cache(ypu, object->convnext_transposed_0);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_convnext_transposed_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_convnext_transposed_reset_cache(ypu, object->convnext_transposed_1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_convnext_transposed_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_vocos_backbone_reset_cache(ypu, object->backbone_0);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_vocos_backbone_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_vocos_backbone_reset_cache(ypu, object->backbone_1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_vocos_backbone_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    status = pv_cnn_reset_cache(ypu, object->conv_proj);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_reset_cache,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    return PV_STATUS_SUCCESS;
 }
 
 pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
@@ -474,7 +535,7 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
             .input = buffer_conv_pre_ypu,
             .length = n * pv_cnn_output_channels(object->conv_pre),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -556,7 +617,7 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
             .input = buffer_backbone_ypu,
             .length = n_upsampled_0 * pv_vocos_backbone_output_channels(object->backbone_0),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -651,6 +712,259 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         return status;
     }
     pv_ypu_mem_release_host_view(ypu, buffer_spec_all_subbands_ypu, false);
+
+    return PV_STATUS_SUCCESS;
+}
+
+pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_vocoder_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        int16_t *pcm,
+        int32_t x_offset,
+        bool is_flush,
+        int32_t *num_pcm_out) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(n);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(pcm);
+
+    int32_t n_upsampled_0 = pv_convnext_transposed_num_output_frames(object->convnext_transposed_0, n + EXTRA_PAD);
+    int32_t n_upsampled_1 = pv_convnext_transposed_num_output_frames(object->convnext_transposed_1, n_upsampled_0);
+
+    const int32_t num_channels_conv_pre = object->param->conv_pre_param->output_channels;
+    pv_ypu_mem_t *buffer_conv_pre_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_channels_conv_pre * (n + EXTRA_PAD) * ((int32_t) sizeof(float)),
+            false);
+    if (!buffer_conv_pre_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_conv_pre_ypu"));
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    int32_t n_conv_pre_out = 0;
+    pv_status_t status = pv_cnn_forward_with_cache(
+            ypu,
+            object->conv_pre,
+            n,
+            x_ypu,
+            buffer_conv_pre_ypu,
+            x_offset,
+            0,
+            is_flush,
+            &n_conv_pre_out);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t gelu_args0 = {
+            .output = buffer_conv_pre_ypu,
+            .input = buffer_conv_pre_ypu,
+            .length = n_conv_pre_out * pv_cnn_output_channels(object->conv_pre),
+            .output_offset = 0,
+            .input_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_GELU_APPROX,
+            &gelu_args0);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_GELU_APPROX),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
+        return status;
+    }
+
+    const int32_t num_channels_convnext_transposed = object->param->convnext_transposed_1_param->conv_2_param->output_channels;
+    pv_ypu_mem_t *buffer_convnext_transposed_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_channels_convnext_transposed * n_upsampled_1 * ((int32_t) sizeof(float)),
+            false);
+    if (!buffer_convnext_transposed_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_convnext_transposed_ypu"));
+        pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    int32_t n_convnext_transposed_0_out = 0;
+    status = pv_convnext_transposed_forward_with_cache(
+            ypu,
+            object->convnext_transposed_0,
+            n_conv_pre_out,
+            buffer_conv_pre_ypu,
+            buffer_convnext_transposed_ypu,
+            is_flush,
+            &n_convnext_transposed_0_out);
+    pv_ypu_buffer_release(ypu, buffer_conv_pre_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_convnext_transposed_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+        return status;
+    }
+
+    const int32_t num_channels_backbone = object->param->backbone_1_param->layer_norm_pre_param->num_channels;
+    pv_ypu_mem_t *buffer_backbone_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_channels_backbone * n_upsampled_1 * ((int32_t) sizeof(float)),
+            false);
+    if (!buffer_backbone_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_backbone_ypu"));
+        pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    int32_t n_backbone_0_out = 0;
+    status = pv_vocos_backbone_forward_with_cache(
+            ypu,
+            object->backbone_0,
+            n_convnext_transposed_0_out,
+            buffer_convnext_transposed_ypu,
+            buffer_backbone_ypu,
+            is_flush,
+            &n_backbone_0_out);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_vocos_backbone_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+        pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+        return status;
+    }
+
+    pv_ypu_op_elementwise_args_t gelu_args1 = {
+            .output = buffer_backbone_ypu,
+            .input = buffer_backbone_ypu,
+            .length = n_backbone_0_out * pv_vocos_backbone_output_channels(object->backbone_0),
+            .output_offset = 0,
+            .input_offset = 0,
+    };
+    status = pv_ypu_operator_execute(
+            ypu,
+            PV_YPU_OPERATOR_GELU_APPROX,
+            &gelu_args1);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_operator_fail,
+                PV_ERROR_ARGS_PUBLIC("execute"),
+                PV_ERROR_ARGS_PRIVATE(
+                        "execute",
+                        pv_ypu_operator_type_to_string(PV_YPU_OPERATOR_GELU_APPROX),
+                        pv_ypu_device_type_to_string(pv_ypu_device_type(ypu)),
+                        pv_status_to_string(status)));
+        pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+        pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+        return status;
+    }
+
+    int32_t n_convnext_transposed_1_out = 0;
+    status = pv_convnext_transposed_forward_with_cache(
+            ypu,
+            object->convnext_transposed_1,
+            n_backbone_0_out,
+            buffer_backbone_ypu,
+            buffer_convnext_transposed_ypu,
+            is_flush,
+            &n_convnext_transposed_1_out);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_convnext_transposed_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+        pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+        return status;
+    }
+
+    int32_t n_backbone_1_out = 0;
+    status = pv_vocos_backbone_forward_with_cache(
+            ypu,
+            object->backbone_1,
+            n_convnext_transposed_1_out,
+            buffer_convnext_transposed_ypu,
+            buffer_backbone_ypu,
+            is_flush,
+            &n_backbone_1_out);
+    pv_ypu_buffer_release(ypu, buffer_convnext_transposed_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_vocos_backbone_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+        return status;
+    }
+
+    const int32_t num_channels_spec = pv_cnn_output_channels(object->conv_proj);
+    pv_ypu_mem_t *buffer_spec_all_subbands_ypu = pv_ypu_buffer_get(
+            ypu,
+            num_channels_spec * n_backbone_1_out * ((int32_t) sizeof(float)),
+            false);
+    if (!buffer_spec_all_subbands_ypu) {
+        PV_ERROR_REPORT(
+                &pv_error_msg_ypu_device_alloc,
+                PV_ERROR_ARGS_PUBLIC_EMPTY(),
+                PV_ERROR_ARGS_PRIVATE("buffer_spec_all_subbands_ypu"));
+        pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+        return PV_STATUS_OUT_OF_MEMORY;
+    }
+
+    int32_t n_conv_proj_out = 0;
+    status = pv_cnn_forward_with_cache(
+            ypu,
+            object->conv_proj,
+            n_backbone_1_out,
+            buffer_backbone_ypu,
+            buffer_spec_all_subbands_ypu,
+            0,
+            0,
+            is_flush,
+            &n_conv_proj_out);
+    pv_ypu_buffer_release(ypu, buffer_backbone_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_cnn_forward_with_cache,
+                pv_status_to_string(status));
+        pv_ypu_buffer_release(ypu, buffer_spec_all_subbands_ypu);
+        return status;
+    }
+
+    float *buffer_spec_all_subbands = ((float *) pv_ypu_mem_get_host_view(ypu, buffer_spec_all_subbands_ypu, true));
+    status = pv_orca_istft_multiband_forward(
+            object->istft,
+            n_conv_proj_out,
+            buffer_spec_all_subbands,
+            pcm);
+    pv_ypu_buffer_release(ypu, buffer_spec_all_subbands_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_orca_istft_multiband_forward,
+                pv_status_to_string(status));
+        return status;
+    }
+    pv_ypu_mem_release_host_view(ypu, buffer_spec_all_subbands_ypu, false);
+
+    *num_pcm_out = n_conv_proj_out * 16;
 
     return PV_STATUS_SUCCESS;
 }

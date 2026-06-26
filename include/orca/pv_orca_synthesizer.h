@@ -52,6 +52,10 @@ pv_status_t PV_MOCKABLE(pv_orca_synthesizer_init)(
 
 void PV_MOCKABLE(pv_orca_synthesizer_delete)(pv_ypu_t *ypu, pv_orca_synthesizer_t *object);
 
+pv_status_t PV_MOCKABLE(pv_orca_synthesizer_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_synthesizer_t *object);
+
 int32_t PV_MOCKABLE(pv_orca_synthesizer_sample_rate)(const pv_orca_synthesizer_t *object);
 
 pv_status_t PV_MOCKABLE(pv_orca_synthesizer_forward)(

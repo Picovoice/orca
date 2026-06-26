@@ -170,7 +170,8 @@ pv_status_t PV_MOCKABLE(pv_adanorm_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->linear_param,
-            &(o->linear));
+            &(o->linear),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -230,7 +231,7 @@ pv_status_t PV_MOCKABLE(pv_adanorm_rope_transformer_forward)(
             .input = c_ypu,
             .length = n * input_channels,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
@@ -290,7 +291,7 @@ pv_status_t PV_MOCKABLE(pv_adanorm_rope_transformer_forward)(
             .n = n,
             .k = num_channels * (int32_t) sizeof(float),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -316,7 +317,7 @@ pv_status_t PV_MOCKABLE(pv_adanorm_rope_transformer_forward)(
             .n = num_channels,
             .eps = object->param->eps,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

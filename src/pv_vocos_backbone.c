@@ -323,6 +323,25 @@ void PV_MOCKABLE(pv_vocos_backbone_delete)(
     }
 }
 
+pv_status_t PV_MOCKABLE(pv_vocos_backbone_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_vocos_backbone_t *object) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+
+    for (int32_t i = 0; i < object->param->num_convnext_layers; i++) {
+        pv_status_t status = pv_convnext_reset_cache(ypu, object->convnext_layers[i]);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                    pv_convnext_reset_cache,
+                    pv_status_to_string(status));
+            return status;
+        }
+    }
+
+    return PV_STATUS_SUCCESS;
+}
+
 int32_t PV_MOCKABLE(pv_vocos_backbone_output_channels)(const pv_vocos_backbone_t *object) {
     PV_ASSERT(object);
 
@@ -349,8 +368,8 @@ pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward)(
             y_ypu);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-                    pv_layer_norm_forward,
-                    pv_status_to_string(status));
+                pv_layer_norm_forward,
+                pv_status_to_string(status));
         return status;
     }
 
@@ -380,6 +399,68 @@ pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward)(
                 pv_status_to_string(status));
         return status;
     }
+
+    return PV_STATUS_SUCCESS;
+}
+
+pv_status_t PV_MOCKABLE(pv_vocos_backbone_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_vocos_backbone_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x_ypu,
+        pv_ypu_mem_t *y_ypu,
+        bool is_flush,
+        int32_t *n_out) {
+    PV_ASSERT(ypu);
+    PV_ASSERT(object);
+    PV_ASSERT(n);
+    PV_ASSERT(x_ypu);
+    PV_ASSERT(y_ypu);
+    PV_ASSERT(n_out);
+
+    pv_status_t status = pv_layer_norm_forward(
+            ypu,
+            object->layer_norm_pre,
+            n,
+            x_ypu,
+            y_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_forward,
+                pv_status_to_string(status));
+        return status;
+    }
+
+    int32_t n_convnext_out = n;
+    for (int32_t i = 0; i < object->param->num_convnext_layers; i++) {
+        status = pv_convnext_forward_with_cache(
+                ypu,
+                object->convnext_layers[i],
+                n_convnext_out,
+                y_ypu,
+                is_flush,
+                &n_convnext_out);
+        if (status != PV_STATUS_SUCCESS) {
+            PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                    pv_convnext_forward_with_cache,
+                    pv_status_to_string(status));
+            return status;
+        }
+    }
+
+    status = pv_layer_norm_forward(
+            ypu,
+            object->layer_norm_post,
+            n_convnext_out,
+            y_ypu,
+            y_ypu);
+    if (status != PV_STATUS_SUCCESS) {
+        PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
+                pv_layer_norm_forward,
+                pv_status_to_string(status));
+        return status;
+    }
+    *n_out = n_convnext_out;
 
     return PV_STATUS_SUCCESS;
 }

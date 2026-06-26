@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 
 #ifdef __PV_DUMP__
 
-                case 'd':
-                    dump_path = optarg;
-                    break;
+            case 'd':
+                dump_path = optarg;
+                break;
 
 #endif
 

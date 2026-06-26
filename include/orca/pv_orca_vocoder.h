@@ -50,6 +50,10 @@ void PV_MOCKABLE(pv_orca_vocoder_delete)(
         pv_ypu_t *ypu,
         pv_orca_vocoder_t *object);
 
+pv_status_t PV_MOCKABLE(pv_orca_vocoder_reset_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_vocoder_t *object);
+
 pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         pv_ypu_t *ypu,
         pv_orca_vocoder_t *object,
@@ -57,5 +61,15 @@ pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward)(
         pv_ypu_mem_t *x,
         int16_t *pcm,
         int32_t x_offset);
+
+pv_status_t PV_MOCKABLE(pv_orca_vocoder_forward_with_cache)(
+        pv_ypu_t *ypu,
+        pv_orca_vocoder_t *object,
+        int32_t n,
+        pv_ypu_mem_t *x,
+        int16_t *pcm,
+        int32_t x_offset,
+        bool is_flush,
+        int32_t *num_pcm_out);
 
 #endif // PV_ORCA_VOCODER_H

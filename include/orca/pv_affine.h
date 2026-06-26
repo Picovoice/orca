@@ -3,7 +3,7 @@
 
 #include "ypu/pv_ypu.h"
 
-#if __ORCA_FLOAT_MODE__
+#ifdef __ORCA_FLOAT_MODE__
 
 pv_status_t PV_MOCKABLE(pv_affine_execute_float)(
         int32_t n,

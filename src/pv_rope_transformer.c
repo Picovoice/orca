@@ -335,7 +335,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_layer_norm_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_ypu);
+        pv_ypu_buffer_release(ypu, buffer_ypu);
         return status;
     }
 
@@ -350,7 +350,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_rope_attention_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_ypu);
+        pv_ypu_buffer_release(ypu, buffer_ypu);
         return status;
     }
 
@@ -390,7 +390,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_layer_norm_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_ypu);
+        pv_ypu_buffer_release(ypu, buffer_ypu);
         return status;
     }
 
@@ -404,7 +404,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_forward)(
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_rope_transformer_ffn_forward,
                 pv_status_to_string(status));
-    	pv_ypu_buffer_release(ypu, buffer_ypu);
+        pv_ypu_buffer_release(ypu, buffer_ypu);
         return status;
     }
 

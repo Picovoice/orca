@@ -167,7 +167,6 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_film_generator_param_load)(
             pv_orca_lfm_film_generator_param_delete(ypu, p);
             return status;
         }
-
     }
 
     *param = p;

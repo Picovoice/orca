@@ -3,7 +3,6 @@
 
 #include "core/pv_error_messages.h"
 #include "core/pv_type.h"
-#include "core/pv_type.h"
 #include "orca/pv_orca_internal.h"
 #include "orca/pv_orca_stream_state.h"
 
@@ -462,9 +461,9 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_n_domain)(
 
         if (buffer_N_domain_concat_length > 0) {
             pv_buffer_copy_to(
-                object->buffer_N_domain_concat,
-                buffer_result + cached_N_domain_length * dimension,
-                buffer_N_domain_concat_length * ((int32_t) sizeof(int32_t)));
+                    object->buffer_N_domain_concat,
+                    buffer_result + cached_N_domain_length * dimension,
+                    buffer_N_domain_concat_length * ((int32_t) sizeof(int32_t)));
         }
     }
 
@@ -475,8 +474,8 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_update_n_domain)(
     free(buffer_result);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
-            pv_buffer_replace,
-            pv_status_to_string(status));
+                pv_buffer_replace,
+                pv_status_to_string(status));
         return status;
     }
 
@@ -570,9 +569,9 @@ pv_status_t PV_MOCKABLE(pv_orca_stream_state_is_sufficient_context_t_domain)(
             }
         }
         const int32_t buffer_T_domain_concat_length = pv_buffer_ypu_length(object->buffer_T_domain_concat);
-        PV_ASSERT(pv_buffer_ypu_length(object->buffer_bucket_concat) ==  buffer_T_domain_concat_length);
-        PV_ASSERT(pv_buffer_ypu_length(object->buffer_lfm_x_t_concat) ==  buffer_T_domain_concat_length);
-        *is_sufficient = (buffer_T_domain_concat_length >= object->config->T_domain_lookahead + 1);
+        PV_ASSERT(pv_buffer_ypu_length(object->buffer_bucket_concat) == buffer_T_domain_concat_length);
+        PV_ASSERT(pv_buffer_ypu_length(object->buffer_lfm_x_t_concat) == buffer_T_domain_concat_length);
+        *is_sufficient = (buffer_T_domain_concat_length >= object->config->T_domain_lookahead + 13);
     } else {
         status = pv_buffer_ypu_replace(
                 ypu,

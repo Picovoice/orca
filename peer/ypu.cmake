@@ -1,1 +1,1 @@
-fetch_peer_module(ypu "6dbad15f22b5d5bff83c5d31fd49f8435936f040")
+fetch_peer_module(ypu "890d6be8cb0e595d92ffdaaf9e50e413565fe8af")

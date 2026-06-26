@@ -357,8 +357,8 @@ PV_API const char *PV_MOCKABLE(pv_orca_version)(void);
 * `PV_STATUS_ACTIVATION_THROTTLED`, or `PV_STATUS_ACTIVATION_REFUSED` on failure.
 */
 PV_API pv_status_t PV_MOCKABLE(pv_orca_list_hardware_devices)(
-    char ***hardware_devices,
-    int32_t *num_hardware_devices);
+        char ***hardware_devices,
+        int32_t *num_hardware_devices);
 
 /**
 * Frees memory allocated by `pv_orca_list_hardware_devices`.
@@ -367,8 +367,8 @@ PV_API pv_status_t PV_MOCKABLE(pv_orca_list_hardware_devices)(
 * @param[out] num_hardware_devices The number of devices in the `hardware_devices` array.
 */
 PV_API void PV_MOCKABLE(pv_orca_free_hardware_devices)(
-    char **hardware_devices,
-    int32_t num_hardware_devices);
+        char **hardware_devices,
+        int32_t num_hardware_devices);
 
 #ifdef __cplusplus
 }

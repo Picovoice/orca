@@ -10,7 +10,7 @@
 
 #endif
 
-#if __ORCA_FLOAT_MODE__
+#ifdef __ORCA_FLOAT_MODE__
 
 pv_status_t PV_MOCKABLE(pv_affine_execute_float)(
         int32_t n,
@@ -81,7 +81,7 @@ pv_status_t PV_MOCKABLE(pv_affine_execute)(
             .scalar.f32 = shift,
             .length = n * num_channels,
             .output_offset = 0,
-            .input_offset = x_offset
+            .input_offset = x_offset,
     };
     pv_status_t status = pv_ypu_operator_execute(
             ypu,
@@ -119,7 +119,7 @@ pv_status_t PV_MOCKABLE(pv_affine_execute)(
             .scalar.f32 = scale,
             .length = n * num_channels,
             .output_offset = 0,
-            .input_offset = x_offset
+            .input_offset = x_offset,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -147,7 +147,7 @@ pv_status_t PV_MOCKABLE(pv_affine_execute)(
             .n = num_channels,
             .output_offset = 0,
             .lhs_offset = 0,
-            .rhs_offset = weight_offset
+            .rhs_offset = weight_offset,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -219,7 +219,7 @@ pv_status_t PV_MOCKABLE(pv_affine_execute_from_q1417_to_float)(
     PV_ASSERT(bias);
     PV_ASSERT(y);
 
-     pv_ypu_op_pairwise_broadcast_args_t args_mulmv0 = {
+    pv_ypu_op_pairwise_broadcast_args_t args_mulmv0 = {
             .output = y,
             .lhs = x,
             .rhs = scale,

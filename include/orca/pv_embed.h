@@ -13,10 +13,10 @@ typedef struct {
 #ifdef __PV_BUILD_APPS__
 
 pv_status_t PV_MOCKABLE(pv_embed_param_serialize_buffer)(
-    pv_ypu_t *ypu,
-    const pv_embed_param_t *param,
-    size_t *length,
-    void **buffer);
+        pv_ypu_t *ypu,
+        const pv_embed_param_t *param,
+        size_t *length,
+        void **buffer);
 
 pv_status_t PV_MOCKABLE(pv_embed_param_serialize)(pv_ypu_t *ypu, const pv_embed_param_t *param, FILE *file);
 
@@ -41,18 +41,18 @@ int32_t PV_MOCKABLE(pv_embed_dimension)(const pv_embed_t *object);
 int32_t PV_MOCKABLE(pv_embed_num_embeddings)(const pv_embed_t *object);
 
 pv_status_t PV_MOCKABLE(pv_embed_get)(
-    pv_ypu_t *ypu,
-    const pv_embed_t *object,
-    int32_t index,
-    pv_ypu_mem_t *y,
-    int32_t y_offset);
+        pv_ypu_t *ypu,
+        const pv_embed_t *object,
+        int32_t index,
+        pv_ypu_mem_t *y,
+        int32_t y_offset);
 
 pv_status_t PV_MOCKABLE(pv_embed_forward)(
-    pv_ypu_t *ypu,
-    const pv_embed_t *object,
-    int32_t n,
-    const int32_t *x,
-    pv_ypu_mem_t *y,
-    int32_t y_offset);
+        pv_ypu_t *ypu,
+        const pv_embed_t *object,
+        int32_t n,
+        const int32_t *x,
+        pv_ypu_mem_t *y,
+        int32_t y_offset);
 
 #endif // PV_EMBED_H

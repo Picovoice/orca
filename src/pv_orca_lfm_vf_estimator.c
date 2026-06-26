@@ -376,7 +376,8 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_init)(
     pv_status_t status = pv_cnn_init(
             ypu,
             param->conv_pre_param,
-            &(o->conv_pre));
+            &(o->conv_pre),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -388,7 +389,8 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_init)(
     status = pv_cnn_init(
             ypu,
             param->adanorm_linear_param,
-            &(o->adanorm_linear));
+            &(o->adanorm_linear),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -440,7 +442,8 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_init)(
     status = pv_cnn_init(
             ypu,
             param->conv_out_param,
-            &(o->conv_out));
+            &(o->conv_out),
+            false);
     if (status != PV_STATUS_SUCCESS) {
         PV_ERROR_REPORT_MODULE_FUNCTION_STATUS_INTERNAL_HELPER(
                 pv_cnn_init,
@@ -562,7 +565,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
             .input = c_ypu,
             .length = n * dimension,
             .output_offset = 0,
-            .input_offset = c_offset
+            .input_offset = c_offset,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -623,7 +626,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
             .n = n,
             .k = dimension * (int32_t) sizeof(float),
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -687,7 +690,7 @@ pv_status_t PV_MOCKABLE(pv_orca_lfm_vf_estimator_forward)(
             .n = object->param->layer_norm_out_param->num_channels,
             .eps = object->param->layer_norm_out_param->eps,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,

@@ -338,7 +338,6 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_film_conditioned_forward)(
                 PV_ERROR_ARGS_PRIVATE("buffer_gates_list_ypu"));
         pv_ypu_buffer_release(ypu, buffer_ypu);
         return PV_STATUS_OUT_OF_MEMORY;
-       
     }
 
     pv_status_t status = pv_adanorm_rope_transformer_forward(
@@ -404,7 +403,7 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_film_conditioned_forward)(
             .n = object->param->layer_norm_param->num_channels,
             .eps = object->param->layer_norm_param->eps,
             .output_offset = 0,
-            .input_offset = 0
+            .input_offset = 0,
     };
     status = pv_ypu_operator_execute(
             ypu,
@@ -484,6 +483,6 @@ pv_status_t PV_MOCKABLE(pv_rope_transformer_film_conditioned_forward)(
                 pv_status_to_string(status));
         return status;
     }
- 
+
     return PV_STATUS_SUCCESS;
 }
