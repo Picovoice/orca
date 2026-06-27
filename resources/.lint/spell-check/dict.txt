@@ -84,3 +84,4 @@ xcframework
 xcodeproj
 xcuitest
 xcworkspace
+XCTEST
