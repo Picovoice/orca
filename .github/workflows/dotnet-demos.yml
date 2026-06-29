@@ -39,15 +39,6 @@ jobs:
     - name: Package restore
       run: dotnet restore
 
-    # *********** REMOVE AFTER RELEASE **********************
-    - name: Pack binding for local ref
-      run: dotnet pack -c Release
-      working-directory: binding/dotnet
-
-    - name: Add binding to demo
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
-    # ******************************************************
-
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
 
@@ -91,22 +82,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # *********** REMOVE AFTER RELEASE **********************
-    - name: Remove cached package
-      run: dotnet nuget locals all --clear
-    # ******************************************************
-
     - name: Package restore
       run: dotnet restore
-
-    # *********** REMOVE AFTER RELEASE **********************
-    - name: Pack binding for local ref
-      run: dotnet pack -c Release
-      working-directory: binding/dotnet
-
-    - name: Add binding to demo
-      run: dotnet add package -s ../../../binding/dotnet/Orca/bin/Release Picovoice.Orca
-    # ******************************************************
 
     - name: .NET build file demo
       run: dotnet build -c FileDemo.Release
