@@ -187,7 +187,7 @@
 			);
 			mainGroup = 02A1193C268D39A700A2AC99;
 			packageReferences = (
-				5AB738B42FF2FA0C00ADFED6 /* XCLocalSwiftPackageReference "../../../../orca" */,
+				02B588CA2DFBA7AD007E7026 /* XCRemoteSwiftPackageReference "orca" */,
 			);
 			productRefGroup = 02A11946268D39A700A2AC99 /* Products */;
 			projectDirPath = "";
