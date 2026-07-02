@@ -96,10 +96,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.2.tgz#1860473de7dfa1546767448f333db80cb0ff2161"
   integrity sha512-xeO57FpIu4p1Ri3Jq/EXq4ClRm86dVF2z/+kvFnyqVYRavTZmaFaUBbWCOuuTh0o/g7DSsk6kc2vrS4Vl5oPOQ==
 
-"@picovoice/orca-web@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-3.0.0.tgz#774f76a827f1ad09c0557c163e1b6f0af0f250bf"
-  integrity sha512-ZkUDA0zgjHQupFWOtUnpNskvDiqZdYx5DXCh2Mypzz/f8YvQ8YavrGvyDM2o9n/nei4PF2Czck6x4YtxMl/5vA==
+"@picovoice/orca-web@3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-3.0.1.tgz#9a6752c4f4a91599cf9ed66f69f3422b44859add"
+  integrity sha512-7Y95I9RjYzD82AZ43XBB2jIdLEFS++Ynv0Ey7uFhmR1X1PhNI1ghykTA0wmrKf6VXmm3IcWEfbVkzwBjmqr5yA==
   dependencies:
     "@picovoice/web-utils" "=1.4.3"
 
