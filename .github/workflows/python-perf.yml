@@ -16,7 +16,7 @@ on:
       - 'lib/raspberry-pi/**'
       - 'lib/windows/**'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+' ]
+    branches: [ main, 'v[0-9]+.[0-9]+*' ]
     paths:
       - '.github/workflows/python-perf.yml'
       - 'binding/python/__init__.py'
@@ -96,6 +96,21 @@ jobs:
       - name: Machine state before
         working-directory: resources/.scripts
         run: bash machine-state.sh
+
+      - name: Setup Python virtualenv (*nix)
+        if: ${{ matrix.machine != 'pv-windows' && matrix.machine != 'pv-windows-igpu' && matrix.machine != 'pv-windows-arm64' }}
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+      - name: Setup Python virtualenv (windows)
+        if: ${{ matrix.machine == 'pv-windows' || matrix.machine == 'pv-windows-igpu' || matrix.machine == 'pv-windows-arm64' }}
+        run: |
+          python3 -m venv .venv --symlinks
+          .venv\Scripts\activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
 
       - name: Install dependencies
         run: pip install -r requirements.txt
