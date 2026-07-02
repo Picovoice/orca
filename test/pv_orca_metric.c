@@ -1011,7 +1011,7 @@ pv_status_t pv_orca_metric_pcm_frame_level_error_evaluation(
     }
 
     // Average case threshold:
-    prob_average /= ((int32_t) num_frames - num_ignored_frames);
+    prob_average /= (float) ((int32_t) num_frames - num_ignored_frames);
     if (prob_average < threshold_average_case) {
         *passed = false;
         LOG_ERROR_SIMPLE("Failed average case threshold test.");

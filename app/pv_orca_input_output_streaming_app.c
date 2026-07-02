@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
                 output_path = optarg;
                 break;
             case 'r':
-                speech_rate = atof(optarg);
+                speech_rate = (float) atof(optarg);
                 break;
             case 's':
                 random_state = atoi(optarg);
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
            (float) num_samples / (float) sample_rate / (end_chunks[num_chunks - 1] - start_chunks[0]));
 
     for (int32_t i = 0; i < num_chunks; i++) {
-        float num_seconds = num_samples_chunks[i] / (float) sample_rate;
+        float num_seconds = (float) num_samples_chunks[i] / (float) sample_rate;
         float process_time = end_chunks[i] - start_chunks[i];
         float rtf = num_seconds / process_time;
         printf(
