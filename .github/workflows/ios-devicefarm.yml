@@ -9,7 +9,7 @@ on:
       - 'binding/ios/OrcaAppTest/**'
       - 'resources/.test/**'
   pull_request:
-    branches: [ main, 'v[0-9]+.[0-9]+.[0-9]*' ]
+    branches: [ main, 'v[0-9]+.[0-9]+*' ]
     paths:
       - '.github/workflows/ios-devicefarm.yml'
       - 'binding/ios/OrcaAppTest/**'
@@ -21,8 +21,13 @@ defaults:
 
 jobs:
   build:
+<<<<<<< HEAD:.github/workflows/ios-devicefarm.yml
     name: Run iOS Tests on AWS Device Farm
     runs-on: macos-latest
+=======
+    name: Run iOS Tests on BrowserStack
+    runs-on: macos-14
+>>>>>>> c1d619e (v3.0.1 Android & iOS (#166)):.github/workflows/ios-browserstack.yml
 
     steps:
       - name: Checkout
