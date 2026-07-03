@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                 output_path = optarg;
                 break;
             case 'r':
-                speech_rate = atof(optarg);
+                speech_rate = (float) atof(optarg);
                 break;
             case 's':
                 random_state = atoi(optarg);
