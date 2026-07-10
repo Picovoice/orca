@@ -50,7 +50,7 @@ build-prod-linux:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86-docker
     - pv-cicd-gpu
@@ -71,7 +71,7 @@ build-prod-mac:
     - rm -rf ~/.pv
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-macos-arm64
     - pv-cicd-c
@@ -91,7 +91,7 @@ build-prod-windows-x86:
     - Get-ChildItem ~/.pv -Recurse | Remove-Item
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-windows-x86
     - pv-cicd-gpu
@@ -112,7 +112,7 @@ build-prod-windows-arm64:
     - Get-ChildItem ~/.pv -Recurse | Remove-Item
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-windows-arm64
     - pv-cicd-c
@@ -134,7 +134,7 @@ build-prod-rpi3:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
@@ -158,7 +158,7 @@ build-prod-rpi3-64:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
@@ -182,7 +182,7 @@ build-prod-rpi4:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi4-armv7-docker
     - pv-cicd-c
@@ -206,7 +206,7 @@ build-prod-rpi4-64:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi4-arm64-docker
     - pv-cicd-c
@@ -230,7 +230,7 @@ build-prod-rpi5:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi5-armv7-docker
     - pv-cicd-c
@@ -254,7 +254,7 @@ build-prod-rpi5-64:
     - !reference [.build-prod, script-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-rpi5-arm64-docker
     - pv-cicd-c
@@ -276,7 +276,7 @@ build-prod-wasm:
     - !reference [.build-prod, script-no-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86-docker
   cache:
@@ -298,7 +298,7 @@ build-prod-android:
     - !reference [.build-prod, script-no-toolchain]
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-linux-x86
     - pv-cicd-android
@@ -339,7 +339,7 @@ build-prod-ios:
     - python3 -m script.artifact_copy --platform ${PLATFORM_NAME}
   artifacts:
     paths:
-      - build/release/artifacts/${PLATFORM_NAME}/
+      - build/release/artifacts/
   tags:
     - pv-cicd-macos-arm64
     - pv-cicd-ios
