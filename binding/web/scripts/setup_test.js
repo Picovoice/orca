@@ -32,10 +32,10 @@ try {
   });
 
   fs.mkdirSync(join(fixturesDirectory, '.test', 'wav'), { recursive: true });
-  fs.copyFileSync(join(sourceDirectory, 'test_data.json'), join(fixturesDirectory, '.test', 'test_data.json'));
+  fs.copyFileSync(join(sourceDirectory, 'wasm-x86_64_test_data.json'), join(fixturesDirectory, '.test', 'test_data.json'));
 
-  fs.readdirSync(join(sourceDirectory, 'wav')).forEach(file => {
-    fs.copyFileSync(join(sourceDirectory, 'wav', file), join(fixturesDirectory, '.test', 'wav', file));
+  fs.readdirSync(join(sourceDirectory, 'wav', 'wasm-x86_64')).forEach(file => {
+    fs.copyFileSync(join(sourceDirectory, 'wav', 'wasm-x86_64', file), join(fixturesDirectory, '.test', 'wav', file));
   });
 } catch (error) {
   console.error(error);

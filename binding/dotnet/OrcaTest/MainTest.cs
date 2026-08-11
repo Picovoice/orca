@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -557,9 +558,53 @@ namespace OrcaTest
             return GetPcmFromFile(testAudioPath);
         }
 
+        private static String GetPlatformName()
+        {
+            String platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
+            if (platformName == null) {
+                Console.WriteLine("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
+                Environment.Exit(1);
+            }
+
+            if (platformName == "ios") {
+                platformName = "mac";
+            }
+
+            return platformName;
+        }
+
+        private static String GetArchitecture()
+        {
+            String platformName = GetPlatformName();
+            String architecture = RuntimeInformation.OSArchitecture;
+
+            if (platformName == "windows" && architecture == "X64")
+            {
+                architecture = "AMD64";
+            }
+            else if (platformName == "windows" && architecture == "Arm64")
+            {
+                architecture = "ARM64";
+            }
+            else if (architecture == "X64")
+            {
+                architecture = "x86_64";
+            }
+            else if (architecture == "Arm64")
+            {
+                architecture = "aarch64";
+            }
+
+            return architecture;
+        }
+
         private static TestDataJson LoadJsonTestData()
         {
-            string content = File.ReadAllText(Path.Combine(ROOT_DIR, "resources/.test/test_data.json"));
+            String platformName = GetPlatformName();
+            String architecture = GetArchitecture();
+            string content = File.ReadAllText(Path.Combine(
+                    ROOT_DIR,
+                    $"resources/.test/{platformName}-{architecture}_test_data.json"));
             return JObject.Parse(content).ToObject<TestDataJson>();
         }
     }

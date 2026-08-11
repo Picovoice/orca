@@ -10,10 +10,29 @@
 //
 import * as path from 'path';
 
+import os from 'os';
+
+function getPlatformName(): string {
+    let platformName = process.env.PLATFORM_NAME;
+    if (platformName == null) {
+        console.log("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
+        process.exit(1);
+    }
+
+    if (platformName == "ios") {
+        platformName = "mac";
+    }
+
+    return platformName;
+}
+
+const ARCH = os.machine();
+const PLATFORM_NAME = getPlatformName();
+
 const ROOT_DIR = path.join(__dirname, '../../..');
 const TEST_DATA_JSON = require(path.join(
   ROOT_DIR,
-  'resources/.test/test_data.json',
+  `resources/.test/${PLATFORM_NAME}-${ARCH}_test_data.json`,
 ));
 
 export function getAudioFile(audioFile: string): string {
