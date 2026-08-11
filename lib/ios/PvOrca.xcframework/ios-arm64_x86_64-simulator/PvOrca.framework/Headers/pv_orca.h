@@ -1,5 +1,5 @@
 /*
-    Copyright 2024-2026 Picovoice Inc.
+    Copyright 2024 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
     file accompanying this source.
@@ -357,8 +357,8 @@ PV_API const char *pv_orca_version(void);
 * `PV_STATUS_ACTIVATION_THROTTLED`, or `PV_STATUS_ACTIVATION_REFUSED` on failure.
 */
 PV_API pv_status_t pv_orca_list_hardware_devices(
-    char ***hardware_devices,
-    int32_t *num_hardware_devices);
+        char ***hardware_devices,
+        int32_t *num_hardware_devices);
 
 /**
 * Frees memory allocated by `pv_orca_list_hardware_devices`.
@@ -367,8 +367,8 @@ PV_API pv_status_t pv_orca_list_hardware_devices(
 * @param[out] num_hardware_devices The number of devices in the `hardware_devices` array.
 */
 PV_API void pv_orca_free_hardware_devices(
-    char **hardware_devices,
-    int32_t num_hardware_devices);
+        char **hardware_devices,
+        int32_t num_hardware_devices);
 
 #ifdef __cplusplus
 }

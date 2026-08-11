@@ -1,0 +1,1112 @@
+{
+  "tests": {
+    "sentence_tests": [
+      {
+        "language": "en",
+        "models": [
+          "orca_params_en_female.pv",
+          "orca_params_en_male.pv"
+        ],
+        "random_state": 42,
+        "text": "It doesn't matter how slowly you go, as long as you do not stop!",
+        "text_no_punctuation": "It doesn't matter how slowly you go as long as you do not stop",
+        "text_custom_pronunciation": "I {live|L IH V} in {Sevilla|S EH V IY Y AH}. We have great {live|L AY V} sports!"
+      },
+      {
+        "language": "es",
+        "models": [
+          "orca_params_es_female.pv",
+          "orca_params_es_male.pv"
+        ],
+        "random_state": 42,
+        "text": "No importa lo lento que vayas, ¡siempre que no te detengas!",
+        "text_no_punctuation": "No importa lo lento que vayas siempre que no te detengas",
+        "text_custom_pronunciation": "Pruebe la {alineación|a l i n e a θ j o n}."
+      },
+      {
+        "language": "de",
+        "models": [
+          "orca_params_de_female.pv",
+          "orca_params_de_male.pv"
+        ],
+        "random_state": 42,
+        "text": "Es spielt keine Rolle, wie langsam du gehst, solange du nicht stehen bleibst!",
+        "text_no_punctuation": "Es spielt keine Rolle wie langsam du gehst solange du nicht stehen bleibst",
+        "text_custom_pronunciation": "Eine {ein|aɪ ŋ} Aussprache."
+      },
+      {
+        "language": "fr",
+        "models": [
+          "orca_params_fr_female.pv",
+          "orca_params_fr_male.pv"
+        ],
+        "random_state": 42,
+        "text": "Peu importe la lenteur avec laquelle tu avances, tant que tu ne t’arrêtes pas!",
+        "text_no_punctuation": "Peu importe la lenteur avec laquelle tu avances tant que tu ne t’arrêtes pas",
+        "text_custom_pronunciation": "La prononciation {personal|p e s o n a l}."
+      },
+      {
+        "language": "ko",
+        "models": [
+          "orca_params_ko_female.pv"
+        ],
+        "random_state": 42,
+        "text": "아무리 천천히 가도, 멈추지만 않는다면 괜찮다!",
+        "text_no_punctuation": "아무리 천천히 가도 멈추지만 않는다면 괜찮다",
+        "text_custom_pronunciation": "맞춤형 {발음|p a r ɯ m}."
+      },
+      {
+        "language": "ja",
+        "models": [
+          "orca_params_ja_female.pv",
+          "orca_params_ja_male.pv"
+        ],
+        "random_state": 42,
+        "text": "止まらなければ、どれだけゆっくり進んでも問題ありません。",
+        "text_no_punctuation": "止まらなければどれだけゆっくり進んでも問題ありません",
+        "text_custom_pronunciation": "これは{カスタム|k a s t a m ɕ}発音です."
+      },
+      {
+        "language": "it",
+        "models": [
+          "orca_params_it_female.pv",
+          "orca_params_it_male.pv"
+        ],
+        "random_state": 42,
+        "text": "quanto lentamente vai, l'importante è non fermarsi!",
+        "text_no_punctuation": "quanto lentamente vai l'importante è non fermarsi",
+        "text_custom_pronunciation": "Una pronuncia {personalizzata|a b d ddʒ dz dʒ dʣ e f g i j k l m n o p r rr s t ts tts tʃ tʧ u v w z ŋ ŋg ŋk ɔ ɛ ɲ ʃ ʎ}"
+      },
+      {
+        "language": "pt",
+        "models": [
+          "orca_params_pt_female.pv",
+          "orca_params_pt_male.pv"
+        ],
+        "random_state": 42,
+        "text": "Não importa o quão devagar vai, desde que não pare!",
+        "text_no_punctuation": "Não importa o quão devagar vai desde que não pare",
+        "text_custom_pronunciation": "Uma pronúncia {lus|l u z}"
+      }
+    ],
+    "alignment_tests": [
+      {
+        "language": "en",
+        "model": "orca_params_en_female.pv",
+        "random_state": 42,
+        "text_alignment": "Test alignment.",
+        "alignments": [
+          {
+            "word": "Test",
+            "start_sec": 0.0,
+            "end_sec": 0.418,
+            "phonemes": [
+              {
+                "phoneme": "T",
+                "start_sec": 0.093,
+                "end_sec": 0.174
+              },
+              {
+                "phoneme": "EH",
+                "start_sec": 0.174,
+                "end_sec": 0.255
+              },
+              {
+                "phoneme": "S",
+                "start_sec": 0.255,
+                "end_sec": 0.337
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.337,
+                "end_sec": 0.418
+              }
+            ]
+          },
+          {
+            "word": "alignment",
+            "start_sec": 0.418,
+            "end_sec": 1.033,
+            "phonemes": [
+              {
+                "phoneme": "AH",
+                "start_sec": 0.418,
+                "end_sec": 0.464
+              },
+              {
+                "phoneme": "L",
+                "start_sec": 0.464,
+                "end_sec": 0.534
+              },
+              {
+                "phoneme": "AY",
+                "start_sec": 0.534,
+                "end_sec": 0.639
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.639,
+                "end_sec": 0.708
+              },
+              {
+                "phoneme": "M",
+                "start_sec": 0.708,
+                "end_sec": 0.743
+              },
+              {
+                "phoneme": "AH",
+                "start_sec": 0.743,
+                "end_sec": 0.848
+              },
+              {
+                "phoneme": "N",
+                "start_sec": 0.848,
+                "end_sec": 0.917
+              },
+              {
+                "phoneme": "T",
+                "start_sec": 0.917,
+                "end_sec": 1.033
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.033,
+            "end_sec": 1.173,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.033,
+                "end_sec": 1.103
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "model": "orca_params_es_female.pv",
+        "random_state": 42,
+        "text_alignment": "Pruebe la alineación.",
+        "alignments": [
+          {
+            "word": "Pruebe",
+            "start_sec": 0.0,
+            "end_sec": 0.418,
+            "phonemes": [
+              {
+                "phoneme": "p",
+                "start_sec": 0.0,
+                "end_sec": 0.116
+              },
+              {
+                "phoneme": "ɾ",
+                "start_sec": 0.116,
+                "end_sec": 0.186
+              },
+              {
+                "phoneme": "w",
+                "start_sec": 0.186,
+                "end_sec": 0.244
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.244,
+                "end_sec": 0.302
+              },
+              {
+                "phoneme": "β",
+                "start_sec": 0.302,
+                "end_sec": 0.348
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.348,
+                "end_sec": 0.406
+              }
+            ]
+          },
+          {
+            "word": "la",
+            "start_sec": 0.418,
+            "end_sec": 0.58,
+            "phonemes": [
+              {
+                "phoneme": "l",
+                "start_sec": 0.418,
+                "end_sec": 0.476
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.476,
+                "end_sec": 0.569
+              }
+            ]
+          },
+          {
+            "word": "alineación",
+            "start_sec": 0.58,
+            "end_sec": 1.428,
+            "phonemes": [
+              {
+                "phoneme": "a",
+                "start_sec": 0.58,
+                "end_sec": 0.627
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.627,
+                "end_sec": 0.685
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.685,
+                "end_sec": 0.755
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 0.755,
+                "end_sec": 0.801
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.801,
+                "end_sec": 0.882
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.882,
+                "end_sec": 0.952
+              },
+              {
+                "phoneme": "θ",
+                "start_sec": 0.952,
+                "end_sec": 1.045
+              },
+              {
+                "phoneme": "j",
+                "start_sec": 1.045,
+                "end_sec": 1.126
+              },
+              {
+                "phoneme": "o",
+                "start_sec": 1.126,
+                "end_sec": 1.207
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 1.207,
+                "end_sec": 1.416
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.428,
+            "end_sec": 1.428,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.428,
+                "end_sec": 1.428
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "de",
+        "model": "orca_params_de_female.pv",
+        "random_state": 42,
+        "text_alignment": "Ausrichtung testen.",
+        "alignments": [
+          {
+            "word": "Ausrichtung",
+            "start_sec": 0.0,
+            "end_sec": 0.685,
+            "phonemes": [
+              {
+                "phoneme": "aʊ",
+                "start_sec": 0.093,
+                "end_sec": 0.209
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.209,
+                "end_sec": 0.348
+              },
+              {
+                "phoneme": "r",
+                "start_sec": 0.348,
+                "end_sec": 0.36
+              },
+              {
+                "phoneme": "ɪ",
+                "start_sec": 0.36,
+                "end_sec": 0.441
+              },
+              {
+                "phoneme": "ç",
+                "start_sec": 0.441,
+                "end_sec": 0.522
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.522,
+                "end_sec": 0.569
+              },
+              {
+                "phoneme": "ʊ",
+                "start_sec": 0.569,
+                "end_sec": 0.615
+              },
+              {
+                "phoneme": "ŋ",
+                "start_sec": 0.615,
+                "end_sec": 0.685
+              }
+            ]
+          },
+          {
+            "word": "testen",
+            "start_sec": 0.685,
+            "end_sec": 1.161,
+            "phonemes": [
+              {
+                "phoneme": "t",
+                "start_sec": 0.685,
+                "end_sec": 0.755
+              },
+              {
+                "phoneme": "ɛ",
+                "start_sec": 0.755,
+                "end_sec": 0.836
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.836,
+                "end_sec": 0.94
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.94,
+                "end_sec": 0.998
+              },
+              {
+                "phoneme": "n̩",
+                "start_sec": 0.998,
+                "end_sec": 1.161
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.161,
+            "end_sec": 1.277,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.161,
+                "end_sec": 1.219
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "fr",
+        "model": "orca_params_fr_female.pv",
+        "random_state": 42,
+        "text_alignment": "Tester l'alignement.",
+        "alignments": [
+          {
+            "word": "Tester",
+            "start_sec": 0.0,
+            "end_sec": 0.372,
+            "phonemes": [
+              {
+                "phoneme": "t",
+                "start_sec": 0.035,
+                "end_sec": 0.093
+              },
+              {
+                "phoneme": "ɛ",
+                "start_sec": 0.093,
+                "end_sec": 0.163
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.163,
+                "end_sec": 0.232
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.232,
+                "end_sec": 0.302
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.302,
+                "end_sec": 0.36
+              }
+            ]
+          },
+          {
+            "word": "l'alignement",
+            "start_sec": 0.372,
+            "end_sec": 0.929,
+            "phonemes": [
+              {
+                "phoneme": "l",
+                "start_sec": 0.372,
+                "end_sec": 0.418
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.418,
+                "end_sec": 0.476
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.476,
+                "end_sec": 0.534
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.534,
+                "end_sec": 0.592
+              },
+              {
+                "phoneme": "ɲ",
+                "start_sec": 0.592,
+                "end_sec": 0.731
+              },
+              {
+                "phoneme": "m",
+                "start_sec": 0.731,
+                "end_sec": 0.801
+              },
+              {
+                "phoneme": "ã",
+                "start_sec": 0.801,
+                "end_sec": 0.917
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 0.929,
+            "end_sec": 1.033,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 0.929,
+                "end_sec": 0.975
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ko",
+        "model": "orca_params_ko_female.pv",
+        "random_state": 42,
+        "text_alignment": "정렬 테스트.",
+        "alignments": [
+          {
+            "word": "정렬",
+            "start_sec": 0.0,
+            "end_sec": 0.522,
+            "phonemes": [
+              {
+                "phoneme": "ʨ",
+                "start_sec": 0.058,
+                "end_sec": 0.163
+              },
+              {
+                "phoneme": "ʌ",
+                "start_sec": 0.163,
+                "end_sec": 0.209
+              },
+              {
+                "phoneme": "ŋ",
+                "start_sec": 0.209,
+                "end_sec": 0.325
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 0.325,
+                "end_sec": 0.36
+              },
+              {
+                "phoneme": "jʌ",
+                "start_sec": 0.36,
+                "end_sec": 0.453
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.453,
+                "end_sec": 0.522
+              }
+            ]
+          },
+          {
+            "word": "테스트",
+            "start_sec": 0.522,
+            "end_sec": 1.022,
+            "phonemes": [
+              {
+                "phoneme": "tʰ",
+                "start_sec": 0.522,
+                "end_sec": 0.615
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.615,
+                "end_sec": 0.708
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.708,
+                "end_sec": 0.824
+              },
+              {
+                "phoneme": "ɯ",
+                "start_sec": 0.824,
+                "end_sec": 0.848
+              },
+              {
+                "phoneme": "tʰ",
+                "start_sec": 0.848,
+                "end_sec": 0.94
+              },
+              {
+                "phoneme": "ɯ",
+                "start_sec": 0.94,
+                "end_sec": 1.022
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.022,
+            "end_sec": 1.08,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.022,
+                "end_sec": 1.045
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ja",
+        "model": "orca_params_ja_female.pv",
+        "random_state": 42,
+        "text_alignment": "テストアライメント.",
+        "alignments": [
+          {
+            "word": "テストアライメント",
+            "start_sec": 0.0,
+            "end_sec": 1.324,
+            "phonemes": [
+              {
+                "phoneme": "t",
+                "start_sec": 0.093,
+                "end_sec": 0.163
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.163,
+                "end_sec": 0.255
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.255,
+                "end_sec": 0.313
+              },
+              {
+                "phoneme": "ɯ",
+                "start_sec": 0.313,
+                "end_sec": 0.36
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.36,
+                "end_sec": 0.43
+              },
+              {
+                "phoneme": "o",
+                "start_sec": 0.43,
+                "end_sec": 0.511
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.511,
+                "end_sec": 0.592
+              },
+              {
+                "phoneme": "ɾ",
+                "start_sec": 0.592,
+                "end_sec": 0.639
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.639,
+                "end_sec": 0.72
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.72,
+                "end_sec": 0.801
+              },
+              {
+                "phoneme": "m",
+                "start_sec": 0.801,
+                "end_sec": 0.871
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.871,
+                "end_sec": 0.964
+              },
+              {
+                "phoneme": "ɴ",
+                "start_sec": 0.964,
+                "end_sec": 1.045
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 1.045,
+                "end_sec": 1.138
+              },
+              {
+                "phoneme": "o",
+                "start_sec": 1.138,
+                "end_sec": 1.312
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.324,
+            "end_sec": 1.416,
+            "phonemes": [
+              {
+                "phoneme": "。",
+                "start_sec": 1.324,
+                "end_sec": 1.37
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "it",
+        "model": "orca_params_it_female.pv",
+        "random_state": 42,
+        "text_alignment": "Testare l'allineamento.",
+        "alignments": [
+          {
+            "word": "Testare",
+            "start_sec": 0.0,
+            "end_sec": 0.546,
+            "phonemes": [
+              {
+                "phoneme": "t",
+                "start_sec": 0.07,
+                "end_sec": 0.128
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.128,
+                "end_sec": 0.186
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 0.186,
+                "end_sec": 0.29
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.29,
+                "end_sec": 0.348
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.348,
+                "end_sec": 0.43
+              },
+              {
+                "phoneme": "r",
+                "start_sec": 0.43,
+                "end_sec": 0.488
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.488,
+                "end_sec": 0.546
+              }
+            ]
+          },
+          {
+            "word": "l'allineamento",
+            "start_sec": 0.546,
+            "end_sec": 1.556,
+            "phonemes": [
+              {
+                "phoneme": "l",
+                "start_sec": 0.546,
+                "end_sec": 0.604
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.604,
+                "end_sec": 0.662
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.662,
+                "end_sec": 0.708
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.708,
+                "end_sec": 0.755
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.755,
+                "end_sec": 0.836
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 0.836,
+                "end_sec": 0.894
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 0.894,
+                "end_sec": 0.929
+              },
+              {
+                "phoneme": "a",
+                "start_sec": 0.929,
+                "end_sec": 0.975
+              },
+              {
+                "phoneme": "m",
+                "start_sec": 0.975,
+                "end_sec": 1.045
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 1.045,
+                "end_sec": 1.161
+              },
+              {
+                "phoneme": "n",
+                "start_sec": 1.161,
+                "end_sec": 1.3
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 1.3,
+                "end_sec": 1.358
+              },
+              {
+                "phoneme": "o",
+                "start_sec": 1.358,
+                "end_sec": 1.556
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.556,
+            "end_sec": 1.614,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.556,
+                "end_sec": 1.579
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "pt",
+        "model": "orca_params_pt_female.pv",
+        "random_state": 42,
+        "text_alignment": "Alinhamento de teste.",
+        "alignments": [
+          {
+            "word": "Alinhamento",
+            "start_sec": 0.0,
+            "end_sec": 0.848,
+            "phonemes": [
+              {
+                "phoneme": "ɐ",
+                "start_sec": 0.151,
+                "end_sec": 0.209
+              },
+              {
+                "phoneme": "l",
+                "start_sec": 0.209,
+                "end_sec": 0.279
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.279,
+                "end_sec": 0.337
+              },
+              {
+                "phoneme": "ɲ",
+                "start_sec": 0.337,
+                "end_sec": 0.511
+              },
+              {
+                "phoneme": "ɐ",
+                "start_sec": 0.511,
+                "end_sec": 0.546
+              },
+              {
+                "phoneme": "m",
+                "start_sec": 0.546,
+                "end_sec": 0.627
+              },
+              {
+                "phoneme": "ẽ",
+                "start_sec": 0.627,
+                "end_sec": 0.743
+              },
+              {
+                "phoneme": "t",
+                "start_sec": 0.743,
+                "end_sec": 0.801
+              },
+              {
+                "phoneme": "u",
+                "start_sec": 0.801,
+                "end_sec": 0.848
+              }
+            ]
+          },
+          {
+            "word": "de",
+            "start_sec": 0.848,
+            "end_sec": 0.94,
+            "phonemes": [
+              {
+                "phoneme": "d",
+                "start_sec": 0.848,
+                "end_sec": 0.906
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 0.906,
+                "end_sec": 0.94
+              }
+            ]
+          },
+          {
+            "word": "teste",
+            "start_sec": 0.94,
+            "end_sec": 1.416,
+            "phonemes": [
+              {
+                "phoneme": "t",
+                "start_sec": 0.94,
+                "end_sec": 1.033
+              },
+              {
+                "phoneme": "e",
+                "start_sec": 1.033,
+                "end_sec": 1.207
+              },
+              {
+                "phoneme": "s",
+                "start_sec": 1.207,
+                "end_sec": 1.289
+              },
+              {
+                "phoneme": "tʃ",
+                "start_sec": 1.289,
+                "end_sec": 1.382
+              },
+              {
+                "phoneme": "i",
+                "start_sec": 1.382,
+                "end_sec": 1.416
+              }
+            ]
+          },
+          {
+            "word": ".",
+            "start_sec": 1.416,
+            "end_sec": 1.533,
+            "phonemes": [
+              {
+                "phoneme": ".",
+                "start_sec": 1.416,
+                "end_sec": 1.474
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "invalid_tests": [
+      {
+        "language": "en",
+        "models": [
+          "orca_params_en_female.pv",
+          "orca_params_en_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Not closed {custom|K AH S T AM pron",
+          "No separator in {custom K AH S T AM} pron",
+          "Wrong {{custom}|K AH S T AM} pron",
+          "Wrong {{custom||K AH S T AM}} pron",
+          "Wrong {custom|K AH S T AM}}| pron",
+          "Wrong }custom|K AH S T AM{ pron",
+          "Wrong {custom| K AH S T AM} pron",
+          "Wrong {custom|K AH S T AM } pron"
+        ]
+      },
+      {
+        "language": "es",
+        "models": [
+          "orca_params_es_female.pv",
+          "orca_params_es_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some french word t’arrêtes",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "de",
+        "models": [
+          "orca_params_de_female.pv",
+          "orca_params_de_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some french word t’arrêtes",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "fr",
+        "models": [
+          "orca_params_fr_female.pv",
+          "orca_params_fr_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "ko",
+        "models": [
+          "orca_params_ko_female.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some french word t’arrêtes",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "ja",
+        "models": [
+          "orca_params_ja_female.pv",
+          "orca_params_ja_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some french word t’arrêtes",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "it",
+        "models": [
+          "orca_params_it_female.pv",
+          "orca_params_it_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some french word t’arrêtes",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      },
+      {
+        "language": "pt",
+        "models": [
+          "orca_params_pt_female.pv",
+          "orca_params_pt_male.pv"
+        ],
+        "text_invalid": [
+          "Symbols *$",
+          "Escape characters \\",
+          "\"ی\", \"ء\"",
+          "ॐÁ hindi and spanish",
+          "Б russian",
+          "Some korean ㅘ",
+          "Some french word cœur",
+          "Some japanese punctuation 。",
+          "Invalid {custom|K AH S T AM} pron phonemes"
+        ]
+      }
+    ]
+  },
+  "audio_data_folder": "resources/.test/wav/raspberry-pi5-aarch64/"
+}
