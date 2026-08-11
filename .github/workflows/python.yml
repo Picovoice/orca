@@ -40,6 +40,16 @@ jobs:
         device: [ cpu:1, cpu ]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14' ]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: mac
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
@@ -64,14 +74,29 @@ jobs:
     strategy:
       matrix:
         device: [ best ]
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64, pv-linux, pv-windows, pv-ios ]
         include:
-          - device: gpu
-            machine: pv-linux
-          - device: gpu
-            machine: pv-windows
-          - device: gpu
-            machine: pv-ios
+          - machine: rpi3-32
+            platform: raspberry-pi3
+          - machine: rpi3-64
+            platform: raspberry-pi3-64
+          - machine: rpi4-32
+            platform: raspberry-pi4
+          - machine: rpi4-64
+            platform: raspberry-pi4-64
+          - machine: rpi5-64
+            platform: raspberry-pi5-64
+          - machine: pv-windows-arm64
+            platform: windows
+          - machine: pv-linux
+            platform: linux
+          - machine: pv-windows
+            platform: windows
+          - machine: pv-ios
+            platform: ios
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3

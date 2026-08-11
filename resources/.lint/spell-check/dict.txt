@@ -29,6 +29,7 @@ flac
 floatfmt
 fprintf
 frombuffer
+getprop
 Gson
 HEAPF
 HEAPU
@@ -82,6 +83,6 @@ wavefile
 wchars
 xcframework
 xcodeproj
+XCTEST
 xcuitest
 xcworkspace
-XCTEST
