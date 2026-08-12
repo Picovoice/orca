@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
