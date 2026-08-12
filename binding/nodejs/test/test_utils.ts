@@ -9,8 +9,7 @@
 // specific language governing permissions and limitations under the License.
 //
 import * as path from 'path';
-
-import os from 'os';
+import * as os from 'os';
 
 function getPlatformName(): string {
     let platformName = process.env.PLATFORM_NAME;
@@ -26,8 +25,26 @@ function getPlatformName(): string {
     return platformName;
 }
 
-const ARCH = os.machine();
+function getArchName(platformName: string): string {
+    let arch = os.machine();
+
+    if (arch == "unknown") {
+        arch = process.env.PROCESSOR_ARCHITEW6432 ||
+               process.env.PROCESSOR_ARCHITECTURE ||
+               "unknown";
+    }
+
+    if (platformName == "windows" && arch == "x86_64") {
+        arch = "AMD64";
+    } else if (platformName == "windows" && arch == "arm64") {
+        arch = "ARM64";
+    }
+
+    return arch;
+}
+
 const PLATFORM_NAME = getPlatformName();
+const ARCH = getArchName(PLATFORM_NAME);
 
 const ROOT_DIR = path.join(__dirname, '../../..');
 const TEST_DATA_JSON = require(path.join(

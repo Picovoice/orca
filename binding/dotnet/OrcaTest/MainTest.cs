@@ -561,12 +561,14 @@ namespace OrcaTest
         private static String GetPlatformName()
         {
             String platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
-            if (platformName == null) {
+            if (platformName == null)
+            {
                 Console.WriteLine("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
                 Environment.Exit(1);
             }
 
-            if (platformName == "ios") {
+            if (platformName == "ios")
+            {
                 platformName = "mac";
             }
 
@@ -576,7 +578,7 @@ namespace OrcaTest
         private static String GetArchitecture()
         {
             String platformName = GetPlatformName();
-            String architecture = RuntimeInformation.OSArchitecture;
+            String architecture = RuntimeInformation.OSArchitecture.ToString();
 
             if (platformName == "windows" && architecture == "X64")
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 public class ModelUtils
@@ -30,7 +31,7 @@ public class ModelUtils
     private static String GetArchitecture()
     {
         String platformName = GetPlatformName();
-        String architecture = RuntimeInformation.OSArchitecture;
+        String architecture = RuntimeInformation.OSArchitecture.ToString();
 
         if (platformName == "windows" && architecture == "X64")
         {
