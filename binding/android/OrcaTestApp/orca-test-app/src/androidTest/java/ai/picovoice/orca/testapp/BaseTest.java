@@ -17,6 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Build;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -59,6 +60,55 @@ public class BaseTest {
     private static final int PCM_OUTLIER_THRESHOLD = 400;
     private static final double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
 
+    private static String getArchitecture() {
+        if (Build.SUPPORTED_ABIS.length <= 0) {
+            Log.e("PICOVOICE", "ERROR: Android NDK too old.");
+            System.exit(1);
+        }
+
+        String abi = Build.SUPPORTED_ABIS[0];
+        if (abi == "arm64-v8a") {
+            return "aarch64";
+        } else if (abi == "armeabi-v7a" || abi == "armeabi") {
+            return "armv7l";
+        } else {
+            return abi;
+        }
+    }
+
+    private static String getTestDataFilename() {
+        String arch = getArchitecture();
+        String testDataFilename = String.format("android-%s_test_data.json", arch);
+        String testDataDir = String.format("%s/test_resources/%s", base, testDataFilename);
+
+        File baseDir = new File(ctx.getFilesDir(), SUBDIR);
+        File testDataFile = new File(baseDir, testDataDir);
+
+        if (testDataFile.isFile()) {
+            return testDataFilename;
+        }
+
+        Log.w(
+                "PICOVOICE",
+                "test data for android-" + arch + " does not exist. Falling back to less accurate test data");
+
+        File[] entries = dir.listFiles();
+        if (entries == null) {
+            Log.e("PICOVOICE", "ERROR: Dir does not exist.");
+            System.exit(1);
+        }
+
+        for (File f : entries) {
+            String name = f.getName();
+            if (f.isFile() && name.startsWith("android-") && name.endsWith(".json")) {
+                return name;
+            }
+        }
+
+        Log.e("PICOVOICE", "ERROR: Found no test data.");
+        System.exit(1);
+    }
+
     @BeforeClass
     public static void setup() throws Exception {
         extractedFiles = new HashSet<>();
@@ -70,9 +120,11 @@ public class BaseTest {
                 appContext.getFilesDir(),
                 "test_resources").getAbsolutePath();
 
-        extractTestFile("test_resources/test_data.json");
+        String testDataFilename = getTestDataFilename();
+        String testDataPath = String.format("test_resources/%s", testDataFilename);
+        extractTestFile(testDataPath);
         FileReader reader = new FileReader(
-                new File(testResourcesPath, "test_data.json").getAbsolutePath()
+                new File(testResourcesPath, testDataFilename).getAbsolutePath()
         );
         testJson = new Gson().fromJson(reader, JsonObject.class);
         reader.close();
@@ -85,7 +137,9 @@ public class BaseTest {
         Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
         AssetManager assetManager = testContext.getAssets();
 
-        InputStream is = new BufferedInputStream(assetManager.open("test_resources/test_data.json"), 256);
+        String testDataFilename = getTestDataFilename();
+        String testDataPath = String.format("test_resources/%s", testDataFilename);
+        InputStream is = new BufferedInputStream(assetManager.open(testDataPath), 256);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
 
         byte[] buffer = new byte[256];

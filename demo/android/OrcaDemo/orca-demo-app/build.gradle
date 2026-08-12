@@ -49,7 +49,12 @@ android {
         }
     }
 
-    def testDataFile = file('../../../../resources/.test/test_data.json')
+    def jsons = fileTree("../../../../resources/.test/") { include("**/*.json") }
+    if (jsons.files.isEmpty()) {
+        throw new GradleException("Could not find any json files.")
+    }
+
+    def testDataFile = jsons.files.first()
     def parsedJson = new JsonSlurper().parseText(testDataFile.text)
     def models = []
     parsedJson.tests.sentence_tests.each { test ->
