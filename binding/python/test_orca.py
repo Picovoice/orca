@@ -20,7 +20,7 @@ from typing import List, Sequence
 
 from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
-from test_util import get_model_path, get_test_data, read_wav_file
+from test_util import get_platform_and_architecture, get_model_path, get_test_data, read_wav_file
 
 
 test_data = get_test_data()
@@ -332,6 +332,19 @@ if __name__ == '__main__':
     parser.add_argument('--access-key', required=True)
     parser.add_argument('--device', required=True)
     args = parser.parse_args()
+
+    arch, platform_name = get_platform_and_architecture()
+    print(f"arch={arch}, platform={platform_name}")
+
+    import subprocess
+    result = subprocess.run(
+        ["lscpu"],
+        capture_output=True,
+        text=True,
+    )
+    print(result.stdout)
+    print(result.stderr)
+    print(result.returncode)
 
     OrcaTestCase.access_key = args.access_key
     OrcaTestCase.device = args.device
