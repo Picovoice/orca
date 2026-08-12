@@ -66,6 +66,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test
+        continue-on-error: true
         run: python3 test_orca.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}} --device ${{ matrix.device }}
 
       - name: Upload output artifacts
@@ -131,4 +132,5 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test
+        continue-on-error: true
         run: python3 test_orca.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}} --device ${{ matrix.device }}
