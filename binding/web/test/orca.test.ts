@@ -248,7 +248,8 @@ describe('Sentence Tests', function() {
                   validatePcm(new Int16Array(streamPcm), rawPcm);
                   await orcaStream.close();
                 } catch (e) {
-                  expect(e).to.be.undefined;
+                  console.log('e =', e && (e.stack || e.message || String(e)));
+                  expect(e, `got ${e && e.stack}`).to.be.undefined;
                 }
 
                 if (orca instanceof OrcaWorker) {
