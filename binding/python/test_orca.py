@@ -198,6 +198,16 @@ class OrcaTestCase(unittest.TestCase):
                 audio_data_folder=test_data.audio_data_folder,
                 synthesis_type="stream")
 
+            os.makedirs("./out/", exist_ok=True)
+
+            import wave
+            with wave.open("./out/" + model.replace('.pv', '_stream.wav'), "wb") as w:
+                w.setnchannels(1)
+                w.setsampwidth(2)  # 2 bytes
+                w.setframerate(22050)
+                import struct
+                w.writeframes(struct.pack(f"<{len(pcm)}h", *pcm))
+
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
     @parameterized.expand([(t.language, t.models, t.random_state, t.text_custom_pronunciation) for t in test_data.sentence_tests])

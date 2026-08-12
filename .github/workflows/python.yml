@@ -68,6 +68,15 @@ jobs:
       - name: Test
         run: python3 test_orca.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}} --device ${{ matrix.device }}
 
+      - name: Upload output artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-debug-${{ github.run_attempt }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 5
+
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
 
