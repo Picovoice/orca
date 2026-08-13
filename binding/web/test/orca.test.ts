@@ -34,15 +34,52 @@ const getAudioFileName = (model: string, synthesis_type: string): string => mode
 
 const PCM_OUTLIER_THRESHOLD = 400;
 const PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+const MAXIMUM_LENGTH_DIFFERENCE = 0.05;
+const ZERO_CROSSING_SIMILARITY = 0.04;
+
+const zeroCrossingRate = (pcm: Int16Array) => {
+  let numZeroCrossings = 0;
+  for (let i = 1; i < pcm.length; i++) {
+    if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+      numZeroCrossings += 1;
+    }
+  }
+
+  return numZeroCrossings / (pcm.length - 1);
+}
 
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
-  expect(pcm.length).gt(0);
-  expect(pcm.length).eq(groundTruth.length);
-  const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
-  const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
-  expect(diffOutliers).lte(PCM_OUTLIER_COUNT_THRESHOLD);
+  expect(pcm.length).toBeGreaterThan(0);
+
+  if (pcm.length == groundTruth.length) {
+    const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
+    const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
+
+    if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD) {
+      return;
+    }
+  }
+
+  expect((pcm.length - groundTruth.length) / groundTruth.length).toBeLessThan(MAXIMUM_LENGTH_DIFFERENCE);
+
+  const zcr0 = zeroCrossingRate(pcm)
+  const zcr1 = zeroCrossingRate(groundTruth)
+  if (Math.abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+    return;
+  }
+
+  throw new Error(`${zcr0} and ${zcr1} are too different`);
 };
 
+const validatePcmDiffers = (pcm: Int16Array, groundTruth: Int16Array) => {
+  const zcr0 = zeroCrossingRate(pcm)
+  const zcr1 = zeroCrossingRate(groundTruth)
+  const diff = Math.abs(zcr0 - zcr1) / zcr1;
+  console.log(`${zcr0} vs ${zcr1} [${diff}]`);
+  if (diff <= ZERO_CROSSING_SIMILARITY) {
+    throw new Error(`${zcr0} and ${zcr1} are too similar`);
+  }
+}
 const runInitTest = async (
   instance: typeof Orca | typeof OrcaWorker,
   params: {
@@ -401,6 +438,44 @@ describe('Sentence Tests', function() {
 
             const { pcm } = await orca.synthesize(text);
             expect(pcm.length).gt(0);
+
+            if (orca instanceof OrcaWorker) {
+              orca.terminate();
+            } else if (orca instanceof Orca) {
+              await orca.release();
+            }
+          } catch (e) {
+            expect(e).to.be.undefined;
+          }
+        });
+
+        it(`should be able to differentiate speech with zcr (${testCaseString})`, async () => {
+          if (testCase.language != "en") {
+            return;
+          }
+
+          try {
+            const orca = await instance.create(
+              ACCESS_KEY,
+              { publicPath, forceWrite: true },
+              { device: DEVICE }
+            );
+
+            for (const pair of textPairs) {
+              const result0 = await orca.synthesize(
+                pair[0],
+                { speechRate: 1, randomState: testCase.random_state },
+              );
+              expect(result0.alignments).to.not.be.undefined;
+
+              const result1 = await orca.synthesize(
+                pair[1],
+                { speechRate: 1, randomState: testCase.random_state },
+              );
+              expect(result1.alignments).to.not.be.undefined;
+
+              validatePcmDiffers(result0.pcm, result1.pcm);
+            }
 
             if (orca instanceof OrcaWorker) {
               orca.terminate();

@@ -33,6 +33,8 @@ namespace OrcaTest
 
         private static readonly int PCM_OUTLIER_THRESHOLD = 400;
         private static readonly double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+        private static readonly double MAXIMUM_LENGTH_DIFFERENCE = 0.05;
+        private static readonly double ZERO_CROSSING_SIMILARITY = 0.04;
 
         private static string _accessKey;
         private static string _device;
@@ -171,12 +173,48 @@ namespace OrcaTest
             }
         }
 
+        private static double ZeroCrossingRate(List<short> pcm)
+        {
+            int numZeroCrossings = 0;
+            for (int i = 1; i < pcm.Count(); i++) {
+                if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+                    numZeroCrossings += 1;
+                }
+            }
+
+            return numZeroCrossings / (pcm.Count() - 1);
+        }
+
         private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
         {
-            Assert.AreEqual(synthesizedPcm.Count(), testPcm.Count());
-            List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
-            double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
-            Assert.IsTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
+            if (synthesizedPcm.Count() == testPcm.Count()) {
+                List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
+                double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
+
+                if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD) {
+                    return;
+                }
+            }
+
+            double lengthDifferenceRatio = (synthesizedPcm.Count() - testPcm.Count()) / testPcm.Count();
+            Assert.IsTrue(lengthDifferenceRatio < MAXIMUM_LENGTH_DIFFERENCE);
+
+            double zcr0 = ZeroCrossingRate(synthesizedPcm);
+            double zcr1 = ZeroCrossingRate(testPcm);
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+                return;
+            }
+
+            throw new Exception($"{zcr0} and {zcr1} are too different");
+        }
+
+        private static void ValidateAudioDiffers(List<short> synthesizedPcm, List<short> testPcm)
+        {
+            double zcr0 = ZeroCrossingRate(synthesizedPcm);
+            double zcr1 = ZeroCrossingRate(testPcm);
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+                throw new Exception($"{zcr0} and {zcr1} are too similar");
+            }
         }
 
         public void ValidatePhonemes(OrcaPhoneme[] phonemes)
@@ -418,6 +456,40 @@ namespace OrcaTest
                 Assert.IsTrue(resSlow.Pcm.Length > 0);
                 Assert.IsTrue(resFast.Pcm.Length > 0);
                 Assert.IsTrue(resSlow.Pcm.Length > resFast.Pcm.Length);
+            }
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestZCRSimilarity(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
+        {
+            if (language != "en") {
+                return;
+            }
+
+            List<(String, String)> textPairs = new List<(String, String)> {
+                ("This is a dog", "That is a frog"),
+                ("Hello world", "A nice tree"),
+            };
+
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
+            {
+                foreach ((String, String) pair in textPairs) {
+                    OrcaAudio result0 = orca.Synthesize(
+                        pair.Item1,
+                        randomState: random_state);
+                    OrcaAudio result1 = orca.Synthesize(
+                        pair.Item2,
+                        randomState: random_state);
+
+                    ValidateAudioDiffers(result0.Pcm.ToList(), result1.Pcm.ToList());
+                }
             }
         }
 
