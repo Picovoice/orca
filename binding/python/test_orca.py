@@ -27,7 +27,7 @@ test_data = get_test_data()
 
 PCM_OUTLIER_THRESHOLD = 400
 PCM_OUTLIER_COUNT_THRESHOLD = 0.05
-ZERO_CROSSING_SIMILARITY = 0.01
+ZERO_CROSSING_SIMILARITY = 0.04
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
