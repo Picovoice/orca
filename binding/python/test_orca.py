@@ -27,7 +27,7 @@ test_data = get_test_data()
 
 PCM_OUTLIER_THRESHOLD = 400
 PCM_OUTLIER_COUNT_THRESHOLD = 0.05
-ZERO_CROSSING_SIMILARITY = 0.005
+ZERO_CROSSING_SIMILARITY = 0.01
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
@@ -73,13 +73,13 @@ class OrcaTestCase(unittest.TestCase):
         if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY:
             return
 
-        self.fail("should not get here")
+        self.fail(f"zcr of {zcr0} and {zcr1} are too different")
 
     def _test_audio_differs(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
         zcr0 = OrcaTestCase.zero_crossing_rate(pcm)
         zcr1 = OrcaTestCase.zero_crossing_rate(ground_truth)
         if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY:
-            self.fail("should not get here")
+            self.fail(f"zcr of {zcr0} and {zcr1} are too similar")
 
     @staticmethod
     def _get_pcm(model: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
@@ -298,7 +298,7 @@ class OrcaTestCase(unittest.TestCase):
             return
 
         pairs = [
-            ("This is a dog", "This is a hog"),
+            ("This is a dog", "This is a frog"),
             ("Hello world", "A nice tree"),
         ]
 

@@ -66,17 +66,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test
-        continue-on-error: true
         run: python3 test_orca.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}} --device ${{ matrix.device }}
-
-      - name: Upload output artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-debug-${{ github.run_attempt }}
-          path: binding/python/out/
-          if-no-files-found: warn
-          retention-days: 5
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
@@ -132,5 +122,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test
-        continue-on-error: true
         run: python3 test_orca.py --access-key ${{secrets.PV_VALID_ACCESS_KEY}} --device ${{ matrix.device }}
