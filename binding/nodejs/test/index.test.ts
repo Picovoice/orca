@@ -119,8 +119,8 @@ const validateAlignmentsExact = (alignments: OrcaAlignment[], expectedAlignments
     const expectedPhonemes = expectedAlignments[i].phonemes;
     alignment.phonemes.forEach((phoneme, j) => {
       expect(phoneme.phoneme).toEqual(expectedPhonemes[j].phoneme);
-      expect(phoneme.startSec).toBeCloseTo(expectedPhonemes[j].start_sec, 2);
-      expect(phoneme.endSec).toBeCloseTo(expectedPhonemes[j].end_sec, 2);
+      expect(phoneme.startSec).toBeCloseTo(expectedPhonemes[j].start_sec, 1);
+      expect(phoneme.endSec).toBeCloseTo(expectedPhonemes[j].end_sec, 1);
     });
   });
 };

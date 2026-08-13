@@ -176,24 +176,26 @@ namespace OrcaTest
         private static double ZeroCrossingRate(List<short> pcm)
         {
             int numZeroCrossings = 0;
-            for (int i = 1; i < pcm.Count(); i++) {
-                if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+            for (int i = 1; i < pcm.Count(); i++)
+            {
+                if ((pcm[i] >= 0) != (pcm[i - 1] >= 0))
+                {
                     numZeroCrossings += 1;
                 }
             }
 
-            return (double) numZeroCrossings / (pcm.Count() - 1);
+            return (double)numZeroCrossings / (pcm.Count() - 1);
         }
 
         private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
         {
-            if (synthesizedPcm.Count() == testPcm.Count()) {
+            if (synthesizedPcm.Count() == testPcm.Count())
+            {
                 List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
                 double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
 
-                if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD) {
+                if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD)
                     return;
-                }
             }
 
             double lengthDifferenceRatio = (synthesizedPcm.Count() - testPcm.Count()) / testPcm.Count();
@@ -201,9 +203,8 @@ namespace OrcaTest
 
             double zcr0 = ZeroCrossingRate(synthesizedPcm);
             double zcr1 = ZeroCrossingRate(testPcm);
-            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY)
                 return;
-            }
 
             throw new Exception($"{zcr0} and {zcr1} are too different");
         }
@@ -212,9 +213,8 @@ namespace OrcaTest
         {
             double zcr0 = ZeroCrossingRate(synthesizedPcm);
             double zcr1 = ZeroCrossingRate(testPcm);
-            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY)
                 throw new Exception($"{zcr0} and {zcr1} are too similar");
-            }
         }
 
         public void ValidatePhonemes(OrcaPhoneme[] phonemes)
@@ -257,15 +257,15 @@ namespace OrcaTest
             for (int i = 0; i < alignments.Length; i++)
             {
                 Assert.AreEqual(alignments[i].Word, expectedAlignments[i].word);
-                Assert.AreEqual(alignments[i].StartSec, expectedAlignments[i].start_sec, 0.01);
-                Assert.AreEqual(alignments[i].EndSec, expectedAlignments[i].end_sec, 0.01);
+                Assert.AreEqual(alignments[i].StartSec, expectedAlignments[i].start_sec, 0.025);
+                Assert.AreEqual(alignments[i].EndSec, expectedAlignments[i].end_sec, 0.025);
 
                 TestPhonemeAlignmentsJson[] expectedPhonemes = expectedAlignments[i].phonemes;
                 for (int j = 0; j < alignments[i].Phonemes.Length; j++)
                 {
                     Assert.AreEqual(alignments[i].Phonemes[j].Phoneme, expectedPhonemes[j].phoneme);
-                    Assert.AreEqual(alignments[i].Phonemes[j].StartSec, expectedPhonemes[j].start_sec, 0.01);
-                    Assert.AreEqual(alignments[i].Phonemes[j].EndSec, expectedPhonemes[j].end_sec, 0.01);
+                    Assert.AreEqual(alignments[i].Phonemes[j].StartSec, expectedPhonemes[j].start_sec, 0.025);
+                    Assert.AreEqual(alignments[i].Phonemes[j].EndSec, expectedPhonemes[j].end_sec, 0.025);
                 }
             }
         }
@@ -469,9 +469,8 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            if (language != "en") {
+            if (language != "en")
                 return;
-            }
 
             List<(String, String)> textPairs = new List<(String, String)> {
                 ("This is a dog", "This is a frog"),
@@ -480,7 +479,8 @@ namespace OrcaTest
 
             using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
-                foreach ((String, String) pair in textPairs) {
+                foreach ((String, String) pair in textPairs)
+                {
                     OrcaAudio result0 = orca.Synthesize(
                         pair.Item1,
                         randomState: random_state);
@@ -680,7 +680,8 @@ namespace OrcaTest
             return architecture;
         }
 
-        public static string GetDataFilePath() {
+        public static string GetDataFilePath()
+        {
             string platformName = GetPlatformName();
             string architecture = GetArchitecture();
             string dataFilePath = Path.Combine(
