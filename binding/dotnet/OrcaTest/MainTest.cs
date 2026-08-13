@@ -182,7 +182,7 @@ namespace OrcaTest
                 }
             }
 
-            return numZeroCrossings / (pcm.Count() - 1);
+            return (double) numZeroCrossings / (pcm.Count() - 1);
         }
 
         private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
@@ -474,7 +474,7 @@ namespace OrcaTest
             }
 
             List<(String, String)> textPairs = new List<(String, String)> {
-                ("This is a dog", "That is a frog"),
+                ("This is a dog", "This is a frog"),
                 ("Hello world", "A nice tree"),
             };
 
@@ -569,7 +569,6 @@ namespace OrcaTest
         {
             using (Orca o = Orca.Create(_accessKey, device: _device))
             {
-                // TODO: is this failing?
                 var obj = typeof(Orca).GetField("_libraryPointer", BindingFlags.NonPublic | BindingFlags.Instance);
                 IntPtr address = (IntPtr)obj.GetValue(o);
                 obj.SetValue(o, IntPtr.Zero);

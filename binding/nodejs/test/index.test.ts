@@ -247,7 +247,7 @@ describe('sentences', () => {
         }
 
         const textPairs = [
-            ["This is a dog", "That is a frog"],
+            ["This is a dog", "This is a frog"],
             ["Hello world", "A nice tree"],
         ];
 

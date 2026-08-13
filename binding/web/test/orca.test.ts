@@ -49,7 +49,7 @@ const zeroCrossingRate = (pcm: Int16Array) => {
 }
 
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
-  expect(pcm.length).toBeGreaterThan(0);
+  expect(pcm.length).to.be.greaterThan(0);
 
   if (pcm.length == groundTruth.length) {
     const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
@@ -460,6 +460,11 @@ describe('Sentence Tests', function() {
               { publicPath, forceWrite: true },
               { device: DEVICE }
             );
+
+            const textPairs = [
+              ["This is a dog", "This is a frog"],
+              ["Hello world", "A nice tree"],
+            ];
 
             for (const pair of textPairs) {
               const result0 = await orca.synthesize(
