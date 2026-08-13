@@ -60,7 +60,7 @@ const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
     }
   }
 
-  expect((pcm.length - groundTruth.length) / groundTruth.length).toBeLessThan(MAXIMUM_LENGTH_DIFFERENCE);
+  expect((pcm.length - groundTruth.length) / groundTruth.length).to.be.lessThan(MAXIMUM_LENGTH_DIFFERENCE);
 
   const zcr0 = zeroCrossingRate(pcm)
   const zcr1 = zeroCrossingRate(groundTruth)
