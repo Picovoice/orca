@@ -30,7 +30,7 @@ def android_first_device_id():
 def get_platform_and_architecture() -> tuple[str, str]:
     platform_name = os.getenv("PLATFORM_NAME")
     if platform_name is None:
-        raise Exception("Expected PLATFORM_NAME to exit. Is this being run in a pipeline?")
+        raise Exception("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?")
 
     arch = platform.machine()
 

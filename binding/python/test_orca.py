@@ -1,5 +1,5 @@
 #
-#    Copyright 2024-2025 Picovoice Inc.
+#    Copyright 2024-2026 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -53,7 +53,7 @@ class OrcaTestCase(unittest.TestCase):
             self._test_phoneme_equal(phoneme, phoneme_truth)
 
     def zero_crossing_rate(pcm):
-        # Different kinds of phonemes tend to have the same numbers of zero crossings. Same with similar pitches, so
+        # The same kinds of phonemes tend to have the same numbers of zero crossings. Same with similar pitches, so
         # zcr is a sort of rudimentary timbre hash.
         num_zero_crossings = sum(1 for i in range(1, len(pcm)) if (pcm[i] >= 0) != (pcm[i-1] >= 0))
         return num_zero_crossings / (len(pcm) - 1)
@@ -218,16 +218,6 @@ class OrcaTestCase(unittest.TestCase):
                 model=model,
                 audio_data_folder=test_data.audio_data_folder,
                 synthesis_type="stream")
-
-            os.makedirs("./out/", exist_ok=True)
-
-            import wave
-            with wave.open("./out/" + model.replace('.pv', '_stream.wav'), "wb") as w:
-                w.setnchannels(1)
-                w.setsampwidth(2)  # 2 bytes
-                w.setframerate(22050)
-                import struct
-                w.writeframes(struct.pack(f"<{len(pcm)}h", *pcm))
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
