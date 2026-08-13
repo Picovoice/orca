@@ -54,7 +54,7 @@ class OrcaTestCase(unittest.TestCase):
 
     def zero_crossing_rate(pcm):
         # Different kinds of phonemes tend to have the same numbers of zero crossings. Same with similar pitches, so
-        # zcr is a sort of ruidimentary timbre hash.
+        # zcr is a sort of rudimentary timbre hash.
         num_zero_crossings = sum(1 for i in range(1, len(pcm)) if (pcm[i] >= 0) != (pcm[i-1] >= 0))
         return num_zero_crossings / (len(pcm) - 1)
 
