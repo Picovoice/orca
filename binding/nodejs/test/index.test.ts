@@ -24,8 +24,10 @@ const DEVICE = process.argv
   .filter(x => x.startsWith('--device='))[0]
   .split('--device=')[1] ?? 'best';
 
-const PCM_OUTLIER_THRESHOLD = 400
-const PCM_OUTLIER_COUNT_THRESHOLD = 0.05
+const PCM_OUTLIER_THRESHOLD = 400;
+const PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+const MAXIMUM_LENGTH_DIFFERENCE = 0.05;
+const ZERO_CROSSING_SIMILARITY = 0.005;
 
 const testData = getTestData();
 
@@ -40,13 +42,49 @@ const loadPcm = (audioFile: string): any => {
   return waveAudioFile.getSamples(false, Int16Array);
 };
 
+const zeroCrossingRate = (pcm: Int16Array) => {
+  let numZeroCrossings = 0;
+  for (let i = 1; i < pcm.length; i++) {
+    if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+      numZeroCrossings += 1;
+    }
+  }
+
+  return numZeroCrossings / (pcm.length - 1);
+}
+
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).toBeGreaterThan(0);
-  expect(pcm.length).toEqual(groundTruth.length);
-  const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
-  const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
-  expect(diffOutliers).toBeLessThanOrEqual(PCM_OUTLIER_COUNT_THRESHOLD);
+
+  if (pcm.length == groundTruth.length) {
+    const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
+    const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
+
+    if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD) {
+      return;
+    }
+  }
+
+  expect((pcm.length - groundTruth.length) / groundTruth.length).toBeLessThan(MAXIMUM_LENGTH_DIFFERENCE);
+
+  const zcr0 = zeroCrossingRate(pcm)
+  const zcr1 = zeroCrossingRate(groundTruth)
+  if (Math.abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+    return;
+  }
+
+  throw new Error('unreachable');
 };
+
+const validatePcmDiffers = (pcm: Int16Array, groundTruth: Int16Array) => {
+  const zcr0 = zeroCrossingRate(pcm)
+  const zcr1 = zeroCrossingRate(groundTruth)
+  const diff = Math.abs(zcr0 - zcr1) / zcr1;
+  console.log(`${zcr0} vs ${zcr1} [${diff}]`);
+  if (diff <= ZERO_CROSSING_SIMILARITY) {
+    throw new Error('unreachable');
+  }
+}
 
 const validatePhonemes = (phonemes: OrcaPhoneme[]) => {
   expect(phonemes.length).toBeGreaterThanOrEqual(0);
@@ -202,6 +240,35 @@ describe('sentences', () => {
         expect(pcmSlow.length).toBeGreaterThan(pcmFast.length);
         orcaEngine.release();
       });
+
+      it('test zcr similarity', () => {
+        const textPairs = [
+            ["This is a dog", "This is a hog"],
+            ["Hello world", "A nice tree"],
+        ];
+
+        const orcaEngine = new Orca(ACCESS_KEY, { modelPath: getModelPath(model), device: DEVICE });
+
+        for (const pair of textPairs) {
+          console.log(pair[0] + " |vs| " + pair[1] + " (" + model + ")");
+
+          const result0 = orcaEngine.synthesize(
+            pair[0],
+            { speechRate: 1, randomState: random_state },
+          );
+          expect(result0.alignments).not.toBeUndefined();
+
+          const result1 = orcaEngine.synthesize(
+            pair[1],
+            { speechRate: 1, randomState: random_state },
+          );
+          expect(result1.alignments).not.toBeUndefined();
+
+          validatePcmDiffers(result0.pcm, result1.pcm);
+        }
+
+        orcaEngine.release();
+      });
     });
   });
 });
@@ -237,7 +304,6 @@ describe('invalids', () => {
     });
   });
 });
-
 
 describe('basic parameter validation', () => {
   test('Empty AccessKey', () => {

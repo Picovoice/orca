@@ -126,7 +126,6 @@ namespace OrcaTest
 
         private static IEnumerable<object[]> SentenceTestParameters
         {
-            Console.WriteLine("Inside SentenceTestParameters");
             get
             {
                 TestDataJson testData = LoadJsonTestData();
@@ -624,7 +623,8 @@ namespace OrcaTest
                     $"WARNING: test data for {platformName}-{architecture} does not exist. " +
                     "Falling back to less accurate test data");
 
-            if (!Directory.Exists(Path.Combine(ROOT_DIR, "resources/.test/")))
+            string resourcesDir = Path.Combine(ROOT_DIR, "resources/.test/");
+            if (!Directory.Exists(resourcesDir))
                 throw new Exception("Could not find ./.test/ directory");
 
             foreach (var file in Directory.EnumerateFiles(resourcesDir))
@@ -644,7 +644,7 @@ namespace OrcaTest
 
         private static TestDataJson LoadJsonTestData()
         {
-            string content = File.ReadAllText(GetDataFilePath())
+            string content = File.ReadAllText(GetDataFilePath());
             TestDataJson res = JObject.Parse(content).ToObject<TestDataJson>();
             return res;
         }

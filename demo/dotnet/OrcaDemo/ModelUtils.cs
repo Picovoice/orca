@@ -67,7 +67,8 @@ public class ModelUtils
         if (File.Exists(dataFilePath))
             return dataFilePath;
 
-        if (!Directory.Exists(Path.Combine(ROOT_DIR, "resources/.test/")))
+        string resourcesDir = Path.Combine(ROOT_DIR, "resources/.test/");
+        if (!Directory.Exists(resourcesDir))
             throw new Exception("Could not find ./.test/ directory");
 
         foreach (var file in Directory.EnumerateFiles(resourcesDir))
