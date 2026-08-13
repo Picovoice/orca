@@ -53,7 +53,7 @@ const TEST_DATA_JSON = require(path.join(
 ));
 
 export function getAudioFile(audioFile: string): string {
-  return path.join(ROOT_DIR, `resources/.test/${PLATFORM_NAME}-${ARCH}/wav`, audioFile);
+  return path.join(ROOT_DIR, `resources/.test/wav/${PLATFORM_NAME}-${ARCH}/`, audioFile);
 }
 
 export function getTestData() {

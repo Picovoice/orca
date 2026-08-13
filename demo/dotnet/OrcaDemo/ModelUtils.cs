@@ -11,9 +11,9 @@ public class ModelUtils
         AppContext.BaseDirectory,
         "../../../../../..");
 
-    private static String GetPlatformName()
+    private static string GetPlatformName()
     {
-        String platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
+        string platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
         if (platformName == null)
         {
             Console.WriteLine("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
@@ -28,10 +28,10 @@ public class ModelUtils
         return platformName;
     }
 
-    private static String GetArchitecture()
+    private static string GetArchitecture()
     {
-        String platformName = GetPlatformName();
-        String architecture = RuntimeInformation.OSArchitecture.ToString();
+        string platformName = GetPlatformName();
+        string architecture = RuntimeInformation.OSArchitecture.ToString();
 
         if (platformName == "windows" && architecture == "X64")
         {
@@ -45,6 +45,10 @@ public class ModelUtils
         {
             architecture = "x86_64";
         }
+        else if (platformName == "mac" && architecture == "Arm64")
+        {
+            architecture = "arm64";
+        }
         else if (architecture == "Arm64")
         {
             architecture = "aarch64";
@@ -53,14 +57,37 @@ public class ModelUtils
         return architecture;
     }
 
-    public static List<string> GetAvailableLanguages()
-    {
-        String platformName = GetPlatformName();
-        String architecture = GetArchitecture();
-        string testDataPath = Path.Combine(
+    public static string GetDataFilePath() {
+        string platformName = GetPlatformName();
+        string architecture = GetArchitecture();
+        string dataFilePath = Path.Combine(
                 ROOT_DIR,
                 $"resources/.test/{platformName}-{architecture}_test_data.json");
 
+        if (File.Exists(dataFilePath))
+            return dataFilePath;
+
+        if (!Directory.Exists(Path.Combine(ROOT_DIR, "resources/.test/")))
+            throw new Exception("Could not find ./.test/ directory");
+
+        foreach (var file in Directory.EnumerateFiles(resourcesDir))
+        {
+            string name = Path.GetFileName(file);
+            if (name.StartsWith($"{platformName}-", StringComparison.Ordinal) &&
+                name.EndsWith(".json", StringComparison.Ordinal))
+            {
+                return Path.Combine(
+                        ROOT_DIR,
+                        $"resources/.test/{name}");
+            }
+        }
+
+        throw new Exception("Could not find any test_data for the current platform");
+    }
+
+    public static List<string> GetAvailableLanguages()
+    {
+        string testDataPath = GetDataFilePath();
         testDataPath = Path.GetFullPath(testDataPath);
 
         string jsonString = File.ReadAllText(testDataPath);

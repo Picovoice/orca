@@ -126,6 +126,7 @@ namespace OrcaTest
 
         private static IEnumerable<object[]> SentenceTestParameters
         {
+            Console.WriteLine("Inside SentenceTestParameters");
             get
             {
                 TestDataJson testData = LoadJsonTestData();
@@ -563,9 +564,9 @@ namespace OrcaTest
             return GetPcmFromFile(testAudioPath);
         }
 
-        private static String GetPlatformName()
+        private static string GetPlatformName()
         {
-            String platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
+            string platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
             if (platformName == null)
             {
                 Console.WriteLine("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
@@ -580,10 +581,10 @@ namespace OrcaTest
             return platformName;
         }
 
-        private static String GetArchitecture()
+        private static string GetArchitecture()
         {
-            String platformName = GetPlatformName();
-            String architecture = RuntimeInformation.OSArchitecture.ToString();
+            string platformName = GetPlatformName();
+            string architecture = RuntimeInformation.OSArchitecture.ToString();
 
             if (platformName == "windows" && architecture == "X64")
             {
@@ -597,6 +598,10 @@ namespace OrcaTest
             {
                 architecture = "x86_64";
             }
+            else if (platformName == "mac" && architecture == "Arm64")
+            {
+                architecture = "arm64";
+            }
             else if (architecture == "Arm64")
             {
                 architecture = "aarch64";
@@ -605,17 +610,43 @@ namespace OrcaTest
             return architecture;
         }
 
+        public static string GetDataFilePath() {
+            string platformName = GetPlatformName();
+            string architecture = GetArchitecture();
+            string dataFilePath = Path.Combine(
+                    ROOT_DIR,
+                    $"resources/.test/{platformName}-{architecture}_test_data.json");
+
+            if (File.Exists(dataFilePath))
+                return dataFilePath;
+
+            Console.WriteLine(
+                    $"WARNING: test data for {platformName}-{architecture} does not exist. " +
+                    "Falling back to less accurate test data");
+
+            if (!Directory.Exists(Path.Combine(ROOT_DIR, "resources/.test/")))
+                throw new Exception("Could not find ./.test/ directory");
+
+            foreach (var file in Directory.EnumerateFiles(resourcesDir))
+            {
+                string name = Path.GetFileName(file);
+                if (name.StartsWith($"{platformName}-", StringComparison.Ordinal) &&
+                    name.EndsWith(".json", StringComparison.Ordinal))
+                {
+                    return Path.Combine(
+                            ROOT_DIR,
+                            $"resources/.test/{name}");
+                }
+            }
+
+            throw new Exception("Could not find any test_data for the current platform");
+        }
+
         private static TestDataJson LoadJsonTestData()
         {
-            Console.WriteLine("Inside LoadJsonTestData()");
-            String platformName = GetPlatformName();
-            Console.WriteLine("platformName = " + platformName);
-            String architecture = GetArchitecture();
-            Console.WriteLine("architecture = " + architecture);
-            string content = File.ReadAllText(Path.Combine(
-                    ROOT_DIR,
-                    $"resources/.test/{platformName}-{architecture}_test_data.json"));
-            return JObject.Parse(content).ToObject<TestDataJson>();
+            string content = File.ReadAllText(GetDataFilePath())
+            TestDataJson res = JObject.Parse(content).ToObject<TestDataJson>();
+            return res;
         }
     }
 }
