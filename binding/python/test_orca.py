@@ -27,7 +27,7 @@ test_data = get_test_data()
 
 PCM_OUTLIER_THRESHOLD = 400
 PCM_OUTLIER_COUNT_THRESHOLD = 0.05
-ZERO_CROSSING_SIMILARITY = 0.05
+ZERO_CROSSING_SIMILARITY = 0.005
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
@@ -307,11 +307,10 @@ class OrcaTestCase(unittest.TestCase):
                 pcm0, alignment = orca.synthesize(text0, random_state=random_state)
                 self.assertGreater(len(pcm0), 0)
 
-            for orca, model in OrcaTestCase._orca_iter(models):
                 pcm1, alignment = orca.synthesize(text1, random_state=random_state)
                 self.assertGreater(len(pcm1), 0)
 
-            self._test_audio_differs(pcm=pcm0, ground_truth=pcm1)
+                self._test_audio_differs(pcm=pcm0, ground_truth=pcm1)
 
     def test_message_stack(self):
         relative_path = '../..'
