@@ -108,16 +108,16 @@ class BaseTest: XCTestCase {
     }
 
     func zeroCrossingRate(pcm: [Int16]) -> Double {
-        var numZeroCrossings: Int32 = 0;
+        var numZeroCrossings: Int32 = 0
         for i in stride(from: 1, to: pcm.count, by: 1) where (pcm[i] >= 0) != (pcm[i - 1] >= 0) {
-            numZeroCrossings += 1;
+            numZeroCrossings += 1
         }
 
-        return Double(numZeroCrossings) / Double(pcm.count - 1);
+        return Double(numZeroCrossings) / Double(pcm.count - 1)
     }
 
     func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
-        if (arr1.count == arr2.count) {
+        if arr1.count == arr2.count {
             var found_outlier = false
             for i in stride(from: 0, to: arr1.count - step, by: step)
                     where abs(arr1[i] - arr2[i]) > PCM_OUTLIER_THRESHOLD {
@@ -132,7 +132,7 @@ class BaseTest: XCTestCase {
 
         let zcr0 = zeroCrossingRate(pcm: arr1)
         let zcr1 = zeroCrossingRate(pcm: arr2)
-        if (abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+        if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY {
             return true
         }
 
