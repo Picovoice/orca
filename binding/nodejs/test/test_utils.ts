@@ -10,6 +10,7 @@
 //
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 
 function getPlatformName(): string {
     let platformName = process.env.PLATFORM_NAME;
@@ -46,6 +47,35 @@ function getArchName(platformName: string): string {
 const PLATFORM_NAME = getPlatformName();
 const ARCH = getArchName(PLATFORM_NAME);
 
+function GetDataFilePath(): string {
+  const dataFilePath = path.join(
+      ROOT_DIR,
+      `resources/.test/${PLATFORM_NAME}-${ARCH}_test_data.json`);
+
+  if (fs.existsSync(dataFilePath)) {
+    return dataFilePath;
+  }
+
+  console.log(
+      `WARNING: test data for ${PLATFORM_NAME}-${ARCH} does not exist. ` +
+      "Falling back to less accurate test data");
+
+  const resourcesDir = path.join(ROOT_DIR, "resources/.test/");
+  if (!fs.existsSync(resourcesDir)) {
+    throw new Error("Could not find ./.test/ directory");
+  }
+
+  for (const name of fs.readdirSync(resourcesDir)) {
+    if (name.startsWith(`${PLATFORM_NAME}-`) && name.endsWith(".json")) {
+      return path.join(
+          ROOT_DIR,
+          `resources/.test/${name}`);
+    }
+  }
+
+  throw new Error("Could not find any test_data for the current platform");
+}
+
 const ROOT_DIR = path.join(__dirname, '../../..');
 const TEST_DATA_JSON = require(path.join(
   ROOT_DIR,
@@ -53,7 +83,8 @@ const TEST_DATA_JSON = require(path.join(
 ));
 
 export function getAudioFile(audioFile: string): string {
-  return path.join(ROOT_DIR, `resources/.test/wav/${PLATFORM_NAME}-${ARCH}/`, audioFile);
+  const dataFilePath = GetDataFilePath();
+  return path.join(dataFilePath, audioFile);
 }
 
 export function getTestData() {
