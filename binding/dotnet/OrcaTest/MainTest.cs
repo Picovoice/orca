@@ -280,12 +280,8 @@ namespace OrcaTest
             string text_no_punctuation,
             string text_custom_pronunciation)
         {
-            Console.WriteLine("model = " + model);
-            Console.WriteLine("GetModelPath(model) = " + GetModelPath(model));
-            Console.WriteLine("TestInit => before using");
             using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
             {
-                Console.WriteLine("TestInit => after using");
                 Assert.IsFalse(string.IsNullOrWhiteSpace(orca?.Version), "Orca did not return a valid version string.");
                 Assert.IsTrue(orca.SampleRate > 0, "Orca did not return a valid sample rate.");
                 Assert.IsTrue(orca.MaxCharacterLimit > 0, "Orca did not return a valid max character limit.");
