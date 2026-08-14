@@ -80,7 +80,6 @@ const validatePcmDiffers = (pcm: Int16Array, groundTruth: Int16Array) => {
   const zcr0 = zeroCrossingRate(pcm)
   const zcr1 = zeroCrossingRate(groundTruth)
   const diff = Math.abs(zcr0 - zcr1) / zcr1;
-  console.log(`${zcr0} vs ${zcr1} [${diff}]`);
   if (diff <= ZERO_CROSSING_SIMILARITY) {
     throw new Error(`${zcr0} and ${zcr1} are too similar`);
   }

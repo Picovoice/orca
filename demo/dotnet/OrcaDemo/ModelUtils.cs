@@ -57,7 +57,8 @@ public class ModelUtils
         return architecture;
     }
 
-    public static string GetDataFilePath() {
+    public static string GetDataFilePath()
+    {
         string platformName = GetPlatformName();
         string architecture = GetArchitecture();
         string dataFilePath = Path.Combine(

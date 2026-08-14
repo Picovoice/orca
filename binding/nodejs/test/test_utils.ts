@@ -47,6 +47,8 @@ function getArchName(platformName: string): string {
 const PLATFORM_NAME = getPlatformName();
 const ARCH = getArchName(PLATFORM_NAME);
 
+const ROOT_DIR = path.join(__dirname, '../../..');
+
 function GetDataFilePath(): string {
   const dataFilePath = path.join(
       ROOT_DIR,
@@ -76,15 +78,10 @@ function GetDataFilePath(): string {
   throw new Error("Could not find any test_data for the current platform");
 }
 
-const ROOT_DIR = path.join(__dirname, '../../..');
-const TEST_DATA_JSON = require(path.join(
-  ROOT_DIR,
-  `resources/.test/${PLATFORM_NAME}-${ARCH}_test_data.json`,
-));
+const TEST_DATA_JSON = require(GetDataFilePath());
 
 export function getAudioFile(audioFile: string): string {
-  const dataFilePath = GetDataFilePath();
-  return path.join(dataFilePath, audioFile);
+  return path.join(ROOT_DIR, TEST_DATA_JSON.audio_data_folder, audioFile);
 }
 
 export function getTestData() {
