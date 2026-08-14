@@ -78,14 +78,13 @@ public class BaseTest {
     }
 
     private static String getTestDataFilename() {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
         String arch = getArchitecture();
         String testDataFilename = String.format("android-%s_test_data.json", arch);
-        String testDataDir = String.format("%s/test_resources/%s", base, testDataFilename);
 
-        File baseDir = new File(ctx.getFilesDir(), SUBDIR);
-        File testDataFile = new File(baseDir, testDataDir);
-
-        if (testDataFile.isFile()) {
+        File parentDir = new File(context.getFilesDir(), "test_resources");
+        if (new File(parentDir, testDataFilename).isFile()) {
             return testDataFilename;
         }
 
@@ -93,10 +92,9 @@ public class BaseTest {
                 "PICOVOICE",
                 "test data for android-" + arch + " does not exist. Falling back to less accurate test data");
 
-        File[] entries = dir.listFiles();
+        File[] entries = parentDir.listFiles();
         if (entries == null) {
-            Log.e("PICOVOICE", "ERROR: Dir does not exist.");
-            System.exit(1);
+            throw new IllegalStateException("Cannot list files in " + parentDir.getAbsolutePath());
         }
 
         for (File f : entries) {
@@ -106,8 +104,7 @@ public class BaseTest {
             }
         }
 
-        Log.e("PICOVOICE", "ERROR: Found no test data.");
-        System.exit(1);
+        throw new IllegalStateException("No test data found in " + parentDir.getAbsolutePath());
     }
 
     @BeforeClass

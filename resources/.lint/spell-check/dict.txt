@@ -3,6 +3,7 @@ AILLM
 ALSA
 androidx
 appendleft
+armeabi
 armv
 BROWSERSTACK
 btns
@@ -82,6 +83,6 @@ wavefile
 wchars
 xcframework
 xcodeproj
+XCTEST
 xcuitest
 xcworkspace
-XCTEST
