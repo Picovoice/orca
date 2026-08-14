@@ -11,4 +11,7 @@ mkdir -p ${ASSETS_DIR}/wav
 cp -r ${RESOURCE_DIR}/.test/wav/mac-*/ ${ASSETS_DIR}/wav/
 
 echo "Copying test data file..."
-cp ${RESOURCE_DIR}/.test/mac-*_test_data.json ${ASSETS_DIR}/
+cp ${RESOURCE_DIR}/.test/mac-*_test_data.json ${ASSETS_DIR}/test_data.json
+
+sed 's|resources/.test/wav/mac-arm64/|resources/.test/wav/|g' ${ASSETS_DIR}/test_data.json > ${ASSETS_DIR}/test_data.json.tmp
+mv ${ASSETS_DIR}/test_data.json.tmp ${ASSETS_DIR}/test_data.json
