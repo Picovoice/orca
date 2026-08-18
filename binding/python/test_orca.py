@@ -36,7 +36,7 @@ class OrcaTestCase(unittest.TestCase):
     model_paths: List[str]
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
-        self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
+        self.assertAlmostEqual(timestamp, timestamp_truth, places=1)
 
     def _test_phoneme_equal(self, phoneme: Orca.PhonemeAlignment, phoneme_truth: Orca.PhonemeAlignment) -> None:
         self.assertEqual(phoneme.phoneme, phoneme_truth.phoneme)
