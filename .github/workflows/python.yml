@@ -74,8 +74,14 @@ jobs:
     strategy:
       matrix:
         device: [ best ]
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64, pv-linux, pv-windows, pv-ios ]
+        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64, pv-windows-arm64 ]
         include:
+          - device: gpu
+            machine: pv-linux
+          - device: gpu
+            machine: pv-windows
+          - device: gpu
+            machine: pv-ios
           - machine: rpi3-32
             platform: raspberry-pi3
           - machine: rpi3-64
@@ -88,12 +94,6 @@ jobs:
             platform: raspberry-pi5-64
           - machine: pv-windows-arm64
             platform: windows
-          - machine: pv-linux
-            platform: linux
-          - machine: pv-windows
-            platform: windows
-          - machine: pv-ios
-            platform: ios
 
     env:
       PLATFORM_NAME: ${{ matrix.platform }}
