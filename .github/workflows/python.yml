@@ -78,10 +78,13 @@ jobs:
         include:
           - device: gpu
             machine: pv-linux
+            platform: linux
           - device: gpu
             machine: pv-windows
+            platform: windows
           - device: gpu
             machine: pv-ios
+            platform: ios
           - machine: rpi3-32
             platform: raspberry-pi3
           - machine: rpi3-64
