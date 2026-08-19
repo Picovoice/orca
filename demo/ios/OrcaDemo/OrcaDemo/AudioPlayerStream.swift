@@ -9,6 +9,9 @@ class AudioPlayerStream {
     private var pcmBuffers = [[Int16]]()
     private var isPlaying = false
 
+    private let lock = NSLock()
+    private var buffersScheduled = 0
+
     init(sampleRate: Double) throws {
         let audioSession = AVAudioSession.sharedInstance()
         try audioSession.setCategory(.playback, mode: .default)
@@ -30,42 +33,46 @@ class AudioPlayerStream {
     }
 
     func playStreamPCM(_ pcmData: [Int16], completion: @escaping (Bool) -> Void) {
-        pcmBuffers.append(pcmData)
+        
+        schedulePCM(pcm: pcmData, completion: completion)
+        
         if !isPlaying {
-            playNextPCMBuffer(completion: completion)
-        } else {
+            playerNode.play()
+            isPlaying = true
             completion(true)
         }
     }
 
-    private func playNextPCMBuffer(completion: @escaping (Bool) -> Void) {
-        guard let pcmData = pcmBuffers.first, !pcmData.isEmpty else {
-            isPlaying = false
-            completion(false)
-            return
-        }
-        pcmBuffers.removeFirst()
-
+    private func schedulePCM(pcm: [Int16], completion: @escaping (Bool) -> Void) {
         let audioBuffer = AVAudioPCMBuffer(
-            pcmFormat: playerNode.outputFormat(forBus: 0), frameCapacity: AVAudioFrameCount(pcmData.count))!
+            pcmFormat: playerNode.outputFormat(forBus: 0), frameCapacity: AVAudioFrameCount(pcm.count))!
 
         audioBuffer.frameLength = audioBuffer.frameCapacity
         let buf = audioBuffer.floatChannelData![0]
-        for (index, sample) in pcmData.enumerated() {
+        for (index, sample) in pcm.enumerated() {
             buf[index] = Float32(sample) / Float32(Int16.max)
         }
 
+        lock.lock()
+        self.buffersScheduled += 1
+        lock.unlock()
+        
         playerNode.scheduleBuffer(audioBuffer) { [weak self] in
-            self?.playNextPCMBuffer(completion: completion)
-        }
+            self?.lock.lock()
+            self?.buffersScheduled -= 1
+            self?.lock.unlock()
 
-        playerNode.play()
-        isPlaying = true
-        completion(true)
+            if self?.buffersScheduled == 0 {
+                self?.isPlaying = false
+                completion(false)
+                self?.buffersScheduled = 0
+            }
+        }
     }
 
     func stopStreamPCM() {
         playerNode.stop()
         engine.stop()
+        self.buffersScheduled = 0
     }
 }
