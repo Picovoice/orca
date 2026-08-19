@@ -635,8 +635,7 @@ namespace OrcaTest
             string platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
             if (platformName == null)
             {
-                Console.WriteLine("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
-                Environment.Exit(1);
+                Assert.Fail("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
             }
 
             if (platformName == "ios")
