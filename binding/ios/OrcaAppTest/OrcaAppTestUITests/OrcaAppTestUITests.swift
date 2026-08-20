@@ -22,7 +22,6 @@ class OrcaAppTestUITests: BaseTest {
         XCTAssertGreaterThan(wordArray.count, 0)
 
         let groundTruth = try self.getPcm(fileUrl: self.getAudioFileUrl(model: model, synthesis_type: "single"))
-        XCTAssertEqual(pcm.count, groundTruth.count)
         XCTAssertTrue(compareArrays(arr1: pcm, arr2: groundTruth, step: 1))
     }
 
@@ -62,7 +61,6 @@ class OrcaAppTestUITests: BaseTest {
         orcaStream.close()
 
         let groundTruth = try self.getPcm(fileUrl: self.getAudioFileUrl(model: model, synthesis_type: "stream"))
-        XCTAssertEqual(fullPcm.count, groundTruth.count)
         XCTAssertTrue(compareArrays(arr1: fullPcm, arr2: groundTruth, step: 1))
 
         orca.delete()

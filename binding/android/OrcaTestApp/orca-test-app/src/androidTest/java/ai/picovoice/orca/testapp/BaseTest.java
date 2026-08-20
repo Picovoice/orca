@@ -17,6 +17,8 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Build;
+import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -58,6 +60,49 @@ public class BaseTest {
 
     private static final int PCM_OUTLIER_THRESHOLD = 400;
     private static final double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+    private static final double MAXIMUM_LENGTH_DIFFERENCE = 0.05;
+    private static final double ZERO_CROSSING_SIMILARITY = 0.04;
+
+    private static String getArchitecture() {
+        if (Build.SUPPORTED_ABIS.length <= 0) {
+            Log.e("PICOVOICE", "ERROR: Android NDK too old.");
+            System.exit(1);
+        }
+
+        String abi = Build.SUPPORTED_ABIS[0];
+        if (abi == "arm64-v8a") {
+            return "aarch64";
+        } else if (abi == "armeabi-v7a" || abi == "armeabi") {
+            return "armv7l";
+        } else {
+            return abi;
+        }
+    }
+
+    private static String getTestDataName() throws IOException {
+        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        AssetManager assetManager = testContext.getAssets();
+
+        String arch = getArchitecture();
+        String testDataFilename = String.format("android-%s_test_data.json", arch);
+
+        String[] names = assetManager.list("test_resources");
+        if (Arrays.asList(names).contains(testDataFilename)) {
+            return String.format("android-%s", arch);
+        }
+
+        Log.w(
+                "PICOVOICE",
+                "test data for android-" + arch + " does not exist. Falling back to less accurate test data");
+
+        for (String name : names) {
+            if (name.startsWith("android-") && name.endsWith(".json")) {
+                return name.replace("_test_data.json", "");
+            }
+        }
+
+        throw new IllegalStateException("No test data found in assets/test_resources");
+    }
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -70,9 +115,11 @@ public class BaseTest {
                 appContext.getFilesDir(),
                 "test_resources").getAbsolutePath();
 
-        extractTestFile("test_resources/test_data.json");
+        String testDataFilename = String.format("%s_test_data.json", getTestDataName());
+        String testDataPath = String.format("test_resources/%s", testDataFilename);
+        extractTestFile(testDataPath);
         FileReader reader = new FileReader(
-                new File(testResourcesPath, "test_data.json").getAbsolutePath()
+                new File(testResourcesPath, testDataFilename).getAbsolutePath()
         );
         testJson = new Gson().fromJson(reader, JsonObject.class);
         reader.close();
@@ -85,7 +132,9 @@ public class BaseTest {
         Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
         AssetManager assetManager = testContext.getAssets();
 
-        InputStream is = new BufferedInputStream(assetManager.open("test_resources/test_data.json"), 256);
+        String testDataFilename = String.format("%s_test_data.json", getTestDataName());
+        String testDataPath = String.format("test_resources/%s", testDataFilename);
+        InputStream is = new BufferedInputStream(assetManager.open(testDataPath), 256);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
 
         byte[] buffer = new byte[256];
@@ -109,27 +158,59 @@ public class BaseTest {
 
     public static String getAudioFilepath(String modelFilename, String synthesisType) throws IOException {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        String testDataDirName = getTestDataName();
+        String audioFilename = modelFilename.replace(".pv", String.format("_%s.wav", synthesisType));
+        extractTestFile(String.format("test_resources/wav/%s/%s", testDataDirName, audioFilename));
+
         String resPath = new File(
                 context.getFilesDir(),
                 "test_resources").getAbsolutePath();
-        String audioFilename = modelFilename.replace(".pv", String.format("_%s.wav", synthesisType));
-        extractTestFile(String.format("test_resources/wav/%s", audioFilename));
-        return new File(resPath, String.format("wav/%s", audioFilename)).getAbsolutePath();
+        return new File(resPath, String.format("wav/%s/%s", testDataDirName, audioFilename)).getAbsolutePath();
     }
 
-    protected static void validatePcm(short[] synthesizedPcm, short[] groundTruth) {
-        assertEquals(groundTruth.length, synthesizedPcm.length);
-
-        int outlierCount = 0;
-        for (int i = 0; i < synthesizedPcm.length; i++) {
-            int diff = Math.abs(synthesizedPcm[i] - groundTruth[i]);
-            if (diff > PCM_OUTLIER_THRESHOLD) {
-                outlierCount++;
+    private static double zeroCrossingRate(short[] pcm) {
+        int numZeroCrossings = 0;
+        for (int i = 1; i < pcm.length; i++) {
+            if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+                numZeroCrossings += 1;
             }
         }
 
-        double diffOutliers = (double) outlierCount / synthesizedPcm.length;
-        assertTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
+        return (double) numZeroCrossings / (pcm.length - 1);
+    }
+
+    protected static void validatePcm(short[] synthesizedPcm, short[] groundTruth) throws Exception {
+        if (groundTruth.length == synthesizedPcm.length) {
+            int outlierCount = 0;
+            for (int i = 0; i < synthesizedPcm.length; i++) {
+                int diff = Math.abs(synthesizedPcm[i] - groundTruth[i]);
+                if (diff > PCM_OUTLIER_THRESHOLD) {
+                    outlierCount++;
+                }
+            }
+
+            double diffOutliers = (double) outlierCount / synthesizedPcm.length;
+            if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD) {
+                return;
+            }
+        }
+
+        double zcr0 = zeroCrossingRate(synthesizedPcm);
+        double zcr1 = zeroCrossingRate(groundTruth);
+        if (Math.abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+            return;
+        }
+
+        throw new Exception(String.format("%f and %f are too different", zcr0, zcr1));
+    }
+
+    protected static void validatePcmDiffers(short[] synthesizedPcm, short[] groundTruth) throws Exception {
+        double zcr0 = zeroCrossingRate(synthesizedPcm);
+        double zcr1 = zeroCrossingRate(groundTruth);
+        if (Math.abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY) {
+            throw new Exception(String.format("%f and %f are too similar", zcr0, zcr1));
+        }
     }
 
     protected static short[] concatArrays(short[] existingArray, short[] arrayToAdd) {

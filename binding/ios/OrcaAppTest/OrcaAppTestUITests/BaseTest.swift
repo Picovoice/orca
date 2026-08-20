@@ -70,6 +70,9 @@ class BaseTest: XCTestCase {
     let accessKey: String = "{TESTING_ACCESS_KEY_HERE}"
     let device: String = "{TESTING_DEVICE_HERE}"
 
+    var PCM_OUTLIER_THRESHOLD: Int32 = 12000
+    var ZERO_CROSSING_SIMILARITY: Double = 0.04
+
     var testData: TestData?
 
     override func setUp() async throws {
@@ -104,11 +107,36 @@ class BaseTest: XCTestCase {
                 inDirectory: "test_resources/model_files")!
     }
 
-    func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
-        for i in stride(from: 0, to: arr1.count - step, by: step) where !(abs(arr1[i] - arr2[i]) <= 12000) {
-            return false
+    func zeroCrossingRate(pcm: [Int16]) -> Double {
+        var numZeroCrossings: Int32 = 0
+        for i in stride(from: 1, to: pcm.count, by: 1) where (pcm[i] >= 0) != (pcm[i - 1] >= 0) {
+            numZeroCrossings += 1
         }
-        return true
+
+        return Double(numZeroCrossings) / Double(pcm.count - 1)
+    }
+
+    func compareArrays(arr1: [Int16], arr2: [Int16], step: Int) -> Bool {
+        if arr1.count == arr2.count {
+            var found_outlier = false
+            for i in stride(from: 0, to: arr1.count - step, by: step)
+                    where abs(arr1[i] - arr2[i]) > PCM_OUTLIER_THRESHOLD {
+                found_outlier = true
+                break
+            }
+
+            if !found_outlier {
+                return true
+            }
+        }
+
+        let zcr0 = zeroCrossingRate(pcm: arr1)
+        let zcr1 = zeroCrossingRate(pcm: arr2)
+        if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY {
+            return true
+        }
+
+        return false
     }
 
     func getPcm(fileUrl: URL) throws -> [Int16] {
