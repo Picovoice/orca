@@ -792,6 +792,11 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
+### v3.1.0 - Aug 20th, 2026
+
+- Improved engine performance
+- Improved synthesis quality
+
 ### v3.0.0 - March 13th, 2026
 
 - Improved synthesis quality
