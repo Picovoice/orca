@@ -107,6 +107,7 @@ jobs:
         run: pip3 install -r requirements.txt
 
       - name: Test streaming
+
         run: >
           python3 orca_demo_streaming.py
           --access_key ${{secrets.PV_VALID_ACCESS_KEY}}
