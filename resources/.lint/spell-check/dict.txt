@@ -4,6 +4,7 @@ ALSA
 androidx
 appendleft
 armeabi
+ARCHITEW
 armv
 BROWSERSTACK
 btns
@@ -30,6 +31,7 @@ flac
 floatfmt
 fprintf
 frombuffer
+getprop
 Gson
 HEAPF
 HEAPU
