@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 public class ModelUtils
@@ -12,7 +13,9 @@ public class ModelUtils
 
     public static List<string> GetAvailableLanguages()
     {
-        string testDataPath = Path.Combine(ROOT_DIR, "resources/.test/test_data.json");
+        string testDataPath = Path.Combine(
+                ROOT_DIR,
+                $"resources/.test/linux-x86_64_test_data.json");
         testDataPath = Path.GetFullPath(testDataPath);
 
         string jsonString = File.ReadAllText(testDataPath);

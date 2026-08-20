@@ -34,8 +34,6 @@ defaults:
 jobs:
   build-github-hosted:
     runs-on: ${{ matrix.os }}
-    env:
-      ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
 
     strategy:
       matrix:
@@ -53,6 +51,14 @@ jobs:
             test-framework: net8.0
           - dotnet-version: 10.0.x
             test-framework: net10.0
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: mac
+          - os: macos-15-intel
+            platform: mac
+          - os: windows-latest
+            platform: windows
         exclude:
           - os: ubuntu-latest
             dotnet-version: 2.1.x
@@ -62,6 +68,10 @@ jobs:
             dotnet-version: 2.1.x
           - os: macos-latest
             dotnet-version: 3.1.x
+
+    env:
+      ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
     - uses: actions/checkout@v3
@@ -79,7 +89,7 @@ jobs:
 
     - name: Build binding
       run: dotnet build Orca/Orca.csproj
-      
+
     - name: Set test framework version (linux)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: sed -i 's/net6.0/${{matrix.test-framework}}/g' OrcaTest/OrcaTest.csproj
@@ -99,8 +109,6 @@ jobs:
 
   build-self-hosted:
     runs-on: ${{ matrix.machine }}
-    env:
-      ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
 
     strategy:
       matrix:
@@ -109,10 +117,29 @@ jobs:
         include:
           - device: gpu
             machine: pv-linux
+            platform: linux
           - device: gpu
             machine: pv-windows
+            platform: windows
           - device: gpu
             machine: pv-ios
+            platform: ios
+          - machine: rpi3-32
+            platform: raspberry-pi3
+          - machine: rpi3-64
+            platform: raspberry-pi3-64
+          - machine: rpi4-32
+            platform: raspberry-pi4
+          - machine: rpi4-64
+            platform: raspberry-pi4-64
+          - machine: rpi5-64
+            platform: raspberry-pi5-64
+          - machine: pv-windows-arm64
+            platform: windows
+
+    env:
+      ACCESS_KEY: ${{secrets.PV_VALID_ACCESS_KEY}}
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
     - uses: actions/checkout@v3

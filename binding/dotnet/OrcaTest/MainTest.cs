@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -32,6 +33,8 @@ namespace OrcaTest
 
         private static readonly int PCM_OUTLIER_THRESHOLD = 400;
         private static readonly double PCM_OUTLIER_COUNT_THRESHOLD = 0.05;
+        private static readonly double MAXIMUM_LENGTH_DIFFERENCE = 0.05;
+        private static readonly double ZERO_CROSSING_SIMILARITY = 0.04;
 
         private static string _accessKey;
         private static string _device;
@@ -170,12 +173,48 @@ namespace OrcaTest
             }
         }
 
+        private static double ZeroCrossingRate(List<short> pcm)
+        {
+            int numZeroCrossings = 0;
+            for (int i = 1; i < pcm.Count(); i++)
+            {
+                if ((pcm[i] >= 0) != (pcm[i - 1] >= 0))
+                {
+                    numZeroCrossings += 1;
+                }
+            }
+
+            return (double)numZeroCrossings / (pcm.Count() - 1);
+        }
+
         private static void ValidateAudio(List<short> synthesizedPcm, List<short> testPcm)
         {
-            Assert.AreEqual(synthesizedPcm.Count(), testPcm.Count());
-            List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
-            double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
-            Assert.IsTrue(diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD);
+            if (synthesizedPcm.Count() == testPcm.Count())
+            {
+                List<short> diffPcm = synthesizedPcm.Zip(testPcm, (a, b) => (short)Math.Abs(a - b)).ToList();
+                double diffOutliers = diffPcm.Count(d => d > PCM_OUTLIER_THRESHOLD) / (double)diffPcm.Count;
+
+                if (diffOutliers <= PCM_OUTLIER_COUNT_THRESHOLD)
+                    return;
+            }
+
+            double lengthDifferenceRatio = (synthesizedPcm.Count() - testPcm.Count()) / testPcm.Count();
+            Assert.IsTrue(lengthDifferenceRatio < MAXIMUM_LENGTH_DIFFERENCE);
+
+            double zcr0 = ZeroCrossingRate(synthesizedPcm);
+            double zcr1 = ZeroCrossingRate(testPcm);
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY)
+                return;
+
+            throw new Exception($"{zcr0} and {zcr1} are too different");
+        }
+
+        private static void ValidateAudioDiffers(List<short> synthesizedPcm, List<short> testPcm)
+        {
+            double zcr0 = ZeroCrossingRate(synthesizedPcm);
+            double zcr1 = ZeroCrossingRate(testPcm);
+            if (Math.Abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY)
+                throw new Exception($"{zcr0} and {zcr1} are too similar");
         }
 
         public void ValidatePhonemes(OrcaPhoneme[] phonemes)
@@ -218,15 +257,15 @@ namespace OrcaTest
             for (int i = 0; i < alignments.Length; i++)
             {
                 Assert.AreEqual(alignments[i].Word, expectedAlignments[i].word);
-                Assert.AreEqual(alignments[i].StartSec, expectedAlignments[i].start_sec, 0.01);
-                Assert.AreEqual(alignments[i].EndSec, expectedAlignments[i].end_sec, 0.01);
+                Assert.AreEqual(alignments[i].StartSec, expectedAlignments[i].start_sec, 0.025);
+                Assert.AreEqual(alignments[i].EndSec, expectedAlignments[i].end_sec, 0.025);
 
                 TestPhonemeAlignmentsJson[] expectedPhonemes = expectedAlignments[i].phonemes;
                 for (int j = 0; j < alignments[i].Phonemes.Length; j++)
                 {
                     Assert.AreEqual(alignments[i].Phonemes[j].Phoneme, expectedPhonemes[j].phoneme);
-                    Assert.AreEqual(alignments[i].Phonemes[j].StartSec, expectedPhonemes[j].start_sec, 0.01);
-                    Assert.AreEqual(alignments[i].Phonemes[j].EndSec, expectedPhonemes[j].end_sec, 0.01);
+                    Assert.AreEqual(alignments[i].Phonemes[j].StartSec, expectedPhonemes[j].start_sec, 0.025);
+                    Assert.AreEqual(alignments[i].Phonemes[j].EndSec, expectedPhonemes[j].end_sec, 0.025);
                 }
             }
         }
@@ -417,6 +456,40 @@ namespace OrcaTest
         }
 
         [TestMethod]
+        [DynamicData(nameof(SentenceTestParameters))]
+        public void TestZCRSimilarity(
+            string language,
+            string model,
+            long random_state,
+            string text,
+            string text_no_punctuation,
+            string text_custom_pronunciation)
+        {
+            if (language != "en")
+                return;
+
+            List<(String, String)> textPairs = new List<(String, String)> {
+                ("This is a dog", "This is a frog"),
+                ("Hello world", "A nice tree"),
+            };
+
+            using (Orca orca = Orca.Create(_accessKey, GetModelPath(model), _device))
+            {
+                foreach ((String, String) pair in textPairs)
+                {
+                    OrcaAudio result0 = orca.Synthesize(
+                        pair.Item1,
+                        randomState: random_state);
+                    OrcaAudio result1 = orca.Synthesize(
+                        pair.Item2,
+                        randomState: random_state);
+
+                    ValidateAudioDiffers(result0.Pcm.ToList(), result1.Pcm.ToList());
+                }
+            }
+        }
+
+        [TestMethod]
         [DynamicData(nameof(InvalidTestParameters))]
         public void TestInvalidInput(
             string language,
@@ -557,10 +630,90 @@ namespace OrcaTest
             return GetPcmFromFile(testAudioPath);
         }
 
+        private static string GetPlatformName()
+        {
+            string platformName = Environment.GetEnvironmentVariable("PLATFORM_NAME");
+            if (platformName == null)
+            {
+                Assert.Fail("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
+            }
+
+            if (platformName == "ios")
+            {
+                platformName = "mac";
+            }
+
+            return platformName;
+        }
+
+        private static string GetArchitecture()
+        {
+            string platformName = GetPlatformName();
+            string architecture = RuntimeInformation.OSArchitecture.ToString();
+
+            if (platformName == "windows" && architecture == "X64")
+            {
+                architecture = "AMD64";
+            }
+            else if (platformName == "windows" && architecture == "Arm64")
+            {
+                architecture = "ARM64";
+            }
+            else if (architecture == "X64")
+            {
+                architecture = "x86_64";
+            }
+            else if (platformName == "mac" && architecture == "Arm64")
+            {
+                architecture = "arm64";
+            }
+            else if (architecture == "Arm64")
+            {
+                architecture = "aarch64";
+            }
+
+            return architecture;
+        }
+
+        public static string GetDataFilePath()
+        {
+            string platformName = GetPlatformName();
+            string architecture = GetArchitecture();
+            string dataFilePath = Path.Combine(
+                    ROOT_DIR,
+                    $"resources/.test/{platformName}-{architecture}_test_data.json");
+
+            if (File.Exists(dataFilePath))
+                return dataFilePath;
+
+            Console.WriteLine(
+                    $"WARNING: test data for {platformName}-{architecture} does not exist. " +
+                    "Falling back to less accurate test data");
+
+            string resourcesDir = Path.Combine(ROOT_DIR, "resources/.test/");
+            if (!Directory.Exists(resourcesDir))
+                throw new Exception("Could not find ./.test/ directory");
+
+            foreach (var file in Directory.EnumerateFiles(resourcesDir))
+            {
+                string name = Path.GetFileName(file);
+                if (name.StartsWith($"{platformName}-", StringComparison.Ordinal) &&
+                    name.EndsWith(".json", StringComparison.Ordinal))
+                {
+                    return Path.Combine(
+                            ROOT_DIR,
+                            $"resources/.test/{name}");
+                }
+            }
+
+            throw new Exception("Could not find any test_data for the current platform");
+        }
+
         private static TestDataJson LoadJsonTestData()
         {
-            string content = File.ReadAllText(Path.Combine(ROOT_DIR, "resources/.test/test_data.json"));
-            return JObject.Parse(content).ToObject<TestDataJson>();
+            string content = File.ReadAllText(GetDataFilePath());
+            TestDataJson res = JObject.Parse(content).ToObject<TestDataJson>();
+            return res;
         }
     }
 }

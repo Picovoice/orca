@@ -32,9 +32,19 @@ jobs:
 
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
         device: [cpu:1, cpu]
         node-version: [18.x, 20.x, 22.x, 24.x]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: windows
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
@@ -60,10 +70,28 @@ jobs:
         include:
           - device: gpu
             machine: pv-linux
+            platform: linux
           - device: gpu
             machine: pv-windows
+            platform: windows
           - device: gpu
             machine: pv-ios
+            platform: ios
+          - machine: rpi3-32
+            platform: raspberry-pi3
+          - machine: rpi3-64
+            platform: raspberry-pi3-64
+          - machine: rpi4-32
+            platform: raspberry-pi4
+          - machine: rpi4-64
+            platform: raspberry-pi4-64
+          - machine: rpi5-64
+            platform: raspberry-pi5-64
+          - machine: pv-windows-arm64
+            platform: windows
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
