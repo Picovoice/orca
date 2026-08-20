@@ -44,10 +44,16 @@ jobs:
         include:
           - os: ubuntu-latest
             proc_performance_threshold_rtf: 3.0
+            platform: linux
           - os: windows-latest
             proc_performance_threshold_rtf: 2.0
+            platform: windows
           - os: macos-latest
             proc_performance_threshold_rtf: 2.0
+            platform: mac
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
@@ -81,14 +87,22 @@ jobs:
         include:
           - machine: rpi3-32
             proc_performance_threshold_rtf: 0.5
+            platform: raspberry-pi3
           - machine: rpi3-64
             proc_performance_threshold_rtf: 0.5
+            platform: raspberry-pi3-64
           - machine: rpi4-32
             proc_performance_threshold_rtf: 1.0
+            platform: raspberry-pi4
           - machine: rpi4-64
             proc_performance_threshold_rtf: 1.0
+            platform: raspberry-pi4-64
           - machine: rpi5-64
             proc_performance_threshold_rtf: 1.0
+            platform: raspberry-pi5-64
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
@@ -110,7 +124,6 @@ jobs:
           python3 -m venv .venv --symlinks
           .venv\Scripts\activate
           echo PATH=$PATH >> $GITHUB_ENV
-
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -137,6 +150,10 @@ jobs:
         include:
           - machine: pv-windows-arm64
             proc_performance_threshold_rtf: 1.5
+            platform: windows
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
       - uses: actions/checkout@v3
