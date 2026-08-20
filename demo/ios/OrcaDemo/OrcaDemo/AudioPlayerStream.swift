@@ -33,9 +33,9 @@ class AudioPlayerStream {
     }
 
     func playStreamPCM(_ pcmData: [Int16], completion: @escaping (Bool) -> Void) {
-        
+
         schedulePCM(pcm: pcmData, completion: completion)
-        
+
         if !isPlaying {
             playerNode.play()
             isPlaying = true
@@ -56,7 +56,7 @@ class AudioPlayerStream {
         lock.lock()
         self.buffersScheduled += 1
         lock.unlock()
-        
+
         playerNode.scheduleBuffer(audioBuffer) { [weak self] in
             self?.lock.lock()
             self?.buffersScheduled -= 1
