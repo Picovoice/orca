@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,9 +18,7 @@
 		1EAEDDE12B745E6A003B8C18 /* BaseTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAEDDDF2B745E6A003B8C18 /* BaseTest.swift */; };
 		1EAEDDE32B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
 		1EAEDDE42B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
-		5A3DFBE0302E9FA90039342D /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5A3DFBDF302E9FA90039342D /* Orca */; };
-		6A9164E4B0B1626D27DBA0A1 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
-		E109D19E2CFE4DBC0014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D19D2CFE4DBC0014F5AA /* Orca */; };
+		5A29982B303671C1007E2BC9 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5A29982A303671C1007E2BC9 /* Orca */; };
 		E109D1A02CFE4DBF0014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D19F2CFE4DBF0014F5AA /* Orca */; };
 /* End PBXBuildFile section */
 
@@ -64,7 +62,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5A3DFBE0302E9FA90039342D /* Orca in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,8 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6A9164E4B0B1626D27DBA0A1 /* (null) in Frameworks */,
-				E109D19E2CFE4DBC0014F5AA /* Orca in Frameworks */,
+				5A29982B303671C1007E2BC9 /* Orca in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,7 +234,7 @@
 			);
 			mainGroup = 1E00643F27CEDF9B006FF6E9;
 			packageReferences = (
-				5A3DFBDE302E9EFF0039342D /* XCLocalSwiftPackageReference "../../../../orca" */,
+				5A299832303687E9007E2BC9 /* XCRemoteSwiftPackageReference "orca" */,
 			);
 			productRefGroup = 1E00644927CEDF9B006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -650,20 +646,27 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		5A3DFBDE302E9EFF0039342D /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+		5A299829303671A6007E2BC9 /* XCLocalSwiftPackageReference "../../../../orca" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../../orca;
 		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCSwiftPackageProductDependency section */
-		5A3DFBDF302E9FA90039342D /* Orca */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5A3DFBDE302E9EFF0039342D /* XCLocalSwiftPackageReference "../../../../orca" */;
-			productName = Orca;
+/* Begin XCRemoteSwiftPackageReference section */
+		5A299832303687E9007E2BC9 /* XCRemoteSwiftPackageReference "orca" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/orca";
+			requirement = {
+				kind = exactVersion;
+				version = 3.1.0;
+			};
 		};
-		E109D19D2CFE4DBC0014F5AA /* Orca */ = {
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5A29982A303671C1007E2BC9 /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 5A299829303671A6007E2BC9 /* XCLocalSwiftPackageReference "../../../../orca" */;
 			productName = Orca;
 		};
 		E109D19F2CFE4DBF0014F5AA /* Orca */ = {
