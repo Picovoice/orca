@@ -10,6 +10,7 @@
 
 import json
 import os
+import platform
 
 from xml.dom import minidom
 
@@ -48,7 +49,9 @@ def update_ios_demo(models):
 
 
 def main():
-    with open(os.path.join(os.path.dirname(__file__), "../.test/test_data.json"), encoding='utf-8') as f:
+    ARCH = platform.machine()
+
+    with open(os.path.join(os.path.dirname(__file__), f"../.test/mac-{ARCH}_test_data.json"), encoding='utf-8') as f:
         json_content = json.loads(f.read())
 
     models = list()

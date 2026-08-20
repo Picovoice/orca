@@ -51,6 +51,9 @@ jobs:
             arch: undetermined
             make_file: "Unix Makefiles"
 
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -84,55 +87,67 @@ jobs:
             arch: cortex-a53
             make_file: "Unix Makefiles"
             pv_recorder_platform: "raspberry-pi3"
+            test_platform: "raspberry-pi3"
             device: best
           - machine: rpi3-64
             platform: raspberry-pi
             arch: cortex-a53-aarch64
             make_file: "Unix Makefiles"
             pv_recorder_platform: "raspberry-pi3-64"
+            test_platform: "raspberry-pi3-64"
             device: best
           - machine: rpi4-32
             platform: raspberry-pi
             arch: cortex-a72
             make_file: "Unix Makefiles"
             pv_recorder_platform: "raspberry-pi4"
+            test_platform: "raspberry-pi4"
             device: best
           - machine: rpi4-64
             platform: raspberry-pi
             arch: cortex-a72-aarch64
             make_file: "Unix Makefiles"
             pv_recorder_platform: "raspberry-pi4-64"
+            test_platform: "raspberry-pi4-64"
             device: best
           - machine: rpi5-64
             platform: raspberry-pi
             arch: cortex-a76-aarch64
             make_file: "Unix Makefiles"
             pv_recorder_platform: "raspberry-pi5-64"
+            test_platform: "raspberry-pi5-64"
             device: best
           - machine: pv-windows-arm64
             platform: windows
             arch: arm64
             make_file: "MinGW Makefiles"
             pv_recorder_platform: "windows-arm64"
+            test_platform: "windows"
             device: best
           - machine: pv-linux
             platform: linux
             arch: x86_64
             make_file: "Unix Makefiles"
             pv_recorder_platform: "linux"
+            test_platform: "linux"
             device: gpu
           - machine: pv-ios
             platform: mac
             arch: arm64
             make_file: "Unix Makefiles"
             pv_recorder_platform: "mac-arm64"
+            test_platform: "mac"
             device: gpu
           - machine: pv-windows
             platform: windows
             arch: amd64
             make_file: "MinGW Makefiles"
             pv_recorder_platform: "windows-amd64"
+            test_platform: "windows"
             device: gpu
+
+    env:
+      PLATFORM_NAME: ${{ matrix.test_platform }}
 
     steps:
       - uses: actions/checkout@v3

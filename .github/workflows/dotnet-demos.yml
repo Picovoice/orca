@@ -27,6 +27,16 @@ jobs:
       matrix:
         device: [cpu, cpu:1]
         os: [ ubuntu-latest, windows-latest, macos-latest ]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: mac
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
     - uses: actions/checkout@v3
@@ -74,10 +84,28 @@ jobs:
         include:
           - device: gpu
             machine: pv-linux
+            platform: linux
           - device: gpu
             machine: pv-windows
+            platform: windows
           - device: gpu
             machine: pv-ios
+            platform: ios
+          - machine: rpi3-32
+            platform: raspberry-pi3
+          - machine: rpi3-64
+            platform: raspberry-pi3-64
+          - machine: rpi4-32
+            platform: raspberry-pi4
+          - machine: rpi4-64
+            platform: raspberry-pi4-64
+          - machine: rpi5-64
+            platform: raspberry-pi5-64
+          - machine: pv-windows-arm64
+            platform: windows
+
+    env:
+      PLATFORM_NAME: ${{ matrix.platform }}
 
     steps:
     - uses: actions/checkout@v3

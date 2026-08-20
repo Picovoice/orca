@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import ai.picovoice.orca.Orca;
 import ai.picovoice.orca.OrcaAudio;
@@ -239,6 +240,37 @@ public class SentenceTests extends BaseTest {
             fail();
         } catch (OrcaInvalidArgumentException e) {
             assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testZCRSimilarity() throws Exception {
+        if (language != "en") {
+            return;
+        }
+
+        Map.Entry<String, String>[] textPairs = new Map.Entry[] {
+            Map.entry("This is a dog", "This is a frog"),
+            Map.entry("Hello world", "A nice tree"),
+        };
+
+        for (Map.Entry<String, String> pair : textPairs) {
+            String text0 = pair.getKey();
+            String text1 = pair.getValue();
+
+            final OrcaAudio result0 = orca.synthesize(
+                    text0,
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
+
+            final OrcaAudio result1 = orca.synthesize(
+                    text1,
+                    new OrcaSynthesizeParams.Builder()
+                            .setRandomState(randomState)
+                            .build());
+
+            validatePcmDiffers(result0.getPcm(), result1.getPcm());
         }
     }
 

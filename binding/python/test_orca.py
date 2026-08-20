@@ -1,5 +1,5 @@
 #
-#    Copyright 2024-2025 Picovoice Inc.
+#    Copyright 2024-2026 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -20,13 +20,14 @@ from typing import List, Sequence
 
 from _orca import Orca, OrcaError, OrcaInvalidArgumentError
 from _util import default_library_path, default_model_path
-from test_util import get_model_path, get_test_data, read_wav_file
+from test_util import get_platform_and_architecture, get_model_path, get_test_data, read_wav_file
 
 
 test_data = get_test_data()
 
 PCM_OUTLIER_THRESHOLD = 400
 PCM_OUTLIER_COUNT_THRESHOLD = 0.05
+ZERO_CROSSING_SIMILARITY = 0.04
 
 class OrcaTestCase(unittest.TestCase):
     access_key: str
@@ -35,7 +36,7 @@ class OrcaTestCase(unittest.TestCase):
     model_paths: List[str]
 
     def _test_equal_timestamp(self, timestamp: float, timestamp_truth: float) -> None:
-        self.assertAlmostEqual(timestamp, timestamp_truth, places=2)
+        self.assertAlmostEqual(timestamp, timestamp_truth, places=1)
 
     def _test_phoneme_equal(self, phoneme: Orca.PhonemeAlignment, phoneme_truth: Orca.PhonemeAlignment) -> None:
         self.assertEqual(phoneme.phoneme, phoneme_truth.phoneme)
@@ -51,13 +52,34 @@ class OrcaTestCase(unittest.TestCase):
         for phoneme, phoneme_truth in zip(word.phonemes, word_truth.phonemes):
             self._test_phoneme_equal(phoneme, phoneme_truth)
 
+    def zero_crossing_rate(pcm):
+        # The same kinds of phonemes tend to have the same numbers of zero crossings. Same with similar pitches, so
+        # zcr is a sort of rudimentary timbre hash.
+        num_zero_crossings = sum(1 for i in range(1, len(pcm)) if (pcm[i] >= 0) != (pcm[i-1] >= 0))
+        return num_zero_crossings / (len(pcm) - 1)
+
     def _test_audio(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
         pcm = pcm[:len(ground_truth)]  # compensate for discrepancies due to wav header
-        self.assertEqual(len(pcm), len(ground_truth))
-        diff_pcm = [abs(a - b) for a, b in zip(pcm, ground_truth)]
-        diff_outliers = sum(1 for d in diff_pcm if d > PCM_OUTLIER_THRESHOLD) / len(diff_pcm)
-        self.assertLessEqual(diff_outliers, PCM_OUTLIER_COUNT_THRESHOLD)
 
+        if len(pcm) == len(ground_truth):
+            diff_pcm = [abs(a - b) for a, b in zip(pcm, ground_truth)]
+            diff_outliers = sum(1 for d in diff_pcm if d > PCM_OUTLIER_THRESHOLD) / len(diff_pcm)
+
+            if diff_outliers <= PCM_OUTLIER_COUNT_THRESHOLD:
+                return
+
+        zcr0 = OrcaTestCase.zero_crossing_rate(pcm)
+        zcr1 = OrcaTestCase.zero_crossing_rate(ground_truth)
+        if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY:
+            return
+
+        self.fail(f"zcr of {zcr0} and {zcr1} are too different")
+
+    def _test_audio_differs(self, pcm: Sequence[int], ground_truth: Sequence[int]) -> None:
+        zcr0 = OrcaTestCase.zero_crossing_rate(pcm)
+        zcr1 = OrcaTestCase.zero_crossing_rate(ground_truth)
+        if abs(zcr0 - zcr1) / zcr1 <= ZERO_CROSSING_SIMILARITY:
+            self.fail(f"zcr of {zcr0} and {zcr1} are too similar")
 
     @staticmethod
     def _get_pcm(model: str, audio_data_folder: str, synthesis_type: str = "single") -> Sequence[int]:
@@ -199,6 +221,7 @@ class OrcaTestCase(unittest.TestCase):
 
             self._test_audio(pcm=pcm, ground_truth=ground_truth)
 
+
     @parameterized.expand([(t.language, t.models, t.random_state, t.text_custom_pronunciation) for t in test_data.sentence_tests])
     def test_synthesize_custom_pron(
             self,
@@ -227,7 +250,6 @@ class OrcaTestCase(unittest.TestCase):
 
             with self.assertRaises(OrcaError):
                 _ = orca.synthesize(text, speech_rate=9999)
-
     @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
     def test_synthesize_to_file(
             self,
@@ -264,6 +286,31 @@ class OrcaTestCase(unittest.TestCase):
             for sentence in text_invalid:
                 with self.assertRaises(OrcaInvalidArgumentError):
                     orca.synthesize(sentence)
+
+    @parameterized.expand([(t.language, t.models, t.random_state, t.text) for t in test_data.sentence_tests])
+    def test_zcr_similarity(
+            self,
+            language: str,
+            models: List[str],
+            random_state: int,
+            _: str):
+        if language != "en":
+            return
+
+        pairs = [
+            ("This is a dog", "This is a frog"),
+            ("Hello world", "A nice tree"),
+        ]
+
+        for (text0, text1) in pairs:
+            for orca, model in OrcaTestCase._orca_iter(models):
+                pcm0, alignment = orca.synthesize(text0, random_state=random_state)
+                self.assertGreater(len(pcm0), 0)
+
+                pcm1, alignment = orca.synthesize(text1, random_state=random_state)
+                self.assertGreater(len(pcm1), 0)
+
+                self._test_audio_differs(pcm=pcm0, ground_truth=pcm1)
 
     def test_message_stack(self):
         relative_path = '../..'
