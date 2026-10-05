@@ -39,7 +39,7 @@ android {
         minSdkVersion 21
         targetSdkVersion defaultTargetSdkVersion
         versionCode 1
-        versionName "3.1.0"
+        versionName "3.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -63,7 +63,7 @@ android {
             signingConfig signingConfigs.release
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -114,7 +114,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.code.gson:gson:2.10'
     implementation 'com.google.errorprone:error_prone_annotations:2.36.0'
-    implementation 'ai.picovoice:orca-android:3.1.0'
+    // implementation 'ai.picovoice:orca-android:3.1.1'
+    implementation files('../../Orca/orca/build/outputs/aar/orca-release.aar')
 
     // Espresso UI Testing
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
