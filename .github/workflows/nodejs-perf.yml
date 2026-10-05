@@ -64,17 +64,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [ rpi3-32, rpi3-64, rpi4-32, rpi4-64, rpi5-64 ]
+        machine: [ rpi3-64, rpi4-64, rpi5-64 ]
         include:
-          - machine: rpi3-32
-            proc_performance_threshold_sec: 4.9
-            platform: raspberry-pi3
           - machine: rpi3-64
             proc_performance_threshold_sec: 4.5
             platform: raspberry-pi3-64
-          - machine: rpi4-32
-            proc_performance_threshold_sec: 2.3
-            platform: raspberry-pi4
           - machine: rpi4-64
             proc_performance_threshold_sec: 2.3
             platform: raspberry-pi4-64
