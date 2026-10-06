@@ -25,10 +25,10 @@ android {
 
     defaultConfig {
         applicationId "ai.picovoice.orcademo"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion defaultTargetSdkVersion
         versionCode 2
-        versionName "3.1.0"
+        versionName "3.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -118,7 +118,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'ai.picovoice:orca-android:3.1.0'
+    implementation 'ai.picovoice:orca-android:3.1.1'
 }
 
 afterEvaluate {

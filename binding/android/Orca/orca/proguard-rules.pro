@@ -1,1 +1,3 @@
 -keep class ai.picovoice.orca.*Exception { <init>(...); }
+-keep class ai.picovoice.orca.OrcaWord { *; }
+-keep class ai.picovoice.orca.OrcaPhoneme { *; }
