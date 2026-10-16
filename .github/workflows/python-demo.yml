@@ -112,7 +112,7 @@ jobs:
 # ************** REMOVE AFTER RELEASE ********************
       - name: Build binding
         run: |
-          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-3.1.0-py3-none-any.whl --force-reinstall
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-3.1.2-py3-none-any.whl --force-reinstall
 # ********************************************************
 
       - name: Install dependencies
