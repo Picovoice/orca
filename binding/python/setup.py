@@ -16,7 +16,7 @@ import setuptools
 
 INCLUDE_FILES = ('../../LICENSE', '__init__.py', '_factory.py', '_orca.py', '_util.py')
 INCLUDE_LIBS = ('linux', 'mac', 'raspberry-pi', 'windows')
-DEFAULT_MODEL_FILE = 'orca_params_en_female.pv'
+DEFAULT_MODEL_FILE = 'orca_params_en_male.pv'
 
 os.system('git clean -dfx')
 
@@ -49,7 +49,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setuptools.setup(
     name="pvorca",
-    version="3.1.0",
+    version="3.1.2",
     author="Picovoice",
     author_email="hello@picovoice.ai",
     description="Orca Streaming Text-to-Speech Engine",

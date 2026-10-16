@@ -78,7 +78,7 @@ def default_library_path(relative: str = "") -> str:
 
 
 def default_model_path(relative: str = "") -> str:
-    return os.path.join(os.path.dirname(__file__), relative, "lib", "common", "orca_params_en_female.pv")
+    return os.path.join(os.path.dirname(__file__), relative, "lib", "common", "orca_params_en_male.pv")
 
 
 __all__ = [
