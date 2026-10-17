@@ -205,16 +205,16 @@ async function streamingDemo() {
     return;
   }
 
-  const modelFilePrefix = "orca_params_";
-  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
-  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
-
   if (accessKey === undefined || text === undefined || modelFilePath === undefined) {
     console.error(
       "`--access_key` `text_to_stream`, and `model_file_path` are required arguments"
     );
     return;
   }
+
+  const modelFilePrefix = "orca_params_";
+  const langCodeIdx = modelFilePath.indexOf(modelFilePrefix) + modelFilePrefix.length;
+  const language = modelFilePath.substring(langCodeIdx, langCodeIdx + 2);
 
   if (audioWaitChunks === undefined || audioWaitChunks === null) {
     audioWaitChunks = 0;

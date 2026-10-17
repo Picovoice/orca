@@ -792,6 +792,11 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
+### v3.1.2 - Oct 19th, 2026
+
+- Replace `en_male` with a more expressive voice
+- Improve english pronunciations
+
 ### v3.1.0 - Aug 20th, 2026
 
 - Improved engine performance
