@@ -14,12 +14,11 @@ import * as fs from 'fs';
 
 function getPlatformName(): string {
     let platformName = process.env.PLATFORM_NAME;
-    if (platformName == null) {
-        console.log("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
-        process.exit(1);
+    if (platformName === null) {
+        throw new Error("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
     }
 
-    if (platformName == "ios") {
+    if (platformName === "ios") {
         platformName = "mac";
     }
 
@@ -29,15 +28,15 @@ function getPlatformName(): string {
 function getArchName(platformName: string): string {
     let arch = os.machine();
 
-    if (arch == "unknown") {
+    if (arch === "unknown") {
         arch = process.env.PROCESSOR_ARCHITEW6432 ||
                process.env.PROCESSOR_ARCHITECTURE ||
                "unknown";
     }
 
-    if (platformName == "windows" && arch == "x86_64") {
+    if (platformName === "windows" && arch === "x86_64") {
         arch = "AMD64";
-    } else if (platformName == "windows" && arch == "arm64") {
+    } else if (platformName === "windows" && arch === "arm64") {
         arch = "ARM64";
     }
 

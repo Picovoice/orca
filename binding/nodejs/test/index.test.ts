@@ -45,7 +45,7 @@ const loadPcm = (audioFile: string): any => {
 const zeroCrossingRate = (pcm: Int16Array) => {
   let numZeroCrossings = 0;
   for (let i = 1; i < pcm.length; i++) {
-    if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+    if ((pcm[i] >= 0) !== (pcm[i - 1] >= 0)) {
       numZeroCrossings += 1;
     }
   }
@@ -56,7 +56,7 @@ const zeroCrossingRate = (pcm: Int16Array) => {
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).toBeGreaterThan(0);
 
-  if (pcm.length == groundTruth.length) {
+  if (pcm.length === groundTruth.length) {
     const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
     const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
 
@@ -241,7 +241,7 @@ describe('sentences', () => {
       });
 
       it('test zcr similarity', () => {
-        if (language != "en") {
+        if (language !== "en") {
             return;
         }
 
