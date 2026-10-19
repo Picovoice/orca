@@ -12,7 +12,7 @@
 		02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02A1194C268D39AB00A2AC99 /* Assets.xcassets */; };
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
-		1E001B6A2B7D451200D8E72D /* orca_params_en_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_en_female.pv */; };
+		1E001B6A2B7D451200D8E72D /* orca_params_en_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_en_male.pv */; };
 		5A2998313036783A007E2BC9 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5A2998303036783A007E2BC9 /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */; };
@@ -42,7 +42,7 @@
 		02A11951268D39AB00A2AC99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
-		1E001B692B7D451200D8E72D /* orca_params_en_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_female.pv; path = ../../../../../lib/common/orca_params_en_female.pv; sourceTree = "<group>"; };
+		1E001B692B7D451200D8E72D /* orca_params_en_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_male.pv; path = ../../../../../lib/common/orca_params_en_male.pv; sourceTree = "<group>"; };
 		E125E1882BE99DCA008B6D56 /* AtomicBool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicBool.swift; sourceTree = "<group>"; };
 		E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_de_female.pv; path = ../../../../../lib/common/orca_params_de_female.pv; sourceTree = "<group>"; };
 		E18C9CBA2DB071CA000157A3 /* orca_params_fr_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_fr_female.pv; path = ../../../../../lib/common/orca_params_fr_female.pv; sourceTree = "<group>"; };
@@ -114,7 +114,7 @@
 			children = (
 				E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */,
 				E18C9CBC2DB071CA000157A3 /* orca_params_de_male.pv */,
-				1E001B692B7D451200D8E72D /* orca_params_en_female.pv */,
+				1E001B692B7D451200D8E72D /* orca_params_en_male.pv */,
 				E18C9CBB2DB071CA000157A3 /* orca_params_en_male.pv */,
 				E18C9CC52DB071CA000157A3 /* orca_params_es_female.pv */,
 				E18C9CC02DB071CA000157A3 /* orca_params_es_male.pv */,
@@ -206,7 +206,7 @@
 				E18C9CD22DB071CA000157A3 /* orca_params_es_female.pv in Resources */,
 				E18C9CD32DB071CA000157A3 /* orca_params_fr_male.pv in Resources */,
 				E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */,
-				1E001B6A2B7D451200D8E72D /* orca_params_en_female.pv in Resources */,
+				1E001B6A2B7D451200D8E72D /* orca_params_en_male.pv in Resources */,
 				02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -420,7 +420,7 @@
 			repositoryURL = "https://github.com/Picovoice/orca";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.0;
+				version = 3.1.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
