@@ -175,7 +175,7 @@
 			);
 			mainGroup = 02A1193C268D39A700A2AC99;
 			packageReferences = (
-				5A29982F3036783A007E2BC9 /* XCRemoteSwiftPackageReference "orca" */,
+				5AB453663086B1B000C6AA9A /* XCLocalSwiftPackageReference "../../../../orca" */,
 			);
 			productRefGroup = 02A11946268D39A700A2AC99 /* Products */;
 			projectDirPath = "";
@@ -413,6 +413,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		5AB453663086B1B000C6AA9A /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../orca;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		5A29982F3036783A007E2BC9 /* XCRemoteSwiftPackageReference "orca" */ = {
