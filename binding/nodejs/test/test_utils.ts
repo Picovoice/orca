@@ -14,7 +14,7 @@ import * as fs from 'fs';
 
 function getPlatformName(): string {
     let platformName = process.env.PLATFORM_NAME;
-    if (platformName === null) {
+    if (platformName === null || platformName === undefined) {
         throw new Error("Expected PLATFORM_NAME to exist. Is this being run in a pipeline?");
     }
 
