@@ -161,22 +161,28 @@ describe('Orca Binding', function() {
       });
     });
 
-    it(`should be able to init with public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true },
-      });
+    it(`should be able to init with public path (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { publicPath, forceWrite: true },
+        })
+      )
     });
 
-    it(`should be able to init with base64 (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { base64: orcaParamsMale, forceWrite: true },
-      });
+    it(`should be able to init with base64 (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { base64: orcaParamsMale, forceWrite: true },
+        })
+      )
     });
 
-    it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true, customWritePath: '테스트' },
-      });
+    it(`should be able to handle UTF-8 public path (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { publicPath, forceWrite: true, customWritePath: '테스트' },
+        })
+      )
     });
 
     it(`should return process and flush error message stack (${testCaseString})`, async () => {

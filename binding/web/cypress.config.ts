@@ -11,6 +11,7 @@ export default defineConfig({
     specPattern: 'test/*.test.{js,jsx,ts,tsx}',
     video: false,
     screenshotOnRunFailure: false,
+    chromeWebSecurity: false,
   },
   setupNodeEvents(on) {
     on('before:browser:launch', (browser, launchOptions) => {
