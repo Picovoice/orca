@@ -40,7 +40,7 @@ const ZERO_CROSSING_SIMILARITY = 0.04;
 const zeroCrossingRate = (pcm: Int16Array) => {
   let numZeroCrossings = 0;
   for (let i = 1; i < pcm.length; i++) {
-    if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+    if ((pcm[i] >= 0) !== (pcm[i - 1] >= 0)) {
       numZeroCrossings += 1;
     }
   }
@@ -51,7 +51,7 @@ const zeroCrossingRate = (pcm: Int16Array) => {
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).to.be.greaterThan(0);
 
-  if (pcm.length == groundTruth.length) {
+  if (pcm.length === groundTruth.length) {
     const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
     const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
 
@@ -454,7 +454,7 @@ describe('Sentence Tests', function() {
         });
 
         it(`should be able to differentiate speech with zcr (${testCaseString})`, async () => {
-          if (testCase.language != "en") {
+          if (testCase.language !== "en") {
             return;
           }
 
