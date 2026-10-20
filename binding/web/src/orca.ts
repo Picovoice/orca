@@ -16,22 +16,11 @@ import { Mutex } from 'async-mutex';
 import { simd } from 'wasm-feature-detect';
 
 import {
+  arrayBufferToStringAtIndex,
   base64ToUint8Array,
   isAccessKeyValid,
   loadModel,
 } from '@picovoice/web-utils';
-
-export function arrayBufferToStringAtIndex(
-  arrayBuffer: Uint8Array,
-  indexStart: number
-): string {
-  let indexEnd = indexStart;
-  while (indexEnd < arrayBuffer.length && arrayBuffer[indexEnd] !== 0) {
-    indexEnd++;
-  }
-  const utf8decoder = new TextDecoder('utf-8');
-  return utf8decoder.decode(arrayBuffer.slice(indexStart, indexEnd));
-}
 
 import createModuleSimd from "./lib/pv_orca_simd";
 import createModulePThread from "./lib/pv_orca_pthread";
@@ -510,7 +499,6 @@ export class Orca {
     options: OrcaOptions = {}
   ): Promise<Orca> {
     const customWritePath = (model.customWritePath) ? model.customWritePath : 'orca_model';
-    console.log("before loadModel");
     const modelPath = await loadModel({ ...model, customWritePath });
 
     return Orca._init(accessKey, modelPath, options);
@@ -521,13 +509,9 @@ export class Orca {
     modelPath: string,
     options: OrcaOptions = {}
   ): Promise<Orca> {
-    console.log("_init");
-
     if (!isAccessKeyValid(accessKey)) {
       throw new OrcaErrors.OrcaInvalidArgumentError('Invalid AccessKey');
     }
-
-    console.log("_init 1");
 
     let { device = 'best' } = options;
 
@@ -546,16 +530,12 @@ export class Orca {
       device = 'cpu:1';
     }
 
-    console.log("_init 2");
-
     const sabDefined = typeof SharedArrayBuffer !== 'undefined'
       && (device !== "cpu:1");
 
     return new Promise<Orca>((resolve, reject) => {
       Orca._orcaMutex
         .runExclusive(async () => {
-          console.log("before initWasm");
-
           const wasmOutput = await Orca.initWasm(
             accessKey.trim(),
             modelPath.trim(),
@@ -563,8 +543,6 @@ export class Orca {
             (sabDefined) ? this._wasmPThread : this._wasmSimd,
             (sabDefined) ? this._wasmPThreadLib : this._wasmSimdLib,
             (sabDefined) ? createModulePThread : createModuleSimd);
-
-          console.log("after initWasm");
           return new Orca(wasmOutput);
         })
         .then((result: Orca) => {
@@ -960,8 +938,6 @@ export class Orca {
     wasmLibBase64: string,
     createModuleFunc: any
   ): Promise<OrcaWasmOutput> {
-    console.log('in init wasm');
-    console.log(modelPath);
     const blob = new Blob(
       [base64ToUint8Array(wasmLibBase64)],
       { type: 'application/javascript' }
@@ -1040,9 +1016,6 @@ export class Orca {
       throw new OrcaErrors.OrcaOutOfMemoryError('malloc failed: Cannot allocate memory');
     }
 
-    console.log('after allocs');
-    console.log('before pv_orca_init');
-
     const initStatus = await pv_orca_init(
       accessKeyAddress,
       modelPathAddress,
@@ -1051,8 +1024,6 @@ export class Orca {
     module._pv_free(accessKeyAddress);
     module._pv_free(modelPathAddress);
     module._pv_free(deviceAddress);
-
-    console.log('after pv_orca_init');
 
     if (initStatus !== PvStatus.SUCCESS) {
       const messageStack = Orca.getMessageStack(

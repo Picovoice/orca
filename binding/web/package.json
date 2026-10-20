@@ -33,7 +33,7 @@
     "test-perf": "cypress run --spec test/orca_perf.test.ts --browser chrome"
   },
   "dependencies": {
-    "@picovoice/web-utils": "=1.4.8"
+    "@picovoice/web-utils": "=1.4.3"
   },
   "devDependencies": {
     "@babel/core": "^7.21.3",

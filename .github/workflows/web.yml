@@ -58,16 +58,5 @@ jobs:
       - name: Prepare Test
         run: yarn setup-test
 
-      - name: Show runner's outgoing IP
-        run: curl -s https://api.ipify.org
-
       - name: Test
         run: yarn test --env ACCESS_KEY=${{secrets.PV_VALID_ACCESS_KEY}},DEVICE=${{matrix.device}}
-
-      - name: Upload Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: netlog
-          path: cypress/logs/
-          if-no-files-found: warn
