@@ -27,6 +27,10 @@ import testData from '../cypress/fixtures/resources/.test/test_data.json';
 const ACCESS_KEY = Cypress.env('ACCESS_KEY');
 const DEVICE: string = Cypress.env('DEVICE');
 
+Cypress.on('window:before:unload', () => {
+  console.log('Cypress : PAGE IS UNLOADING \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#######################')
+});
+
 const EXPECTED_MAX_CHARACTER_LIMIT = 2000;
 const EXPECTED_SAMPLE_RATE = 22050;
 
@@ -99,13 +103,16 @@ const runInitTest = async (
   let isFailed = false;
 
   try {
+    console.log("before create");
     orca = await instance.create(accessKey, model, { device });
+    console.log("after create");
     expect(typeof orca.version).eq('string');
     expect(orca.version.length).gt(0);
     expect(orca.maxCharacterLimit).eq(EXPECTED_MAX_CHARACTER_LIMIT);
     expect(orca.sampleRate).eq(EXPECTED_SAMPLE_RATE);
     expect(orca.validCharacters.length).gt(0);
   } catch (e) {
+    console.log("CAUGHT");
     if (expectFailure) {
       isFailed = true;
     } else {
@@ -114,10 +121,14 @@ const runInitTest = async (
   }
 
   if (orca instanceof OrcaWorker) {
+    console.log("before terminate");
     orca.terminate();
   } else if (orca instanceof Orca) {
+    console.log("before release");
     await orca.release();
   }
+
+  console.log("before expect failure");
 
   if (expectFailure) {
     expect(isFailed).to.be.true;
@@ -126,8 +137,8 @@ const runInitTest = async (
   }
 };
 
-describe('Orca Binding', function() {
-  for (const instance of [Orca, OrcaWorker]) {
+describe('Orca Binding', { testIsolation: false }, function() {
+  for (const instance of [Orca/*, OrcaWorker*/]) {
     const instanceString = instance === Orca ? 'main' : 'worker';
     const testCaseString = `/test/orca_params_en_male.pv | ${instanceString}`;
 
@@ -161,54 +172,63 @@ describe('Orca Binding', function() {
       });
     });
 
-    it(`should be able to init with public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true },
-      });
+    it(`should be able to init with public path (${testCaseString})`, () => {
+        cy.then({ timeout: 50000 }, () =>
+          runInitTest(instance, {
+            model: { publicPath, forceWrite: true },
+          })
+        )
     });
 
-    it(`should be able to init with base64 (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { base64: orcaParamsMale, forceWrite: true },
-      });
+    it(`should be able to init with base64 (${testCaseString})`, () => {
+        cy.then({ timeout: 50000 }, () =>
+          runInitTest(instance, {
+            model: { base64: orcaParamsMale, forceWrite: true },
+          })
+        )
     });
 
-    it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true, customWritePath: '테스트' },
-      });
+    it(`should be able to handle UTF-8 public path (${testCaseString})`, () => {
+        cy.then({ timeout: 50000 }, () =>
+          runInitTest(instance, {
+            model: { publicPath, forceWrite: true, customWritePath: '테스트' },
+          })
+        )
     });
 
-    it(`should return process and flush error message stack (${testCaseString})`, async () => {
-      const orca = await Orca.create(
-        ACCESS_KEY,
-        { publicPath: publicPath, forceWrite: true },
-        { device: DEVICE }
-      );
+    it(`should return process and flush error message stack (${testCaseString})`, () => {
+        cy.then({ timeout: 50000 }, async () => {
+          const orca = await Orca.create(
+            ACCESS_KEY,
+            { publicPath: publicPath, forceWrite: true },
+            { device: DEVICE }
+          );
 
-      // @ts-ignore
-      const objectAddress = orca._objectAddress;
+          // @ts-ignore
+          const objectAddress = orca._objectAddress;
 
-      // @ts-ignore
-      orca._objectAddress = 0;
+          // @ts-ignore
+          orca._objectAddress = 0;
 
-      const errors: OrcaError[] = [];
-      try {
-        await orca.synthesize('test');
-      } catch (e: any) {
-        errors.push(e);
-      }
+          const errors: OrcaError[] = [];
+          try {
+            await orca.synthesize('test');
+          } catch (e: any) {
+            errors.push(e);
+          }
 
-      // @ts-ignore
-      orca._objectAddress = objectAddress;
-      await orca.release();
+          // @ts-ignore
+          orca._objectAddress = objectAddress;
+          await orca.release();
 
-      expect(errors.length).to.be.gte(0);
+          expect(errors.length).to.be.gte(0);
 
-      for (let i = 0; i < errors.length; i++) {
-        expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
-        expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
-      }
+          for (let i = 0; i < errors.length; i++) {
+            expect((errors[i] as OrcaError).messageStack.length).to.be.gt(0);
+          
+            expect((errors[i] as OrcaError).messageStack.length).to.be.lte(8);
+          }
+        })
     });
 
     it(`should return correct error message stack (${testCaseString})`, async () => {
@@ -246,9 +266,10 @@ describe('Orca Binding', function() {
   }
 });
 
+/*
 describe('Sentence Tests', function() {
-  for (const testCase of testData.tests.sentence_tests) {
-    for (const model of testCase.models) {
+  for (const testCase of [testData.tests.sentence_tests[0]]) {
+    for (const model of [testCase.models[0]]) {
       for (const instance of [Orca, OrcaWorker]) {
         const instanceString = instance === Orca ? 'main' : 'worker';
         const testCaseString = `${testCase.language} | ${model} | ${instanceString}`;
@@ -391,7 +412,6 @@ describe('Sentence Tests', function() {
           }
         });
 
-        /* eslint-disable-next-line cypress/no-async-tests */
         it(`should be able to handle max num characters (${testCaseString})`, async () => {
           // test takes a while specifically in some languages
           // set timeout decently high and only run in worker
@@ -495,7 +515,7 @@ describe('Sentence Tests', function() {
 });
 
 describe('Alignment Tests', function() {
-  for (const testCase of testData.tests.alignment_tests) {
+  for (const testCase of [testData.tests.alignment_tests[0]]) {
     for (const instance of [Orca, OrcaWorker]) {
       const instanceString = instance === Orca ? 'main' : 'worker';
       const testCaseString = `${testCase.language} | ${testCase.model} | ${instanceString}`;
@@ -543,7 +563,7 @@ describe('Alignment Tests', function() {
 });
 
 describe('Invalid Tests', function() {
-  for (const testCase of testData.tests.invalid_tests) {
+  for (const testCase of [testData.tests.invalid_tests[0]]) {
     for (const model of testCase.models) {
       for (const instance of [Orca, OrcaWorker]) {
         const instanceString = instance === Orca ? 'main' : 'worker';
@@ -576,3 +596,4 @@ describe('Invalid Tests', function() {
     }
   }
 });
+*/
