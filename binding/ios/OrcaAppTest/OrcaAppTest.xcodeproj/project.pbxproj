@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -19,6 +19,7 @@
 		1EAEDDE32B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
 		1EAEDDE42B76A9DB003B8C18 /* test_resources in Resources */ = {isa = PBXBuildFile; fileRef = 1EAEDDE22B76A9DB003B8C18 /* test_resources */; };
 		5A29982B303671C1007E2BC9 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5A29982A303671C1007E2BC9 /* Orca */; };
+		5ADBEF593089475C00B43CAB /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5ADBEF583089475C00B43CAB /* Orca */; };
 		E109D1A02CFE4DBF0014F5AA /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = E109D19F2CFE4DBF0014F5AA /* Orca */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5ADBEF593089475C00B43CAB /* Orca in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,7 +236,7 @@
 			);
 			mainGroup = 1E00643F27CEDF9B006FF6E9;
 			packageReferences = (
-				5AB453653086B0E400C6AA9A /* XCLocalSwiftPackageReference "../../../../orca" */,
+				5ADBEF573089474E00B43CAB /* XCRemoteSwiftPackageReference "orca" */,
 			);
 			productRefGroup = 1E00644927CEDF9B006FF6E9 /* Products */;
 			projectDirPath = "";
@@ -650,16 +652,28 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../../orca;
 		};
-		5AB453653086B0E400C6AA9A /* XCLocalSwiftPackageReference "../../../../orca" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../orca;
-		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5ADBEF573089474E00B43CAB /* XCRemoteSwiftPackageReference "orca" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Picovoice/orca";
+			requirement = {
+				kind = exactVersion;
+				version = 3.1.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		5A29982A303671C1007E2BC9 /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 5A299829303671A6007E2BC9 /* XCLocalSwiftPackageReference "../../../../orca" */;
+			productName = Orca;
+		};
+		5ADBEF583089475C00B43CAB /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5ADBEF573089474E00B43CAB /* XCRemoteSwiftPackageReference "orca" */;
 			productName = Orca;
 		};
 		E109D19F2CFE4DBF0014F5AA /* Orca */ = {
