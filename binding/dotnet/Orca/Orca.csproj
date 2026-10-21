@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks>
-        <Version>3.1.0</Version>
+        <Version>3.1.2</Version>
         <Authors>Picovoice</Authors>
         <Company />
         <Product>Orca Streaming Text-to-Speech Engine</Product>
@@ -90,12 +90,12 @@
         </Content>
     </ItemGroup>
     <ItemGroup>
-        <Content Include="..\..\..\lib\common\orca_params_en_female.pv">
+        <Content Include="..\..\..\lib\common\orca_params_en_male.pv">
             <PackagePath>
-                buildTransitive/common/orca_params_en_female.pv;
+                buildTransitive/common/orca_params_en_male.pv;
             </PackagePath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>lib\common\orca_params_en_female.pv</Link>
+            <Link>lib\common\orca_params_en_male.pv</Link>
             <Visible>false</Visible>
         </Content>
     </ItemGroup>

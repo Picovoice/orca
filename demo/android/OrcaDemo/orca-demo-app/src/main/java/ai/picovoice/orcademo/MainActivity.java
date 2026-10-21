@@ -35,7 +35,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -53,7 +55,6 @@ import ai.picovoice.orca.OrcaActivationThrottledException;
 import ai.picovoice.orca.OrcaException;
 import ai.picovoice.orca.OrcaInvalidArgumentException;
 import ai.picovoice.orca.OrcaSynthesizeParams;
-
 
 public class MainActivity extends AppCompatActivity {
     private static final String ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}";
@@ -456,7 +457,7 @@ public class MainActivity extends AppCompatActivity {
         setUIState(UIState.STREAMING_PLAYBACK);
 
         AtomicBoolean isStreamingText = new AtomicBoolean(false);
-        ArrayList<String> textStream = new ArrayList<>();
+        List<String> textStream = Collections.synchronizedList(new ArrayList<>());
 
         AtomicBoolean isQueueingStreamingPcm = new AtomicBoolean(false);
         ConcurrentLinkedQueue<short[]> pcmQueue = new ConcurrentLinkedQueue<>();
@@ -504,6 +505,10 @@ public class MainActivity extends AppCompatActivity {
                 while (isStreamingText.get() || !textStream.isEmpty()) {
                     if (!textStream.isEmpty()) {
                         String word = textStream.remove(0);
+                        if (word == null) {
+                            continue;
+                        }
+
                         try {
                             short[] pcm = orcaStream.synthesize(word);
                             if (pcm != null && pcm.length > 0) {

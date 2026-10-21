@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<TestResult> results = new ArrayList<>();
 
-        final String modelFile = "models/orca_params_en_female.pv";
+        final String modelFile = "models/orca_params_en_male.pv";
 
         TestResult result = new TestResult();
         result.testName = "Test Init";

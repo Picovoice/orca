@@ -40,7 +40,7 @@ const ZERO_CROSSING_SIMILARITY = 0.04;
 const zeroCrossingRate = (pcm: Int16Array) => {
   let numZeroCrossings = 0;
   for (let i = 1; i < pcm.length; i++) {
-    if ((pcm[i] >= 0) != (pcm[i - 1] >= 0)) {
+    if ((pcm[i] >= 0) !== (pcm[i - 1] >= 0)) {
       numZeroCrossings += 1;
     }
   }
@@ -51,7 +51,7 @@ const zeroCrossingRate = (pcm: Int16Array) => {
 const validatePcm = (pcm: Int16Array, groundTruth: Int16Array) => {
   expect(pcm.length).to.be.greaterThan(0);
 
-  if (pcm.length == groundTruth.length) {
+  if (pcm.length === groundTruth.length) {
     const diffPcm = pcm.map((a, i) => Math.abs(a - groundTruth[i]));
     const diffOutliers = diffPcm.filter(d => d > PCM_OUTLIER_THRESHOLD).length / diffPcm.length;
 
@@ -161,22 +161,28 @@ describe('Orca Binding', function() {
       });
     });
 
-    it(`should be able to init with public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true },
-      });
+    it(`should be able to init with public path (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { publicPath, forceWrite: true },
+        })
+      )
     });
 
-    it(`should be able to init with base64 (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { base64: orcaParamsMale, forceWrite: true },
-      });
+    it(`should be able to init with base64 (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { base64: orcaParamsMale, forceWrite: true },
+        })
+      )
     });
 
-    it(`should be able to handle UTF-8 public path (${testCaseString})`, async () => {
-      await runInitTest(instance, {
-        model: { publicPath, forceWrite: true, customWritePath: '테스트' },
-      });
+    it(`should be able to handle UTF-8 public path (${testCaseString})`, () => {
+      cy.then({ timeout: 15000 }, () =>
+        runInitTest(instance, {
+          model: { publicPath, forceWrite: true, customWritePath: '테스트' },
+        })
+      )
     });
 
     it(`should return process and flush error message stack (${testCaseString})`, async () => {
@@ -448,7 +454,7 @@ describe('Sentence Tests', function() {
         });
 
         it(`should be able to differentiate speech with zcr (${testCaseString})`, async () => {
-          if (testCase.language != "en") {
+          if (testCase.language !== "en") {
             return;
           }
 

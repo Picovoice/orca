@@ -186,7 +186,7 @@ For more information about .NET demos go to [demo/dotnet](demo/dotnet).
 
 1. Open [OrcaDemo.xcodeproj](demo/ios/OrcaDemo/OrcaDemo.xcodeproj) in XCode.
 2. Replace `${YOUR_ACCESS_KEY_HERE}` in the file [`ViewModel.swift`](demo/ios/OrcaDemo/OrcaDemo/ViewModel.swift) with your `AccessKey`.
-3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enFemaleDemo` -> English Demo with a female voice, `deMaleDemo` -> German demo with a male voice).
+3. Go to `Product > Scheme` and select the scheme for the language and gender you would like to run the demo in (e.g. `enMaleDemo` -> English Demo with a male voice, `deFemaleDemo` -> German demo with a female voice).
 4. Run the demo with a simulator or connected iOS device.
 5. Once the demo app has started, enter the text you wish to synthesize in the text box area, and press the `Synthesize` button to synthesize the text and play audio.
 
@@ -791,6 +791,11 @@ Finally, when done release the resources using `orca.release()`.
 For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
+
+### v3.1.2 - Oct 19th, 2026
+
+- Replace `en_male` with a more expressive voice
+- Improve english pronunciations
 
 ### v3.1.0 - Aug 20th, 2026
 

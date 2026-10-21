@@ -24,7 +24,7 @@ enum UIState {
 
 class ViewModel: ObservableObject {
     private let ACCESS_KEY = "${YOUR_ACCESS_KEY_HERE}" // Obtained from Picovoice Console (https://console.picovoice.ai)
-    private let model = ProcessInfo.processInfo.environment["MODEL"] ?? "en_female"
+    private let model = ProcessInfo.processInfo.environment["MODEL"] ?? "en_male"
 
     private let NUM_AUDIO_WAIT_CHUNKS = 1
 
