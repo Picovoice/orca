@@ -70,11 +70,13 @@ public class Orca {
                 throw new OrcaInvalidStateException(
                         "Attempted to call OrcaStream synthesize after delete."
                 );
-            }
-
-            if (stream == 0) {
+            } else if (stream == 0) {
                 throw new OrcaInvalidStateException(
                         "Attempted to call OrcaStream synthesize without an open stream."
+                );
+            } else if (text == null) {
+                throw new OrcaException(
+                        "Attempted to call OrcaStream synthesize with null text."
                 );
             }
 

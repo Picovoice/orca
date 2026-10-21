@@ -27,7 +27,7 @@ def update_ios_demo(models):
 
     for model in models:
         language, gender = model.removeprefix("orca_params_").removesuffix(".pv").split("_")
-        if language == 'en' and gender == 'female':
+        if language == 'en' and gender == 'male':
             continue
 
         model_camel = language + gender.capitalize()
@@ -40,7 +40,7 @@ def update_ios_demo(models):
             env_var = base_scheme_content.getElementsByTagName('EnvironmentVariable')[0]
             pre_build_action.setAttribute(
                 'scriptText',
-                pre_build_action.attributes['scriptText'].value.replace(" en_female", f" {model_snake}"))
+                pre_build_action.attributes['scriptText'].value.replace(" en_male", f" {model_snake}"))
             env_var.setAttribute('value', model_snake)
             with open(os.path.join(scheme_dir, f"{model_camel}Demo.xcscheme"), 'w') as f:
                 f.write(base_scheme_content.toxml())
