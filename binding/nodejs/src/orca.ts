@@ -30,7 +30,7 @@ import {
 
 import { getSystemLibraryPath } from './platforms';
 
-const DEFAULT_MODEL_PATH = '../lib/common/orca_params_en_female.pv';
+const DEFAULT_MODEL_PATH = '../lib/common/orca_params_en_male.pv';
 
 type OrcaHandleAndStatus = { handle: any; status: PvStatus };
 type OrcaResult = OrcaSynthesizeResult & {

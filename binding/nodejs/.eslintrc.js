@@ -193,7 +193,7 @@ module.exports = {
     // disallow reassignment of function parameters
     'no-param-reassign': 2,
     // disallow use of process.env
-    'no-process-env': 2,
+    'no-process-env': 0,
     // disallow usage of __proto__ property
     'no-proto': 2,
     // disallow declaring the same variable more then once
