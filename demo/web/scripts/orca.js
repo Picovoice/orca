@@ -446,7 +446,7 @@ async function startOrca(accessKey) {
   try {
     document.getElementById("start-orca").disabled = true;
 
-    orca = await OrcaWeb.OrcaWorker.create(accessKey);
+    orca = await OrcaWeb.OrcaWorker.create(accessKey, orcaModel);
 
     document.getElementById("choose-btns").style.display = "block";
     const maxCharacterLimit = orca.maxCharacterLimit.toString();
