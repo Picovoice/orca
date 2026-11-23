@@ -1,5 +1,5 @@
 /*
-    Copyright 2024-2025 Picovoice Inc.
+    Copyright 2024-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is
     located in the "LICENSE" file accompanying this source.
@@ -274,6 +274,8 @@ public class MainActivity extends AppCompatActivity {
                     text = ValidateTextHelper.filterValidCharsKo(text);
                 } else if (BuildConfig.FLAVOR.startsWith("ja")) {
                     text = ValidateTextHelper.filterValidCharsJa(text);
+                } else if (BuildConfig.FLAVOR.startsWith("zh")) {
+                    text = ValidateTextHelper.filterValidCharsZh(text);
                 }
 
                 Matcher m = validationRegex.matcher(text);

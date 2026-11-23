@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 //
-// Copyright 2024-2025 Picovoice Inc.
+// Copyright 2024-2026 Picovoice Inc.
 //
 // You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 // file accompanying this source.
@@ -77,7 +77,7 @@ program.parse(process.argv);
 
 function splitText(text, language) {
   // TODO: Update once Orca supports passing in partial bytes
-  if (language === "ko" || language === "ja") {
+  if (language === "ko" || language === "ja" || language == "zh") {
     return text.split("");
   // TODO: Remove once tiktoken supports windows-arm64
   } else if (os.platform() === 'win32' && os.arch() === 'arm64') {
