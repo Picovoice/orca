@@ -45,10 +45,22 @@ jobs:
       - name: Pre-build dependencies
         run: python3 -m pip install --upgrade pip
 
+# ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: pip install setuptools && pip install wheel && python3 setup.py sdist bdist_wheel
+        working-directory: binding/python
+# ********************************************************
+
       - name: Install dependencies
         run: |
           ${{matrix.install_dep}}
           pip install -r requirements.txt
+
+# ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-3.2.0-py3-none-any.whl --force-reinstall
+# ********************************************************
 
       - name: Test streaming
         run: >
