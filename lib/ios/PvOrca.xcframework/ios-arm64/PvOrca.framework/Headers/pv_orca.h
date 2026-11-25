@@ -67,7 +67,8 @@ PV_API pv_status_t pv_orca_init(
 PV_API void pv_orca_delete(pv_orca_t *object);
 
 /**
- * Returns an array of characters that are accepted as input to Orca synthesize functions.
+ * Returns an array of characters that are accepted as input to Orca synthesize functions. For JA and ZH, this is
+ * not the list of all accepted characters.
  *
  * @param object Constructed instance of Orca.
  * @param[out] num_characters Number of valid characters.
