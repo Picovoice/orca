@@ -47,6 +47,9 @@ jobs:
     - name: Set up service json
       run: echo ${{secrets.GOOGLE_PLAY_SERVICE_JSON}} | base64 -d > ./service-account.json
 
+    - name: Install fastlane
+      run: gem install fastlane -v 2.242.0
+
     - name: Override version code
       run: |
         VC=`fastlane run google_play_track_version_codes \
