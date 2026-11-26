@@ -1,6 +1,6 @@
 {
   "name": "@picovoice/orca-node",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "description": "Picovoice Orca Node.js binding",
   "main": "dist/index.js",
   "types": "dist/types/index.d.ts",
