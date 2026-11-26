@@ -56,12 +56,6 @@ jobs:
           ${{matrix.install_dep}}
           pip install -r requirements.txt
 
-# ************** REMOVE AFTER RELEASE ********************
-      - name: Build binding
-        run: |
-          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-3.2.0-py3-none-any.whl --force-reinstall
-# ********************************************************
-
       - name: Test streaming
         run: >
           python3 orca_demo_streaming.py
@@ -114,6 +108,12 @@ jobs:
           python3 -m venv .venv --symlinks
           .venv\Scripts\activate
           echo PATH=$PATH >> $GITHUB_ENV
+
+# ************** REMOVE AFTER RELEASE ********************
+      - name: Build binding
+        run: |
+          pip install wheel setuptools && cd ../../binding/python && python3 setup.py sdist bdist_wheel && pip install dist/pvorca-3.2.0-py3-none-any.whl --force-reinstall
+# ********************************************************
 
       - name: Install dependencies
         run: pip3 install -r requirements.txt
