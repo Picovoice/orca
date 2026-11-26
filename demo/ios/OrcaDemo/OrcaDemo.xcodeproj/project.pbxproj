@@ -13,7 +13,6 @@
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
 		1E001B6A2B7D451200D8E72D /* orca_params_en_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_en_male.pv */; };
-		5A2998313036783A007E2BC9 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5A2998303036783A007E2BC9 /* Orca */; };
 		5ADBEF56308946F100B43CAB /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5ADBEF55308946F100B43CAB /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */; };
@@ -417,30 +416,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		5A29982F3036783A007E2BC9 /* XCRemoteSwiftPackageReference "orca" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Picovoice/orca";
-			requirement = {
-				kind = exactVersion;
-				version = 3.1.2;
-			};
-		};
 		5ADBEF54308946F100B43CAB /* XCRemoteSwiftPackageReference "orca" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Picovoice/orca";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.2;
+				version = 3.2.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		5A2998303036783A007E2BC9 /* Orca */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5A29982F3036783A007E2BC9 /* XCRemoteSwiftPackageReference "orca" */;
-			productName = Orca;
-		};
 		5ADBEF55308946F100B43CAB /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 5ADBEF54308946F100B43CAB /* XCRemoteSwiftPackageReference "orca" */;

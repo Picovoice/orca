@@ -6,6 +6,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+	mavenLocal()  // TODO: remove this
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.2'
@@ -16,6 +17,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+	mavenLocal()  // TODO: remove this
     }
 }
 
