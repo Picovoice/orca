@@ -1,22 +1,5 @@
 apply plugin: 'com.android.library'
 
-//////////////////////////////////////////////////// TODO: remove
-apply plugin: 'maven-publish'
-publishing {
-    publications {
-        release(MavenPublication) {
-            groupId = "ai.picovoice"
-            artifactId = "orca-android"
-            version = "3.2.0"
-            artifact("$buildDir/outputs/aar/orca-release.aar")
-        }
-    }
-    repositories {
-        mavenLocal()
-    }
-}
-//////////////////////////////////////////////////// TODO: remove
-
 ext {
     PUBLISH_GROUP_ID = 'ai.picovoice'
     PUBLISH_VERSION = '3.2.0'
