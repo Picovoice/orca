@@ -12,7 +12,10 @@
 		02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 02A1194C268D39AB00A2AC99 /* Assets.xcassets */; };
 		02A1195F268D3FD600A2AC99 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A1195E268D3FD600A2AC99 /* ViewModel.swift */; };
 		1E001B682B76FFE700D8E72D /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E001B672B76FFE700D8E72D /* AudioPlayer.swift */; };
-		1E001B6A2B7D451200D8E72D /* orca_params_en_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = 1E001B692B7D451200D8E72D /* orca_params_en_male.pv */; };
+		5AB18BD530B8C8B700B3EE95 /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5AB18BD430B8C8B700B3EE95 /* Orca */; };
+		5AB18BF230B8D53A00B3EE95 /* orca_params_en_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 5AB18BEC30B8D50500B3EE95 /* orca_params_en_female.pv */; };
+		5AB18BFF30B8D5AF00B3EE95 /* orca_params_zh_male.pv in Resources */ = {isa = PBXBuildFile; fileRef = 5AB18BFE30B8D5AF00B3EE95 /* orca_params_zh_male.pv */; };
+		5AB18C0030B8D5AF00B3EE95 /* orca_params_zh_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = 5AB18BFD30B8D5AF00B3EE95 /* orca_params_zh_female.pv */; };
 		5ADBEF56308946F100B43CAB /* Orca in Frameworks */ = {isa = PBXBuildFile; productRef = 5ADBEF55308946F100B43CAB /* Orca */; };
 		E125E1892BE99DCA008B6D56 /* AtomicBool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125E1882BE99DCA008B6D56 /* AtomicBool.swift */; };
 		E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */ = {isa = PBXBuildFile; fileRef = E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */; };
@@ -42,7 +45,9 @@
 		02A11951268D39AB00A2AC99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02A1195E268D3FD600A2AC99 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		1E001B672B76FFE700D8E72D /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
-		1E001B692B7D451200D8E72D /* orca_params_en_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_male.pv; path = ../../../../../lib/common/orca_params_en_male.pv; sourceTree = "<group>"; };
+		5AB18BEC30B8D50500B3EE95 /* orca_params_en_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_en_female.pv; path = ../../../../../lib/common/orca_params_en_female.pv; sourceTree = "<group>"; };
+		5AB18BFD30B8D5AF00B3EE95 /* orca_params_zh_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_zh_female.pv; path = ../../../../../lib/common/orca_params_zh_female.pv; sourceTree = "<group>"; };
+		5AB18BFE30B8D5AF00B3EE95 /* orca_params_zh_male.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_zh_male.pv; path = ../../../../../lib/common/orca_params_zh_male.pv; sourceTree = "<group>"; };
 		E125E1882BE99DCA008B6D56 /* AtomicBool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomicBool.swift; sourceTree = "<group>"; };
 		E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_de_female.pv; path = ../../../../../lib/common/orca_params_de_female.pv; sourceTree = "<group>"; };
 		E18C9CBA2DB071CA000157A3 /* orca_params_fr_female.pv */ = {isa = PBXFileReference; lastKnownFileType = file; name = orca_params_fr_female.pv; path = ../../../../../lib/common/orca_params_fr_female.pv; sourceTree = "<group>"; };
@@ -68,8 +73,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5A2998313036783A007E2BC9 /* Orca in Frameworks */,
 				5ADBEF56308946F100B43CAB /* Orca in Frameworks */,
+				5AB18BD530B8C8B700B3EE95 /* Orca in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,9 +118,11 @@
 		E18C9CD42DB071E2000157A3 /* models */ = {
 			isa = PBXGroup;
 			children = (
+				5AB18BFD30B8D5AF00B3EE95 /* orca_params_zh_female.pv */,
+				5AB18BFE30B8D5AF00B3EE95 /* orca_params_zh_male.pv */,
 				E18C9CB82DB07180000157A3 /* orca_params_de_female.pv */,
 				E18C9CBC2DB071CA000157A3 /* orca_params_de_male.pv */,
-				1E001B692B7D451200D8E72D /* orca_params_en_male.pv */,
+				5AB18BEC30B8D50500B3EE95 /* orca_params_en_female.pv */,
 				E18C9CBB2DB071CA000157A3 /* orca_params_en_male.pv */,
 				E18C9CC52DB071CA000157A3 /* orca_params_es_female.pv */,
 				E18C9CC02DB071CA000157A3 /* orca_params_es_male.pv */,
@@ -176,7 +183,7 @@
 			);
 			mainGroup = 02A1193C268D39A700A2AC99;
 			packageReferences = (
-				5ADBEF54308946F100B43CAB /* XCRemoteSwiftPackageReference "orca" */,
+				5AB18BD330B8C8B700B3EE95 /* XCLocalSwiftPackageReference "../../../../orca" */,
 			);
 			productRefGroup = 02A11946268D39A700A2AC99 /* Products */;
 			projectDirPath = "";
@@ -193,21 +200,23 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1DDE9B12DB9BFB50068F88C /* pre-build.sh in Resources */,
-				E18C9CC72DB071CA000157A3 /* orca_params_fr_female.pv in Resources */,
 				E18C9CC82DB071CA000157A3 /* orca_params_en_male.pv in Resources */,
+				5AB18BF230B8D53A00B3EE95 /* orca_params_en_female.pv in Resources */,
 				E18C9CC92DB071CA000157A3 /* orca_params_de_male.pv in Resources */,
-				E18C9CCA2DB071CA000157A3 /* orca_params_it_female.pv in Resources */,
-				E18C9CCB2DB071CA000157A3 /* orca_params_pt_female.pv in Resources */,
-				E18C9CCC2DB071CA000157A3 /* orca_params_ja_male.pv in Resources */,
+				E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */,
 				E18C9CCD2DB071CA000157A3 /* orca_params_es_male.pv in Resources */,
-				E18C9CCE2DB071CA000157A3 /* orca_params_ja_female.pv in Resources */,
-				E18C9CCF2DB071CA000157A3 /* orca_params_it_male.pv in Resources */,
-				E18C9CD02DB071CA000157A3 /* orca_params_ko_female.pv in Resources */,
-				E18C9CD12DB071CA000157A3 /* orca_params_pt_male.pv in Resources */,
 				E18C9CD22DB071CA000157A3 /* orca_params_es_female.pv in Resources */,
 				E18C9CD32DB071CA000157A3 /* orca_params_fr_male.pv in Resources */,
-				E18C9CB92DB07180000157A3 /* orca_params_de_female.pv in Resources */,
-				1E001B6A2B7D451200D8E72D /* orca_params_en_male.pv in Resources */,
+				E18C9CC72DB071CA000157A3 /* orca_params_fr_female.pv in Resources */,
+				E18C9CCF2DB071CA000157A3 /* orca_params_it_male.pv in Resources */,
+				E18C9CCA2DB071CA000157A3 /* orca_params_it_female.pv in Resources */,
+				E18C9CCC2DB071CA000157A3 /* orca_params_ja_male.pv in Resources */,
+				E18C9CCE2DB071CA000157A3 /* orca_params_ja_female.pv in Resources */,
+				E18C9CD02DB071CA000157A3 /* orca_params_ko_female.pv in Resources */,
+				E18C9CD12DB071CA000157A3 /* orca_params_pt_male.pv in Resources */,
+				E18C9CCB2DB071CA000157A3 /* orca_params_pt_female.pv in Resources */,
+				5AB18BFF30B8D5AF00B3EE95 /* orca_params_zh_male.pv in Resources */,
+				5AB18C0030B8D5AF00B3EE95 /* orca_params_zh_female.pv in Resources */,
 				02A1194D268D39AB00A2AC99 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,6 +424,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		5AB18BD330B8C8B700B3EE95 /* XCLocalSwiftPackageReference "../../../../orca" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../../orca;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		5ADBEF54308946F100B43CAB /* XCRemoteSwiftPackageReference "orca" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -427,6 +443,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5AB18BD430B8C8B700B3EE95 /* Orca */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Orca;
+		};
 		5ADBEF55308946F100B43CAB /* Orca */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 5ADBEF54308946F100B43CAB /* XCRemoteSwiftPackageReference "orca" */;
