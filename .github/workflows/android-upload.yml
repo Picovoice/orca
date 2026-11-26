@@ -48,7 +48,7 @@ jobs:
       run: echo ${{secrets.GOOGLE_PLAY_SERVICE_JSON}} | base64 -d > ./service-account.json
 
     - name: Install ruby
-    - uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.3'
 
