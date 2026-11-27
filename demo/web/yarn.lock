@@ -104,8 +104,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.2.tgz#1860473de7dfa1546767448f333db80cb0ff2161"
   integrity sha512-xeO57FpIu4p1Ri3Jq/EXq4ClRm86dVF2z/+kvFnyqVYRavTZmaFaUBbWCOuuTh0o/g7DSsk6kc2vrS4Vl5oPOQ==
 
-"@picovoice/orca-web@file:../../binding/web":
+"@picovoice/orca-web@^3.2.0":
   version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@picovoice/orca-web/-/orca-web-3.2.0.tgz#701aead8050c34595fc4d7a0efa22b40035ed1bd"
+  integrity sha512-cqcSgOGAgV8Y08RvTUM05bgFhrr6pjBWolK0OXnrtckA7QN3YtYzIohgOu6Q291hd52zrVsvq3sndrCvqqN23A==
   dependencies:
     "@picovoice/web-utils" "=1.4.3"
 
