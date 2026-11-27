@@ -63,6 +63,7 @@ voice assistants. Orca is:
   - German
   - Japanese
   - Korean
+  - Mandarin
   - Spanish
   - Italian
   - Portuguese
@@ -225,7 +226,7 @@ npm run start ${LANGUAGE} ${GENDER}
 ```
 
 Replace `${LANGUAGE}` and `${GENDER}` with the language and gender you would like to run the demo in.
-Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, and available genders are `male` and `female`.
+Available languages are `en`, `es`, `de`, `fr`, `ko`, `ja`, `it`, `pt`, `zh`, and available genders are `male` and `female`.
 
 Open `http://localhost:5000` in your browser to try the demo.
 
@@ -792,12 +793,17 @@ For more details, see the [Node.js SDK](./binding/nodejs/).
 
 ## Releases
 
-### v3.1.2 - Oct 19th, 2026
+### v3.2.0 - November 25th, 2026
+
+- Added support for Mandarin voices
+- Improve quality of `en-female`
+
+### v3.1.2 - October 19th, 2026
 
 - Replace `en_male` with a more expressive voice
 - Improve english pronunciations
 
-### v3.1.0 - Aug 20th, 2026
+### v3.1.0 - August 20th, 2026
 
 - Improved engine performance
 - Improved synthesis quality

@@ -44,4 +44,26 @@ public class ValidateTextHelper {
 
         return invalidChars.toString();
     }
+
+    public static String filterValidCharsZh(String input) {
+        StringBuilder invalidChars = new StringBuilder();
+
+        for (int i = 0; i < input.length(); ) {
+            int codePoint = input.codePointAt(i);
+            i += Character.charCount(codePoint);
+
+            boolean isHan =
+                (codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||   // CJK Unified Ideographs (common)
+                (codePoint >= 0x3400 && codePoint <= 0x4DBF) ||   // CJK Unified Ideographs Extension A
+                (codePoint >= 0xF900 && codePoint <= 0xFAFF) ||   // CJK Compatibility Ideographs
+                (codePoint >= 0x20000 && codePoint <= 0x323AF) || // CJK Extensions B-I + Compatibility Ideographs Supplement
+                (codePoint == 0x3007);                            // 〇 ideographic number zero
+
+            if (!isHan) {
+                invalidChars.appendCodePoint(codePoint);
+            }
+        }
+
+        return invalidChars.toString();
+    }
 }

@@ -1,5 +1,5 @@
 #
-#    Copyright 2024-2025 Picovoice Inc.
+#    Copyright 2024-2026 Picovoice Inc.
 #
 #    You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
 #    file accompanying this source.
@@ -176,7 +176,7 @@ def tokenize_text(text: str, language: str) -> Sequence[str]:
     custom_pronunciations = set(["{" + pron + "}" for pron in custom_pronunciations])
 
     # TODO: Update once Orca supports passing in partial bytes
-    if language == "ko" or language == "ja":
+    if language == "ko" or language == "ja" or language == "zh":
         tokens_raw = list(text)
     else:
         # TODO: Remove once tiktoken supports windows-arm64

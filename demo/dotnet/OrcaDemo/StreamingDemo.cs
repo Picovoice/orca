@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright 2025 Picovoice Inc.
+    Copyright 2025-2026 Picovoice Inc.
 
     You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
     file accompanying this source.
@@ -164,7 +164,7 @@ namespace OrcaDemo
 
             List<string> tokensRaw = new List<string>();
 
-            if (language == "ko" || language == "ja")
+            if (language == "ko" || language == "ja" || language == "zh")
             {
                 foreach (char c in text)
                 {

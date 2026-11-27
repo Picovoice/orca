@@ -84,6 +84,8 @@ window.onload = function () {
       textToValidate = filterValidCharsKo(input);
     } else if (orcaModel.publicPath.includes("ja")) {
       textToValidate = filterValidCharsJa(input);
+    } else if (orcaModel.publicPath.includes("zh")) {
+      textToValidate = filterValidCharsZh(input);
     }
 
     let nonAllowedCharacters = [];
@@ -502,6 +504,27 @@ function filterValidCharsJa(input) {
         (codePoint >= 0x4E00 && codePoint <= 0x9FFF);   // kanji
 
     if (!isJapanese) {
+      invalidChars += String.fromCodePoint(codePoint);
+    }
+  }
+
+  return invalidChars;
+}
+
+function filterValidCharsZh(input) {
+  let invalidChars = "";
+
+  for (const char of input) {
+    const codePoint = char.codePointAt(0);
+
+    const isHan =
+        (codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||   // CJK Unified Ideographs (common)
+        (codePoint >= 0x3400 && codePoint <= 0x4DBF) ||   // CJK Unified Ideographs Extension A
+        (codePoint >= 0xF900 && codePoint <= 0xFAFF) ||   // CJK Compatibility Ideographs
+        (codePoint >= 0x20000 && codePoint <= 0x323AF) || // CJK Extensions B-I + Compatibility Ideographs Supplement
+        (codePoint == 0x3007);                            // 〇 ideographic number zero
+
+    if (!isHan) {
       invalidChars += String.fromCodePoint(codePoint);
     }
   }
