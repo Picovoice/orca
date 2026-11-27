@@ -14,7 +14,7 @@ on:
       - 'demo/android/OrcaDemo/**/build.gradle'
 
 env:
-  PV_WORKFLOW_MODE: release
+  PV_WORKFLOW_MODE: staging
 
 jobs:
   upload-demo:
@@ -46,6 +46,14 @@ jobs:
 
     - name: Set up service json
       run: echo ${{secrets.GOOGLE_PLAY_SERVICE_JSON}} | base64 -d > ./service-account.json
+
+    - name: Install ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+
+    - name: Install fastlane
+      run: gem install fastlane -v 2.242.0
 
     - name: Override version code
       run: |
