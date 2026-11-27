@@ -14,7 +14,7 @@ on:
       - 'demo/android/OrcaDemo/**/build.gradle'
 
 env:
-  PV_WORKFLOW_MODE: staging
+  PV_WORKFLOW_MODE: release
 
 jobs:
   upload-demo:
